@@ -1,4 +1,6 @@
+pytest==4.5.0
 sphinx==2.0.1
 sqlparse==0.3.0
+tox==3.11.1
 twine==1.13.0
 wheel==0.33.4
