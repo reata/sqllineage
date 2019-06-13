@@ -28,7 +28,7 @@ class LineageParser(object):
 
     @property
     def statements(self) -> List[str]:
-        return [sqlparse.format(s.value) for s in self._stmt]
+        return [sqlparse.format(s.value) for s in self.statements_parsed]
 
     @property
     def source_tables(self) -> Set[str]:

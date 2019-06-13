@@ -22,3 +22,8 @@ def test_insert_into():
 
 def test_insert_overwrite():
     helper("insert overwrite table tab1 select col1 from tab2", {"tab2"}, {"tab1"})
+
+
+def test_split_statements():
+    sql = "select * from tab1; select * from tab2;"
+    assert len(LineageParser(sql).statements) == 2
