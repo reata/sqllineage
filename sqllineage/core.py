@@ -6,7 +6,7 @@ from sqlparse.tokens import Keyword, Token, Whitespace
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
                        'FULL OUTER JOIN')
-TARGET_TABLE_TOKENS = ('INSERT INTO', 'INSERT OVERWRITE')
+TARGET_TABLE_TOKENS = ('INTO', 'TABLE')
 
 
 class LineageParser(object):
