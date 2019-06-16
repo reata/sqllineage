@@ -2,7 +2,7 @@ import argparse
 from typing import List, Set
 
 import sqlparse
-from sqlparse.sql import Identifier, IdentifierList, TokenList, Statement
+from sqlparse.sql import Identifier, IdentifierList, Statement, TokenList
 from sqlparse.tokens import Keyword, Token, Whitespace
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',

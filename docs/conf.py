@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'sqllineage'
-copyright = '2019, Reata'
+copyright = '2019, Reata'   # noqa
 author = 'Reata'
 
 # The full version, including alpha/beta/rc tags

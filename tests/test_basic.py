@@ -1,4 +1,4 @@
-from sqllineage import LineageParser
+from sqllineage.core import LineageParser
 
 
 def helper(sql, source_tables=None, target_tables=None):
