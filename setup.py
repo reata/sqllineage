@@ -23,5 +23,10 @@ setuptools.setup(
     python_requires=">=3.5",
     install_requires=[
         "sqlparse"
-    ]
+    ],
+    entry_points={
+        "console_scripts": [
+            "sqllineage = sqllineage.core:main",
+        ],
+    },
 )

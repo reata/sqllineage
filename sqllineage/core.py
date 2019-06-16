@@ -1,3 +1,4 @@
+import argparse
 from typing import List, Set
 
 import sqlparse
@@ -21,6 +22,15 @@ class LineageParser(object):
         self._tmp_tables = self._source_tables.intersection(self._target_tables)
         self._source_tables -= self._tmp_tables
         self._target_tables -= self._tmp_tables
+
+    def __str__(self):
+        return """Statements(#): {stmt_cnt}
+Source Tables:
+    {source_tables}
+Target Tables:
+    {target_tables}
+""".format(stmt_cnt=len(self.statements), source_tables="\n    ".join(self.source_tables),
+           target_tables="\n    ".join(self.target_tables))
 
     @property
     def statements_parsed(self) -> List[Statement]:
@@ -65,3 +75,17 @@ class LineageParser(object):
                     assert isinstance(sub_token, Identifier)
                     self._target_tables.add(sub_token.get_real_name())
                     target_table_token_flag = False
+
+
+def main():
+    parser = argparse.ArgumentParser(description='SQL Lineage Parser.')
+    parser.add_argument('sql', metavar='sql_file', type=str,
+                        help='a text file that contains one or multiple sql statements')
+    args = parser.parse_args()
+    with open(args.sql) as f:
+        sql = f.read()
+    print(LineageParser(sql))
+
+
+if __name__ == "__main__":
+    main()
