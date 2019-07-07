@@ -1,11 +1,26 @@
-import setuptools
+from setuptools import find_packages, setup
 
 from sqllineage import name, version
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+with open("README.md", "r") as f:
+    long_description = f.read()
 
-setuptools.setup(
+ci_requires = [
+    "codecov",
+    "flake8",
+    "flake8-blind-except",
+    "flake8-builtins",
+    "flake8-import-order",
+    "flake8-logging-format",
+    "pytest>=4.5.0,<5.0",
+    "pytest-cov",
+    "sphinx>=2.0.0",
+    "tox>=3.11.0,<4.0",
+    "twine",
+    "wheel"
+]
+
+setup(
     name=name,
     version=version,
     author="Reata",
@@ -14,7 +29,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/reata/sqllineage",
-    packages=setuptools.find_packages(exclude=("tests",)),
+    packages=find_packages(exclude=("tests",)),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",
@@ -27,11 +42,14 @@ setuptools.setup(
     ],
     python_requires=">=3.5",
     install_requires=[
-        "sqlparse"
+        "sqlparse>=0.3.0,<0.4"
     ],
     entry_points={
         "console_scripts": [
             "sqllineage = sqllineage.core:main",
         ],
     },
+    extras_require={
+        "ci": ci_requires
+    }
 )
