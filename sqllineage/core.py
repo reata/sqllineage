@@ -2,7 +2,7 @@ import argparse
 from typing import List, Set
 
 import sqlparse
-from sqlparse.sql import Identifier, IdentifierList, Statement, TokenList
+from sqlparse.sql import Function, Identifier, IdentifierList, Statement, TokenList
 from sqlparse.tokens import Keyword, Token, Whitespace
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
@@ -71,6 +71,12 @@ Target Tables:
             elif target_table_token_flag:
                 if sub_token.ttype == Whitespace:
                     continue
+                elif isinstance(sub_token, Function):
+                    # insert into tab (col1, col2), tab (col1, col2) will be parsed as Function
+                    # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
+                    assert isinstance(sub_token.token_first(), Identifier)
+                    self._target_tables.add(sub_token.token_first().get_real_name())
+                    target_table_token_flag = False
                 else:
                     assert isinstance(sub_token, Identifier)
                     self._target_tables.add(sub_token.get_real_name())
