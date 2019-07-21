@@ -31,3 +31,7 @@ def test_insert_overwrite_with_keyword_table():
 
 def test_insert_overwrite_values():
     helper("INSERT OVERWRITE tab1 VALUES ('val1', 'val2'), ('val3', 'val4')", {}, {"tab1"})
+
+
+def test_with_insert():
+    helper("WITH tab1 AS (SELECT * FROM tab2) INSERT INTO TABLE tab3 SELECT * FROM tab1", {"tab2"}, {"tab3"})

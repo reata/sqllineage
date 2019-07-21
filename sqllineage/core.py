@@ -8,6 +8,7 @@ from sqlparse.tokens import Keyword, Token, Whitespace
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
                        'FULL OUTER JOIN')
 TARGET_TABLE_TOKENS = ('INTO', 'OVERWRITE', 'TABLE')
+TEMP_TABLE_TOKENS = ('WITH', )
 
 
 class LineageParser(object):
@@ -51,7 +52,7 @@ Target Tables:
     def _extract_from_token(self, token: Token):
         if not isinstance(token, TokenList):
             return
-        source_table_token_flag = target_table_token_flag = False
+        source_table_token_flag = target_table_token_flag = temp_table_token_flag = False
         for sub_token in token.tokens:
             if isinstance(token, TokenList) and not isinstance(sub_token, (Identifier, IdentifierList)):
                 self._extract_from_token(sub_token)
@@ -60,6 +61,8 @@ Target Tables:
                     source_table_token_flag = True
                 elif sub_token.normalized in TARGET_TABLE_TOKENS:
                     target_table_token_flag = True
+                elif sub_token.normalized in TEMP_TABLE_TOKENS:
+                    temp_table_token_flag = True
                 continue
             elif isinstance(sub_token, Identifier) and sub_token.normalized == "OVERWRITE" \
                     and sub_token.get_alias() is not None:
@@ -86,6 +89,15 @@ Target Tables:
                     assert isinstance(sub_token, Identifier)
                     self._target_tables.add(sub_token.get_real_name())
                     target_table_token_flag = False
+            elif temp_table_token_flag:
+                if sub_token.ttype == Whitespace:
+                    continue
+                else:
+                    assert isinstance(sub_token, Identifier)
+                    self._source_tables.add(sub_token.get_real_name())
+                    self._target_tables.add(sub_token.get_real_name())
+                    self._extract_from_token(sub_token)
+                    temp_table_token_flag = False
 
 
 def main():
