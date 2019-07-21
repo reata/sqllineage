@@ -22,8 +22,12 @@ def test_insert_into_with_columns_and_select_union():
 
 
 def test_insert_overwrite():
+    helper("INSERT OVERWRITE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"})
+
+
+def test_insert_overwrite_with_keyword_table():
     helper("INSERT OVERWRITE TABLE tab1 SELECT col1 FROM tab2", {"tab2"}, {"tab1"})
 
 
 def test_insert_overwrite_values():
-    helper("INSERT OVERWRITE TABLE tab1 VALUES ('val1', 'val2'), ('val3', 'val4')", {}, {"tab1"})
+    helper("INSERT OVERWRITE tab1 VALUES ('val1', 'val2'), ('val3', 'val4')", {}, {"tab1"})

@@ -7,7 +7,7 @@ from sqlparse.tokens import Keyword, Token, Whitespace
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
                        'FULL OUTER JOIN')
-TARGET_TABLE_TOKENS = ('INTO', 'TABLE')
+TARGET_TABLE_TOKENS = ('INTO', 'OVERWRITE', 'TABLE')
 
 
 class LineageParser(object):
@@ -60,6 +60,11 @@ Target Tables:
                     source_table_token_flag = True
                 elif sub_token.normalized in TARGET_TABLE_TOKENS:
                     target_table_token_flag = True
+                continue
+            elif isinstance(sub_token, Identifier) and sub_token.normalized == "OVERWRITE" \
+                    and sub_token.get_alias() is not None:
+                # overwrite can't be parsed as Keyword, manual walk around
+                self._target_tables.add(sub_token.get_alias())
                 continue
             if source_table_token_flag:
                 if sub_token.ttype == Whitespace:
