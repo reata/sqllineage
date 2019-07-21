@@ -52,6 +52,14 @@ def test_select_left_join():
     helper("SELECT * FROM tab1 LEFT JOIN tab2", {"tab1", "tab2"})
 
 
+def test_select_left_semi_join():
+    helper("SELECT * FROM tab1 LEFT SEMI JOIN tab2", {"tab1", "tab2"})
+
+
+def test_select_left_semi_join_with_on():
+    helper("SELECT * FROM tab1 LEFT SEMI JOIN tab2 ON (tab1.col1 = tab2.col2)", {"tab1", "tab2"})
+
+
 def test_select_right_join():
     helper("SELECT * FROM tab1 RIGHT JOIN tab2", {"tab1", "tab2"})
 
@@ -60,10 +68,22 @@ def test_select_full_outer_join():
     helper("SELECT * FROM tab1 FULL OUTER JOIN tab2", {"tab1", "tab2"})
 
 
+def test_select_full_outer_join_with_full_as_alias():
+    helper("SELECT * FROM tab1 AS full FULL OUTER JOIN tab2", {"tab1", "tab2"})
+
+
 def test_select_cross_join():
     helper("SELECT * FROM tab1 CROSS JOIN tab2", {"tab1", "tab2"})
+
+
+def test_select_cross_join_with_on():
+    helper("SELECT * FROM tab1 CROSS JOIN tab2 on tab1.col1 = tab2.col2", {"tab1", "tab2"})
 
 
 def test_select_join_with_subquery():
     helper("SELECT col1 FROM tab1 AS a LEFT JOIN tab2 AS b ON a.id=b.tab1_id "
            "WHERE col1 = (SELECT col1 FROM tab2 WHERE id = 1)", {"tab1", "tab2"})
+
+
+def test_with_select():
+    helper("WITH tab1 AS (SELECT 1) SELECT * FROM tab1")
