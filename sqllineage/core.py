@@ -6,7 +6,7 @@ from sqlparse.sql import Function, Identifier, IdentifierList, Statement, TokenL
 from sqlparse.tokens import Keyword, Token, Whitespace
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
-                       'FULL OUTER JOIN')
+                       'FULL OUTER JOIN', 'CROSS JOIN')
 TARGET_TABLE_TOKENS = ('INTO', 'OVERWRITE', 'TABLE')
 TEMP_TABLE_TOKENS = ('WITH', )
 

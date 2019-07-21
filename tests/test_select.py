@@ -40,6 +40,30 @@ def test_select_count():
     helper("SELECT COUNT(*) FROM tab1", {"tab1"})
 
 
+def test_select_inner_join():
+    helper("SELECT * FROM tab1 INNER JOIN tab2", {"tab1", "tab2"})
+
+
+def test_select_join():
+    helper("SELECT * FROM tab1 JOIN tab2", {"tab1", "tab2"})
+
+
+def test_select_left_join():
+    helper("SELECT * FROM tab1 LEFT JOIN tab2", {"tab1", "tab2"})
+
+
+def test_select_right_join():
+    helper("SELECT * FROM tab1 RIGHT JOIN tab2", {"tab1", "tab2"})
+
+
+def test_select_full_outer_join():
+    helper("SELECT * FROM tab1 FULL OUTER JOIN tab2", {"tab1", "tab2"})
+
+
+def test_select_cross_join():
+    helper("SELECT * FROM tab1 CROSS JOIN tab2", {"tab1", "tab2"})
+
+
 def test_select_join_with_subquery():
     helper("SELECT col1 FROM tab1 AS a LEFT JOIN tab2 AS b ON a.id=b.tab1_id "
            "WHERE col1 = (SELECT col1 FROM tab2 WHERE id = 1)", {"tab1", "tab2"})
