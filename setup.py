@@ -6,7 +6,6 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 ci_requires = [
-    "codecov",
     "flake8",
     "flake8-blind-except",
     "flake8-builtins",
