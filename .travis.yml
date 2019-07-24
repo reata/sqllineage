@@ -6,7 +6,7 @@ python:
   - "3.7"
 # command to install dependencies
 install:
-  - pip install tox-travis
+  - pip install tox-travis codecov
 # command to run tests
 script:
   - tox
