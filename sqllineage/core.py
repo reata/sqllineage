@@ -114,9 +114,9 @@ def main():
                 sql = f.read()
             print(LineageParser(sql))
         except FileNotFoundError:
-            print(f"ERROR: No such file: {args.f}", file=sys.stderr)
+            print("ERROR: No such file: {}".format(args.f), file=sys.stderr)
         except PermissionError:
-            print(f"ERROR: Permission denied when reading file '{args.f}'", file=sys.stderr)
+            print("ERROR: Permission denied when reading file '{}'".format(args.f), file=sys.stderr)
     elif args.e:
         print(LineageParser(args.e))
     else:
