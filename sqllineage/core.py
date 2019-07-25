@@ -1,4 +1,5 @@
 import argparse
+import sys
 from typing import List, Set
 
 import sqlparse
@@ -101,13 +102,25 @@ Target Tables:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='SQL Lineage Parser.')
-    parser.add_argument('sql', metavar='sql_file', type=str,
-                        help='a text file that contains one or multiple sql statements')
+    parser = argparse.ArgumentParser(prog='sqllineage', description='SQL Lineage Parser.')
+    parser.add_argument('-e', metavar='<quoted-query-string>', help='SQL from command line')
+    parser.add_argument('-f', metavar='<filename>', help='SQL from files')
     args = parser.parse_args()
-    with open(args.sql) as f:
-        sql = f.read()
-    print(LineageParser(sql))
+    if args.e and args.f:
+        print("WARNING: Both -e and -f options are specified. -e option will be ignored", file=sys.stderr)
+    if args.f:
+        try:
+            with open(args.f) as f:
+                sql = f.read()
+            print(LineageParser(sql))
+        except FileNotFoundError:
+            print("ERROR: No such file: {}".format(args.f), file=sys.stderr)
+        except PermissionError:
+            print("ERROR: Permission denied when reading file '{}'".format(args.f), file=sys.stderr)
+    elif args.e:
+        print(LineageParser(args.e))
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":
