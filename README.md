@@ -23,7 +23,7 @@ $ pip install sqllineage
 ```
 
 Using sqllineage command to parse a quoted-query-string:
-```bash
+```
 $ sqllineage -e "insert into table1 select * from table2"
 Statements(#): 1
 Source Tables:
@@ -33,7 +33,7 @@ Target Tables:
 ```
 
 Or you can parse a SQL file with -f option:
-```bash
+```
 $ sqllineage -f foo.sqlStatements(#): 1
 Statements(#): 1
 Source Tables:

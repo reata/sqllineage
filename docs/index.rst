@@ -1,20 +1,24 @@
-.. sqllineage documentation master file, created by
-   sphinx-quickstart on Wed May 22 22:48:13 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+SQLLineage: SQL Lineage Analysis Tool Powered by Python
+=======================================================
 
-Welcome to sqllineage's documentation!
-======================================
+Never get the hang of a SQL parser? SQLLineage comes to the rescue. Given a SQL command, SQLLineage will tell you its
+source and target tables, without worrying about Tokens, Keyword, Identified and all the jagons used by a SQL parser.
+
+Behind the scene, SQLLineage uses the fantastic sqlparse library to parse the SQL command, and bring you all the
+human-readable result with ease.
+
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :hidden:
+   :caption: First steps
+
+   getting_started
 
 
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Changelog
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   changelog
