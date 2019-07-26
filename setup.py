@@ -13,7 +13,6 @@ ci_requires = [
     "flake8-logging-format",
     "pytest>=4.5.0,<5.0",
     "pytest-cov",
-    "sphinx>=2.0.0",
     "tox>=3.11.0,<4.0",
     "twine",
     "wheel"
