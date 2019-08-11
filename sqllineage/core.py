@@ -4,7 +4,7 @@ from typing import List, Set
 
 import sqlparse
 from sqlparse.sql import Function, Identifier, Parenthesis, Statement, TokenList
-from sqlparse.tokens import Keyword, Token, Whitespace
+from sqlparse.tokens import Keyword, Token
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
                        'FULL OUTER JOIN', 'CROSS JOIN')
@@ -69,7 +69,7 @@ Target Tables:
                 self._target_tables.add(sub_token.get_alias())
                 continue
             if source_table_token_flag:
-                if sub_token.ttype == Whitespace:
+                if sub_token.is_whitespace:
                     continue
                 else:
                     assert isinstance(sub_token, Identifier)
@@ -82,7 +82,7 @@ Target Tables:
                         self._source_tables.add(sub_token.get_real_name())
                     source_table_token_flag = False
             elif target_table_token_flag:
-                if sub_token.ttype == Whitespace:
+                if sub_token.is_whitespace:
                     continue
                 elif isinstance(sub_token, Function):
                     # insert into tab (col1, col2), tab (col1, col2) will be parsed as Function
@@ -95,7 +95,7 @@ Target Tables:
                     self._target_tables.add(sub_token.get_real_name())
                     target_table_token_flag = False
             elif temp_table_token_flag:
-                if sub_token.ttype == Whitespace:
+                if sub_token.is_whitespace:
                     continue
                 else:
                     assert isinstance(sub_token, Identifier)

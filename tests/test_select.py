@@ -5,6 +5,11 @@ def test_select():
     helper("SELECT col1 FROM tab1", {"tab1"})
 
 
+def test_select_multi_line():
+    helper("""SELECT col1 FROM
+tab1""", {"tab1"})
+
+
 def test_select_asterisk():
     helper("SELECT * FROM tab1", {"tab1"})
 
