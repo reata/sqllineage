@@ -18,7 +18,7 @@ class LineageParser(object):
         self._encoding = encoding
         self._source_tables = set()
         self._target_tables = set()
-        self._stmt = sqlparse.parse(sql.strip(), self._encoding)
+        self._stmt = [s for s in sqlparse.parse(sql.strip(), self._encoding) if s.get_type() != "UNKNOWN"]
         for stmt in self._stmt:
             if stmt.get_type() == "DROP":
                 self._target_tables -= {t.get_real_name() for t in stmt.tokens if isinstance(t, Identifier)}
