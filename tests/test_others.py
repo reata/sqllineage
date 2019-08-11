@@ -6,6 +6,26 @@ def test_use():
     helper("USE db1")
 
 
+def test_create():
+    helper("CREATE TABLE tab1 (col1 STRING)", None, {"tab1"})
+
+
+def test_create_if_not_exist():
+    helper("CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)", None, {"tab1"})
+
+
+def test_create_after_drop():
+    helper("DROP TABLE IF EXISTS tab1; CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)", None, {"tab1"})
+
+
+def test_drop():
+    helper("DROP TABLE IF EXISTS tab1", None, None)
+
+
+def test_drop_after_create():
+    helper("CREATE TABLE IF NOT EXISTS tab1 (col1 STRING);DROP TABLE IF EXISTS tab1", None, None)
+
+
 def test_create_select():
     helper("CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"})
 
