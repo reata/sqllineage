@@ -4,7 +4,7 @@ from typing import List, Set
 
 import sqlparse
 from sqlparse.sql import Function, Identifier, Parenthesis, Statement, TokenList
-from sqlparse.tokens import DDL, Keyword, Token
+from sqlparse.tokens import Keyword, Token
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
                        'FULL OUTER JOIN', 'CROSS JOIN')
@@ -18,9 +18,9 @@ class LineageParser(object):
         self._encoding = encoding
         self._source_tables = set()
         self._target_tables = set()
-        self._stmt = sqlparse.parse(sql, self._encoding)
+        self._stmt = sqlparse.parse(sql.strip(), self._encoding)
         for stmt in self._stmt:
-            if stmt.token_first().ttype == DDL and stmt.token_first().normalized == "DROP":
+            if stmt.get_type() == "DROP":
                 self._target_tables -= {t.get_real_name() for t in stmt.tokens if isinstance(t, Identifier)}
             else:
                 self._extract_from_token(stmt)
@@ -76,7 +76,7 @@ Target Tables:
                     continue
                 else:
                     assert isinstance(sub_token, Identifier)
-                    if isinstance(sub_token.token_first(), Parenthesis):
+                    if isinstance(sub_token.token_first(skip_cm=True), Parenthesis):
                         # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
                         # and this Identifier's get_real_name method would return alias name dt
                         # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
@@ -90,8 +90,8 @@ Target Tables:
                 elif isinstance(sub_token, Function):
                     # insert into tab (col1, col2), tab (col1, col2) will be parsed as Function
                     # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
-                    assert isinstance(sub_token.token_first(), Identifier)
-                    self._target_tables.add(sub_token.token_first().get_real_name())
+                    assert isinstance(sub_token.token_first(skip_cm=True), Identifier)
+                    self._target_tables.add(sub_token.token_first(skip_cm=True).get_real_name())
                     target_table_token_flag = False
                 else:
                     assert isinstance(sub_token, Identifier)
