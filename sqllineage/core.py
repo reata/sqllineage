@@ -51,8 +51,6 @@ Target Tables:
         return self._target_tables
 
     def _extract_from_token(self, token: Token):
-        if not isinstance(token, TokenList):
-            return
         source_table_token_flag = target_table_token_flag = temp_table_token_flag = False
         for sub_token in token.tokens:
             if isinstance(sub_token, TokenList):
