@@ -4,7 +4,7 @@ from typing import List, Set
 
 import sqlparse
 from sqlparse.sql import Function, Identifier, Parenthesis, Statement, TokenList
-from sqlparse.tokens import Keyword, Token
+from sqlparse.tokens import DDL, Keyword, Token
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
                        'FULL OUTER JOIN', 'CROSS JOIN')
@@ -20,7 +20,10 @@ class LineageParser(object):
         self._target_tables = set()
         self._stmt = sqlparse.parse(sql, self._encoding)
         for stmt in self._stmt:
-            self._extract_from_token(stmt)
+            if stmt.token_first().ttype == DDL and stmt.token_first().normalized == "DROP":
+                self._target_tables -= {t.get_real_name() for t in stmt.tokens if isinstance(t, Identifier)}
+            else:
+                self._extract_from_token(stmt)
         self._tmp_tables = self._source_tables.intersection(self._target_tables)
         self._source_tables -= self._tmp_tables
         self._target_tables -= self._tmp_tables
