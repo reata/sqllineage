@@ -40,6 +40,10 @@ def test_select_count():
     helper("SELECT COUNT(*) FROM tab1", {"tab1"})
 
 
+def test_select_subquery():
+    helper("SELECT col1 FROM (SELECT col2 FROM tab1) dt", {"tab1"})
+
+
 def test_select_inner_join():
     helper("SELECT * FROM tab1 INNER JOIN tab2", {"tab1", "tab2"})
 
