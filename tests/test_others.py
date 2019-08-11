@@ -43,3 +43,10 @@ def test_split_statements():
 def test_split_statements_with_heading_and_ending_new_line():
     sql = "\nSELECT * FROM tab1;\nSELECT * FROM tab2;\n"
     assert len(LineageParser(sql).statements) == 2
+
+
+def test_split_statements_with_comment():
+    sql = """SELECT 1;
+
+-- SELECT 2;"""
+    assert len(LineageParser(sql).statements) == 1
