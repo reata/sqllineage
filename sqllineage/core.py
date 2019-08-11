@@ -3,7 +3,7 @@ import sys
 from typing import List, Set
 
 import sqlparse
-from sqlparse.sql import Function, Identifier, IdentifierList, Statement, TokenList
+from sqlparse.sql import Function, Identifier, Parenthesis, Statement, TokenList
 from sqlparse.tokens import Keyword, Token, Whitespace
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
@@ -51,11 +51,9 @@ Target Tables:
         return self._target_tables
 
     def _extract_from_token(self, token: Token):
-        if not isinstance(token, TokenList):
-            return
         source_table_token_flag = target_table_token_flag = temp_table_token_flag = False
         for sub_token in token.tokens:
-            if isinstance(token, TokenList) and not isinstance(sub_token, (Identifier, IdentifierList)):
+            if isinstance(sub_token, TokenList):
                 self._extract_from_token(sub_token)
             if sub_token.ttype in Keyword:
                 if sub_token.normalized in SOURCE_TABLE_TOKENS:
@@ -75,7 +73,13 @@ Target Tables:
                     continue
                 else:
                     assert isinstance(sub_token, Identifier)
-                    self._source_tables.add(sub_token.get_real_name())
+                    if isinstance(sub_token.token_first(), Parenthesis):
+                        # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
+                        # and this Identifier's get_real_name method would return alias name dt
+                        # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
+                        pass
+                    else:
+                        self._source_tables.add(sub_token.get_real_name())
                     source_table_token_flag = False
             elif target_table_token_flag:
                 if sub_token.ttype == Whitespace:
