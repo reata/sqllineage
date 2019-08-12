@@ -50,3 +50,17 @@ def test_split_statements_with_comment():
 
 -- SELECT 2;"""
     assert len(LineageParser(sql).statements) == 1
+
+
+def test_split_statements_with_show_create_table():
+    sql = """SELECT 1;
+
+SHOW CREATE TABLE tab1;"""
+    assert len(LineageParser(sql).statements) == 2
+
+
+def test_split_statements_with_desc():
+    sql = """SELECT 1;
+
+DESC tab1;"""
+    assert len(LineageParser(sql).statements) == 2
