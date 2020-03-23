@@ -3,13 +3,13 @@ import sys
 from typing import List, Set
 
 import sqlparse
-from sqlparse.sql import Function, Identifier, Parenthesis, Statement, TokenList
+from sqlparse.sql import Comment, Function, Identifier, Parenthesis, Statement, TokenList
 from sqlparse.tokens import Keyword, Token
 
 SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
                        'FULL OUTER JOIN', 'CROSS JOIN')
 TARGET_TABLE_TOKENS = ('INTO', 'OVERWRITE', 'TABLE')
-TEMP_TABLE_TOKENS = ('WITH', )
+TEMP_TABLE_TOKENS = ('WITH',)
 
 
 class LineageParser(object):
@@ -53,7 +53,7 @@ Target Tables:
     def target_tables(self) -> Set[str]:
         return self._target_tables
 
-    def _extract_from_token(self, token: Token):
+    def _extract_from_token(self, token: Token) -> None:
         source_table_token_flag = target_table_token_flag = temp_table_token_flag = False
         for sub_token in token.tokens:
             if isinstance(sub_token, TokenList):
@@ -72,7 +72,7 @@ Target Tables:
                 self._target_tables.add(sub_token.get_alias())
                 continue
             if source_table_token_flag:
-                if sub_token.is_whitespace:
+                if self.__token_negligible_before_tablename(sub_token):
                     continue
                 else:
                     assert isinstance(sub_token, Identifier)
@@ -85,7 +85,7 @@ Target Tables:
                         self._source_tables.add(sub_token.get_real_name())
                     source_table_token_flag = False
             elif target_table_token_flag:
-                if sub_token.is_whitespace:
+                if self.__token_negligible_before_tablename(sub_token):
                     continue
                 elif isinstance(sub_token, Function):
                     # insert into tab (col1, col2), tab (col1, col2) will be parsed as Function
@@ -98,7 +98,7 @@ Target Tables:
                     self._target_tables.add(sub_token.get_real_name())
                     target_table_token_flag = False
             elif temp_table_token_flag:
-                if sub_token.is_whitespace:
+                if self.__token_negligible_before_tablename(sub_token):
                     continue
                 else:
                     assert isinstance(sub_token, Identifier)
@@ -106,6 +106,10 @@ Target Tables:
                     self._target_tables.add(sub_token.get_real_name())
                     self._extract_from_token(sub_token)
                     temp_table_token_flag = False
+
+    @classmethod
+    def __token_negligible_before_tablename(cls, token: Token) -> bool:
+        return token.is_whitespace or isinstance(token, Comment)
 
 
 def main():
