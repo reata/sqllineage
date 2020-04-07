@@ -1,4 +1,5 @@
 import argparse
+import re
 import sys
 from typing import List, Set
 
@@ -6,8 +7,9 @@ import sqlparse
 from sqlparse.sql import Comment, Function, Identifier, Parenthesis, Statement, TokenList
 from sqlparse.tokens import Keyword, Token
 
-SOURCE_TABLE_TOKENS = ('FROM', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'LEFT OUTER JOIN', 'RIGHT OUTER JOIN',
-                       'FULL OUTER JOIN', 'CROSS JOIN')
+SOURCE_TABLE_TOKENS = (r'FROM',
+                       # inspired by https://github.com/andialbrecht/sqlparse/blob/master/sqlparse/keywords.py
+                       r'((LEFT\s+|RIGHT\s+|FULL\s+)?(INNER\s+|OUTER\s+|STRAIGHT\s+)?|(CROSS\s+|NATURAL\s+)?)?JOIN')
 TARGET_TABLE_TOKENS = ('INTO', 'OVERWRITE', 'TABLE')
 TEMP_TABLE_TOKENS = ('WITH',)
 
@@ -59,7 +61,7 @@ Target Tables:
             if isinstance(sub_token, TokenList):
                 self._extract_from_token(sub_token)
             if sub_token.ttype in Keyword:
-                if sub_token.normalized in SOURCE_TABLE_TOKENS:
+                if any(re.match(regex, sub_token.normalized) for regex in SOURCE_TABLE_TOKENS):
                     source_table_token_flag = True
                 elif sub_token.normalized in TARGET_TABLE_TOKENS:
                     target_table_token_flag = True

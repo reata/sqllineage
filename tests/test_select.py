@@ -69,6 +69,10 @@ def test_select_left_join():
     helper("SELECT * FROM tab1 LEFT JOIN tab2", {"tab1", "tab2"})
 
 
+def test_select_left_join_with_extra_space_in_middle():
+    helper("SELECT * FROM tab1 LEFT  JOIN tab2", {"tab1", "tab2"})
+
+
 def test_select_left_semi_join():
     helper("SELECT * FROM tab1 LEFT SEMI JOIN tab2", {"tab1", "tab2"})
 
