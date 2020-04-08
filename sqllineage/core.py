@@ -23,7 +23,8 @@ class LineageParser(object):
         self._stmt = [s for s in sqlparse.parse(sql.strip(), self._encoding) if s.token_first(skip_cm=True)]
         for stmt in self._stmt:
             if stmt.get_type() == "DROP":
-                self._target_tables -= {t.get_real_name() for t in stmt.tokens if isinstance(t, Identifier)}
+                for tables in (self._source_tables, self._target_tables):
+                    tables -= {t.get_real_name() for t in stmt.tokens if isinstance(t, Identifier)}
             else:
                 self._extract_from_token(stmt)
         self._tmp_tables = self._source_tables.intersection(self._target_tables)

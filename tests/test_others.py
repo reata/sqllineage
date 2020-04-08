@@ -31,6 +31,13 @@ def test_drop_after_create():
     helper("CREATE TABLE IF NOT EXISTS tab1 (col1 STRING);DROP TABLE IF EXISTS tab1", None, None)
 
 
+def test_drop_tmp_tab_after_create():
+    sql = """create table tab_a as select * from tab_b;
+insert overwrite table tab_c select * from tab_a;
+drop table tab_a;"""
+    helper(sql, {"tab_b"}, {"tab_c"})
+
+
 def test_create_select():
     helper("CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"})
 
