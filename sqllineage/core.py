@@ -4,7 +4,7 @@ import sys
 from typing import List, Set
 
 import sqlparse
-from sqlparse.sql import Comment, Function, Identifier, Parenthesis, Statement, TokenList
+from sqlparse.sql import Comment, Comparison, Function, Identifier, Parenthesis, Statement, TokenList
 from sqlparse.tokens import Keyword, Token
 
 SOURCE_TABLE_TOKENS = (r'FROM',
@@ -95,11 +95,17 @@ Target Tables:
                     # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
                     assert isinstance(sub_token.token_first(skip_cm=True), Identifier)
                     self._target_tables.add(sub_token.token_first(skip_cm=True).get_real_name())
-                    target_table_token_flag = False
+                elif isinstance(sub_token, Comparison):
+                    # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
+                    # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
+                    assert isinstance(sub_token.left, Identifier)
+                    assert isinstance(sub_token.right, Identifier)
+                    self._target_tables.add(sub_token.left.get_real_name())
+                    self._source_tables.add(sub_token.right.get_real_name())
                 else:
                     assert isinstance(sub_token, Identifier)
                     self._target_tables.add(sub_token.get_real_name())
-                    target_table_token_flag = False
+                target_table_token_flag = False
             elif temp_table_token_flag:
                 if self.__token_negligible_before_tablename(sub_token):
                     continue
