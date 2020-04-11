@@ -26,6 +26,8 @@ class LineageParser(object):
                 self._extract_from_DDL_DROP(stmt)
             elif stmt.get_type() == "ALTER":
                 self._extract_from_DDL_ALTER(stmt)
+            elif stmt.get_type() == "DELETE" or stmt.token_first(skip_cm=True).normalized == "TRUNCATE":
+                pass
             else:
                 # DML parsing logic also applies to CREATE DDL
                 self._extract_from_DML(stmt)

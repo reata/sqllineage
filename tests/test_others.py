@@ -58,6 +58,14 @@ def test_alter_target_table_name():
     helper("insert overwrite tab1 select * from tab2; alter table tab1 rename to tab3;", {"tab2"}, {"tab3"})
 
 
+def test_truncate_table():
+    helper("truncate table tab1", None, None)
+
+
+def test_delete_from_table():
+    helper("delete from table tab1", None, None)
+
+
 def test_split_statements():
     sql = "SELECT * FROM tab1; SELECT * FROM tab2;"
     assert len(LineageParser(sql).statements) == 2
