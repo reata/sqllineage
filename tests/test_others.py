@@ -6,6 +6,13 @@ def test_use():
     helper("USE db1")
 
 
+def test_table_name_case():
+    helper("""insert overwrite table tab_a
+select * from tab_b
+union all
+select * from TAB_B""", {"tab_b"}, {"tab_a"})
+
+
 def test_create():
     helper("CREATE TABLE tab1 (col1 STRING)", None, {"tab1"})
 
