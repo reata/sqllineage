@@ -23,10 +23,12 @@ class LineageParser(object):
         self._stmt = [s for s in sqlparse.parse(sql.strip(), self._encoding) if s.token_first(skip_cm=True)]
         for stmt in self._stmt:
             if stmt.get_type() == "DROP":
-                for tables in (self._source_tables, self._target_tables):
-                    tables -= {t.get_real_name() for t in stmt.tokens if isinstance(t, Identifier)}
+                self._extract_from_DDL_DROP(stmt)
+            elif stmt.get_type() == "ALTER":
+                self._extract_from_DDL_ALTER(stmt)
             else:
-                self._extract_from_token(stmt)
+                # DML parsing logic also applies to CREATE DDL
+                self._extract_from_DML(stmt)
         self._tmp_tables = self._source_tables.intersection(self._target_tables)
         self._source_tables -= self._tmp_tables
         self._target_tables -= self._tmp_tables
@@ -56,11 +58,11 @@ Target Tables:
     def target_tables(self) -> Set[str]:
         return self._target_tables
 
-    def _extract_from_token(self, token: Token) -> None:
+    def _extract_from_DML(self, token: Token) -> None:
         source_table_token_flag = target_table_token_flag = temp_table_token_flag = False
         for sub_token in token.tokens:
             if isinstance(sub_token, TokenList):
-                self._extract_from_token(sub_token)
+                self._extract_from_DML(sub_token)
             if sub_token.ttype in Keyword:
                 if any(re.match(regex, sub_token.normalized) for regex in SOURCE_TABLE_TOKENS):
                     source_table_token_flag = True
@@ -113,8 +115,21 @@ Target Tables:
                     assert isinstance(sub_token, Identifier)
                     self._source_tables.add(sub_token.get_real_name())
                     self._target_tables.add(sub_token.get_real_name())
-                    self._extract_from_token(sub_token)
+                    self._extract_from_DML(sub_token)
                     temp_table_token_flag = False
+
+    def _extract_from_DDL_DROP(self, stmt: Statement) -> None:
+        for st_tables in (self._source_tables, self._target_tables):
+            st_tables -= {t.get_real_name() for t in stmt.tokens if isinstance(t, Identifier)}
+
+    def _extract_from_DDL_ALTER(self, stmt: Statement) -> None:
+        tables = [t.get_real_name() for t in stmt.tokens if isinstance(t, Identifier)]
+        keywords = [t for t in stmt.tokens if t.ttype is Keyword]
+        if any(k.normalized == "RENAME" for k in keywords) and len(tables) == 2:
+            for st_tables in (self._source_tables, self._target_tables):
+                if tables[0] in st_tables:
+                    st_tables.remove(tables[0])
+                    st_tables.add(tables[1])
 
     @classmethod
     def __token_negligible_before_tablename(cls, token: Token) -> bool:
