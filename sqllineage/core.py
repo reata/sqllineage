@@ -54,11 +54,11 @@ Target Tables:
 
     @property
     def source_tables(self) -> Set[str]:
-        return self._source_tables
+        return {t.lower() for t in self._source_tables}
 
     @property
     def target_tables(self) -> Set[str]:
-        return self._target_tables
+        return {t.lower() for t in self._target_tables}
 
     def _extract_from_DML(self, token: Token) -> None:
         source_table_token_flag = target_table_token_flag = temp_table_token_flag = False
