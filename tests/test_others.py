@@ -22,6 +22,10 @@ def test_create_like():
     helper("CREATE TABLE tab1 LIKE tab2", {"tab2"}, {"tab1"})
 
 
+def test_create_select():
+    helper("CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"})
+
+
 def test_create_after_drop():
     helper("DROP TABLE IF EXISTS tab1; CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)", None, {"tab1"})
 
@@ -46,8 +50,20 @@ drop table tab_a;"""
     helper(sql, {"tab_b"}, {"tab_c"})
 
 
-def test_create_select():
-    helper("CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"})
+def test_alter_table_rename():
+    helper("alter table tab1 rename to tab2;", None, None)
+
+
+def test_alter_target_table_name():
+    helper("insert overwrite tab1 select * from tab2; alter table tab1 rename to tab3;", {"tab2"}, {"tab3"})
+
+
+def test_truncate_table():
+    helper("truncate table tab1", None, None)
+
+
+def test_delete_from_table():
+    helper("delete from table tab1", None, None)
 
 
 def test_split_statements():
