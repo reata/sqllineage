@@ -12,6 +12,7 @@ ci_requires = [
     "flake8-builtins",
     "flake8-import-order",
     "flake8-logging-format",
+    "mypy",
     "pytest>=4.5.0,<5.0",
     "pytest-cov",
     "tox>=3.11.0,<4.0",

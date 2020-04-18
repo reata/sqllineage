@@ -29,8 +29,8 @@ TEMP_TABLE_TOKENS = ("WITH",)
 class LineageParser(object):
     def __init__(self, sql: str, encoding=None):
         self._encoding = encoding
-        self._source_tables = set()
-        self._target_tables = set()
+        self._source_tables = set()  # type: Set[str]
+        self._target_tables = set()  # type: Set[str]
         self._stmt = [
             s
             for s in sqlparse.parse(sql.strip(), self._encoding)
@@ -178,7 +178,7 @@ Target Tables:
         return token.is_whitespace or isinstance(token, Comment)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         prog="sqllineage", description="SQL Lineage Parser."
     )
