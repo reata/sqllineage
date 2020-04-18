@@ -15,6 +15,8 @@ from sqlparse.sql import (
 )
 from sqlparse.tokens import Keyword, Token
 
+from sqllineage.exceptions import SQLLineageException
+
 SOURCE_TABLE_TOKENS = (
     r"FROM",
     # inspired by https://github.com/andialbrecht/sqlparse/blob/master/sqlparse/keywords.py
@@ -109,7 +111,8 @@ Target Tables:
                 if self.__token_negligible_before_tablename(sub_token):
                     continue
                 else:
-                    assert isinstance(sub_token, Identifier)
+                    if not isinstance(sub_token, Identifier):
+                        raise SQLLineageException("An Identifier is expected")
                     if isinstance(sub_token.token_first(skip_cm=True), Parenthesis):
                         # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
                         # and this Identifier's get_real_name method would return alias name dt
@@ -124,26 +127,32 @@ Target Tables:
                 elif isinstance(sub_token, Function):
                     # insert into tab (col1, col2), tab (col1, col2) will be parsed as Function
                     # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
-                    assert isinstance(sub_token.token_first(skip_cm=True), Identifier)
+                    if not isinstance(sub_token.token_first(skip_cm=True), Identifier):
+                        raise SQLLineageException("An Identifier is expected")
                     self._target_tables.add(
                         sub_token.token_first(skip_cm=True).get_real_name()
                     )
                 elif isinstance(sub_token, Comparison):
                     # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
                     # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
-                    assert isinstance(sub_token.left, Identifier)
-                    assert isinstance(sub_token.right, Identifier)
+                    if not (
+                        isinstance(sub_token.left, Identifier)
+                        and isinstance(sub_token.right, Identifier)
+                    ):
+                        raise SQLLineageException("An Identifier is expected")
                     self._target_tables.add(sub_token.left.get_real_name())
                     self._source_tables.add(sub_token.right.get_real_name())
                 else:
-                    assert isinstance(sub_token, Identifier)
+                    if not isinstance(sub_token, Identifier):
+                        raise SQLLineageException("An Identifier is expected")
                     self._target_tables.add(sub_token.get_real_name())
                 target_table_token_flag = False
             elif temp_table_token_flag:
                 if self.__token_negligible_before_tablename(sub_token):
                     continue
                 else:
-                    assert isinstance(sub_token, Identifier)
+                    if not isinstance(sub_token, Identifier):
+                        raise SQLLineageException("An Identifier is expected")
                     self._source_tables.add(sub_token.get_real_name())
                     self._target_tables.add(sub_token.get_real_name())
                     self._extract_from_DML(sub_token)
