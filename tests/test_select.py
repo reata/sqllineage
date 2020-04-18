@@ -6,8 +6,11 @@ def test_select():
 
 
 def test_select_multi_line():
-    helper("""SELECT col1 FROM
-tab1""", {"tab1"})
+    helper(
+        """SELECT col1 FROM
+tab1""",
+        {"tab1"},
+    )
 
 
 def test_select_asterisk():
@@ -35,7 +38,9 @@ def test_select_with_comment_after_from():
 
 
 def test_select_with_comment_after_join():
-    helper("select * from tab1 join --comment\ntab2 on tab1.x = tab2.x", {"tab1", "tab2"})
+    helper(
+        "select * from tab1 join --comment\ntab2 on tab1.x = tab2.x", {"tab1", "tab2"}
+    )
 
 
 def test_select_keyword_as_column_alias():
@@ -78,7 +83,10 @@ def test_select_left_semi_join():
 
 
 def test_select_left_semi_join_with_on():
-    helper("SELECT * FROM tab1 LEFT SEMI JOIN tab2 ON (tab1.col1 = tab2.col2)", {"tab1", "tab2"})
+    helper(
+        "SELECT * FROM tab1 LEFT SEMI JOIN tab2 ON (tab1.col1 = tab2.col2)",
+        {"tab1", "tab2"},
+    )
 
 
 def test_select_right_join():
@@ -98,12 +106,17 @@ def test_select_cross_join():
 
 
 def test_select_cross_join_with_on():
-    helper("SELECT * FROM tab1 CROSS JOIN tab2 on tab1.col1 = tab2.col2", {"tab1", "tab2"})
+    helper(
+        "SELECT * FROM tab1 CROSS JOIN tab2 on tab1.col1 = tab2.col2", {"tab1", "tab2"}
+    )
 
 
 def test_select_join_with_subquery():
-    helper("SELECT col1 FROM tab1 AS a LEFT JOIN tab2 AS b ON a.id=b.tab1_id "
-           "WHERE col1 = (SELECT col1 FROM tab2 WHERE id = 1)", {"tab1", "tab2"})
+    helper(
+        "SELECT col1 FROM tab1 AS a LEFT JOIN tab2 AS b ON a.id=b.tab1_id "
+        "WHERE col1 = (SELECT col1 FROM tab2 WHERE id = 1)",
+        {"tab1", "tab2"},
+    )
 
 
 def test_with_select():

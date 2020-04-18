@@ -8,6 +8,7 @@ SQL Lineage Analysis Tool powered by Python
 [![Build Status](https://travis-ci.org/reata/sqllineage.svg?branch=master)](https://travis-ci.org/reata/sqllineage)
 [![Documentation Status](https://readthedocs.org/projects/sqllineage/badge/?version=latest)](https://sqllineage.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/reata/sqllineage/branch/master/graph/badge.svg)](https://codecov.io/gh/reata/sqllineage)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Never get the hang of a SQL parser? SQLLineage comes to the rescue. Given a SQL command, SQLLineage will tell you its
 source and target tables, without worrying about Tokens, Keyword, Identifier and all the jagons used by SQL parsers.
