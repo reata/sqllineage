@@ -15,7 +15,7 @@ ci_requires = [
     "pytest-cov",
     "tox>=3.11.0,<4.0",
     "twine",
-    "wheel"
+    "wheel",
 ]
 
 setup(
@@ -37,18 +37,10 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: Implementation :: CPython"
+        "Programming Language :: Python :: Implementation :: CPython",
     ],
     python_requires=">=3.5",
-    install_requires=[
-        "sqlparse>=0.3.0,<0.4"
-    ],
-    entry_points={
-        "console_scripts": [
-            "sqllineage = sqllineage.core:main",
-        ],
-    },
-    extras_require={
-        "ci": ci_requires
-    }
+    install_requires=["sqlparse>=0.3.0,<0.4"],
+    entry_points={"console_scripts": ["sqllineage = sqllineage.core:main"]},
+    extras_require={"ci": ci_requires},
 )

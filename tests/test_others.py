@@ -7,10 +7,14 @@ def test_use():
 
 
 def test_table_name_case():
-    helper("""insert overwrite table tab_a
+    helper(
+        """insert overwrite table tab_a
 select * from tab_b
 union all
-select * from TAB_B""", {"tab_b"}, {"tab_a"})
+select * from TAB_B""",
+        {"tab_b"},
+        {"tab_a"},
+    )
 
 
 def test_create():
@@ -34,7 +38,11 @@ def test_create_select():
 
 
 def test_create_after_drop():
-    helper("DROP TABLE IF EXISTS tab1; CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)", None, {"tab1"})
+    helper(
+        "DROP TABLE IF EXISTS tab1; CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)",
+        None,
+        {"tab1"},
+    )
 
 
 def test_drop():
@@ -42,12 +50,20 @@ def test_drop():
 
 
 def test_drop_with_comment():
-    helper("""--comment
-DROP TABLE IF EXISTS tab1""", None, None)
+    helper(
+        """--comment
+DROP TABLE IF EXISTS tab1""",
+        None,
+        None,
+    )
 
 
 def test_drop_after_create():
-    helper("CREATE TABLE IF NOT EXISTS tab1 (col1 STRING);DROP TABLE IF EXISTS tab1", None, None)
+    helper(
+        "CREATE TABLE IF NOT EXISTS tab1 (col1 STRING);DROP TABLE IF EXISTS tab1",
+        None,
+        None,
+    )
 
 
 def test_drop_tmp_tab_after_create():
@@ -62,7 +78,11 @@ def test_alter_table_rename():
 
 
 def test_alter_target_table_name():
-    helper("insert overwrite tab1 select * from tab2; alter table tab1 rename to tab3;", {"tab2"}, {"tab3"})
+    helper(
+        "insert overwrite tab1 select * from tab2; alter table tab1 rename to tab3;",
+        {"tab2"},
+        {"tab3"},
+    )
 
 
 def test_truncate_table():
