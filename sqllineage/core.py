@@ -120,7 +120,7 @@ Target Tables:
                         # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
                         pass
                     else:
-                        self._source_tables.add(Table(sub_token.get_real_name()))
+                        self._source_tables.add(Table.create(sub_token))
                     source_table_token_flag = False
             elif target_table_token_flag:
                 if self.__token_negligible_before_tablename(sub_token):
@@ -131,7 +131,7 @@ Target Tables:
                     if not isinstance(sub_token.token_first(skip_cm=True), Identifier):
                         raise SQLLineageException("An Identifier is expected")
                     self._target_tables.add(
-                        Table(sub_token.token_first(skip_cm=True).get_real_name())
+                        Table.create(sub_token.token_first(skip_cm=True))
                     )
                 elif isinstance(sub_token, Comparison):
                     # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
@@ -141,12 +141,12 @@ Target Tables:
                         and isinstance(sub_token.right, Identifier)
                     ):
                         raise SQLLineageException("An Identifier is expected")
-                    self._target_tables.add(Table(sub_token.left.get_real_name()))
-                    self._source_tables.add(Table(sub_token.right.get_real_name()))
+                    self._target_tables.add(Table.create(sub_token.left))
+                    self._source_tables.add(Table.create(sub_token.right))
                 else:
                     if not isinstance(sub_token, Identifier):
                         raise SQLLineageException("An Identifier is expected")
-                    self._target_tables.add(Table(sub_token.get_real_name()))
+                    self._target_tables.add(Table.create(sub_token))
                 target_table_token_flag = False
             elif temp_table_token_flag:
                 if self.__token_negligible_before_tablename(sub_token):
@@ -154,23 +154,19 @@ Target Tables:
                 else:
                     if not isinstance(sub_token, Identifier):
                         raise SQLLineageException("An Identifier is expected")
-                    self._source_tables.add(Table(sub_token.get_real_name()))
-                    self._target_tables.add(Table(sub_token.get_real_name()))
+                    self._source_tables.add(Table.create(sub_token))
+                    self._target_tables.add(Table.create(sub_token))
                     self._extract_from_DML(sub_token)
                     temp_table_token_flag = False
 
     def _extract_from_DDL_DROP(self, stmt: Statement) -> None:
         for st_tables in (self._source_tables, self._target_tables):
             st_tables -= {
-                Table(t.get_real_name())
-                for t in stmt.tokens
-                if isinstance(t, Identifier)
+                Table.create(t) for t in stmt.tokens if isinstance(t, Identifier)
             }
 
     def _extract_from_DDL_ALTER(self, stmt: Statement) -> None:
-        tables = [
-            Table(t.get_real_name()) for t in stmt.tokens if isinstance(t, Identifier)
-        ]
+        tables = [Table.create(t) for t in stmt.tokens if isinstance(t, Identifier)]
         keywords = [t for t in stmt.tokens if t.ttype is Keyword]
         if any(k.normalized == "RENAME" for k in keywords) and len(tables) == 2:
             for st_tables in (self._source_tables, self._target_tables):
