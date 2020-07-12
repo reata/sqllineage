@@ -42,6 +42,14 @@ class LineageResult:
         for attr in self.__slots__:
             setattr(self, attr, getattr(self, attr).union(getattr(other, attr)))
 
+    def __str__(self):
+        return "\n".join(
+            "table {attr}: {attr_val}".format(
+                attr=attr, attr_val=getattr(self, attr) if getattr(self, attr) else "{}"
+            )
+            for attr in self.__slots__
+        )
+
 
 class LineageAnalyzer:
     """SQL Statement Level Lineage Analyzer."""

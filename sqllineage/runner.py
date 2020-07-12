@@ -16,6 +16,7 @@ class LineageRunner(object):
         sql: str,
         encoding: str = None,
         combiner: Type[LineageCombiner] = DefaultLineageCombiner,
+        verbose: bool = False,
     ):
         self._encoding = encoding
         self._stmt = [
@@ -23,20 +24,35 @@ class LineageRunner(object):
             for s in sqlparse.parse(sql.strip(), self._encoding)
             if s.token_first(skip_cm=True)
         ]
-        lineage_results = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
-        self._lineage_result = combiner.combine(*lineage_results)
+        self._lineage_results = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
+        self._lineage_result = combiner.combine(*self._lineage_results)
+        self._verbose = verbose
 
     def __str__(self):
-        return """Statements(#): {stmt_cnt}
+        statements = self.statements
+        combined = """Statements(#): {stmt_cnt}
 Source Tables:
     {source_tables}
 Target Tables:
     {target_tables}
 """.format(
-            stmt_cnt=len(self.statements),
+            stmt_cnt=len(statements),
             source_tables="\n    ".join(str(t) for t in self.source_tables),
             target_tables="\n    ".join(str(t) for t in self.target_tables),
         )
+        if self._verbose:
+            result = ""
+            for i, lineage_result in enumerate(self._lineage_results):
+                stmt_short = statements[i].replace("\n", "")
+                if len(stmt_short) > 50:
+                    stmt_short = stmt_short[:50] + "..."
+                result += """Statement #{ord}: {stmt}
+{content}
+""".format(
+                    ord=i + 1, content=str(lineage_result), stmt=stmt_short
+                )
+            combined = result + "==========\nSummary:\n" + combined
+        return combined
 
     @property
     def statements_parsed(self) -> List[Statement]:
@@ -63,6 +79,12 @@ def main() -> None:
         "-e", metavar="<quoted-query-string>", help="SQL from command line"
     )
     parser.add_argument("-f", metavar="<filename>", help="SQL from files")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="increase output verbosity, show statement level lineage result",
+        action="store_true",
+    )
     args = parser.parse_args()
     if args.e and args.f:
         print(
@@ -73,7 +95,7 @@ def main() -> None:
         try:
             with open(args.f) as f:
                 sql = f.read()
-            print(LineageRunner(sql))
+            print(LineageRunner(sql, verbose=args.verbose))
         except FileNotFoundError:
             print("ERROR: No such file: {}".format(args.f), file=sys.stderr)
         except PermissionError:
@@ -82,7 +104,7 @@ def main() -> None:
                 file=sys.stderr,
             )
     elif args.e:
-        print(LineageRunner(args.e))
+        print(LineageRunner(args.e, verbose=args.verbose))
     else:
         parser.print_help()
 
