@@ -1,9 +1,6 @@
-import argparse
 import re
-import sys
-from typing import List, Set
+from typing import Set, TYPE_CHECKING, Tuple
 
-import sqlparse
 from sqlparse.sql import (
     Comment,
     Comparison,
@@ -23,64 +20,61 @@ SOURCE_TABLE_TOKENS = (
     # inspired by https://github.com/andialbrecht/sqlparse/blob/master/sqlparse/keywords.py
     r"((LEFT\s+|RIGHT\s+|FULL\s+)?(INNER\s+|OUTER\s+|STRAIGHT\s+)?|(CROSS\s+|NATURAL\s+)?)?JOIN",
 )
-TARGET_TABLE_TOKENS = ("INTO", "OVERWRITE", "TABLE")
+TARGET_TABLE_TOKENS = ("INTO", "OVERWRITE", "TABLE", "VIEW")
 TEMP_TABLE_TOKENS = ("WITH",)
 
 
-class LineageParser(object):
-    def __init__(self, sql: str, encoding=None):
-        self._encoding = encoding
-        self._source_tables = set()  # type: Set[Table]
-        self._target_tables = set()  # type: Set[Table]
-        self._stmt = [
-            s
-            for s in sqlparse.parse(sql.strip(), self._encoding)
-            if s.token_first(skip_cm=True)
-        ]
-        for stmt in self._stmt:
-            if stmt.get_type() == "DROP":
-                self._extract_from_DDL_DROP(stmt)
-            elif stmt.get_type() == "ALTER":
-                self._extract_from_DDL_ALTER(stmt)
-            elif (
-                stmt.get_type() == "DELETE"
-                or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"
-            ):
-                pass
-            else:
-                # DML parsing logic also applies to CREATE DDL
-                self._extract_from_DML(stmt)
-        self._tmp_tables = self._source_tables.intersection(self._target_tables)
-        self._source_tables -= self._tmp_tables
-        self._target_tables -= self._tmp_tables
+class LineageResult:
+    """Statement(s) Level Lineage Result."""
 
-    def __str__(self):
-        return """Statements(#): {stmt_cnt}
-Source Tables:
-    {source_tables}
-Target Tables:
-    {target_tables}
-""".format(
-            stmt_cnt=len(self.statements),
-            source_tables="\n    ".join(str(t) for t in self.source_tables),
-            target_tables="\n    ".join(str(t) for t in self.target_tables),
-        )
+    __slots__ = ["read", "write", "rename", "drop"]
+    if TYPE_CHECKING:
+        read = None  # type: Set[Table]
+        write = None  # type: Set[Table]
+        rename = None  # type: Set[Tuple[Table, Table]]
+        drop = None  # type: Set[Table]
 
-    @property
-    def statements_parsed(self) -> List[Statement]:
-        return self._stmt
+    def __init__(self) -> None:
+        for attr in self.__slots__:
+            setattr(self, attr, set())
 
-    @property
-    def statements(self) -> List[str]:
-        return [sqlparse.format(s.value) for s in self.statements_parsed]
+    def __add__(self, other):
+        for attr in self.__slots__:
+            setattr(self, attr, getattr(self, attr).union(getattr(other, attr)))
 
-    @property
-    def source_tables(self) -> Set[Table]:
-        return {t for t in self._source_tables}
 
-    @property
-    def target_tables(self) -> Set[Table]:
-        return {t for t in self._target_tables}
+class LineageAnalyzer:
+    """SQL Statement Level Lineage Analyzer."""
+
+    def __init__(self) -> None:
+        self._lineage_result = LineageResult()
+
+    def analyze(self, stmt: Statement) -> LineageResult:
+        if stmt.get_type() == "DROP":
+            self._extract_from_DDL_DROP(stmt)
+        elif stmt.get_type() == "ALTER":
+            self._extract_from_DDL_ALTER(stmt)
+        elif (
+            stmt.get_type() == "DELETE"
+            or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"
+        ):
+            pass
+        else:
+            # DML parsing logic also applies to CREATE DDL
+            self._extract_from_DML(stmt)
+        return self._lineage_result
+
+    def _extract_from_DDL_DROP(self, stmt: Statement) -> None:
+        for table in {
+            Table.create(t) for t in stmt.tokens if isinstance(t, Identifier)
+        }:
+            self._lineage_result.drop.add(table)
+
+    def _extract_from_DDL_ALTER(self, stmt: Statement) -> None:
+        tables = [Table.create(t) for t in stmt.tokens if isinstance(t, Identifier)]
+        keywords = [t for t in stmt.tokens if t.ttype is Keyword]
+        if any(k.normalized == "RENAME" for k in keywords) and len(tables) == 2:
+            self._lineage_result.rename.add((tables[0], tables[1]))
 
     def _extract_from_DML(self, token: Token) -> None:
         source_table_token_flag = (
@@ -106,7 +100,7 @@ Target Tables:
                 and sub_token.get_alias() is not None
             ):
                 # overwrite can't be parsed as Keyword, manual walk around
-                self._target_tables.add(Table(sub_token.get_alias()))
+                self._lineage_result.write.add(Table(sub_token.get_alias()))
                 continue
             if source_table_token_flag:
                 if self.__token_negligible_before_tablename(sub_token):
@@ -120,7 +114,7 @@ Target Tables:
                         # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
                         pass
                     else:
-                        self._source_tables.add(Table.create(sub_token))
+                        self._lineage_result.read.add(Table.create(sub_token))
                     source_table_token_flag = False
             elif target_table_token_flag:
                 if self.__token_negligible_before_tablename(sub_token):
@@ -130,7 +124,7 @@ Target Tables:
                     # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
                     if not isinstance(sub_token.token_first(skip_cm=True), Identifier):
                         raise SQLLineageException("An Identifier is expected")
-                    self._target_tables.add(
+                    self._lineage_result.write.add(
                         Table.create(sub_token.token_first(skip_cm=True))
                     )
                 elif isinstance(sub_token, Comparison):
@@ -141,12 +135,12 @@ Target Tables:
                         and isinstance(sub_token.right, Identifier)
                     ):
                         raise SQLLineageException("An Identifier is expected")
-                    self._target_tables.add(Table.create(sub_token.left))
-                    self._source_tables.add(Table.create(sub_token.right))
+                    self._lineage_result.write.add(Table.create(sub_token.left))
+                    self._lineage_result.read.add(Table.create(sub_token.right))
                 else:
                     if not isinstance(sub_token, Identifier):
                         raise SQLLineageException("An Identifier is expected")
-                    self._target_tables.add(Table.create(sub_token))
+                    self._lineage_result.write.add(Table.create(sub_token))
                 target_table_token_flag = False
             elif temp_table_token_flag:
                 if self.__token_negligible_before_tablename(sub_token):
@@ -154,62 +148,11 @@ Target Tables:
                 else:
                     if not isinstance(sub_token, Identifier):
                         raise SQLLineageException("An Identifier is expected")
-                    self._source_tables.add(Table.create(sub_token))
-                    self._target_tables.add(Table.create(sub_token))
+                    self._lineage_result.read.add(Table.create(sub_token))
+                    self._lineage_result.write.add(Table.create(sub_token))
                     self._extract_from_DML(sub_token)
                     temp_table_token_flag = False
-
-    def _extract_from_DDL_DROP(self, stmt: Statement) -> None:
-        for st_tables in (self._source_tables, self._target_tables):
-            st_tables -= {
-                Table.create(t) for t in stmt.tokens if isinstance(t, Identifier)
-            }
-
-    def _extract_from_DDL_ALTER(self, stmt: Statement) -> None:
-        tables = [Table.create(t) for t in stmt.tokens if isinstance(t, Identifier)]
-        keywords = [t for t in stmt.tokens if t.ttype is Keyword]
-        if any(k.normalized == "RENAME" for k in keywords) and len(tables) == 2:
-            for st_tables in (self._source_tables, self._target_tables):
-                if tables[0] in st_tables:
-                    st_tables.remove(tables[0])
-                    st_tables.add(tables[1])
 
     @classmethod
     def __token_negligible_before_tablename(cls, token: Token) -> bool:
         return token.is_whitespace or isinstance(token, Comment)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        prog="sqllineage", description="SQL Lineage Parser."
-    )
-    parser.add_argument(
-        "-e", metavar="<quoted-query-string>", help="SQL from command line"
-    )
-    parser.add_argument("-f", metavar="<filename>", help="SQL from files")
-    args = parser.parse_args()
-    if args.e and args.f:
-        print(
-            "WARNING: Both -e and -f options are specified. -e option will be ignored",
-            file=sys.stderr,
-        )
-    if args.f:
-        try:
-            with open(args.f) as f:
-                sql = f.read()
-            print(LineageParser(sql))
-        except FileNotFoundError:
-            print("ERROR: No such file: {}".format(args.f), file=sys.stderr)
-        except PermissionError:
-            print(
-                "ERROR: Permission denied when reading file '{}'".format(args.f),
-                file=sys.stderr,
-            )
-    elif args.e:
-        print(LineageParser(args.e))
-    else:
-        parser.print_help()
-
-
-if __name__ == "__main__":
-    main()

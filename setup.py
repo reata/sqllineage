@@ -43,6 +43,6 @@ setup(
     ],
     python_requires=">=3.5",
     install_requires=["sqlparse>=0.3.0,<0.4"],
-    entry_points={"console_scripts": ["sqllineage = sqllineage.core:main"]},
+    entry_points={"console_scripts": ["sqllineage = sqllineage.runner:main"]},
     extras_require={"ci": ci_requires},
 )
