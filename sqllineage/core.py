@@ -39,8 +39,12 @@ class LineageResult:
             setattr(self, attr, set())
 
     def __add__(self, other):
+        lineage_result = LineageResult()
         for attr in self.__slots__:
-            setattr(self, attr, getattr(self, attr).union(getattr(other, attr)))
+            setattr(
+                lineage_result, attr, getattr(self, attr).union(getattr(other, attr))
+            )
+        return lineage_result
 
     def __str__(self):
         return "\n".join(

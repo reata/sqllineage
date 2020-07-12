@@ -13,7 +13,7 @@ class LineageCombiner:
 class NaiveLineageCombiner(LineageCombiner):
     @staticmethod
     def combine(*args: LineageResult) -> LineageResult:
-        return reduce(add, args)
+        return reduce(add, args, LineageResult())
 
 
 class DefaultLineageCombiner(LineageCombiner):
