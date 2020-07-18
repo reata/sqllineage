@@ -113,18 +113,23 @@ class LineageAnalyzer:
                 if self.__token_negligible_before_tablename(sub_token):
                     continue
                 else:
-                    if not isinstance(sub_token, Identifier):
+                    if isinstance(sub_token, Identifier):
+                        if isinstance(sub_token.token_first(skip_cm=True), Parenthesis):
+                            # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
+                            # and this Identifier's get_real_name method would return alias name dt
+                            # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
+                            pass
+                        else:
+                            self._lineage_result.read.add(Table.create(sub_token))
+                    elif isinstance(sub_token, Parenthesis):
+                        # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
+                        # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
+                        pass
+                    else:
                         raise SQLLineageException(
                             "An Identifier is expected, got %s[value: %s] instead"
                             % (type(sub_token).__name__, sub_token)
                         )
-                    if isinstance(sub_token.token_first(skip_cm=True), Parenthesis):
-                        # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
-                        # and this Identifier's get_real_name method would return alias name dt
-                        # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
-                        pass
-                    else:
-                        self._lineage_result.read.add(Table.create(sub_token))
                     source_table_token_flag = False
             elif target_table_token_flag:
                 if self.__token_negligible_before_tablename(sub_token):

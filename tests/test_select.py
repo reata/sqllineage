@@ -63,7 +63,12 @@ def test_select_count():
 
 
 def test_select_subquery():
-    helper("SELECT col1 FROM (SELECT col2 FROM tab1) dt", {"tab1"})
+    helper("SELECT col1 FROM (SELECT col1 FROM tab1) dt", {"tab1"})
+
+
+def test_select_subquery_without_alias():
+    """this syntax is valid in SparkSQL, not for MySQL"""
+    helper("SELECT col1 FROM (SELECT col1 FROM tab1)", {"tab1"})
 
 
 def test_select_inner_join():
