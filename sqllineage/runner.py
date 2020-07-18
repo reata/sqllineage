@@ -40,6 +40,13 @@ Target Tables:
             source_tables="\n    ".join(str(t) for t in self.source_tables),
             target_tables="\n    ".join(str(t) for t in self.target_tables),
         )
+        if self.intermediate_tables:
+            combined += """Intermediate Tables:
+    {intermediate_tables}""".format(
+                intermediate_tables="\n    ".join(
+                    str(t) for t in self.intermediate_tables
+                )
+            )
         if self._verbose:
             result = ""
             for i, lineage_result in enumerate(self._lineage_results):
@@ -47,9 +54,11 @@ Target Tables:
                 if len(stmt_short) > 50:
                     stmt_short = stmt_short[:50] + "..."
                 result += """Statement #{ord}: {stmt}
-{content}
+    {content}
 """.format(
-                    ord=i + 1, content=str(lineage_result), stmt=stmt_short
+                    ord=i + 1,
+                    content=str(lineage_result).replace("\n", "\n    "),
+                    stmt=stmt_short,
                 )
             combined = result + "==========\nSummary:\n" + combined
         return combined
@@ -63,11 +72,15 @@ Target Tables:
 
     @property
     def source_tables(self) -> Set[Table]:
-        return {t for t in self._lineage_result.read}
+        return self._lineage_result.read
 
     @property
     def target_tables(self) -> Set[Table]:
-        return {t for t in self._lineage_result.write}
+        return self._lineage_result.write
+
+    @property
+    def intermediate_tables(self) -> Set[Table]:
+        return self._lineage_result.intermediate
 
 
 def main() -> None:
