@@ -70,6 +70,8 @@ class LineageAnalyzer:
         elif (
             stmt.get_type() == "DELETE"
             or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"
+            or stmt.token_first(skip_cm=True).normalized.upper() == "REFRESH"
+            or stmt.token_first(skip_cm=True).normalized == "CACHE"
         ):
             pass
         else:
