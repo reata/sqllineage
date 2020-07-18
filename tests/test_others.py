@@ -91,6 +91,14 @@ def test_alter_target_table_name():
     )
 
 
+def test_refresh_table():
+    helper("refresh table tab1", None, None)
+
+
+def test_cache_table():
+    helper("cache table tab1", None, None)
+
+
 def test_truncate_table():
     helper("truncate table tab1", None, None)
 
