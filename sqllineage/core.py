@@ -27,9 +27,9 @@ TEMP_TABLE_TOKENS = ("WITH",)
 class LineageResult:
     """Statement(s) Level Lineage Result."""
 
-    __slots__ = ["read", "write", "rename", "drop", "with_"]
+    __slots__ = ["read", "write", "rename", "drop", "intermediate"]
     if TYPE_CHECKING:
-        read = write = drop = with_ = set()  # type: Set[Table]
+        read = write = drop = intermediate = set()  # type: Set[Table]
         rename = set()  # type: Set[Tuple[Table, Table]]
 
     def __init__(self) -> None:
@@ -109,20 +109,15 @@ class LineageAnalyzer:
                 elif sub_token.normalized in TEMP_TABLE_TOKENS:
                     temp_table_token_flag = True
                 continue
-            elif (
-                isinstance(sub_token, Identifier)
-                and sub_token.normalized == "OVERWRITE"
-                and sub_token.get_alias() is not None
-            ):
-                # overwrite can't be parsed as Keyword, manual walk around
-                self._lineage_result.write.add(Table(sub_token.get_alias()))
-                continue
             if source_table_token_flag:
                 if self.__token_negligible_before_tablename(sub_token):
                     continue
                 else:
                     if not isinstance(sub_token, Identifier):
-                        raise SQLLineageException("An Identifier is expected")
+                        raise SQLLineageException(
+                            "An Identifier is expected, got %s[value: %s] instead"
+                            % (type(sub_token).__name__, sub_token)
+                        )
                     if isinstance(sub_token.token_first(skip_cm=True), Parenthesis):
                         # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
                         # and this Identifier's get_real_name method would return alias name dt
@@ -135,10 +130,13 @@ class LineageAnalyzer:
                 if self.__token_negligible_before_tablename(sub_token):
                     continue
                 elif isinstance(sub_token, Function):
-                    # insert into tab (col1, col2), tab (col1, col2) will be parsed as Function
+                    # insert into tab (col1, col2) values (val1, val2); Here tab (col1, col2) will be parsed as Function
                     # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
                     if not isinstance(sub_token.token_first(skip_cm=True), Identifier):
-                        raise SQLLineageException("An Identifier is expected")
+                        raise SQLLineageException(
+                            "An Identifier is expected, got %s[value: %s] instead"
+                            % (type(sub_token).__name__, sub_token)
+                        )
                     self._lineage_result.write.add(
                         Table.create(sub_token.token_first(skip_cm=True))
                     )
@@ -149,12 +147,18 @@ class LineageAnalyzer:
                         isinstance(sub_token.left, Identifier)
                         and isinstance(sub_token.right, Identifier)
                     ):
-                        raise SQLLineageException("An Identifier is expected")
+                        raise SQLLineageException(
+                            "An Identifier is expected, got %s[value: %s] instead"
+                            % (type(sub_token).__name__, sub_token)
+                        )
                     self._lineage_result.write.add(Table.create(sub_token.left))
                     self._lineage_result.read.add(Table.create(sub_token.right))
                 else:
                     if not isinstance(sub_token, Identifier):
-                        raise SQLLineageException("An Identifier is expected")
+                        raise SQLLineageException(
+                            "An Identifier is expected, got %s[value: %s] instead"
+                            % (type(sub_token).__name__, sub_token)
+                        )
                     self._lineage_result.write.add(Table.create(sub_token))
                 target_table_token_flag = False
             elif temp_table_token_flag:
@@ -162,8 +166,11 @@ class LineageAnalyzer:
                     continue
                 else:
                     if not isinstance(sub_token, Identifier):
-                        raise SQLLineageException("An Identifier is expected")
-                    self._lineage_result.with_.add(Table.create(sub_token))
+                        raise SQLLineageException(
+                            "An Identifier is expected, got %s[value: %s] instead"
+                            % (type(sub_token).__name__, sub_token)
+                        )
+                    self._lineage_result.intermediate.add(Table.create(sub_token))
                     self._extract_from_DML(sub_token)
                     temp_table_token_flag = False
 

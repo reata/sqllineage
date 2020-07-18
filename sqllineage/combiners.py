@@ -32,13 +32,17 @@ class DefaultLineageCombiner(LineageCombiner):
                         if table_old in st_tables:
                             st_tables.remove(table_old)
                             st_tables.add(table_new)
-            elif lineage_result.with_:
-                combined_result.read |= lineage_result.read - lineage_result.with_
+            elif lineage_result.intermediate:
+                combined_result.read |= (
+                    lineage_result.read - lineage_result.intermediate
+                )
                 combined_result.write |= lineage_result.write
             else:
                 combined_result.read |= lineage_result.read
                 combined_result.write |= lineage_result.write
-        tmp_tables = combined_result.read.intersection(combined_result.write)
+        combined_result.intermediate = combined_result.read.intersection(
+            combined_result.write
+        )
         self_depend_tables = reduce(
             or_,
             (
@@ -47,7 +51,7 @@ class DefaultLineageCombiner(LineageCombiner):
             ),
             set(),
         )  # type: Set[Table]
-        tmp_tables -= self_depend_tables
-        combined_result.read -= tmp_tables
-        combined_result.write -= tmp_tables
+        combined_result.intermediate -= self_depend_tables
+        combined_result.read -= combined_result.intermediate
+        combined_result.write -= combined_result.intermediate
         return combined_result
