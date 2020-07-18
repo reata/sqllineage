@@ -73,6 +73,12 @@ drop table tab_a;"""
     helper(sql, {"tab_b"}, {"tab_c"})
 
 
+def test_new_create_tab_as_tmp_table():
+    sql = """create table tab_a as select * from tab_b;
+create table tab_c as select * from tab_a;"""
+    helper(sql, {"tab_b"}, {"tab_c"})
+
+
 def test_alter_table_rename():
     helper("alter table tab1 rename to tab2;", None, None)
 

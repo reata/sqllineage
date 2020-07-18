@@ -27,12 +27,13 @@ TEMP_TABLE_TOKENS = ("WITH",)
 class LineageResult:
     """Statement(s) Level Lineage Result."""
 
-    __slots__ = ["read", "write", "rename", "drop"]
+    __slots__ = ["read", "write", "rename", "drop", "with_"]
     if TYPE_CHECKING:
         read = None  # type: Set[Table]
         write = None  # type: Set[Table]
         rename = None  # type: Set[Tuple[Table, Table]]
         drop = None  # type: Set[Table]
+        with_ = None  # type: Set[Table]
 
     def __init__(self) -> None:
         for attr in self.__slots__:
@@ -53,6 +54,9 @@ class LineageResult:
             )
             for attr in self.__slots__
         )
+
+    def __repr__(self):
+        return str(self)
 
 
 class LineageAnalyzer:
@@ -160,8 +164,7 @@ class LineageAnalyzer:
                 else:
                     if not isinstance(sub_token, Identifier):
                         raise SQLLineageException("An Identifier is expected")
-                    self._lineage_result.read.add(Table.create(sub_token))
-                    self._lineage_result.write.add(Table.create(sub_token))
+                    self._lineage_result.with_.add(Table.create(sub_token))
                     self._extract_from_DML(sub_token)
                     temp_table_token_flag = False
 

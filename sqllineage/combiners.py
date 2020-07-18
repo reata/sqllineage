@@ -1,7 +1,9 @@
 from functools import reduce
-from operator import add
+from operator import add, or_
+from typing import Set
 
 from sqllineage.core import LineageResult
+from sqllineage.models import Table
 
 
 class LineageCombiner:
@@ -30,10 +32,22 @@ class DefaultLineageCombiner(LineageCombiner):
                         if table_old in st_tables:
                             st_tables.remove(table_old)
                             st_tables.add(table_new)
+            elif lineage_result.with_:
+                combined_result.read |= lineage_result.read - lineage_result.with_
+                combined_result.write |= lineage_result.write
             else:
                 combined_result.read |= lineage_result.read
                 combined_result.write |= lineage_result.write
         tmp_tables = combined_result.read.intersection(combined_result.write)
+        self_depend_tables = reduce(
+            or_,
+            (
+                lineage_result.read.intersection(lineage_result.write)
+                for lineage_result in args
+            ),
+            set(),
+        )  # type: Set[Table]
+        tmp_tables -= self_depend_tables
         combined_result.read -= tmp_tables
         combined_result.write -= tmp_tables
         return combined_result

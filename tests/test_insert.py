@@ -47,6 +47,17 @@ def test_insert_overwrite_values():
     )
 
 
+def test_insert_overwrite_from_self():
+    helper(
+        """INSERT OVERWRITE TABLE tab_1
+SELECT tab2.col_a from tab_2
+JOIN tab_1
+ON tab_1.col_a = tab_2.cola""",
+        {"tab_1", "tab_2"},
+        {"tab_1"},
+    )
+
+
 def test_with_insert():
     helper(
         "WITH tab1 AS (SELECT * FROM tab2) INSERT INTO tab3 SELECT * FROM tab1",
