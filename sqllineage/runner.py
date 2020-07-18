@@ -29,7 +29,7 @@ class LineageRunner(object):
         self._verbose = verbose
 
     def __str__(self):
-        statements = self.statements
+        statements = self.statements(strip_comments=True)
         combined = """Statements(#): {stmt_cnt}
 Source Tables:
     {source_tables}
@@ -58,9 +58,8 @@ Target Tables:
     def statements_parsed(self) -> List[Statement]:
         return self._stmt
 
-    @property
-    def statements(self) -> List[str]:
-        return [sqlparse.format(s.value) for s in self.statements_parsed]
+    def statements(self, **kwargs) -> List[str]:
+        return [sqlparse.format(s.value, **kwargs) for s in self.statements_parsed]
 
     @property
     def source_tables(self) -> Set[Table]:
