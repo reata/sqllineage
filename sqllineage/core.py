@@ -29,11 +29,8 @@ class LineageResult:
 
     __slots__ = ["read", "write", "rename", "drop", "with_"]
     if TYPE_CHECKING:
-        read = None  # type: Set[Table]
-        write = None  # type: Set[Table]
-        rename = None  # type: Set[Tuple[Table, Table]]
-        drop = None  # type: Set[Table]
-        with_ = None  # type: Set[Table]
+        read = write = drop = with_ = set()  # type: Set[Table]
+        rename = set()  # type: Set[Tuple[Table, Table]]
 
     def __init__(self) -> None:
         for attr in self.__slots__:
