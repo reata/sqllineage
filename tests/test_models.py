@@ -1,9 +1,16 @@
+import pytest
+
+from sqllineage.exceptions import SQLLineageException
 from sqllineage.models import Schema, Table
 
 
 def test_repr_dummy():
     assert repr(Schema())
     assert repr(Table(""))
+    with pytest.raises(SQLLineageException):
+        Table("a.b.c")
+    with pytest.warns(Warning):
+        Table("a.b", Schema("c"))
 
 
 def test_hash_eq():
