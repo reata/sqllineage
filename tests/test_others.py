@@ -101,30 +101,36 @@ def test_delete_from_table():
 
 def test_split_statements():
     sql = "SELECT * FROM tab1; SELECT * FROM tab2;"
-    assert len(LineageRunner(sql).statements) == 2
+    assert len(LineageRunner(sql).statements()) == 2
 
 
 def test_split_statements_with_heading_and_ending_new_line():
     sql = "\nSELECT * FROM tab1;\nSELECT * FROM tab2;\n"
-    assert len(LineageRunner(sql).statements) == 2
+    assert len(LineageRunner(sql).statements()) == 2
 
 
 def test_split_statements_with_comment():
     sql = """SELECT 1;
 
 -- SELECT 2;"""
-    assert len(LineageRunner(sql).statements) == 1
+    assert len(LineageRunner(sql).statements()) == 1
+
+
+def test_statements_trim_comment():
+    comment = "------------------\n"
+    sql = "select * from dual;"
+    assert LineageRunner(comment + sql).statements(strip_comments=True)[0] == sql
 
 
 def test_split_statements_with_show_create_table():
     sql = """SELECT 1;
 
 SHOW CREATE TABLE tab1;"""
-    assert len(LineageRunner(sql).statements) == 2
+    assert len(LineageRunner(sql).statements()) == 2
 
 
 def test_split_statements_with_desc():
     sql = """SELECT 1;
 
 DESC tab1;"""
-    assert len(LineageRunner(sql).statements) == 2
+    assert len(LineageRunner(sql).statements()) == 2
