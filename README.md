@@ -26,21 +26,73 @@ $ pip install sqllineage
 
 Using sqllineage command to parse a quoted-query-string:
 ```
-$ sqllineage -e "insert into table1 select * from table2"
+$ sqllineage -e "insert into db1.table1 select * from db2.table2"
 Statements(#): 1
 Source Tables:
-    table2
+    db2.table2
 Target Tables:
-    table1
+    db1.table1
 ```
 
 Or you can parse a SQL file with -f option:
 ```
-$ sqllineage -f foo.sqlStatements(#): 1
+$ sqllineage -f foo.sql
 Statements(#): 1
 Source Tables:
-    table_foo
-    table_bar
+    db1.table_foo
+    db1.table_bar
 Target Tables:
-    table_baz
+    db2.table_baz
+```
+
+## Advanced Usage
+
+Lineage result combined for multiple SQL statements, with intermediate tables identified:
+```
+$ sqllineage -e "insert into db1.table1 select * from db2.table2; insert into db3.table3 select * from db1.table1;"
+Statements(#): 2
+Source Tables:
+    db2.table2
+Target Tables:
+    db3.table3
+Intermediate Tables:
+    db1.table1
+```
+
+And if you want to see lineage result for every SQL statement, just toggle verbose option
+```
+$ sqllineage -v -e "insert into db1.table1 select * from db2.table2; insert into db3.table3 select * from db1.table1;"
+Statement #1: insert into db1.table1 select * from db2.table2;
+    table read: {Table: db2.table2}
+    table write: {Table: db1.table1}
+    table rename: {}
+    table drop: {}
+    table intermediate: {}
+Statement #2: insert into db3.table3 select * from db1.table1;
+    table read: {Table: db1.table1}
+    table write: {Table: db3.table3}
+    table rename: {}
+    table drop: {}
+    table intermediate: {}
+==========
+Summary:
+Statements(#): 2
+Source Tables:
+    db2.table2
+Target Tables:
+    db3.table3
+Intermediate Tables:
+    db1.table1
+```
+
+Or specify your own combiner to combine lineage result, here we use a naive combiner, which is just to union each table set without removing intermediate tables:
+```
+$ sqllineage -e "insert into db1.table1 select * from db2.table2; insert into db3.table3 select * from db1.table1;" -c sqllineage.combiners.NaiveLineageCombiner"
+Statements(#): 2
+Source Tables:
+    db2.table2
+    db1.table1
+Target Tables:
+    db3.table3
+    db1.table1
 ```
