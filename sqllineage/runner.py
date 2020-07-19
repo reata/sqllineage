@@ -1,6 +1,7 @@
 import argparse
 import sys
 from typing import List, Set, Type
+import importlib
 
 import sqlparse
 from sqlparse.sql import Statement
@@ -92,12 +93,34 @@ def main() -> None:
     )
     parser.add_argument("-f", metavar="<filename>", help="SQL from files")
     parser.add_argument(
+        "-c",
+        metavar="<combiner>",
+        help="specify Combiner to combine lineage result from multiple statements, "
+        "Default Value: sqllineage.combiners.DefaultLineageCombiner",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         help="increase output verbosity, show statement level lineage result",
         action="store_true",
     )
     args = parser.parse_args()
+    combiner = DefaultLineageCombiner
+    if args.c:
+        try:
+            combiner_module, combiner_name = args.c.rsplit(".", maxsplit=1)
+            combiner = getattr(importlib.import_module(combiner_module), combiner_name)
+        except ValueError:
+            print(
+                "ERROR: Combiner should be named as module.class, got {} instead".format(
+                    args.c
+                ),
+                file=sys.stderr,
+            )
+            raise
+        except (ImportError, AttributeError):
+            print("ERROR: No such combiner: {}".format(args.c), file=sys.stderr)
+            raise
     if args.e and args.f:
         print(
             "WARNING: Both -e and -f options are specified. -e option will be ignored",
@@ -107,7 +130,7 @@ def main() -> None:
         try:
             with open(args.f) as f:
                 sql = f.read()
-            print(LineageRunner(sql, verbose=args.verbose))
+            print(LineageRunner(sql, combiner=combiner, verbose=args.verbose))
         except FileNotFoundError:
             print("ERROR: No such file: {}".format(args.f), file=sys.stderr)
         except PermissionError:
@@ -116,7 +139,7 @@ def main() -> None:
                 file=sys.stderr,
             )
     elif args.e:
-        print(LineageRunner(args.e, verbose=args.verbose))
+        print(LineageRunner(args.e, combiner=combiner, verbose=args.verbose))
     else:
         parser.print_help()
 
