@@ -2,6 +2,7 @@ import argparse
 import importlib
 import sys
 from typing import List, Set, Type
+import importlib
 
 import sqlparse
 from sqlparse.sql import Statement
