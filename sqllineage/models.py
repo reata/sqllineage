@@ -6,7 +6,7 @@ from sqllineage.exceptions import SQLLineageException
 
 
 class Schema:
-    unknown = "<unknown>"
+    unknown = "<default>"
 
     def __init__(self, name: str = unknown):
         self.raw_name = name
@@ -15,7 +15,7 @@ class Schema:
         return self.raw_name.lower()
 
     def __repr__(self):
-        return "Database: " + str(self)
+        return "Schema: " + str(self)
 
     def __eq__(self, other):
         return type(self) is type(other) and str(self) == str(other)
