@@ -1,7 +1,7 @@
 import argparse
 import importlib
 import sys
-from typing import List, Set, Type
+from typing import List, Type
 
 import sqlparse
 from sqlparse.sql import Statement
@@ -72,16 +72,16 @@ Target Tables:
         return [sqlparse.format(s.value, **kwargs) for s in self.statements_parsed]
 
     @property
-    def source_tables(self) -> Set[Table]:
-        return self._lineage_result.read
+    def source_tables(self) -> List[Table]:
+        return sorted(self._lineage_result.read, key=lambda x: str(x))
 
     @property
-    def target_tables(self) -> Set[Table]:
-        return self._lineage_result.write
+    def target_tables(self) -> List[Table]:
+        return sorted(self._lineage_result.write, key=lambda x: str(x))
 
     @property
-    def intermediate_tables(self) -> Set[Table]:
-        return self._lineage_result.intermediate
+    def intermediate_tables(self) -> List[Table]:
+        return sorted(self._lineage_result.intermediate, key=lambda x: str(x))
 
 
 def main() -> None:
