@@ -50,7 +50,7 @@ class LineageResult:
                 attr=attr,
                 attr_val=sorted(getattr(self, attr), key=lambda x: str(x))
                 if getattr(self, attr)
-                else "{}",
+                else "[]",
             )
             for attr in self.__slots__
         )
