@@ -47,7 +47,10 @@ class LineageResult:
     def __str__(self):
         return "\n".join(
             "table {attr}: {attr_val}".format(
-                attr=attr, attr_val=getattr(self, attr) if getattr(self, attr) else "{}"
+                attr=attr,
+                attr_val=sorted(getattr(self, attr), key=lambda x: str(x))
+                if getattr(self, attr)
+                else "{}",
             )
             for attr in self.__slots__
         )
