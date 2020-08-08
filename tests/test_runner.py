@@ -13,6 +13,7 @@ insert overwrite table tab3 select * from tab2""",
             verbose=True,
         )
     )
+    main([])
     main(["-e", "select * from dual"])
     main(["-f", __file__])
     main(["-e", "select * from dual", "-f", __file__])
