@@ -20,16 +20,18 @@ insert overwrite table tab3 select * from tab2""",
 
 
 def test_combiner_exception():
-    with pytest.raises(ValueError):
-        main(["-c", "malformatcombiner"])
-    with pytest.raises(ImportError):
-        main(["-c", "nonexist_package.nonexist_combiner"])
-    with pytest.raises(AttributeError):
-        main(["-c", "sqllineage.combiners.nonexist_combiner"])
+    for args in (
+        ["-c", "malformatcombiner"],
+        ["-c", "nonexist_package.nonexist_combiner"],
+        ["-c", "sqllineage.combiners.nonexist_combiner"],
+    ):
+        with pytest.raises(SystemExit) as e:
+            main(args)
+        assert e.value.code == 1
 
 
 def test_file_exception():
-    with pytest.raises(IsADirectoryError):
-        main(["-f", str(pathlib.Path().absolute())])
-    with pytest.raises(FileNotFoundError):
-        main(["-f", "nonexist_file"])
+    for args in (["-f", str(pathlib.Path().absolute())], ["-f", "nonexist_file"]):
+        with pytest.raises(SystemExit) as e:
+            main(args)
+        assert e.value.code == 1

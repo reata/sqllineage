@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-from sqllineage import name, version
+from sqllineage import NAME, VERSION
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -21,8 +21,8 @@ ci_requires = [
 ]
 
 setup(
-    name=name,
-    version=version,
+    name=NAME,
+    version=VERSION,
     author="Reata",
     author_email="reddevil.hjw@gmail.com",
     description="SQL Lineage Analysis Tool powered by Python",

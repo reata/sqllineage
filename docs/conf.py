@@ -21,14 +21,14 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-from sqllineage import name, version  # noqa
+from sqllineage import NAME, VERSION  # noqa
 
-project = name
+project = NAME
 copyright = "2019, Reata"  # noqa
 author = "Reata"
 
 # The full version, including alpha/beta/rc tags
-release = version
+release = VERSION
 
 # -- General configuration ---------------------------------------------------
 
