@@ -84,7 +84,7 @@ Target Tables:
         return sorted(self._lineage_result.intermediate, key=lambda x: str(x))
 
 
-def main() -> None:
+def main(args=None) -> None:
     parser = argparse.ArgumentParser(
         prog="sqllineage", description="SQL Lineage Parser."
     )
@@ -104,7 +104,7 @@ def main() -> None:
         help="increase output verbosity, show statement level lineage result",
         action="store_true",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     combiner = DefaultLineageCombiner
     if args.c:
         try:
@@ -131,13 +131,20 @@ def main() -> None:
             with open(args.f) as f:
                 sql = f.read()
             print(LineageRunner(sql, combiner=combiner, verbose=args.verbose))
+        except IsADirectoryError:
+            print(
+                "ERROR: {} is a directory".format(args.f), file=sys.stderr,
+            )
+            raise
         except FileNotFoundError:
             print("ERROR: No such file: {}".format(args.f), file=sys.stderr)
+            raise
         except PermissionError:
             print(
                 "ERROR: Permission denied when reading file '{}'".format(args.f),
                 file=sys.stderr,
             )
+            raise
     elif args.e:
         print(LineageRunner(args.e, combiner=combiner, verbose=args.verbose))
     else:

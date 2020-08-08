@@ -1,3 +1,5 @@
+import pathlib
+
 import pytest
 
 from sqllineage.runner import LineageRunner, main
@@ -11,6 +13,22 @@ insert overwrite table tab3 select * from tab2""",
             verbose=True,
         )
     )
-    with pytest.raises(SystemExit) as e:
-        main()
-    assert e.value.code == 2
+    main(["-e", "select * from dual"])
+    main(["-f", __file__])
+    main(["-e", "select * from dual", "-f", __file__])
+
+
+def test_combiner_exception():
+    with pytest.raises(ValueError):
+        main(["-c", "malformatcombiner"])
+    with pytest.raises(ImportError):
+        main(["-c", "nonexist_package.nonexist_combiner"])
+    with pytest.raises(AttributeError):
+        main(["-c", "sqllineage.combiners.nonexist_combiner"])
+
+
+def test_file_exception():
+    with pytest.raises(IsADirectoryError):
+        main(["-f", str(pathlib.Path().absolute())])
+    with pytest.raises(FileNotFoundError):
+        main(["-f", "nonexist_file"])
