@@ -1,6 +1,6 @@
 import argparse
 import importlib
-import sys
+import logging
 from typing import List, Type
 
 import sqlparse
@@ -9,6 +9,9 @@ from sqlparse.sql import Statement
 from sqllineage.combiners import DefaultLineageCombiner, LineageCombiner
 from sqllineage.core import LineageAnalyzer
 from sqllineage.models import Table
+
+
+logger = logging.getLogger(__name__)
 
 
 class LineageRunner(object):
@@ -111,20 +114,16 @@ def main(args=None) -> None:
             combiner_module, combiner_name = args.c.rsplit(".", maxsplit=1)
             combiner = getattr(importlib.import_module(combiner_module), combiner_name)
         except ValueError:
-            print(
-                "ERROR: Combiner should be named as module.class, got {} instead".format(
-                    args.c
-                ),
-                file=sys.stderr,
+            logger.exception(
+                "Combiner should be named as module.class, got %s instead", args.c
             )
-            raise
+            exit(1)
         except (ImportError, AttributeError):
-            print("ERROR: No such combiner: {}".format(args.c), file=sys.stderr)
-            raise
+            logger.exception("No such combiner: %s", args.c)
+            exit(1)
     if args.e and args.f:
-        print(
-            "WARNING: Both -e and -f options are specified. -e option will be ignored",
-            file=sys.stderr,
+        logging.warning(
+            "Both -e and -f options are specified. -e option will be ignored"
         )
     if args.f:
         try:
@@ -132,19 +131,14 @@ def main(args=None) -> None:
                 sql = f.read()
             print(LineageRunner(sql, combiner=combiner, verbose=args.verbose))
         except IsADirectoryError:
-            print(
-                "ERROR: {} is a directory".format(args.f), file=sys.stderr,
-            )
-            raise
+            logger.exception("%s is a directory", args.f)
+            exit(1)
         except FileNotFoundError:
-            print("ERROR: No such file: {}".format(args.f), file=sys.stderr)
-            raise
+            logger.exception("No such file: %s", args.f)
+            exit(1)
         except PermissionError:
-            print(
-                "ERROR: Permission denied when reading file '{}'".format(args.f),
-                file=sys.stderr,
-            )
-            raise
+            logger.exception("Permission denied when reading file '%s'", args.f)
+            exit(1)
     elif args.e:
         print(LineageRunner(args.e, combiner=combiner, verbose=args.verbose))
     else:
