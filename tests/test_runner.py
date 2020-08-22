@@ -19,17 +19,6 @@ insert overwrite table tab3 select * from tab2""",
     main(["-e", "select * from dual", "-f", __file__])
 
 
-def test_combiner_exception():
-    for args in (
-        ["-c", "malformatcombiner"],
-        ["-c", "nonexist_package.nonexist_combiner"],
-        ["-c", "sqllineage.combiners.nonexist_combiner"],
-    ):
-        with pytest.raises(SystemExit) as e:
-            main(args)
-        assert e.value.code == 1
-
-
 def test_file_exception():
     for args in (["-f", str(pathlib.Path().absolute())], ["-f", "nonexist_file"]):
         with pytest.raises(SystemExit) as e:

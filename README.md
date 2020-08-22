@@ -84,15 +84,3 @@ Target Tables:
 Intermediate Tables:
     db1.table1
 ```
-
-Or specify your own combiner to combine lineage result, here we use a naive combiner, which is just to union each table set without removing intermediate tables:
-```
-$ sqllineage -e "insert into db1.table1 select * from db2.table2; insert into db3.table3 select * from db1.table1;" -c sqllineage.combiners.NaiveLineageCombiner
-Statements(#): 2
-Source Tables:
-    db2.table2
-    db1.table1
-Target Tables:
-    db3.table3
-    db1.table1
-```

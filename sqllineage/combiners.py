@@ -1,57 +1,81 @@
-from functools import reduce
-from operator import add, or_
+import itertools
 from typing import Set
+
+import networkx as nx
+from networkx import DiGraph
 
 from sqllineage.core import LineageResult
 from sqllineage.models import Table
 
 
-class LineageCombiner:
-    @staticmethod
-    def combine(*args: LineageResult) -> LineageResult:
-        raise NotImplementedError
+class CombinedLineageResult:
+    def __init__(self, graph) -> None:
+        self._graph = graph
+        self._selfloop_tables = self.__retrieve_tag_tables("selfloop")
+        self._sourceonly_tables = self.__retrieve_tag_tables("source")
+        self._targetonly_tables = self.__retrieve_tag_tables("target")
+
+    @property
+    def source_tables(self) -> Set[Table]:
+        source_tables = {
+            table for table, deg in self._graph.in_degree if deg == 0
+        }.intersection({table for table, deg in self._graph.out_degree if deg > 0})
+        source_tables |= self._selfloop_tables
+        source_tables |= self._sourceonly_tables
+        return source_tables
+
+    @property
+    def target_tables(self) -> Set[Table]:
+        target_tables = {
+            table for table, deg in self._graph.out_degree if deg == 0
+        }.intersection({table for table, deg in self._graph.in_degree if deg > 0})
+        target_tables |= self._selfloop_tables
+        target_tables |= self._targetonly_tables
+        return target_tables
+
+    @property
+    def intermediate_tables(self) -> Set[Table]:
+        intermediate_tables = {
+            table for table, deg in self._graph.in_degree if deg > 0
+        }.intersection({table for table, deg in self._graph.out_degree if deg > 0})
+        intermediate_tables -= self.__retrieve_tag_tables("selfloop")
+        return intermediate_tables
+
+    @property
+    def lineage_graph(self) -> DiGraph:
+        return self._graph
+
+    def __retrieve_tag_tables(self, tag) -> Set[Table]:
+        return {
+            table
+            for table, attr in self._graph.nodes(data=True)
+            if attr.get("tag") == tag
+        }
 
 
-class NaiveLineageCombiner(LineageCombiner):
-    @staticmethod
-    def combine(*args: LineageResult) -> LineageResult:
-        return reduce(add, args, LineageResult())
-
-
-class DefaultLineageCombiner(LineageCombiner):
-    @staticmethod
-    def combine(*args: LineageResult) -> LineageResult:
-        combined_result = LineageResult()
-        for lineage_result in args:
-            if lineage_result.drop:
-                for st_tables in (combined_result.read, combined_result.write):
-                    st_tables -= lineage_result.drop
-            elif lineage_result.rename:
-                for (table_old, table_new) in lineage_result.rename:
-                    for st_tables in (combined_result.read, combined_result.write):
-                        if table_old in st_tables:
-                            st_tables.remove(table_old)
-                            st_tables.add(table_new)
-            elif lineage_result.intermediate:
-                combined_result.read |= (
-                    lineage_result.read - lineage_result.intermediate
-                )
-                combined_result.write |= lineage_result.write
+def combine(*args: LineageResult) -> CombinedLineageResult:
+    g = DiGraph()
+    for lineage_result in args:
+        if lineage_result.drop:
+            for table in lineage_result.drop:
+                if g.has_node(table) and g.degree[table] == 0:
+                    g.remove_node(table)
+        elif lineage_result.rename:
+            for (table_old, table_new) in lineage_result.rename:
+                g = nx.relabel_nodes(g, {table_old: table_new})
+        else:
+            read, write = lineage_result.read.copy(), lineage_result.write.copy()
+            if lineage_result.intermediate:
+                read -= lineage_result.intermediate
+            if len(read) > 0 and len(write) == 0:
+                g.add_nodes_from(read, tag="source")
+            elif len(read) == 0 and len(write) > 0:
+                g.add_nodes_from(write, tag="target")
             else:
-                combined_result.read |= lineage_result.read
-                combined_result.write |= lineage_result.write
-        combined_result.intermediate = combined_result.read.intersection(
-            combined_result.write
-        )
-        self_depend_tables = reduce(
-            or_,
-            (
-                lineage_result.read.intersection(lineage_result.write)
-                for lineage_result in args
-            ),
-            set(),
-        )  # type: Set[Table]
-        combined_result.intermediate -= self_depend_tables
-        combined_result.read -= combined_result.intermediate
-        combined_result.write -= combined_result.intermediate
-        return combined_result
+                g.add_nodes_from(read)
+                g.add_nodes_from(write)
+                for source, target in itertools.product(read, write):
+                    g.add_edge(source, target)
+    for table in {e[0] for e in nx.selfloop_edges(g)}:
+        g.nodes[table]["tag"] = "selfloop"
+    return CombinedLineageResult(g)
