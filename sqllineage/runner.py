@@ -7,6 +7,7 @@ from sqlparse.sql import Statement
 
 from sqllineage.combiners import combine
 from sqllineage.core import LineageAnalyzer
+from sqllineage.draw import draw_lineage_graph
 from sqllineage.models import Table
 
 logger = logging.getLogger(__name__)
@@ -61,6 +62,9 @@ Target Tables:
             combined = result + "==========\nSummary:\n" + combined
         return combined
 
+    def draw(self):
+        return draw_lineage_graph(self._combined_lineage_result.lineage_graph)
+
     @property
     def statements_parsed(self) -> List[Statement]:
         return self._stmt
@@ -97,27 +101,39 @@ def main(args=None) -> None:
         help="increase output verbosity, show statement level lineage result",
         action="store_true",
     )
+    parser.add_argument(
+        "-g",
+        "--graphviz",
+        help="show graph visualization of the lineage with graphviz dot layout",
+        action="store_true",
+    )
     args = parser.parse_args(args)
     if args.e and args.f:
         logging.warning(
             "Both -e and -f options are specified. -e option will be ignored"
         )
-    if args.f:
-        try:
-            with open(args.f) as f:
-                sql = f.read()
-            print(LineageRunner(sql, verbose=args.verbose))
-        except IsADirectoryError:
-            logger.exception("%s is a directory", args.f)
-            exit(1)
-        except FileNotFoundError:
-            logger.exception("No such file: %s", args.f)
-            exit(1)
-        except PermissionError:
-            logger.exception("Permission denied when reading file '%s'", args.f)
-            exit(1)
-    elif args.e:
-        print(LineageRunner(args.e, verbose=args.verbose))
+    if args.f or args.e:
+        sql = ""
+        if args.f:
+            try:
+                with open(args.f) as f:
+                    sql = f.read()
+            except IsADirectoryError:
+                logger.exception("%s is a directory", args.f)
+                exit(1)
+            except FileNotFoundError:
+                logger.exception("No such file: %s", args.f)
+                exit(1)
+            except PermissionError:
+                logger.exception("Permission denied when reading file '%s'", args.f)
+                exit(1)
+        elif args.e:
+            sql = args.e
+        runner = LineageRunner(sql, verbose=args.verbose)
+        if args.graphviz:
+            runner.draw()
+        else:
+            print(runner)
     else:
         parser.print_help()
 

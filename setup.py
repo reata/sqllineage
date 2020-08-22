@@ -30,6 +30,7 @@ setup(
     install_requires=["sqlparse>=0.3.0,<0.4", "networkx>=2.4,<3.0"],
     entry_points={"console_scripts": ["sqllineage = sqllineage.runner:main"]},
     extras_require={
+        "all": ["matplotlib", "pygraphviz"],
         "ci": [
             "bandit",
             "flake8",
@@ -43,6 +44,6 @@ setup(
             "tox>=3.11.0,<4.0",
             "twine",
             "wheel",
-        ]
+        ],
     },
 )
