@@ -1,9 +1,12 @@
+from unittest.mock import patch
+
 from networkx import DiGraph
 
 from sqllineage.drawing import draw_lineage_graph
 
 
-def test_dummy():
+@patch("matplotlib.pyplot.show")
+def test_dummy(_):
     g = DiGraph()
     g.add_node(1)
     g.add_edge(1, 1)
