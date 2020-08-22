@@ -5,8 +5,10 @@ python:
   - "3.6"
   - "3.7"
   - "3.8"
-before_install:
-  - "sudo apt install graphviz"
+addons:
+  apt:
+    packages:
+      - graphviz
 install:
   - pip install tox-travis codecov
 script:
