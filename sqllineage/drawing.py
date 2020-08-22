@@ -25,6 +25,7 @@ def draw_lineage_graph(graph: DiGraph) -> None:
     edge_color, node_color, font_color = "#9ab5c7", "#3499d9", "#35393e"
     arrowsize = font_size = radius = 10
     node_size = 30
+    ha, va = "left", "bottom"
     nx.draw(
         graph,
         pos=pos,
@@ -35,6 +36,8 @@ def draw_lineage_graph(graph: DiGraph) -> None:
         node_size=node_size,
         font_color=font_color,
         font_size=font_size,
+        horizontalalignment=ha,
+        verticalalignment=va,
     )
     # selfloop edges
     for edge in nx.selfloop_edges(graph):
