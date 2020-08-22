@@ -7,7 +7,7 @@ from sqlparse.sql import Statement
 
 from sqllineage.combiners import combine
 from sqllineage.core import LineageAnalyzer
-from sqllineage.draw import draw_lineage_graph
+from sqllineage.drawing import draw_lineage_graph
 from sqllineage.models import Table
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ Target Tables:
             combined = result + "==========\nSummary:\n" + combined
         return combined
 
-    def draw(self):
+    def draw(self) -> None:
         return draw_lineage_graph(self._combined_lineage_result.lineage_graph)
 
     @property
