@@ -47,6 +47,7 @@ Target Tables:
 
 ## Advanced Usage
 
+### Multiple SQL Statements
 Lineage result combined for multiple SQL statements, with intermediate tables identified:
 ```
 $ sqllineage -e "insert into db1.table1 select * from db2.table2; insert into db3.table3 select * from db1.table1;"
@@ -59,6 +60,7 @@ Intermediate Tables:
     db1.table1
 ```
 
+### Verbose Lineage Result
 And if you want to see lineage result for every SQL statement, just toggle verbose option
 ```
 $ sqllineage -v -e "insert into db1.table1 select * from db2.table2; insert into db3.table3 select * from db1.table1;"
@@ -85,14 +87,26 @@ Intermediate Tables:
     db1.table1
 ```
 
-Or specify your own combiner to combine lineage result, here we use a naive combiner, which is just to union each table set without removing intermediate tables:
+### Lineage Visualization
+One more cool feature, if you want a graph visualization for the lineage result, toggle graphviz option
 ```
-$ sqllineage -e "insert into db1.table1 select * from db2.table2; insert into db3.table3 select * from db1.table1;" -c sqllineage.combiners.NaiveLineageCombiner
-Statements(#): 2
-Source Tables:
-    db2.table2
-    db1.table1
-Target Tables:
-    db3.table3
-    db1.table1
+sqllineage -g -e "insert into db1.table11 select * from db2.table21 union select * from db2.table22; insert into db3.table3 select * from db1.table11 join db1.table12;"
+```
+An interactive matplotlib graph will then pop up, showing DAG representation of the lineage result:
+![Alt text](docs/_static/Figure_1.png)
+
+For visulization to work, you must have [graphviz](https://graphviz.org/) installed. With Ubuntu, it's simply
+```
+sudo apt install graphviz
+```
+For mac user, brew can help
+```
+brew install graphviz
+```
+graphviz also comes with Windows support, see [Graphviz Download](https://graphviz.org/download/) for details.
+
+
+After that, all the extra dependencies for sqllineage must be installed as well. It will install matplotlib and pygraphviz :
+```
+pip install sqllineage[all]
 ```

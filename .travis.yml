@@ -5,10 +5,12 @@ python:
   - "3.6"
   - "3.7"
   - "3.8"
-# command to install dependencies
+addons:
+  apt:
+    packages:
+      - graphviz
 install:
   - pip install tox-travis codecov
-# command to run tests
 script:
   - tox
 

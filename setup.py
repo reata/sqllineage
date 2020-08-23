@@ -5,21 +5,6 @@ from sqllineage import NAME, VERSION
 with open("README.md", "r") as f:
     long_description = f.read()
 
-ci_requires = [
-    "bandit",
-    "flake8",
-    "flake8-blind-except",
-    "flake8-builtins",
-    "flake8-import-order",
-    "flake8-logging-format",
-    "mypy",
-    "pytest>=4.5.0,<5.0",
-    "pytest-cov",
-    "tox>=3.11.0,<4.0",
-    "twine",
-    "wheel",
-]
-
 setup(
     name=NAME,
     version=VERSION,
@@ -42,7 +27,23 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     python_requires=">=3.5",
-    install_requires=["sqlparse>=0.3.0,<0.4"],
+    install_requires=["sqlparse>=0.3.0,<0.4", "networkx>=2.4,<3.0"],
     entry_points={"console_scripts": ["sqllineage = sqllineage.runner:main"]},
-    extras_require={"ci": ci_requires},
+    extras_require={
+        "all": ["matplotlib", "pygraphviz"],
+        "ci": [
+            "bandit",
+            "flake8",
+            "flake8-blind-except",
+            "flake8-builtins",
+            "flake8-import-order",
+            "flake8-logging-format",
+            "mypy",
+            "pytest>=4.5.0,<5.0",
+            "pytest-cov",
+            "tox>=3.11.0,<4.0",
+            "twine",
+            "wheel",
+        ],
+    },
 )
