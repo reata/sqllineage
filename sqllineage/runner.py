@@ -29,36 +29,30 @@ class LineageRunner(object):
 
     def __str__(self):
         statements = self.statements(strip_comments=True)
-        combined = """Statements(#): {stmt_cnt}
+        source_tables = "\n    ".join(str(t) for t in self.source_tables)
+        target_tables = "\n    ".join(str(t) for t in self.target_tables)
+        combined = f"""Statements(#): {len(statements)}
 Source Tables:
     {source_tables}
 Target Tables:
     {target_tables}
-""".format(
-            stmt_cnt=len(statements),
-            source_tables="\n    ".join(str(t) for t in self.source_tables),
-            target_tables="\n    ".join(str(t) for t in self.target_tables),
-        )
+"""
         if self.intermediate_tables:
-            combined += """Intermediate Tables:
-    {intermediate_tables}""".format(
-                intermediate_tables="\n    ".join(
-                    str(t) for t in self.intermediate_tables
-                )
+            intermediate_tables = "\n    ".join(
+                str(t) for t in self.intermediate_tables
             )
+            combined += f"""Intermediate Tables:
+    {intermediate_tables}"""
         if self._verbose:
             result = ""
             for i, lineage_result in enumerate(self._lineage_results):
                 stmt_short = statements[i].replace("\n", "")
                 if len(stmt_short) > 50:
                     stmt_short = stmt_short[:50] + "..."
-                result += """Statement #{ord}: {stmt}
+                content = str(lineage_result).replace("\n", "\n    ")
+                result += f"""Statement #{i + 1}: {stmt_short}
     {content}
-""".format(
-                    ord=i + 1,
-                    content=str(lineage_result).replace("\n", "\n    "),
-                    stmt=stmt_short,
-                )
+"""
             combined = result + "==========\nSummary:\n" + combined
         return combined
 

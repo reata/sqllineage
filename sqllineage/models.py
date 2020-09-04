@@ -42,7 +42,7 @@ class Table:
             raise SQLLineageException("Invalid format for table name: %s", name)
 
     def __str__(self):
-        return "{}.{}".format(self.schema, self.raw_name.lower())
+        return f"{self.schema}.{self.raw_name.lower()}"
 
     def __repr__(self):
         return "Table: " + str(self)
