@@ -2,6 +2,18 @@
 Changelog
 *********
 
+v1.0.0
+======
+:Date: September 13, 2020
+
+New Features
+-------------
+* a detailed documentation hosted by readthedocs (`#81 <https://github.com/reata/sqllineage/issues/81>`_)
+
+Enhancement
+-------------
+* drop support for Python 3.5 (`#79 <https://github.com/reata/sqllineage/issues/79>`_)
+
 v0.4.0
 ======
 
