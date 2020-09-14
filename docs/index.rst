@@ -30,18 +30,6 @@ First steps
 :doc:`first_steps/beyond_command_line`
     Using SQLLineage in your Python script
 
-Basic concepts
-==============
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: Basic concepts
-
-   basic_concepts/lineage_result
-
-:doc:`basic_concepts/lineage_result`
-    LineageResult: Representation of Lineage Result
 
 Behind the scene
 ================
@@ -63,6 +51,21 @@ Behind the scene
 
 :doc:`behind_the_scene/dos_and_donts`
     Design principles for SQLLineage
+
+
+Basic concepts
+==============
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Basic concepts
+
+   basic_concepts/lineage_result
+
+:doc:`basic_concepts/lineage_result`
+    LineageResult: Representation of Lineage Result
+
 
 Release note
 ============
