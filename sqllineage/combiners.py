@@ -23,7 +23,7 @@ class CombinedLineageResult:
     @property
     def source_tables(self) -> Set[Table]:
         """
-        a list of source `sqllineage.models.Table`
+        a list of source :class:`sqllineage.models.Table`
         """
         source_tables = {
             table for table, deg in self._graph.in_degree if deg == 0
@@ -35,7 +35,7 @@ class CombinedLineageResult:
     @property
     def target_tables(self) -> Set[Table]:
         """
-        a list of target `sqllineage.models.Table`
+        a list of target :class:`sqllineage.models.Table`
         """
         target_tables = {
             table for table, deg in self._graph.out_degree if deg == 0
@@ -47,7 +47,7 @@ class CombinedLineageResult:
     @property
     def intermediate_tables(self) -> Set[Table]:
         """
-        a list of intermediate `sqllineage.models.Table`
+        a list of intermediate :class:`sqllineage.models.Table`
         """
         intermediate_tables = {
             table for table, deg in self._graph.in_degree if deg > 0
@@ -72,9 +72,7 @@ class CombinedLineageResult:
 
 def combine(*args: LineageResult) -> CombinedLineageResult:
     """
-    To combine multiple `sqllineage.core.LineageResult` into `sqllineage.combiners.CombinedLineageResult`
-    :param args:
-    :return:
+    To combine multiple :class:`sqllineage.core.LineageResult` into :class:`sqllineage.combiners.CombinedLineageResult`
     """
     g = DiGraph()
     for lineage_result in args:

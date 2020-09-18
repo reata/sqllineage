@@ -29,10 +29,10 @@ class LineageResult:
 
     LineageResult will hold attributes like read, write, rename, drop, intermediate.
 
-    Each of them is a Set[`sqllineage.models.Table`] except for rename.
+    Each of them is a Set[:class:`sqllineage.models.Table`] except for rename.
 
-    For rename, it a Set[Tuple[`sqllineage.models.Table`, `sqllineage.models.Table`]], with the first table being
-    original table before renaming and the latter after renaming.
+    For rename, it a Set[Tuple[:class:`sqllineage.models.Table`, :class:`sqllineage.models.Table`]], with the first
+    table being original table before renaming and the latter after renaming.
 
     This is the most atomic representation of lineage result.
     """
@@ -72,7 +72,7 @@ class LineageAnalyzer:
 
     def analyze(self, stmt: Statement) -> LineageResult:
         """
-        to analyze the Statement and store the result into LineageResult.
+        to analyze the Statement and store the result into :class:`LineageResult`.
 
         :param stmt: a SQL statement parsed by `sqlparse`
         """

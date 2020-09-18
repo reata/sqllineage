@@ -3,7 +3,7 @@ LineageCombiner
 ***************
 
 Actually there's no such thing as LineageCombiner, only a combine function to do the trick of combining multiple
-`sqllineage.core.LineageResult` into a DAG based `sqllineage.combiners.CombinedLineageResult`, which will server for
+:class:`sqllineage.core.LineageResult` into a DAG based :class:`sqllineage.combiners.CombinedLineageResult`, which will server for
 the final output.
 
 

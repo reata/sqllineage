@@ -64,6 +64,7 @@ Basic concepts
    basic_concepts/lineage_runner
    basic_concepts/lineage_analyzer
    basic_concepts/lineage_combiner
+   basic_concepts/lineage_model
 
 :doc:`basic_concepts/lineage_runner`
     LineageRunner: The entry point for SQLLineage
@@ -73,6 +74,9 @@ Basic concepts
 
 :doc:`basic_concepts/lineage_combiner`
     LineageCombiner: To combine all the atomic lineage result together into a Directed Acyclic Graph
+
+:doc:`basic_concepts/lineage_model`
+    The data classes for SQLLineage
 
 
 Release note
