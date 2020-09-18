@@ -61,10 +61,18 @@ Basic concepts
    :hidden:
    :caption: Basic concepts
 
-   basic_concepts/lineage_result
+   basic_concepts/lineage_runner
+   basic_concepts/lineage_analyzer
+   basic_concepts/lineage_combiner
 
-:doc:`basic_concepts/lineage_result`
-    LineageResult: Representation of Lineage Result
+:doc:`basic_concepts/lineage_runner`
+    LineageRunner: The entry point for SQLLineage
+
+:doc:`basic_concepts/lineage_analyzer`
+    LineageAnalyzer: The core functionality of analyze one SQL statement
+
+:doc:`basic_concepts/lineage_combiner`
+    LineageCombiner: To combine all the atomic lineage result together into a Directed Acyclic Graph
 
 
 Release note

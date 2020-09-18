@@ -17,6 +17,13 @@ class LineageRunner(object):
     def __init__(
         self, sql: str, encoding: str = None, verbose: bool = False,
     ):
+        """
+        The entry point of SQLLineage after command line options are parsed.
+
+        :param sql: a string representation of SQL statements.
+        :param encoding: the encoding for sql string
+        :param verbose: verbose flag indicate whether statement-wise lineage result will be shown
+        """
         self._encoding = encoding
         self._stmt = [
             s
@@ -28,6 +35,9 @@ class LineageRunner(object):
         self._verbose = verbose
 
     def __str__(self):
+        """
+        print out the Lineage Summary.
+        """
         statements = self.statements(strip_comments=True)
         source_tables = "\n    ".join(str(t) for t in self.source_tables)
         target_tables = "\n    ".join(str(t) for t in self.target_tables)
@@ -57,31 +67,56 @@ Target Tables:
         return combined
 
     def draw(self) -> None:
+        """
+        to draw the lineage directed graph with matplotlib.
+        """
         return draw_lineage_graph(self._combined_lineage_result.lineage_graph)
 
-    @property
-    def statements_parsed(self) -> List[Statement]:
-        return self._stmt
-
     def statements(self, **kwargs) -> List[str]:
+        """
+        a list of statements.
+
+        :param kwargs: the key arguments that will be passed to `sqlparse.format`
+        """
         return [sqlparse.format(s.value, **kwargs) for s in self.statements_parsed]
 
     @property
+    def statements_parsed(self) -> List[Statement]:
+        """
+        a list of `sqlparse.sql.Statement`
+        """
+        return self._stmt
+
+    @property
     def source_tables(self) -> List[Table]:
+        """
+        a list of source `sqllineage.models.Table`
+        """
         return sorted(self._combined_lineage_result.source_tables, key=lambda x: str(x))
 
     @property
     def target_tables(self) -> List[Table]:
+        """
+        a list of target `sqllineage.models.Table`
+        """
         return sorted(self._combined_lineage_result.target_tables, key=lambda x: str(x))
 
     @property
     def intermediate_tables(self) -> List[Table]:
+        """
+        a list of intermediate `sqllineage.models.Table`
+        """
         return sorted(
             self._combined_lineage_result.intermediate_tables, key=lambda x: str(x)
         )
 
 
 def main(args=None) -> None:
+    """
+    The command line interface entry point.
+
+    :param args: the command line arguments for sqllineage command
+    """
     parser = argparse.ArgumentParser(
         prog="sqllineage", description="SQL Lineage Parser."
     )

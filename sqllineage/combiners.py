@@ -9,7 +9,12 @@ from sqllineage.models import Table
 
 
 class CombinedLineageResult:
-    def __init__(self, graph) -> None:
+    def __init__(self, graph: DiGraph) -> None:
+        """
+        The combined lineage result in representation of Directed Acyclic Graph.
+
+        :param graph: the Directed Acyclic Graph holding all the combined lineage result.
+        """
         self._graph = graph
         self._selfloop_tables = self.__retrieve_tag_tables("selfloop")
         self._sourceonly_tables = self.__retrieve_tag_tables("source")
@@ -17,6 +22,9 @@ class CombinedLineageResult:
 
     @property
     def source_tables(self) -> Set[Table]:
+        """
+        a list of source `sqllineage.models.Table`
+        """
         source_tables = {
             table for table, deg in self._graph.in_degree if deg == 0
         }.intersection({table for table, deg in self._graph.out_degree if deg > 0})
@@ -26,6 +34,9 @@ class CombinedLineageResult:
 
     @property
     def target_tables(self) -> Set[Table]:
+        """
+        a list of target `sqllineage.models.Table`
+        """
         target_tables = {
             table for table, deg in self._graph.out_degree if deg == 0
         }.intersection({table for table, deg in self._graph.in_degree if deg > 0})
@@ -35,6 +46,9 @@ class CombinedLineageResult:
 
     @property
     def intermediate_tables(self) -> Set[Table]:
+        """
+        a list of intermediate `sqllineage.models.Table`
+        """
         intermediate_tables = {
             table for table, deg in self._graph.in_degree if deg > 0
         }.intersection({table for table, deg in self._graph.out_degree if deg > 0})
@@ -43,6 +57,9 @@ class CombinedLineageResult:
 
     @property
     def lineage_graph(self) -> DiGraph:
+        """
+        The DiGraph held by CombinedLineageResult
+        """
         return self._graph
 
     def __retrieve_tag_tables(self, tag) -> Set[Table]:
@@ -54,6 +71,11 @@ class CombinedLineageResult:
 
 
 def combine(*args: LineageResult) -> CombinedLineageResult:
+    """
+    To combine multiple `sqllineage.core.LineageResult` into `sqllineage.combiners.CombinedLineageResult`
+    :param args:
+    :return:
+    """
     g = DiGraph()
     for lineage_result in args:
         if lineage_result.drop:
