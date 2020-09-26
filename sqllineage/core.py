@@ -25,7 +25,18 @@ TEMP_TABLE_TOKENS = ("WITH",)
 
 
 class LineageResult:
-    """Statement(s) Level Lineage Result."""
+    """
+    Statement Level Lineage Result.
+
+    LineageResult will hold attributes like read, write, rename, drop, intermediate.
+
+    Each of them is a Set[:class:`sqllineage.models.Table`] except for rename.
+
+    For rename, it a Set[Tuple[:class:`sqllineage.models.Table`, :class:`sqllineage.models.Table`]], with the first
+    table being original table before renaming and the latter after renaming.
+
+    This is the most atomic representation of lineage result.
+    """
 
     __slots__ = ["read", "write", "rename", "drop", "intermediate"]
     if TYPE_CHECKING:
@@ -61,6 +72,11 @@ class LineageAnalyzer:
         self._lineage_result = LineageResult()
 
     def analyze(self, stmt: Statement) -> LineageResult:
+        """
+        to analyze the Statement and store the result into :class:`LineageResult`.
+
+        :param stmt: a SQL statement parsed by `sqlparse`
+        """
         if stmt.get_type() == "DROP":
             self._extract_from_DDL_DROP(stmt)
         elif stmt.get_type() == "ALTER":

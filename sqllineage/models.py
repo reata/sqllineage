@@ -9,6 +9,11 @@ class Schema:
     unknown = "<default>"
 
     def __init__(self, name: str = unknown):
+        """
+        Data Class for Schema
+
+        :param name: schema name
+        """
         self.raw_name = name
 
     def __str__(self):
@@ -29,6 +34,12 @@ class Schema:
 
 class Table:
     def __init__(self, name: str, schema: Schema = Schema()):
+        """
+        Data Class for Table
+
+        :param name: table name
+        :param schema: schema as defined by :class:`Schema`
+        """
         if len(name.split(".")) == 2:
             schema_name, table_name = name.split(".")
             self.schema = Schema(schema_name)

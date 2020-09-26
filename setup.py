@@ -44,5 +44,6 @@ setup(
             "twine",
             "wheel",
         ],
+        "docs": ["Sphinx>=3.2.0,<4.0.0", "sphinx_rtd_theme>=0.5.0,<0.6.0"],
     },
 )
