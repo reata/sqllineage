@@ -4,7 +4,7 @@ Changelog
 
 v1.0.0
 ======
-:Date: September 13, 2020
+:Date: September 27, 2020
 
 New Features
 -------------

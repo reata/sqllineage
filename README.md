@@ -65,17 +65,17 @@ And if you want to see lineage result for every SQL statement, just toggle verbo
 ```
 $ sqllineage -v -e "insert into db1.table1 select * from db2.table2; insert into db3.table3 select * from db1.table1;"
 Statement #1: insert into db1.table1 select * from db2.table2;
-    table read: {Table: db2.table2}
-    table write: {Table: db1.table1}
-    table rename: {}
-    table drop: {}
-    table intermediate: {}
+    table read: [Table: db2.table2]
+    table write: [Table: db1.table1]
+    table rename: []
+    table drop: []
+    table intermediate: []
 Statement #2: insert into db3.table3 select * from db1.table1;
-    table read: {Table: db1.table1}
-    table write: {Table: db3.table3}
-    table rename: {}
-    table drop: {}
-    table intermediate: {}
+    table read: [Table: db1.table1]
+    table write: [Table: db3.table3]
+    table rename: []
+    table drop: []
+    table intermediate: []
 ==========
 Summary:
 Statements(#): 2
@@ -95,7 +95,7 @@ sqllineage -g -e "insert into db1.table11 select * from db2.table21 union select
 An interactive matplotlib graph will then pop up, showing DAG representation of the lineage result:
 ![Alt text](docs/_static/Figure_1.png)
 
-For visulization to work, you must have [graphviz](https://graphviz.org/) installed. With Ubuntu, it's simply
+For visualization to work, you must have [graphviz](https://graphviz.org/) installed. With Ubuntu, it's simply
 ```
 sudo apt install graphviz
 ```

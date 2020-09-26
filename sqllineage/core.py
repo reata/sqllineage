@@ -25,7 +25,8 @@ TEMP_TABLE_TOKENS = ("WITH",)
 
 
 class LineageResult:
-    """Statement(s) Level Lineage Result.
+    """
+    Statement Level Lineage Result.
 
     LineageResult will hold attributes like read, write, rename, drop, intermediate.
 

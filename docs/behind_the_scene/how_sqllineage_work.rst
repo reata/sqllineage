@@ -26,7 +26,8 @@ Some other simple rules in SQLLineage:
 The rest thing is just tedious work. We collect all kinds of sql, handle various edge cases and make these simple rules
 robust enough.
 
-**That's it for simple statement SQLLineage. With multiple statements SQL, it's a different story.**
+That's it for single statement SQLLineage. With multiple statements SQL, it requires some more extra work to assemble the
+Lineage result from single statements.
 
 We choose a `DAG`_ based data structure to represent multiple statements SQL lineage. Table/View will be vertex in this
 graph while a edge means data in source vertex table will contribute to data in target vertex table. Every single

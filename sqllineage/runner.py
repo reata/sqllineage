@@ -83,28 +83,28 @@ Target Tables:
     @property
     def statements_parsed(self) -> List[Statement]:
         """
-        a list of `sqlparse.sql.Statement`
+        a list of :class:`sqlparse.sql.Statement`
         """
         return self._stmt
 
     @property
     def source_tables(self) -> List[Table]:
         """
-        a list of source `sqllineage.models.Table`
+        a list of source :class:`sqllineage.models.Table`
         """
         return sorted(self._combined_lineage_result.source_tables, key=lambda x: str(x))
 
     @property
     def target_tables(self) -> List[Table]:
         """
-        a list of target `sqllineage.models.Table`
+        a list of target :class:`sqllineage.models.Table`
         """
         return sorted(self._combined_lineage_result.target_tables, key=lambda x: str(x))
 
     @property
     def intermediate_tables(self) -> List[Table]:
         """
-        a list of intermediate `sqllineage.models.Table`
+        a list of intermediate :class:`sqllineage.models.Table`
         """
         return sorted(
             self._combined_lineage_result.intermediate_tables, key=lambda x: str(x)

@@ -2,7 +2,7 @@
 LineageAnalyzer
 ***************
 
-LineageAnalyzer is the core processing logic for analyze one-statement SQL.
+LineageAnalyzer is the core processing logic for one-statement SQL analysis.
 
 sqllineage.core.LineageAnalyzer
 ===============================
