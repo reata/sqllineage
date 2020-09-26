@@ -29,7 +29,7 @@ copyright = f"2019-{datetime.now().year}, Reata"  # noqa
 author = "Reata"
 
 # The full version, including alpha/beta/rc tags
-release = VERSION
+release = version = VERSION
 
 # -- General configuration ---------------------------------------------------
 
