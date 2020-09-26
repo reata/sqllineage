@@ -11,8 +11,12 @@ we're interested in.
 
 `sqlparse`_ itself gives a simple `example`_ to extract table names, through which you can get a rough idea how
 SQLLineage works. The core idea is when a token is Keyword and its value is "FROM", then the next token will either
-be subquery or identifier (Or identifierList, i.e., a table name with alias). For subquery, we just recursively calling
-extract function. For identifier, there's a way to get its value.
+be subquery or identifier. For subquery, we just recursively calling extract function. For identifier, there's a way
+to get its value.
+
+.. warning::
+    Here is just a simplified description. In reality, we could easily see ``Comment`` coming after "FROM", or subquery
+    mistakenly parsed as ``Identifier`` or ``Parenthesis``. These are all corner cases we should resolve in reality.
 
 Some other simple rules in SQLLineage:
 

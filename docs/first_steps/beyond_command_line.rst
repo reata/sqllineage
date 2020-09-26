@@ -8,7 +8,8 @@ the same functionality.
 .. code-block:: python
 
     >>> from sqllineage.runner import LineageRunner
-    >>> sql = "insert into db1.table11 select * from db2.table21 union select * from db2.table22; insert into db3.table3 select * from db1.table11 join db1.table12;"
+    >>> sql = "insert into db1.table11 select * from db2.table21 union select * from db2.table22;"
+    >>> sql += "insert into db3.table3 select * from db1.table11 join db1.table12;"
     >>> result = LineageRunner(sql)
     # To show lineage summary
     >>> print(result)
