@@ -18,13 +18,14 @@
 # -- Project information -----------------------------------------------------
 import os
 import sys
+from datetime import datetime
 
 sys.path.insert(0, os.path.abspath(".."))
 
 from sqllineage import NAME, VERSION  # noqa
 
 project = NAME
-copyright = "2019, Reata"  # noqa
+copyright = f"2019-{datetime.now().year}, Reata"  # noqa
 author = "Reata"
 
 # The full version, including alpha/beta/rc tags
