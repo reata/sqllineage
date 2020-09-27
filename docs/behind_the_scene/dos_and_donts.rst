@@ -13,6 +13,11 @@ DOs
 
 DONTs
 =====
-* Column-level lineage will not be included since that would require metadata information, or we won't be able to trace
-  situation like `select *`. However, there's no unified metadata service for all kinds of SQL systems.
+* Column-level lineage will not be included since that would require metadata information for 100% accurate lineage
+  tracing, or we won't be able to trace situation like ``select *``. However, there's no unified metadata service for all
+  kinds of SQL systems.
 * Likewise for Partition-level lineage. Until we find a way to not involve metadata service, we will not go for this.
+
+.. note::
+    Column-level lineage is still do-able if we can tolerate information missing for ``select *``. Let's see what will
+    happen in future versions.

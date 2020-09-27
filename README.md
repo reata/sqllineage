@@ -19,7 +19,7 @@ the SQL command, and bring you all the human-readable result with ease.
 
 ## Documentation
 [Documentation](https://sqllineage.readthedocs.io) is online hosted by readthedocs, and you can check the 
-[release note](https://sqllineage.readthedocs.io/en/latest/changelog.html) there.
+[release note](https://sqllineage.readthedocs.io/en/latest/release_note/changelog.html) there.
 
 
 ## Quick Start
