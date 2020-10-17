@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v1.0.1
+======
+:Date: October 17, 2020
+
+Enhancement
+-------------
+* remove upper bound for dependencies (`#85 <https://github.com/reata/sqllineage/issues/85>`_)
+
 v1.0.0
 ======
 :Date: September 27, 2020
