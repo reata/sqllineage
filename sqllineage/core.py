@@ -6,6 +6,7 @@ from sqlparse.sql import (
     Comparison,
     Function,
     Identifier,
+    IdentifierList,
     Parenthesis,
     Statement,
     TokenList,
@@ -135,6 +136,11 @@ class LineageAnalyzer:
                             pass
                         else:
                             self._lineage_result.read.add(Table.create(sub_token))
+                    elif isinstance(sub_token, IdentifierList):
+                        # This is to support join in ANSI-89 syntax
+                        for token in sub_token.tokens:
+                            if isinstance(token, Identifier):
+                                self._lineage_result.read.add(Table.create(token))
                     elif isinstance(sub_token, Parenthesis):
                         # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
                         # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
