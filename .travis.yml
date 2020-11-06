@@ -9,6 +9,7 @@ addons:
   apt:
     packages:
       - graphviz
+      - libgraphviz-dev
 install:
   - pip install tox-travis codecov
 script:
