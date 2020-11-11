@@ -3,6 +3,7 @@ import warnings
 from sqlparse.sql import Identifier
 
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.helpers import escape_identifier_name
 
 
 class Schema:
@@ -14,7 +15,7 @@ class Schema:
 
         :param name: schema name
         """
-        self.raw_name = name
+        self.raw_name = escape_identifier_name(name)
 
     def __str__(self):
         return self.raw_name.lower()
@@ -43,12 +44,12 @@ class Table:
         if len(name.split(".")) == 2:
             schema_name, table_name = name.split(".")
             self.schema = Schema(schema_name)
-            self.raw_name = table_name
+            self.raw_name = escape_identifier_name(table_name)
             if schema:
                 warnings.warn("Name is in schema.table format, schema param is ignored")
         elif "." not in name:
             self.schema = schema
-            self.raw_name = name
+            self.raw_name = escape_identifier_name(name)
         else:
             raise SQLLineageException("Invalid format for table name: %s", name)
 
