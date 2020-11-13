@@ -16,6 +16,7 @@ from sqlparse.tokens import Keyword, Token
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.models import Table
 
+
 SOURCE_TABLE_TOKENS = (
     r"FROM",
     # inspired by https://github.com/andialbrecht/sqlparse/blob/master/sqlparse/keywords.py
@@ -107,37 +108,40 @@ class LineageAnalyzer:
             self._lineage_result.rename.add((tables[0], tables[1]))
 
     def _extract_from_dml(self, token: Token) -> None:
-        source_table_token_flag = False
-        target_table_token_flag = False
-        temp_table_token_flag = False
-        for sub_token in token.tokens:
+        table_cmd_stack = []
+
+        for tn, sub_token in enumerate(token.tokens):
             if self.__token_negligible_before_tablename(sub_token):
                 continue
 
             if isinstance(sub_token, TokenList):
                 self._extract_from_dml(sub_token)
+                # There is no continue here because things like table names are inside a TokenList,
+                # so _extract_from_dml() will do nothing, after which the methods below will execute.
 
             if sub_token.ttype in Keyword:
                 if any(
                     re.match(regex, sub_token.normalized)
                     for regex in SOURCE_TABLE_TOKENS
                 ):
-                    source_table_token_flag = True
+                    table_cmd_stack.append("SOURCE")
                 elif sub_token.normalized in TARGET_TABLE_TOKENS:
-                    target_table_token_flag = True
+                    if not table_cmd_stack or table_cmd_stack[-1] != "TARGET":
+                        table_cmd_stack.append("TARGET")
                 elif sub_token.normalized in TEMP_TABLE_TOKENS:
-                    temp_table_token_flag = True
+                    table_cmd_stack.append("TEMP")
                 continue
 
-            if source_table_token_flag:
+            if not len(table_cmd_stack):
+                continue
+
+            cmd = table_cmd_stack.pop()
+            if cmd == "SOURCE":
                 self._handle_source_table_token(sub_token)
-                source_table_token_flag = False
-            elif target_table_token_flag:
+            elif cmd == "TARGET":
                 self._handle_target_table_token(sub_token)
-                target_table_token_flag = False
-            elif temp_table_token_flag:
+            elif cmd == "TEMP":
                 self._handle_temp_table_token(sub_token)
-                temp_table_token_flag = False
 
     def _handle_source_table_token(self, sub_token: Token) -> None:
         if isinstance(sub_token, Identifier):
