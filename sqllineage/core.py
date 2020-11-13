@@ -107,9 +107,9 @@ class LineageAnalyzer:
             self._lineage_result.rename.add((tables[0], tables[1]))
 
     def _extract_from_dml(self, token: Token) -> None:
-        source_table_token_flag = (
-            target_table_token_flag
-        ) = temp_table_token_flag = False
+        source_table_token_flag = False
+        target_table_token_flag = False
+        temp_table_token_flag = False
         for sub_token in token.tokens:
             if self.__token_negligible_before_tablename(sub_token):
                 continue
@@ -136,7 +136,7 @@ class LineageAnalyzer:
                 self._handle_temp_table_token(sub_token)
                 temp_table_token_flag = False
 
-    def _handle_source_table_token(self, sub_token):
+    def _handle_source_table_token(self, sub_token: Token) -> None:
         if isinstance(sub_token, Identifier):
             if isinstance(sub_token.token_first(skip_cm=True), Parenthesis):
                 # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
@@ -160,7 +160,7 @@ class LineageAnalyzer:
                 % (type(sub_token).__name__, sub_token)
             )
 
-    def _handle_target_table_token(self, sub_token):
+    def _handle_target_table_token(self, sub_token: Token) -> None:
         if isinstance(sub_token, Function):
             # insert into tab (col1, col2) values (val1, val2); Here tab (col1, col2) will be parsed as Function
             # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
@@ -193,7 +193,7 @@ class LineageAnalyzer:
                 )
             self._lineage_result.write.add(Table.create(sub_token))
 
-    def _handle_temp_table_token(self, sub_token):
+    def _handle_temp_table_token(self, sub_token: Token) -> None:
         if not isinstance(sub_token, Identifier):
             raise SQLLineageException(
                 "An Identifier is expected, got %s[value: %s] instead"
