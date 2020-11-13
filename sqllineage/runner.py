@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 
 class LineageRunner(object):
     def __init__(
-        self, sql: str, encoding: str = None, verbose: bool = False,
+        self,
+        sql: str,
+        encoding: str = None,
+        verbose: bool = False,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
