@@ -118,10 +118,7 @@ class LineageAnalyzer:
                 self._extract_from_dml(sub_token)
 
             if sub_token.ttype in Keyword:
-                if any(
-                    re.match(regex, sub_token.normalized)
-                    for regex in SOURCE_TABLE_TOKENS
-                ):
+                if any(re.match(regex, sub_token.normalized) for regex in SOURCE_TABLE_TOKENS):
                     source_table_token_flag = True
                 elif sub_token.normalized in TARGET_TABLE_TOKENS:
                     target_table_token_flag = True
