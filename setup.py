@@ -33,6 +33,7 @@ setup(
         "all": ["matplotlib", "pygraphviz"],
         "ci": [
             "bandit",
+            "black",
             "flake8",
             "flake8-blind-except",
             "flake8-builtins",
