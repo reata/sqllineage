@@ -178,10 +178,7 @@ class LineageAnalyzer:
         elif isinstance(sub_token, Comparison):
             # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
             # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
-            if not (
-                isinstance(sub_token.left, Identifier)
-                and isinstance(sub_token.right, Identifier)
-            ):
+            if not (isinstance(sub_token.left, Identifier) and isinstance(sub_token.right, Identifier)):
                 raise SQLLineageException(
                     "An Identifier is expected, got %s[value: %s] instead"
                     % (type(sub_token).__name__, sub_token)
