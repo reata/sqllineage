@@ -1,6 +1,6 @@
-from sqllineage.core import LineageResult
+from sqllineage.core import DataSetLineage
 
 
 def test_dummy():
-    assert str(LineageResult()) == repr(LineageResult())
-    assert LineageResult() + LineageResult() is not None
+    assert str(DataSetLineage()) == repr(DataSetLineage())
+    assert DataSetLineage() + DataSetLineage() is not None

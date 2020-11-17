@@ -50,9 +50,15 @@ def test_select_with_comment_after_from():
 
 
 def test_select_with_comment_after_join():
-    helper(
-        "select * from tab1 join --comment\ntab2 on tab1.x = tab2.x", {"tab1", "tab2"}
-    )
+    helper("select * from tab1 join --comment\ntab2 on tab1.x = tab2.x", {"tab1", "tab2"})
+
+
+def test_select_multiple_column_alias():
+    helper("select column1 as c1, column2 as c2 from tab1", {"tab1"})
+
+
+def test_select_column_alias():
+    helper("select column1 as c1 from tab1", {"tab1"})
 
 
 def test_select_keyword_as_column_alias():
@@ -123,9 +129,7 @@ def test_select_cross_join():
 
 
 def test_select_cross_join_with_on():
-    helper(
-        "SELECT * FROM tab1 CROSS JOIN tab2 on tab1.col1 = tab2.col2", {"tab1", "tab2"}
-    )
+    helper("SELECT * FROM tab1 CROSS JOIN tab2 on tab1.col1 = tab2.col2", {"tab1", "tab2"})
 
 
 def test_select_join_with_subquery():

@@ -1,13 +1,16 @@
 import argparse
+import json
 import logging
 from typing import List
 
+import networkx
 import sqlparse
 from sqlparse.sql import Statement
+from networkx import DiGraph, node_link_data
 
-from sqllineage.combiners import combine
+from sqllineage import drawing
+from sqllineage.combiners import combine_datasets
 from sqllineage.core import LineageAnalyzer
-from sqllineage.drawing import draw_lineage_graph
 from sqllineage.models import Table
 
 logger = logging.getLogger(__name__)
@@ -29,12 +32,13 @@ class LineageRunner(object):
         """
         self._encoding = encoding
         self._stmt = [
-            s
-            for s in sqlparse.parse(sql.strip(), self._encoding)
-            if s.token_first(skip_cm=True)
+            s for s in sqlparse.parse(sql.strip(), self._encoding) if s.token_first(skip_cm=True)
         ]
-        self._lineage_results = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
-        self._combined_lineage_result = combine(*self._lineage_results)
+        self._lineage_results, self._columns_lineage = zip(
+            *[LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
+        )
+        self._combined_lineage_result = combine_datasets(self._lineage_results)
+        self._combined_columns_lineage = networkx.compose_all(self._columns_lineage)
         self._verbose = verbose
 
     def __str__(self):
@@ -51,9 +55,7 @@ Target Tables:
     {target_tables}
 """
         if self.intermediate_tables:
-            intermediate_tables = "\n    ".join(
-                str(t) for t in self.intermediate_tables
-            )
+            intermediate_tables = "\n    ".join(str(t) for t in self.intermediate_tables)
             combined += f"""Intermediate Tables:
     {intermediate_tables}"""
         if self._verbose:
@@ -69,11 +71,6 @@ Target Tables:
             combined = result + "==========\nSummary:\n" + combined
         return combined
 
-    def draw(self) -> None:
-        """
-        to draw the lineage directed graph with matplotlib.
-        """
-        return draw_lineage_graph(self._combined_lineage_result.lineage_graph)
 
     def statements(self, **kwargs) -> List[str]:
         """
@@ -82,6 +79,14 @@ Target Tables:
         :param kwargs: the key arguments that will be passed to `sqlparse.format`
         """
         return [sqlparse.format(s.value, **kwargs) for s in self.statements_parsed]
+
+    @property
+    def dataset_lineage_graph(self) -> DiGraph:
+        return self._combined_lineage_result.graph
+
+    @property
+    def column_lineage_graph(self) -> DiGraph:
+        return self._combined_columns_lineage
 
     @property
     def statements_parsed(self) -> List[Statement]:
@@ -109,9 +114,7 @@ Target Tables:
         """
         a list of intermediate :class:`sqllineage.models.Table`
         """
-        return sorted(
-            self._combined_lineage_result.intermediate_tables, key=lambda x: str(x)
-        )
+        return sorted(self._combined_lineage_result.intermediate_tables, key=lambda x: str(x))
 
 
 def main(args=None) -> None:
@@ -120,13 +123,10 @@ def main(args=None) -> None:
 
     :param args: the command line arguments for sqllineage command
     """
-    parser = argparse.ArgumentParser(
-        prog="sqllineage", description="SQL Lineage Parser."
-    )
-    parser.add_argument(
-        "-e", metavar="<quoted-query-string>", help="SQL from command line"
-    )
+    parser = argparse.ArgumentParser(prog="sqllineage", description="SQL Lineage Parser.")
+    parser.add_argument("-e", metavar="<quoted-query-string>", help="SQL from command line")
     parser.add_argument("-f", metavar="<filename>", help="SQL from files")
+    parser.add_argument("--json", "-j", metavar="<filename>", help="Serialize to JSON")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -141,9 +141,7 @@ def main(args=None) -> None:
     )
     args = parser.parse_args(args)
     if args.e and args.f:
-        logging.warning(
-            "Both -e and -f options are specified. -e option will be ignored"
-        )
+        logging.warning("Both -e and -f options are specified. -e option will be ignored")
     if args.f or args.e:
         sql = ""
         if args.f:
@@ -161,9 +159,17 @@ def main(args=None) -> None:
                 exit(1)
         elif args.e:
             sql = args.e
+
         runner = LineageRunner(sql, verbose=args.verbose)
+
+        if args.json:
+            with open(args.json, mode="x") as fp:
+                fp.write(str(node_link_data(runner.dataset_lineage_graph)))
+                # json.dump(node_link_data(runner.lineage_graph), fp)
+
         if args.graphviz:
-            runner.draw()
+            drawing.draw_lineage_graph2(runner.dataset_lineage_graph)
+            drawing.draw_lineage_graph2(runner.column_lineage_graph)
         else:
             print(runner)
     else:

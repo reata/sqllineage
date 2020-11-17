@@ -42,15 +42,13 @@ def test_insert_overwrite_with_keyword_table():
 
 
 def test_insert_overwrite_values():
-    helper(
-        "INSERT OVERWRITE tab1 VALUES ('val1', 'val2'), ('val3', 'val4')", {}, {"tab1"}
-    )
+    helper("INSERT OVERWRITE tab1 VALUES ('val1', 'val2'), ('val3', 'val4')", {}, {"tab1"})
 
 
 def test_insert_overwrite_from_self():
     helper(
         """INSERT OVERWRITE TABLE tab_1
-SELECT tab2.col_a from tab_2
+SELECT tab_2.col_a from tab_2
 JOIN tab_1
 ON tab_1.col_a = tab_2.cola""",
         {"tab_1", "tab_2"},
