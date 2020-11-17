@@ -16,7 +16,7 @@ to get its value.
 
 .. warning::
     Here is just a simplified description. In reality, we could easily see ``Comment`` coming after "FROM", or subquery
-    mistakenly parsed as ``Identifier`` or ``Parenthesis``. These are all corner cases we should resolve in reality.
+    mistakenly parsed as ``Identifier`` or ``Parenthesis``. These are all corner cases we should resolve in real world.
 
 Some other simple rules in SQLLineage:
 
@@ -30,13 +30,13 @@ Some other simple rules in SQLLineage:
 The rest thing is just tedious work. We collect all kinds of sql, handle various edge cases and make these simple rules
 robust enough.
 
-That's it for single statement SQLLineage. With multiple statements SQL, it requires some more extra work to assemble the
-Lineage result from single statements.
+That's it for single statement SQL lineage analysis. For multiple statements SQL, it requires some more extra work to
+assemble the lineage result from single statements.
 
 We choose a `DAG`_ based data structure to represent multiple statements SQL lineage. Table/View will be vertex in this
 graph while a edge means data in source vertex table will contribute to data in target vertex table. Every single
 statement lineage result will contain table read and table write information, which will later be combined into this
-graph. With this DAG based data structure, it is also very easy for lineage visualization.
+graph. With this DAG based data structure, it is also very easy to visualize lineage.
 
 .. _AST: https://en.wikipedia.org/wiki/Abstract_syntax_tree
 .. _sqlparse: https://github.com/andialbrecht/sqlparse

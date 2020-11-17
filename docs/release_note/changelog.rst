@@ -2,6 +2,21 @@
 Changelog
 *********
 
+v1.0.2
+======
+:Date: November 17, 2020
+
+Enhancement
+-------------
+* black check in CI (`#99 <https://github.com/reata/sqllineage/issues/99>`_)
+* switch to GitHub Actions for CI (`#95 <https://github.com/reata/sqllineage/issues/95>`_)
+* test against Python 3.9 (`#84 <https://github.com/reata/sqllineage/issues/84>`_)
+
+Bugfix
+-------------
+* cartesian product exception with ANSI-89 syntax (`#89 <https://github.com/reata/sqllineage/issues/89>`_)
+
+
 v1.0.1
 ======
 :Date: October 17, 2020
