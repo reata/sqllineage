@@ -58,12 +58,13 @@ def draw_lineage_graph(graph: DiGraph) -> None:
     plt.show()
 
 
-def draw_lineage_graph2(graph: DiGraph) -> None:
+def draw_lineage_graph_colors(graph: DiGraph) -> None:
     try:
         import matplotlib.pyplot as plt
-        from matplotlib.colors import colorConverter
-        from matplotlib.patches import FancyArrowPatch
-        from matplotlib.path import Path
+
+        # from matplotlib.colors import colorConverter
+        # from matplotlib.patches import FancyArrowPatch
+        # from matplotlib.path import Path
     except ImportError as e:
         raise ImportError("Matplotlib required for draw()") from e
     except RuntimeError:
@@ -96,7 +97,7 @@ def draw_lineage_graph2(graph: DiGraph) -> None:
 
     pos = nx.nx_agraph.graphviz_layout(graph, prog="dot", args="-Grankdir=LR")
     edge_color, font_color = "#9ab5c7", "#35393e"  # "#3499d9"
-    arrowsize = font_size = radius = 10
+    arrowsize = font_size = 10
     node_size = 30
     ha, va = "left", "bottom"
 
@@ -115,6 +116,7 @@ def draw_lineage_graph2(graph: DiGraph) -> None:
     )
 
     # # selfloop edges
+    # radius = 10
     # for edge in nx.selfloop_edges(graph):
     #     x, y = pos[edge[0]]
     #     arrow = FancyArrowPatch(

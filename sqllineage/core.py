@@ -48,21 +48,31 @@ class DataSetLineage:
     table being original table before renaming and the latter after renaming.
 
     This is the most atomic representation of lineage result.
+
+    The final attribute 'aliases' is different than the rest, and keeps a mapping of
+    alias names back to the Table object.
     """
 
-    __slots__ = ["read", "write", "rename", "drop", "intermediate", "columns"]
+    __slots__ = ["read", "write", "rename", "drop", "intermediate", "_aliases"]
     if TYPE_CHECKING:
         read = write = drop = intermediate = set()  # type: Set[Table]
         rename = set()  # type: Set[Tuple[Table, Table]]
+        _aliases = dict()
 
     def __init__(self) -> None:
         for attr in self.__slots__:
-            setattr(self, attr, set())
+            if attr != "_aliases":
+                setattr(self, attr, set())
+            else:
+                setattr(self, attr, dict())
 
     def __add__(self, other):
         lineage_result = DataSetLineage()
         for attr in self.__slots__:
-            setattr(lineage_result, attr, getattr(self, attr).union(getattr(other, attr)))
+            if attr != "_aliases":
+                setattr(lineage_result, attr, getattr(self, attr).union(getattr(other, attr)))
+            else:
+                setattr(lineage_result, attr, getattr(self, attr).update(getattr(other, attr)))
         return lineage_result
 
     def __str__(self):
@@ -76,6 +86,47 @@ class DataSetLineage:
 
     def __bool__(self):
         return any(getattr(self, s) for s in self.__slots__)
+
+    @property
+    def aliases(self) -> Dict:
+        """Return the alias to Table mapping dict"""
+        if None not in self._aliases:
+            self.set_null_alias()
+        return self._aliases
+
+    def add_with_alias(self, slot: str, ident: TokenList, token_first: bool = False):
+        """Add the given identifier to the named slot as a new table
+        This also updates the aliases list.
+        """
+
+        def _mapping_helper(tbl: Table):
+            # Note that if there are conflicting 'raw_name's where tables have the
+            # same name in different schemas, then this can be broken depending
+            # on how the DML uses aliases.  But it should work in most cases.
+            m = {
+                tbl.raw_name: tbl,
+                str(tbl): tbl,
+            }
+            if tbl.alias:
+                m[tbl.alias] = tbl
+            return m
+
+        if slot not in ("read", "write", "intermediate"):
+            raise SQLLineageException(f"Aliases not supported for type {slot}")
+        table = Table.create(ident if not token_first else ident.token_first(skip_cm=True))
+        self._aliases.update(_mapping_helper(table))
+        getattr(self, slot).add(table)
+
+    def set_null_alias(self):
+        """Set the null alias based on available write/intermediate/read tables"""
+        if self.write:
+            self._aliases[None] = next(iter(self.write))
+        elif self.intermediate:
+            self._aliases[None] = next(iter(self.intermediate))
+        elif self.read:
+            self._aliases[None] = next(iter(self.read))
+        else:
+            print("Warning: no NULL alias created")
 
 
 class LineageAnalyzer:
@@ -181,15 +232,18 @@ class LineageAnalyzer:
                 # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
                 pass
             else:
-                self._lineage_result.read.add(Table.create(sub_token))
+                self._lineage_result.add_with_alias("read", sub_token)
         elif isinstance(sub_token, IdentifierList):
             # This is to support join in ANSI-89 syntax
             for token in sub_token.tokens:
                 if isinstance(token, Identifier):
-                    self._lineage_result.read.add(Table.create(token))
+                    self._lineage_result.add_with_alias("read", token)
         elif isinstance(sub_token, Parenthesis):
             # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
             # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
+            pass
+        elif isinstance(sub_token, Function):
+            # Queries sometimes have functions here as well
             pass
         else:
             self._raise_identifier_exception(sub_token)
@@ -200,7 +254,7 @@ class LineageAnalyzer:
             # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
             if not isinstance(sub_token.token_first(skip_cm=True), Identifier):
                 self._raise_identifier_exception(sub_token)
-            self._lineage_result.write.add(Table.create(sub_token.token_first(skip_cm=True)))
+            self._lineage_result.add_with_alias("write", sub_token, token_first=True)
         elif isinstance(sub_token, Comparison):
             # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
             # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
@@ -208,19 +262,19 @@ class LineageAnalyzer:
                 isinstance(sub_token.left, Identifier) and isinstance(sub_token.right, Identifier)
             ):
                 self._raise_identifier_exception(sub_token)
-            self._lineage_result.write.add(Table.create(sub_token.left))
-            self._lineage_result.read.add(Table.create(sub_token.right))
+            self._lineage_result.add_with_alias("write", sub_token.left)
+            self._lineage_result.add_with_alias("read", sub_token.right)
         else:
             if not isinstance(sub_token, Identifier):
                 self._raise_identifier_exception(sub_token)
-            self._lineage_result.write.add(Table.create(sub_token))
+            self._lineage_result.add_with_alias("write", sub_token)
 
     def _handle_temp_table_token(self, sub_token: Token) -> None:
         if not isinstance(sub_token, Identifier):
             self._raise_identifier_exception(sub_token)
         if sub_token.normalized == "BINDING":  # Ignore view clause "WITH NO SCHEMA BINDING"
             return
-        self._lineage_result.intermediate.add(Table.create(sub_token))
+        self._lineage_result.add_with_alias("intermediate", sub_token)
         self._extract_from_dml(sub_token)
 
     def _handle_target_column_token(self, sub_token: Token) -> None:
@@ -237,10 +291,10 @@ class LineageAnalyzer:
             if st.is_whitespace or st.normalized in not_identifier:
                 continue
             if isinstance(st, IdentifierList):
-                print("Complex expressions aren't handled")
+                print("IdentifierList here not handled")
                 continue
             if st.ttype in Token.Keyword:
-                print("Complex expressions aren't handled")
+                print("Complex expressions not handled")
                 continue
             if st.ttype in Token.Literal:
                 # This shouldn't happen but sometimes it does anyway due to weird SQL
@@ -258,9 +312,8 @@ class LineageAnalyzer:
         a graph object handling the relationships is built right away.
         """
         # Get the source table aliases
-        table_mapping = self._build_table_mapping()
         for c in self._columns:
-            sources, target = self._columns_get_sources_target(c, table_mapping)
+            sources, target = self._columns_get_sources_target(c, self._lineage_result.aliases)
             self._columns_graph.add_nodes_from(sources, source=True)
             self._columns_graph.add_node(target, target=True)
             for src, tgt in itertools.product(sources, [target]):
@@ -288,30 +341,27 @@ class LineageAnalyzer:
                     column.get_alias(), tables[None]
                 )
             # Source is a function
-            elif isinstance(column[0], Function):
-                # print("Functions are unhandled")
-                cols = LineageAnalyzer._extract_source_columns(column[0], skip=1)
-                cols = [Column(c.get_name(), tables[c.get_parent_name()]) for c in cols]
-                # try:
-                #     cols = [Column(c.get_name(), tables[c.get_parent_name()]) for c in cols]
-                # except KeyError as e:
-                #     print(f"Missing table {e} so skipping source {column[0]}")
-                #     return [], Column(column.get_alias(), tables[None])
+            elif isinstance(column[0], (Function, Case, Operation, Parenthesis)):
+                skip_first_token = 1 if isinstance(column[0], (Function, Case)) else 0
+                extract = LineageAnalyzer._extract_source_columns(column[0], skip=skip_first_token)
+                cols = []
+                for c in extract:
+                    if c.get_parent_name() not in tables:
+                        print(
+                            f"  Missing table '{c.get_parent_name()}' so skipping"
+                            f" {c} -> {column.get_alias()}"
+                        )
+                        continue
+                    cols.append(Column(c.get_name(), tables[c.get_parent_name()]))
                 return cols, Column(column.get_alias(), tables[None])
-                # return [Column("FUNCTION", Table("unknown"))], Column(column.get_alias(), tables[None])
-            # Source is an operation
-            elif isinstance(column[0], Operation):
-                print("Operations are unhandled")
-                return [Column("OPERATION", Table("unknown"))], Column(
-                    column.get_alias(), tables[None]
-                )
-            # Source is a case statement
-            elif isinstance(column[0], Case):
-                print("Case statements are unhandled")
-                return [Column("CASE", Table("unknown"))], Column(column.get_alias(), tables[None])
             # Source is a literal
             elif column[0].ttype in Token.Literal:
-                return [Column("LITERAL", Table("unknown"))], Column(
+                return [Column(f"LITERAL {column[0]}", Table("none"))], Column(
+                    column.get_alias(), tables[None]
+                )
+            # Source is keyword
+            elif column[0].ttype in Token.Keyword:
+                return [Column(str(column[0]), Table("none"))], Column(
                     column.get_alias(), tables[None]
                 )
             # Shouldn't get here
@@ -335,32 +385,6 @@ class LineageAnalyzer:
                     )
                 )
         return columns
-
-    def _build_table_mapping(self) -> Dict:
-        def _mapping_helper(table: Table):
-            # Note that if there are conflicting 'raw_name's where tables have the
-            # same name in different schemas, then this can be broken depending
-            # on how the DML uses aliases.  But it should work in most cases.
-            m = {
-                table.raw_name: table,
-                str(table): table,
-            }
-            if table.alias:
-                m[table.alias] = table
-            return m
-
-        mapping = {}
-        # Targets first (this is on purpose because the first target table will be used if no specifier is given)
-        for tgt in self._lineage_result.write:
-            mapping.update(_mapping_helper(tgt))
-        for tmp in self._lineage_result.intermediate:
-            mapping.update(_mapping_helper(tmp))
-        for src in self._lineage_result.read:
-            mapping.update(_mapping_helper(src))
-        # Make the None key map to whatever table was added first
-        if mapping:
-            mapping[None] = mapping[next(iter(mapping))]
-        return mapping
 
     @staticmethod
     def _raise_identifier_exception(sub_token):

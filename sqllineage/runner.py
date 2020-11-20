@@ -1,12 +1,11 @@
 import argparse
-import json
 import logging
 from typing import List
 
 import networkx
 import sqlparse
 from sqlparse.sql import Statement
-from networkx import DiGraph, node_link_data
+from networkx import DiGraph, write_gml
 
 from sqllineage import drawing
 from sqllineage.combiners import combine_datasets
@@ -71,7 +70,6 @@ Target Tables:
             combined = result + "==========\nSummary:\n" + combined
         return combined
 
-
     def statements(self, **kwargs) -> List[str]:
         """
         a list of statements.
@@ -126,7 +124,12 @@ def main(args=None) -> None:
     parser = argparse.ArgumentParser(prog="sqllineage", description="SQL Lineage Parser.")
     parser.add_argument("-e", metavar="<quoted-query-string>", help="SQL from command line")
     parser.add_argument("-f", metavar="<filename>", help="SQL from files")
-    parser.add_argument("--json", "-j", metavar="<filename>", help="Serialize to JSON")
+    parser.add_argument(
+        "--columns", "-c", metavar="<filename>", help="Serialize column network to GML file"
+    )
+    parser.add_argument(
+        "--tables", "-t", metavar="<filename>", help="Serialize table network to GML file"
+    )
     parser.add_argument(
         "-v",
         "--verbose",
@@ -162,14 +165,14 @@ def main(args=None) -> None:
 
         runner = LineageRunner(sql, verbose=args.verbose)
 
-        if args.json:
-            with open(args.json, mode="x") as fp:
-                fp.write(str(node_link_data(runner.dataset_lineage_graph)))
-                # json.dump(node_link_data(runner.lineage_graph), fp)
+        if args.tables:
+            write_gml(runner.dataset_lineage_graph, args.tables, lambda s: str(s))
+        if args.columns:
+            write_gml(runner.column_lineage_graph, args.columns, lambda s: str(s))
 
         if args.graphviz:
-            drawing.draw_lineage_graph2(runner.dataset_lineage_graph)
-            drawing.draw_lineage_graph2(runner.column_lineage_graph)
+            drawing.draw_lineage_graph(runner.dataset_lineage_graph)
+            drawing.draw_lineage_graph_colors(runner.column_lineage_graph)
         else:
             print(runner)
     else:
