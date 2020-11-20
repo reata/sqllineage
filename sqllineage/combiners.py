@@ -1,5 +1,5 @@
 import itertools
-from typing import Set, Iterable
+from typing import Iterable, Set
 
 import networkx as nx
 from networkx import DiGraph

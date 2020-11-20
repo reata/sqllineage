@@ -4,8 +4,8 @@ from typing import List
 
 import networkx
 import sqlparse
-from sqlparse.sql import Statement
 from networkx import DiGraph, write_gml
+from sqlparse.sql import Statement
 
 from sqllineage import drawing
 from sqllineage.combiners import combine_datasets

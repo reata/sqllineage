@@ -1,6 +1,6 @@
 import itertools
 import re
-from typing import Set, TYPE_CHECKING, Tuple, List, Dict
+from typing import Dict, List, Set, TYPE_CHECKING, Tuple
 
 import networkx as nx
 from sqlparse.sql import (
@@ -19,7 +19,7 @@ from sqlparse.tokens import Keyword, Token
 
 # from sqllineage.combiners import combine_columns
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.models import Table, Column
+from sqllineage.models import Column, Table
 
 
 SOURCE_TABLE_TOKENS = (
