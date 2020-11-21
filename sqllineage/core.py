@@ -1,6 +1,6 @@
 import itertools
 import re
-from typing import Dict, List, Set, TYPE_CHECKING, Tuple
+from typing import Dict, List, Set, TYPE_CHECKING, Tuple, Union
 
 import networkx as nx
 from sqlparse.sql import (
@@ -57,7 +57,7 @@ class DataSetLineage:
     if TYPE_CHECKING:
         read = write = drop = intermediate = set()  # type: Set[Table]
         rename = set()  # type: Set[Tuple[Table, Table]]
-        _aliases = dict()
+        _aliases = dict()  # type: Dict[Union[str, None], Table]
 
     def __init__(self) -> None:
         for attr in self.__slots__:
@@ -88,7 +88,7 @@ class DataSetLineage:
         return any(getattr(self, s) for s in self.__slots__)
 
     @property
-    def aliases(self) -> Dict:
+    def aliases(self) -> Dict[Union[str, None], Table]:
         """Return the alias to Table mapping dict"""
         if None not in self._aliases:
             self.set_null_alias()
@@ -117,7 +117,7 @@ class DataSetLineage:
         self._aliases.update(_mapping_helper(table))
         getattr(self, slot).add(table)
 
-    def set_null_alias(self):
+    def set_null_alias(self) -> None:
         """Set the null alias based on available write/intermediate/read tables"""
         if self.write:
             self._aliases[None] = next(iter(self.write))
@@ -150,7 +150,7 @@ class LineageAnalyzer:
 
         # _columns is kept as a separate list because the incomplete Identifiers are added
         # there until they can be "fully qualified" and put into _columns_graph.
-        self._columns = []
+        self._columns = []  # type: List[Token]
         self._columns_graph = nx.DiGraph()
 
     def analyze(self, stmt: Statement) -> Tuple[DataSetLineage, nx.DiGraph]:
@@ -188,8 +188,8 @@ class LineageAnalyzer:
             self._lineage_result.rename.add((tables[0], tables[1]))
 
     def _extract_from_dml(self, token: Token) -> None:
-        table_cmd_stack = []
-        unhandled_stack = []
+        table_cmd_stack = []  # type: List[str]
+        unhandled_stack = []  # type: List[str]
 
         for tn, sub_token in enumerate(token.tokens):
             if self.__token_negligible_before_tablename(sub_token):
@@ -202,7 +202,7 @@ class LineageAnalyzer:
 
             if sub_token.ttype in Keyword:
                 for k, v in self._clause_tokens.items():
-                    if any(re.match(regex, sub_token.normalized) for regex in v):
+                    if any(re.match(regex, sub_token.normalized) for regex in v):  # type: ignore
                         # Sometimes multiple matching operators exist for a single clause--don't add extras.
                         if not table_cmd_stack or table_cmd_stack[-1] != k:
                             table_cmd_stack.append(k)
@@ -320,7 +320,9 @@ class LineageAnalyzer:
                 self._columns_graph.add_edge(src, tgt)
 
     @staticmethod
-    def _columns_get_sources_target(column: Identifier, tables: Dict) -> Tuple[List, Column]:
+    def _columns_get_sources_target(
+        column: Identifier, tables: Dict[Union[str, None], Table]
+    ) -> Tuple[List[Column], Column]:
         parent_table = (
             tables[column.get_parent_name()]
             if column.get_parent_name() in tables
@@ -369,7 +371,7 @@ class LineageAnalyzer:
                 raise SQLLineageException(f"Unhandled column string: {column}")
 
     @staticmethod
-    def _extract_source_columns(token: Token, skip=0) -> List:
+    def _extract_source_columns(token: Token, skip=0):
         # print(str(token))
         columns = []
         for t in token[skip:]:
@@ -387,7 +389,7 @@ class LineageAnalyzer:
         return columns
 
     @staticmethod
-    def _raise_identifier_exception(sub_token):
+    def _raise_identifier_exception(sub_token) -> None:
         raise SQLLineageException(
             "An Identifier is expected, got %s[value: %s] instead"
             % (type(sub_token).__name__, sub_token)
