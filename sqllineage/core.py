@@ -202,7 +202,7 @@ class LineageAnalyzer:
 
             if sub_token.ttype in Keyword:
                 for k, v in self._clause_tokens.items():
-                    if any(re.match(regex, sub_token.normalized) for regex in v):  # type: ignore
+                    if any(re.match(regex, sub_token.normalized) for regex in v):
                         # Sometimes multiple matching operators exist for a single clause--don't add extras.
                         if not table_cmd_stack or table_cmd_stack[-1] != k:
                             table_cmd_stack.append(k)
