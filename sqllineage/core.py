@@ -20,7 +20,7 @@ SOURCE_TABLE_TOKENS = (
     # inspired by https://github.com/andialbrecht/sqlparse/blob/master/sqlparse/keywords.py
     r"((LEFT\s+|RIGHT\s+|FULL\s+)?(INNER\s+|OUTER\s+|STRAIGHT\s+)?|(CROSS\s+|NATURAL\s+)?)?JOIN",
 )
-TARGET_TABLE_TOKENS = ("INTO", "OVERWRITE", "TABLE", "VIEW")
+TARGET_TABLE_TOKENS = ("INTO", "OVERWRITE", "TABLE", "VIEW", "UPDATE")
 TEMP_TABLE_TOKENS = ("WITH",)
 
 
