@@ -45,6 +45,18 @@ def test_create_after_drop():
     )
 
 
+def test_update():
+    helper("UPDATE tab1 SET col1='val1' WHERE col2='val2'", None, {"tab1"})
+
+
+def test_update_with_join():
+    helper(
+        "UPDATE tab1 a INNER JOIN tab2 b ON a.col1=b.col1 SET a.col2='val1'",
+        {"tab2"},
+        {"tab1"},
+    )
+
+
 def test_drop():
     helper("DROP TABLE IF EXISTS tab1", None, None)
 
