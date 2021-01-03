@@ -15,6 +15,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/reata/sqllineage",
     packages=find_packages(exclude=("tests",)),
+    include_package_data=True,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
@@ -28,9 +29,9 @@ setup(
     ],
     python_requires=">=3.6",
     install_requires=["sqlparse>=0.3.0", "networkx>=2.4"],
-    entry_points={"console_scripts": ["sqllineage = sqllineage.runner:main"]},
+    entry_points={"console_scripts": ["sqllineage = sqllineage.cli:main"]},
     extras_require={
-        "all": ["matplotlib", "pygraphviz"],
+        "all": ["flask", "flask_cors"],
         "ci": [
             "bandit",
             "black",

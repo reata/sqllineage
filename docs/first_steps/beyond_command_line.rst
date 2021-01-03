@@ -30,5 +30,3 @@ the same functionality.
     # likewise for target tables
     >>> for tbl in result.target_tables: print(tbl)
     db3.table13
-    # To pop up a matplotlib visualization graph
-    >>> result.draw()

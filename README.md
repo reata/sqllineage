@@ -96,21 +96,10 @@ One more cool feature, if you want a graph visualization for the lineage result,
 ```
 sqllineage -g -e "insert into db1.table11 select * from db2.table21 union select * from db2.table22; insert into db3.table3 select * from db1.table11 join db1.table12;"
 ```
-An interactive matplotlib graph will then pop up, showing DAG representation of the lineage result:
+A webserver will be started, showing DAG representation of the lineage result in browser:
 <img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/Figure_1.png">
 
-For visualization to work, you must have [graphviz](https://graphviz.org/) installed. With Ubuntu, it's simply
-```
-sudo apt install graphviz
-```
-For mac user, brew can help
-```
-brew install graphviz
-```
-graphviz also comes with Windows support, see [Graphviz Download](https://graphviz.org/download/) for details.
-
-
-After that, all the extra dependencies for sqllineage must be installed as well. It will install matplotlib and pygraphviz :
+For visualization to work, you must have extra dependencies (flask) installed:
 ```
 pip install sqllineage[all]
 ```

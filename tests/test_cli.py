@@ -1,0 +1,28 @@
+import pathlib
+from unittest.mock import patch
+
+import pytest
+
+from sqllineage.cli import main
+
+
+@patch("flask.Flask.run")
+def test_cli_dummy(_):
+    main([])
+    main(["-e", "select * from dual"])
+    main(["-f", __file__])
+    main(["-e", "select * from dual", "-f", __file__])
+    main(
+        [
+            "-e",
+            "insert overwrite table tab1 select * from tab1 union select * from tab2",
+            "-g",
+        ]
+    )
+
+
+def test_file_exception():
+    for args in (["-f", str(pathlib.Path().absolute())], ["-f", "nonexist_file"]):
+        with pytest.raises(SystemExit) as e:
+            main(args)
+        assert e.value.code == 1
