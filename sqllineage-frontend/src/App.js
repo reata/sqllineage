@@ -11,7 +11,7 @@ class App extends React.Component {
     this.state = {
       error: null,
       isLoaded: false,
-      items: []
+      elements: []
     }
   }
 
@@ -29,7 +29,7 @@ class App extends React.Component {
         (result) => {
           this.setState({
             isLoaded: true,
-            items: result
+            elements: result
           })
         },
         (error) => {
@@ -42,13 +42,12 @@ class App extends React.Component {
   }
 
   render() {
-    const {error, isLoaded, items} = this.state;
+    const {error, isLoaded, elements} = this.state;
     if (error) {
       return <div>Error: {error.message}</div>;
     } else if (!isLoaded) {
       return <div>Loading...</div>;
     } else {
-      const elements = CytoscapeComponent.normalizeElements(items);
       const stylesheet = [
         {
           selector: 'node',

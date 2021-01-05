@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import sqlparse
 from sqlparse.sql import Statement
@@ -68,7 +68,7 @@ Target Tables:
             combined = result + "==========\nSummary:\n" + combined
         return combined
 
-    def to_cytoscape(self) -> Dict[str, Any]:
+    def to_cytoscape(self) -> List[Dict[str, Dict[str, str]]]:
         """
         to turn the DAG into cytoscape format.
         """
