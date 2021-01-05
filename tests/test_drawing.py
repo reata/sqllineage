@@ -17,3 +17,13 @@ def test_no_flask():
 def test_no_flask_cors():
     with pytest.raises(ImportError):
         draw_lineage_graph(Namespace())
+
+
+@patch("flask.Flask.run")
+def test_flask_handler(_):
+    option = {"e": "select * from dual", "f": None}
+    args = Namespace(**option)
+    app = draw_lineage_graph(args)
+    with app.test_client() as c:
+        c.get("/")
+        c.post("/lineage", json=option)

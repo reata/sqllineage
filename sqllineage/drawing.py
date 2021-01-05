@@ -11,7 +11,7 @@ from sqllineage.runner import LineageRunner
 logger = logging.getLogger(__name__)
 
 
-def draw_lineage_graph(args: Namespace) -> None:
+def draw_lineage_graph(args: Namespace):
     try:
         from flask import Flask, jsonify, request
         from flask_cors import CORS
@@ -45,3 +45,5 @@ def draw_lineage_graph(args: Namespace) -> None:
     querystring = urlencode(param)
     print(f" * SQLLineage Running on http://127.0.0.1:5000/?{querystring}")
     app.run()
+    # return here is for testing purpose only
+    return app
