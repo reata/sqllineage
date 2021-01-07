@@ -43,7 +43,7 @@ def draw_lineage_graph(args: Namespace):
     elif args.e:
         param["e"] = args.e
     querystring = urlencode(param)
-    print(f" * SQLLineage Running on http://127.0.0.1:5000/?{querystring}")
-    app.run()
+    print(f" * SQLLineage Running on http://localhost:{args.p}/?{querystring}")
+    app.run(port=args.p)
     # return here is for testing purpose only
     return app

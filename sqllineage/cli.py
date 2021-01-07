@@ -33,6 +33,13 @@ def main(args=None) -> None:
         help="show graph visualization of the lineage within a webserver",
         action="store_true",
     )
+    parser.add_argument(
+        "-p",
+        help="the port visualization webserver will be listening on",
+        type=int,
+        default=5000,
+        metavar="<port_number>{0..65536}",
+    )
     args = parser.parse_args(args)
     if args.e and args.f:
         logging.warning(

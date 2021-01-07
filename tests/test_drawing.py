@@ -21,7 +21,7 @@ def test_no_flask_cors():
 
 @patch("flask.Flask.run")
 def test_flask_handler(_):
-    option = {"e": "select * from dual", "f": None}
+    option = {"e": "select * from dual", "f": None, "p": 5000}
     args = Namespace(**option)
     app = draw_lineage_graph(args)
     with app.test_client() as c:
