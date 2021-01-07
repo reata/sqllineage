@@ -92,7 +92,7 @@ Intermediate Tables:
 ```
 
 ### Lineage Visualization
-One more cool feature, if you want a graph visualization for the lineage result, toggle graphviz option
+One more cool feature, if you want a graph visualization for the lineage result, toggle graph-visualization option
 ```
 sqllineage -g -e "insert into db1.table11 select * from db2.table21 union select * from db2.table22; insert into db3.table3 select * from db1.table11 join db1.table12;"
 ```

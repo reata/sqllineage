@@ -53,7 +53,7 @@ And if you want to see lineage result for every SQL statement, just toggle verbo
 Lineage Visualization
 =====================
 
-One more cool feature, if you want a graph visualization for the lineage result, toggle graphviz option
+One more cool feature, if you want a graph visualization for the lineage result, toggle graph-visualization option
 
 .. code-block:: bash
 

@@ -29,8 +29,8 @@ def main(args=None) -> None:
     )
     parser.add_argument(
         "-g",
-        "--graphviz",
-        help="show graph visualization of the lineage with graphviz dot layout",
+        "--graph-visualization",
+        help="show graph visualization of the lineage within a webserver",
         action="store_true",
     )
     args = parser.parse_args(args)
@@ -39,7 +39,7 @@ def main(args=None) -> None:
             "Both -e and -f options are specified. -e option will be ignored"
         )
     if args.f or args.e:
-        if args.graphviz:
+        if args.graph_visualization:
             draw_lineage_graph(args)
         else:
             sql = extract_sql_from_args(args)
