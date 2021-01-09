@@ -12,8 +12,9 @@ with open("README.md", "r") as f:
 
 class BuildPYWithJS(build_py):
     def run(self) -> None:
-        subprocess.check_call(shlex.split("npm install --prefix sqllineagejs"))
-        subprocess.check_call(shlex.split("npm run build --prefix sqllineagejs"))
+        js_path = "sqllineagejs"
+        subprocess.check_call(shlex.split(f"npm install --prefix {js_path}"))
+        subprocess.check_call(shlex.split(f"npm run build --prefix {js_path}"))
         super().run()
 
 
