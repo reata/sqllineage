@@ -98,8 +98,3 @@ sqllineage -g -e "insert into db1.table11 select * from db2.table21 union select
 ```
 A webserver will be started, showing DAG representation of the lineage result in browser:
 <img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/Figure_1.png">
-
-For visualization to work, you must have extra dependencies (flask) installed:
-```
-pip install sqllineage[all]
-```

@@ -63,8 +63,3 @@ A webserver will be started, showing DAG representation of the lineage result in
 
 .. image:: ../_static/Figure_1.png
    :alt: Lineage visualization
-
-For visualization to work, you must have extra dependencies (flask) installed::
-
-    pip install sqllineage[all]
-

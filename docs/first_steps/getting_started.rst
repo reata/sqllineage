@@ -9,9 +9,6 @@ Install the package via ``pip`` (or add it to your ``requirements.txt`` file), r
 
    pip install sqllineage
 
-If visualization feature is needed::
-
-    pip install sqllineage[all]
 
 Install via Github
 ==================
