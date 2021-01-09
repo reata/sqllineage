@@ -4,6 +4,9 @@ import sys
 from argparse import Namespace
 from urllib.parse import urlencode
 
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
 from sqllineage import __name__ as name
 from sqllineage.helpers import extract_sql_from_args
 from sqllineage.runner import LineageRunner
@@ -11,12 +14,7 @@ from sqllineage.runner import LineageRunner
 logger = logging.getLogger(__name__)
 
 
-def draw_lineage_graph(args: Namespace):
-    try:
-        from flask import Flask, jsonify, request
-        from flask_cors import CORS
-    except ImportError as e:
-        raise ImportError("flask and flask_cors required for visualization") from e
+def draw_lineage_graph(**kwargs) -> Flask:
     app = Flask(
         name,
         static_url_path="",
@@ -37,13 +35,9 @@ def draw_lineage_graph(args: Namespace):
 
     cli = sys.modules["flask.cli"]
     cli.show_server_banner = lambda *x: None  # type: ignore
-    param = {}
-    if args.f:
-        param["f"] = args.f
-    elif args.e:
-        param["e"] = args.e
-    querystring = urlencode(param)
-    print(f" * SQLLineage Running on http://localhost:{args.p}/?{querystring}")
-    app.run(port=args.p)
+    port = kwargs.pop("p")
+    querystring = urlencode({k: v for k, v in kwargs.items() if v})
+    print(f" * SQLLineage Running on http://localhost:{port}/?{querystring}")
+    app.run(port=port)
     # return here is for testing purpose only
     return app

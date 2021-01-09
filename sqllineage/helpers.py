@@ -10,7 +10,7 @@ def escape_identifier_name(name: str):
 
 def extract_sql_from_args(args: Namespace) -> str:
     sql = ""
-    if getattr(args, "f"):
+    if getattr(args, "f", None):
         try:
             with open(args.f) as f:
                 sql = f.read()
@@ -23,6 +23,6 @@ def extract_sql_from_args(args: Namespace) -> str:
         except PermissionError:
             logger.exception("Permission denied when reading file '%s'", args.f)
             exit(1)
-    elif getattr(args, "e"):
+    elif getattr(args, "e", None):
         sql = args.e
     return sql

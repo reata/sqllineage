@@ -47,7 +47,7 @@ def main(args=None) -> None:
         )
     if args.f or args.e:
         if args.graph_visualization:
-            draw_lineage_graph(args)
+            draw_lineage_graph(**args.__dict__)
         else:
             sql = extract_sql_from_args(args)
             runner = LineageRunner(sql, verbose=args.verbose)
