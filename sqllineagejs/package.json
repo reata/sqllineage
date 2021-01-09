@@ -1,5 +1,5 @@
 {
-  "name": "sqllineage-frontend",
+  "name": "sqllineagejs",
   "version": "1.0.0",
   "private": true,
   "dependencies": {

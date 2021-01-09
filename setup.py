@@ -1,9 +1,21 @@
+import shlex
+import subprocess
+from distutils.command.build_py import build_py
+
 from setuptools import find_packages, setup
 
 from sqllineage import NAME, VERSION
 
 with open("README.md", "r") as f:
     long_description = f.read()
+
+
+class BuildPYWithJS(build_py):
+    def run(self) -> None:
+        subprocess.check_call(shlex.split("npm install --prefix sqllineagejs"))
+        subprocess.check_call(shlex.split("npm run build --prefix sqllineagejs"))
+        super().run()
+
 
 setup(
     name=NAME,
@@ -28,10 +40,9 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     python_requires=">=3.6",
-    install_requires=["sqlparse>=0.3.0", "networkx>=2.4"],
+    install_requires=["sqlparse>=0.3.0", "networkx>=2.4", "flask", "flask_cors"],
     entry_points={"console_scripts": ["sqllineage = sqllineage.cli:main"]},
     extras_require={
-        "all": ["flask", "flask_cors"],
         "ci": [
             "bandit",
             "black",
@@ -49,4 +60,5 @@ setup(
         ],
         "docs": ["Sphinx>=3.2.0", "sphinx_rtd_theme>=0.5.0"],
     },
+    cmdclass={"build_py": BuildPYWithJS},
 )
