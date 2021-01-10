@@ -1,8 +1,9 @@
+import os
 import shlex
 import subprocess
-from distutils.command.build_py import build_py
 
 from setuptools import find_packages, setup
+from setuptools.command.egg_info import egg_info
 
 from sqllineage import NAME, STATIC_FOLDRE, VERSION
 
@@ -10,11 +11,21 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 
-class BuildPYWithJS(build_py):
+class EggInfoWithJS(egg_info):
+    """
+    egginfo is a hook both for
+        1) building source code distribution (python setup.py sdist)
+        2) building wheel distribution (python setup.py bdist_wheel)
+        3) installing from source code (python setup.py install) or pip install from GitHub
+    In this step, frontend code will be built to match MANIFEST.in list so that later the static files will be copied to
+    site-packages correctly as package_data. When building a distribution, no building process is needed at install time
+    """
+
     def run(self) -> None:
-        js_path = "sqllineagejs"
-        subprocess.check_call(shlex.split(f"npm install --prefix {js_path}"))
-        subprocess.check_call(shlex.split(f"npm run build --prefix {js_path}"))
+        if not os.path.exists(os.path.join(NAME, STATIC_FOLDRE)):
+            js_path = "sqllineagejs"
+            subprocess.check_call(shlex.split(f"npm install --prefix {js_path}"))
+            subprocess.check_call(shlex.split(f"npm run build --prefix {js_path}"))
         super().run()
 
 
@@ -62,5 +73,5 @@ setup(
         ],
         "docs": ["Sphinx>=3.2.0", "sphinx_rtd_theme>=0.5.0"],
     },
-    cmdclass={"build_py": BuildPYWithJS},
+    cmdclass={"egg_info": EggInfoWithJS},
 )
