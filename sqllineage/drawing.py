@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from sqllineage import __name__ as name
+from sqllineage import STATIC_FOLDRE, __name__ as name
 from sqllineage.helpers import extract_sql_from_args
 from sqllineage.runner import LineageRunner
 
@@ -18,7 +18,7 @@ def draw_lineage_graph(**kwargs) -> Flask:
     app = Flask(
         name,
         static_url_path="",
-        static_folder=os.path.join(os.path.dirname(__file__), "build"),
+        static_folder=os.path.join(os.path.dirname(__file__), STATIC_FOLDRE),
     )
     CORS(app)
 

@@ -29,3 +29,5 @@ DEFAULT_LOGGING = {
     },
 }
 logging.config.dictConfig(DEFAULT_LOGGING)
+
+STATIC_FOLDRE = "build"

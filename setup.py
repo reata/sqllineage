@@ -4,7 +4,7 @@ from distutils.command.build_py import build_py
 
 from setuptools import find_packages, setup
 
-from sqllineage import NAME, VERSION
+from sqllineage import NAME, STATIC_FOLDRE, VERSION
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -28,6 +28,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/reata/sqllineage",
     packages=find_packages(exclude=("tests",)),
+    package_data={"": [f"{STATIC_FOLDRE}/*", f"{STATIC_FOLDRE}/**/**/*"]},
     include_package_data=True,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
