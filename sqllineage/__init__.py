@@ -19,7 +19,15 @@ DEFAULT_LOGGING = {
             "level": "WARNING",
             "propagate": False,
             "filters": [],
-        }
+        },
+        "werkzeug": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+            "filters": [],
+        },
     },
 }
 logging.config.dictConfig(DEFAULT_LOGGING)
+
+STATIC_FOLDRE = "build"

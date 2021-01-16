@@ -1,19 +1,14 @@
-import sys
+from http import HTTPStatus
 from unittest.mock import patch
-
-import pytest
-from networkx import DiGraph
 
 from sqllineage.drawing import draw_lineage_graph
 
 
-@patch.dict(sys.modules, {"matplotlib": None})
-def test_no_matplotlib():
-    with pytest.raises(ImportError):
-        draw_lineage_graph(DiGraph())
-
-
-@patch.dict(sys.modules, {"pygraphviz": None})
-def test_no_pygraphviz():
-    with pytest.raises(ImportError):
-        draw_lineage_graph(DiGraph())
+@patch("flask.Flask.run")
+def test_flask_handler(_):
+    option = {"e": "select * from dual", "p": 5000}
+    app = draw_lineage_graph(**option)
+    with app.test_client() as c:
+        c.get("/")
+        resp = c.post("/lineage", json=option)
+        assert resp.status_code == HTTPStatus.OK

@@ -1,13 +1,12 @@
-import argparse
 import logging
-from typing import List
+from typing import Dict, List
 
 import sqlparse
 from sqlparse.sql import Statement
 
 from sqllineage.combiners import combine
 from sqllineage.core import LineageAnalyzer
-from sqllineage.drawing import draw_lineage_graph
+from sqllineage.io import to_cytoscape
 from sqllineage.models import Table
 
 logger = logging.getLogger(__name__)
@@ -69,11 +68,11 @@ Target Tables:
             combined = result + "==========\nSummary:\n" + combined
         return combined
 
-    def draw(self) -> None:
+    def to_cytoscape(self) -> List[Dict[str, Dict[str, str]]]:
         """
-        to draw the lineage directed graph with matplotlib.
+        to turn the DAG into cytoscape format.
         """
-        return draw_lineage_graph(self._combined_lineage_result.lineage_graph)
+        return to_cytoscape(self._combined_lineage_result.lineage_graph)
 
     def statements(self, **kwargs) -> List[str]:
         """
@@ -112,63 +111,3 @@ Target Tables:
         return sorted(
             self._combined_lineage_result.intermediate_tables, key=lambda x: str(x)
         )
-
-
-def main(args=None) -> None:
-    """
-    The command line interface entry point.
-
-    :param args: the command line arguments for sqllineage command
-    """
-    parser = argparse.ArgumentParser(
-        prog="sqllineage", description="SQL Lineage Parser."
-    )
-    parser.add_argument(
-        "-e", metavar="<quoted-query-string>", help="SQL from command line"
-    )
-    parser.add_argument("-f", metavar="<filename>", help="SQL from files")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        help="increase output verbosity, show statement level lineage result",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-g",
-        "--graphviz",
-        help="show graph visualization of the lineage with graphviz dot layout",
-        action="store_true",
-    )
-    args = parser.parse_args(args)
-    if args.e and args.f:
-        logging.warning(
-            "Both -e and -f options are specified. -e option will be ignored"
-        )
-    if args.f or args.e:
-        sql = ""
-        if args.f:
-            try:
-                with open(args.f) as f:
-                    sql = f.read()
-            except IsADirectoryError:
-                logger.exception("%s is a directory", args.f)
-                exit(1)
-            except FileNotFoundError:
-                logger.exception("No such file: %s", args.f)
-                exit(1)
-            except PermissionError:
-                logger.exception("Permission denied when reading file '%s'", args.f)
-                exit(1)
-        elif args.e:
-            sql = args.e
-        runner = LineageRunner(sql, verbose=args.verbose)
-        if args.graphviz:
-            runner.draw()
-        else:
-            print(runner)
-    else:
-        parser.print_help()
-
-
-if __name__ == "__main__":
-    main()

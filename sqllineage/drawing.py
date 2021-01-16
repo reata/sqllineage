@@ -1,54 +1,43 @@
 import logging
+import os
+import sys
+from argparse import Namespace
+from urllib.parse import urlencode
 
-import networkx as nx
-from networkx import DiGraph
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+from sqllineage import STATIC_FOLDRE, __name__ as name
+from sqllineage.helpers import extract_sql_from_args
+from sqllineage.runner import LineageRunner
 
 logger = logging.getLogger(__name__)
 
 
-def draw_lineage_graph(graph: DiGraph) -> None:
-    try:
-        import matplotlib.pyplot as plt
-        from matplotlib.colors import colorConverter
-        from matplotlib.patches import FancyArrowPatch
-        from matplotlib.path import Path
-    except ImportError as e:
-        raise ImportError("Matplotlib required for draw()") from e
-    except RuntimeError:
-        logger.error("Matplotlib unable to open display")
-        raise
-    try:
-        import pygraphviz  # noqa
-    except ImportError as e:
-        raise ImportError("requires pygraphviz") from e
-    pos = nx.nx_agraph.graphviz_layout(graph, prog="dot", args="-Grankdir='LR'")
-    edge_color, node_color, font_color = "#9ab5c7", "#3499d9", "#35393e"
-    arrowsize = font_size = radius = 10
-    node_size = 30
-    ha, va = "left", "bottom"
-    nx.draw(
-        graph,
-        pos=pos,
-        with_labels=True,
-        edge_color=edge_color,
-        arrowsize=arrowsize,
-        node_color=node_color,
-        node_size=node_size,
-        font_color=font_color,
-        font_size=font_size,
-        horizontalalignment=ha,
-        verticalalignment=va,
+def draw_lineage_graph(**kwargs) -> Flask:
+    app = Flask(
+        name,
+        static_url_path="",
+        static_folder=os.path.join(os.path.dirname(__file__), STATIC_FOLDRE),
     )
-    # selfloop edges
-    for edge in nx.selfloop_edges(graph):
-        x, y = pos[edge[0]]
-        arrow = FancyArrowPatch(
-            path=Path.circle((x, y + radius), radius),
-            arrowstyle="-|>",
-            color=colorConverter.to_rgba_array(edge_color)[0],
-            mutation_scale=arrowsize,
-            linewidth=1.0,
-            zorder=1,
-        )
-        plt.gca().add_patch(arrow)
-    plt.show()
+    CORS(app)
+
+    @app.route("/")
+    def index():
+        return app.send_static_file("index.html")
+
+    @app.route("/lineage", methods=["POST"])
+    def lineage():
+        req_args = Namespace(**request.get_json())
+        sql = extract_sql_from_args(req_args)
+        resp = LineageRunner(sql).to_cytoscape()
+        return jsonify(resp)
+
+    cli = sys.modules["flask.cli"]
+    cli.show_server_banner = lambda *x: None  # type: ignore
+    port = kwargs.pop("p")
+    querystring = urlencode({k: v for k, v in kwargs.items() if v})
+    print(f" * SQLLineage Running on http://localhost:{port}/?{querystring}")
+    app.run(port=port)
+    # return here is for testing purpose only
+    return app

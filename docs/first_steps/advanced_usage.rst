@@ -53,31 +53,13 @@ And if you want to see lineage result for every SQL statement, just toggle verbo
 Lineage Visualization
 =====================
 
-One more cool feature, if you want a graph visualization for the lineage result, toggle graphviz option
+One more cool feature, if you want a graph visualization for the lineage result, toggle graph-visualization option
 
 .. code-block:: bash
 
     sqllineage -g -e "insert into db1.table11 select * from db2.table21 union select * from db2.table22; insert into db3.table3 select * from db1.table11 join db1.table12;"
 
-An interactive matplotlib graph will then pop up, showing DAG representation of the lineage result:
+A webserver will be started, showing DAG representation of the lineage result in browser:
 
 .. image:: ../_static/Figure_1.png
    :alt: Lineage visualization
-
-For visualization to work, you must have `graphviz`_ installed. With Ubuntu, it's simply::
-
-    sudo apt install graphviz
-
-For mac user, brew can help::
-
-    brew install graphviz
-
-graphviz also comes with Windows support, see `Graphviz Download`_ for details.
-
-After that, all the extra dependencies for sqllineage must be installed as well. Specifically, matplotlib and pygraphviz
-will be installed ::
-
-    pip install sqllineage[all]
-
-.. _graphviz: https://graphviz.org/
-.. _Graphviz Download: https://graphviz.org/download/

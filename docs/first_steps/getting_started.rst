@@ -9,9 +9,6 @@ Install the package via ``pip`` (or add it to your ``requirements.txt`` file), r
 
    pip install sqllineage
 
-If visualization feature is needed::
-
-    pip install sqllineage[all]
 
 Install via Github
 ==================
@@ -20,6 +17,9 @@ If you want the latest development version, you can install directly from Github
 
     pip install git+https://github.com/reata/sqllineage.git
 
+
+Please be noted that installation from source code will require NodeJS/npm for frontend code building, while for PyPI,
+we already pre-built the frontend code so Python/pip will be enough.
 
 SQLLineage in Command Line
 =======================================

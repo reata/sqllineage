@@ -22,10 +22,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Packages
-      run: |
-        sudo apt install graphviz
-        sudo apt install libgraphviz-dev
     - name: Install
       run: pip install tox codecov
     - name: Script
