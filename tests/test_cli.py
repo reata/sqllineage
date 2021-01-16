@@ -27,3 +27,10 @@ def test_file_exception():
         with pytest.raises(SystemExit) as e:
             main(args)
         assert e.value.code == 1
+
+
+@patch("builtins.open", side_effect=PermissionError())
+def test_file_permission_error(_):
+    with pytest.raises(SystemExit) as e:
+        main(["-f", __file__])
+    assert e.value.code == 1
