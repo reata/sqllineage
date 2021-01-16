@@ -17,7 +17,9 @@ class App extends React.Component {
 
   componentDidMount() {
     const url = new URL(window.location.href);
-    fetch("lineage", {
+    const backend_port = process.env.REACT_APP_BACKEND_PORT;
+    const backend_origin = backend_port ? url.origin.replace(url.port, backend_port) : url.origin;
+    fetch(`${backend_origin}/lineage`, {
       method: 'POST',
       body: JSON.stringify(Object.fromEntries(url.searchParams)),
       headers: new Headers({
