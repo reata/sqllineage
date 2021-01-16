@@ -30,6 +30,8 @@ jobs:
     - name: Install
       run: pip install tox codecov
     - name: Script
-      run: tox -e py
+      run: |
+        npm version
+        tox -e py
     - name: After Success
       run: codecov
