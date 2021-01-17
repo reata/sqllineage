@@ -2,6 +2,23 @@
 Changelog
 *********
 
+v1.1.0
+======
+:Date: January 17, 2021
+
+Feature
+-------------
+* A new JavaScript-based approach for visualization, drop dependency for graphviz (`#94 <https://github.com/reata/sqllineage/issues/94>`_)
+
+Enhancement
+-------------
+* Test against Mac OS and Windows (`#87 <https://github.com/reata/sqllineage/issues/87>`_)
+
+Bugfix
+-------------
+* buckets parsed as table name for Spark bucket table DDL (`#111 <https://github.com/reata/sqllineage/issues/111>`_)
+* incorrect result for update statement (`#105 <https://github.com/reata/sqllineage/issues/105>`_)
+
 v1.0.2
 ======
 :Date: November 17, 2020
