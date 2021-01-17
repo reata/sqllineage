@@ -1,5 +1,7 @@
 import os
+import platform
 import shlex
+import shutil
 import subprocess
 
 from setuptools import find_packages, setup
@@ -24,8 +26,16 @@ class EggInfoWithJS(egg_info):
     def run(self) -> None:
         if not os.path.exists(os.path.join(NAME, STATIC_FOLDRE)):
             js_path = "sqllineagejs"
-            subprocess.check_call(shlex.split(f"npm install --prefix {js_path}"))
-            subprocess.check_call(shlex.split(f"npm run build --prefix {js_path}"))
+            use_shell = True if platform.system() == "Windows" else False
+            subprocess.check_call(
+                shlex.split("npm install"), cwd=js_path, shell=use_shell
+            )
+            subprocess.check_call(
+                shlex.split("npm run build"), cwd=js_path, shell=use_shell
+            )
+            shutil.move(
+                os.path.join(js_path, STATIC_FOLDRE), os.path.join(NAME, STATIC_FOLDRE)
+            )
         super().run()
 
 
