@@ -24,7 +24,7 @@ sqllineage.runner.LineageRunner
     :special-members: __str__
 
 
-sqllineage.runner.main
+sqllineage.cli.main
 ======================
 
-.. autofunction:: sqllineage.runner.main
+.. autofunction:: sqllineage.cli.main
