@@ -28,9 +28,7 @@ jobs:
       with:
         node-version: '14'
     - name: Install
-      run: |
-        pip install --upgrade pip==20.2.4 # Pinned to 20.2.4 for black install compatibility: https://github.com/psf/black/issues/1847
-        pip install tox codecov
+      run: pip install tox codecov
     - name: Script
       run: tox -e py
     - name: After Success
