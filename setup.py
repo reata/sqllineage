@@ -24,7 +24,10 @@ class EggInfoWithJS(egg_info):
     """
 
     def run(self) -> None:
-        if not os.path.exists(os.path.join(NAME, STATIC_FOLDRE)):
+        static_path = os.path.join(NAME, STATIC_FOLDRE)
+        if os.path.exists(static_path) or "READTHEDOCS" in os.environ:
+            pass
+        else:
             js_path = "sqllineagejs"
             use_shell = True if platform.system() == "Windows" else False
             subprocess.check_call(
@@ -33,9 +36,7 @@ class EggInfoWithJS(egg_info):
             subprocess.check_call(
                 shlex.split("npm run build"), cwd=js_path, shell=use_shell
             )
-            shutil.move(
-                os.path.join(js_path, STATIC_FOLDRE), os.path.join(NAME, STATIC_FOLDRE)
-            )
+            shutil.move(os.path.join(js_path, STATIC_FOLDRE), static_path)
         super().run()
 
 
