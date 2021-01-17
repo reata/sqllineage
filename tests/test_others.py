@@ -25,6 +25,14 @@ def test_create_if_not_exist():
     helper("CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)", None, {"tab1"})
 
 
+def test_create_bucket_table():
+    helper(
+        "CREATE TABLE tab1 USING parquet CLUSTERED BY (col1) INTO 500 BUCKETS",
+        None,
+        {"tab1"},
+    )
+
+
 def test_create_as():
     helper("CREATE TABLE tab1 AS SELECT * FROM tab2", {"tab2"}, {"tab1"})
 
