@@ -11,6 +11,7 @@ from sqlparse.sql import (
     Statement,
     TokenList,
 )
+from sqlparse.tokens import Number
 
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.models import Table
@@ -193,7 +194,11 @@ class LineageAnalyzer:
                     "An Identifier is expected, got %s[value: %s] instead"
                     % (type(sub_token).__name__, sub_token)
                 )
-            self._lineage_result.write.add(Table.create(sub_token))
+            if sub_token.token_first(skip_cm=True).ttype is Number.Integer:
+                # Special Handling for Spark Bucket Table DDL
+                pass
+            else:
+                self._lineage_result.write.add(Table.create(sub_token))
 
     def _handle_temp_table_token(self, sub_token: TokenList) -> None:
         if not isinstance(sub_token, Identifier):
