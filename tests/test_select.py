@@ -142,3 +142,17 @@ def test_select_join_in_ansi89_syntax():
 
 def test_with_select():
     helper("WITH tab1 AS (SELECT 1) SELECT * FROM tab1")
+
+
+def test_with_select_one():
+    helper(
+        "WITH wtab1 AS (SELECT * FROM schema1.tab1) SELECT * FROM wtab1",
+        {"schema1.tab1"})
+
+def test_with_select_many():
+    helper(
+        "WITH wtab1 AS (SELECT * FROM schema1.tab1), "
+        "wtab2 AS (SELECT * FROM schema2.tab2)"
+        "SELECT * FROM wtab1 JOIN wtab2 ON wtab1.id = wtab2.id",
+        {"schema1.tab1", "schema2.tab2"}
+    )
