@@ -147,12 +147,16 @@ def test_with_select():
 def test_with_select_one():
     helper(
         "WITH wtab1 AS (SELECT * FROM schema1.tab1) SELECT * FROM wtab1",
-        {"schema1.tab1"})
+        {"schema1.tab1"},
+    )
+
 
 def test_with_select_many():
     helper(
-        "WITH wtab1 AS (SELECT * FROM schema1.tab1), "
-        "wtab2 AS (SELECT * FROM schema2.tab2)"
-        "SELECT * FROM wtab1 JOIN wtab2 ON wtab1.id = wtab2.id",
-        {"schema1.tab1", "schema2.tab2"}
+        "WITH "
+        "  cte1 AS (SELECT a, b FROM table1), "
+        "  cte2 AS (SELECT c, d FROM table2) "
+        "SELECT b, d FROM cte1 JOIN cte2 "
+        "WHERE cte1.a = cte2.c",
+        {"table1", "table2"},
     )
