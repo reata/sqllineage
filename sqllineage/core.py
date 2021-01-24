@@ -201,13 +201,19 @@ class LineageAnalyzer:
                 self._lineage_result.write.add(Table.create(sub_token))
 
     def _handle_temp_table_token(self, sub_token: TokenList) -> None:
-        if not isinstance(sub_token, Identifier):
+        if isinstance(sub_token, Identifier):
+            self._lineage_result.intermediate.add(Table.create(sub_token))
+            self._extract_from_dml(sub_token)
+        elif isinstance(sub_token, IdentifierList):
+            for temp_tab_token in sub_token:
+                if isinstance(temp_tab_token, Identifier):
+                    self._lineage_result.intermediate.add(Table.create(temp_tab_token))
+                    self._extract_from_dml(temp_tab_token)
+        else:
             raise SQLLineageException(
-                "An Identifier is expected, got %s[value: %s] instead"
+                "An Identifier or IdentifierList is expected, got %s[value: %s] instead"
                 % (type(sub_token).__name__, sub_token)
             )
-        self._lineage_result.intermediate.add(Table.create(sub_token))
-        self._extract_from_dml(sub_token)
 
     @classmethod
     def __token_negligible_before_tablename(cls, token: TokenList) -> bool:
