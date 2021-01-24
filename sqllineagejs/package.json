@@ -1,6 +1,6 @@
 {
   "name": "sqllineagejs",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "dependencies": {
     "cytoscape": "^3.17.1",

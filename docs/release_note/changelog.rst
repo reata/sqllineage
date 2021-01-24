@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v1.1.1
+======
+:Date: January 24, 2021
+
+Bugfix
+-------------
+* SQLLineageException for Multiple CTE Subclauses (`#115 <https://github.com/reata/sqllineage/issues/115>`_)
+
 v1.1.0
 ======
 :Date: January 17, 2021
