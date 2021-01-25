@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from unittest.mock import patch
 
-from sqllineage import app
+from sqllineage.drawing import app
 
 
 @patch("flask.Flask.run")
