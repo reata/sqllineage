@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from sqllineage.drawing import draw_lineage_graph
+from sqllineage import DEFAULT_PORT
 from sqllineage.helpers import extract_sql_from_args
 from sqllineage.runner import LineageRunner
 
@@ -37,7 +37,7 @@ def main(args=None) -> None:
         "-p",
         help="the port visualization webserver will be listening on",
         type=int,
-        default=5000,
+        default=DEFAULT_PORT,
         metavar="<port_number>{0..65536}",
     )
     args = parser.parse_args(args)
@@ -46,11 +46,15 @@ def main(args=None) -> None:
             "Both -e and -f options are specified. -e option will be ignored"
         )
     if args.f or args.e:
+        sql = extract_sql_from_args(args)
+        runner = LineageRunner(
+            sql,
+            verbose=args.verbose,
+            draw_options={"p": args.p, "f": args.f if args.f else None},
+        )
         if args.graph_visualization:
-            draw_lineage_graph(**args.__dict__)
+            runner.draw()
         else:
-            sql = extract_sql_from_args(args)
-            runner = LineageRunner(sql, verbose=args.verbose)
             print(runner)
     else:
         parser.print_help()
