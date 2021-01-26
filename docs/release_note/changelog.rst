@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v1.1.2
+======
+:Date: January 26, 2021
+
+Bugfix
+-------------
+* Bring back draw method of LineageRunner to avoid backward incompatible change (`#120 <https://github.com/reata/sqllineage/issues/120>`_)
+
 v1.1.1
 ======
 :Date: January 24, 2021
