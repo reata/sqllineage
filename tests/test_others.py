@@ -119,6 +119,14 @@ def test_cache_table():
     helper("cache table tab1", None, None)
 
 
+def test_uncache_table():
+    helper("uncache table tab1", None, None)
+
+
+def test_uncache_table_if_exists():
+    helper("uncache table if exists tab1", None, None)
+
+
 def test_truncate_table():
     helper("truncate table tab1", None, None)
 
