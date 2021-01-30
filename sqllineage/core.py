@@ -87,6 +87,7 @@ class LineageAnalyzer:
             or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"
             or stmt.token_first(skip_cm=True).normalized.upper() == "REFRESH"
             or stmt.token_first(skip_cm=True).normalized == "CACHE"
+            or stmt.token_first(skip_cm=True).normalized.upper() == "UNCACHE"
         ):
             pass
         else:
