@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v1.1.3
+======
+:Date: February 1, 2021
+
+Bugfix
+-------------
+* UNCACHE TABLE statement parsed with target table (`#123 <https://github.com/reata/sqllineage/issues/123>`_)
+
 v1.1.2
 ======
 :Date: January 26, 2021
