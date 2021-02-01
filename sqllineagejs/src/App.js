@@ -93,6 +93,7 @@ class App extends React.Component {
         zoom={1}
         minZoom={0.5}
         maxZoom={2}
+        wheelSensitivity={0.2}
       />;
     }
   }
