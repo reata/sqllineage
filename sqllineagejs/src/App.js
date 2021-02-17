@@ -1,102 +1,127 @@
-import React from 'react';
-import CytoscapeComponent from 'react-cytoscapejs';
-import dagre from 'cytoscape-dagre';
-import cytoscape from 'cytoscape';
+import React, {useMemo} from 'react';
+import {Box, Drawer, FormControl, FormControlLabel, Grid, Paper, Radio, RadioGroup} from "@material-ui/core";
+import {DAG} from "./features/dag/DAG";
+import {Editor} from "./features/editor/Editor";
+import {makeStyles} from "@material-ui/core/styles";
+import AppBar from "@material-ui/core/AppBar";
+import Toolbar from "@material-ui/core/Toolbar";
+import IconButton from "@material-ui/core/IconButton";
+import MenuIcon from "@material-ui/icons/Menu";
+import Typography from "@material-ui/core/Typography";
+import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
+import clsx from "clsx";
+import {Directory} from "./features/directory/Directory";
+import {BrowserRouter as Router} from "react-router-dom";
 
-cytoscape.use(dagre);
+const drawerWidth = "18vw";
 
-class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      error: null,
-      isLoaded: false,
-      elements: []
-    }
-  }
+const useStyles = makeStyles((theme) => ({
+  appBar: {
+    flexGrow: 1,
+    zIndex: theme.zIndex.drawer + 1,
+  },
+  menuButton: {
+    marginRight: theme.spacing(2),
+  },
+  title: {
+    flexGrow: 1,
+  },
+  content: {
+    padding: theme.spacing(1),
+    marginTop: theme.spacing(6),
+    float: "right"
+  },
+  hide: {
+    display: "none"
+  },
+  drawerPaper: {
+    width: drawerWidth,
+  },
+  contentShift: {
+    transition: theme.transitions.create('margin', {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  },
+}));
 
-  componentDidMount() {
-    const url = new URL(window.location.href);
-    const backend_port = process.env.REACT_APP_BACKEND_PORT;
-    const backend_origin = backend_port ? url.origin.replace(url.port, backend_port) : url.origin;
-    fetch(`${backend_origin}/lineage`, {
-      method: 'POST',
-      body: JSON.stringify(Object.fromEntries(url.searchParams)),
-      headers: new Headers({
-        'Content-Type': 'application/json'
-      })
-    })
-      .then(res => res.json())
-      .then(
-        (result) => {
-          this.setState({
-            isLoaded: true,
-            elements: result
-          })
-        },
-        (error) => {
-          this.setState({
-            isLoaded: true,
-            error
-          })
-        }
-      )
-  }
+export default function App() {
+  const classes = useStyles();
+  const [selectedValue, setSelectedValue] = React.useState('dag');
+  const [open, setOpen] = React.useState(false);
 
-  render() {
-    const {error, isLoaded, elements} = this.state;
-    if (error) {
-      return <div>Error: {error.message}</div>;
-    } else if (!isLoaded) {
-      return <div>Loading...</div>;
-    } else {
-      const stylesheet = [
-        {
-          selector: 'node',
-          style: {
-            height: 10,
-            width: 10,
-            content: 'data(id)',
-            'text-valign': 'top',
-            'text-halign': 'right',
-            'font-size': 10,
-            'color': '#35393e',
-            'background-color': '#3499d9',
-            'border-color': '#000',
-            'border-width': 1,
-            'border-opacity': 0.8
-          }
-        },
-        {
-          selector: 'edge',
-          style: {
-            width: 1,
-            'line-color': '#9ab5c7',
-            'target-arrow-color': '#9ab5c7',
-            'target-arrow-shape': 'triangle',
-            'arrow-scale': 0.8,
-            'curve-style': 'bezier'
-          }
-        }
-      ]
-      const layout = {
-        name: 'dagre',
-        rankDir: 'LR',
-        rankSep: 200,
-      };
-      const style = {width: '1920px', height: '1080px'};
-      return <CytoscapeComponent
-        elements={elements}
-        stylesheet={stylesheet}
-        style={style}
-        layout={layout}
-        zoom={1}
-        minZoom={0.5}
-        maxZoom={2}
-        wheelSensitivity={0.2}
-      />;
-    }
-  }
+  const height = "85vh", width = "99vw";
+  const adjusted_width = useMemo(() => {
+    return open ? (width.slice(0, -2) - drawerWidth.slice(0, -2)) + "vw" : width
+  }, [open])
+
+  return (
+    <Router>
+      <div>
+        <Box>
+          <AppBar position="fixed" className={classes.appBar}>
+            <Toolbar variant="dense">
+              <IconButton
+                edge="start"
+                className={classes.menuButton}
+                color="inherit"
+                aria-label="menu"
+                onClick={() => {
+                  setOpen(!open)
+                }}
+              >
+                {open ? <ChevronLeftIcon/> : <MenuIcon/>}
+              </IconButton>
+              <Typography variant="h6" className={classes.title}>
+                SQLLineage
+              </Typography>
+            </Toolbar>
+          </AppBar>
+          <Drawer
+            variant="persistent"
+            open={open}
+            classes={{
+              paper: classes.drawerPaper,
+            }}
+          >
+            <Box className={classes.content}>
+              <Directory/>
+            </Box>
+          </Drawer>
+        </Box>
+        <main
+          className={clsx(classes.content, {
+            [classes.contentShift]: open,
+          })}
+        >
+          <Paper elevation="24" style={{height: height, width: adjusted_width}}>
+            <Box className={selectedValue === "dag" ? "" : classes.hide}>
+              <DAG height={height} width={adjusted_width}/>
+            </Box>
+            <Box className={selectedValue === "dag" ? classes.hide : ""}>
+              <Editor height={height} width={adjusted_width}/>
+            </Box>
+          </Paper>
+          <Grid container justify="center">
+            <FormControl component="fieldset">
+              <RadioGroup row aria-label="position" name="position" defaultValue="dag"
+                          value={selectedValue}
+                          onChange={(event) => setSelectedValue(event.target.value)}>
+                <FormControlLabel
+                  value="dag"
+                  control={<Radio color="primary"/>}
+                  label="Lineage View"
+                />
+                <FormControlLabel
+                  value="script"
+                  control={<Radio color="primary"/>}
+                  label="Script View"
+                />
+              </RadioGroup>
+            </FormControl>
+          </Grid>
+        </main>
+      </div>
+    </Router>
+  )
 }
-
-export default App;
