@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v1.1.4
+======
+:Date: March 9, 2021
+
+Bugfix
+-------------
+* trim function with from in arguments (`#127 <https://github.com/reata/sqllineage/issues/127>`_)
+
 v1.1.3
 ======
 :Date: February 1, 2021
