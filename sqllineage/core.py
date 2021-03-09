@@ -122,7 +122,8 @@ class LineageAnalyzer:
                 if any(
                     re.match(regex, sub_token.normalized)
                     for regex in SOURCE_TABLE_TOKENS
-                ):
+                ) and not isinstance(sub_token.parent.parent, Function):
+                    # SELECT trim(BOTH '  ' FROM '  abc  '); Here FROM is not a source table flag
                     source_table_token_flag = True
                 elif sub_token.normalized in TARGET_TABLE_TOKENS:
                     target_table_token_flag = True
