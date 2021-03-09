@@ -37,6 +37,14 @@ def test_select_function():
     helper("SELECT NOW()")
 
 
+def test_select_trim_function_with_from_keyword():
+    helper("SELECT trim(BOTH '  ' FROM '  abc  ')")
+
+
+def test_select_trim_function_with_from_keyword_from_source_table():
+    helper("SELECT trim(BOTH '  ' FROM col1) FROM tab1", {"tab1"})
+
+
 def test_select_with_where():
     helper("SELECT * FROM tab1 WHERE col1 > val1 AND col2 = 'val2'", {"tab1"})
 
