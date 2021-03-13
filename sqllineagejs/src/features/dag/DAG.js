@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 import dagre from 'cytoscape-dagre';
 import cytoscape from 'cytoscape';
@@ -7,14 +7,37 @@ import {fetchDAG, selectDAG, setFile} from "./dagSlice";
 import {Loading} from "../widget/Loading";
 import {LoadError} from "../widget/LoadError";
 import {useLocation} from "react-router-dom";
+import {SpeedDial, SpeedDialIcon} from "@material-ui/lab";
+import {makeStyles} from "@material-ui/core/styles";
+import SpeedDialAction from '@material-ui/lab/SpeedDialAction';
+import SaveAltIcon from '@material-ui/icons/SaveAlt';
+import ZoomInIcon from '@material-ui/icons/ZoomIn';
+import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
+import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 
 cytoscape.use(dagre);
 
-const useFile = () => {return (new URLSearchParams(useLocation().search)).get("f")};
+const useFile = () => {
+  return (new URLSearchParams(useLocation().search)).get("f")
+};
+
+const useStyles = makeStyles((theme) => ({
+  speedDial: {
+    position: 'absolute',
+    '&.MuiSpeedDial-directionLeft': {
+      bottom: theme.spacing(12),
+      right: theme.spacing(2),
+    }
+  },
+}))
+
 
 export function DAG(props) {
+  const classes = useStyles();
   const dispatch = useDispatch();
   const dagState = useSelector(selectDAG);
+  const [open, setOpen] = React.useState(false);
+  const cyRef = useRef(null);
   const file = useFile();
 
   useEffect(() => {
@@ -23,6 +46,17 @@ export function DAG(props) {
       dispatch(fetchDAG());
     }
   })
+
+  const handleSave = () => {
+    if (cyRef.current) {
+      let cy = cyRef.current._cy;
+      let aDownloadLink = document.createElement('a');
+      aDownloadLink.download = `${dagState.file}.jpg`;
+      aDownloadLink.href = cy.jpg({'full': true, 'quality': 1});
+      aDownloadLink.click();
+      setOpen(false);
+    }
+  }
 
   if (dagState.status === "loading") {
     return <Loading minHeight={props.height}/>
@@ -64,15 +98,51 @@ export function DAG(props) {
       rankSep: 200,
     };
     const style = {width: props.width, height: props.height};
-    return <CytoscapeComponent
-      elements={dagState.content}
-      stylesheet={stylesheet}
-      style={style}
-      layout={layout}
-      zoom={1}
-      minZoom={0.5}
-      maxZoom={2}
-      wheelSensitivity={0.2}
-    />;
+    return (
+      <div>
+        <CytoscapeComponent
+          elements={dagState.content}
+          stylesheet={stylesheet}
+          style={style}
+          layout={layout}
+          zoom={1}
+          minZoom={0.5}
+          maxZoom={2}
+          wheelSensitivity={0.2}
+          ref={cyRef}
+        />
+        <SpeedDial
+          ariaLabel="SpeedDial example"
+          className={classes.speedDial}
+          hidden={false}
+          icon={<SpeedDialIcon/>}
+          onClose={() => setOpen(false)}
+          onOpen={() => setOpen(true)}
+          open={open}
+          direction="left"
+        >
+          <SpeedDialAction
+            title="Save"
+            icon={<SaveAltIcon/>}
+            onClick={handleSave}
+          />
+          <SpeedDialAction
+            title="Zoom In"
+            icon={<ZoomInIcon/>}
+            onClick={() => {cyRef.current._cy.zoom(cyRef.current._cy.zoom() + 0.1)}}
+          />
+          <SpeedDialAction
+            title="Auto Fit"
+            icon={<SettingsBackupRestoreIcon/>}
+            onClick={() => {cyRef.current._cy.fit()}}
+          />
+          <SpeedDialAction
+            title="Zoom Out"
+            icon={<ZoomOutIcon/>}
+            onClick={() => {cyRef.current._cy.zoom(cyRef.current._cy.zoom() - 0.1)}}
+          />
+        </SpeedDial>
+      </div>
+    );
   }
 }
