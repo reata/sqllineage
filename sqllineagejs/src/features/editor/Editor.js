@@ -2,13 +2,9 @@ import React, {useEffect, useRef} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {fetchContent, selectEditor, setFile} from "./editorSlice";
 import MonacoEditor from "react-monaco-editor";
-import * as monaco from 'monaco-editor';
 import {Loading} from "../widget/Loading";
 import {LoadError} from "../widget/LoadError";
 import {useLocation} from "react-router-dom";
-
-// for syntax highlight, must import monaco
-console.log(monaco);
 
 const useFile = () => {return (new URLSearchParams(useLocation().search)).get("f")};
 

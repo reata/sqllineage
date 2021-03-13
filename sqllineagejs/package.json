@@ -10,7 +10,7 @@
     "clsx": "^1.1.1",
     "cytoscape": "^3.17.1",
     "cytoscape-dagre": "^2.3.2",
-    "monaco-editor": "^0.22.3",
+    "monaco-editor-webpack-plugin": "^3.0.1",
     "react": "^17.0.1",
     "react-cytoscapejs": "^1.2.1",
     "react-dom": "^17.0.1",
@@ -20,8 +20,8 @@
     "react-scripts": "4.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -41,5 +41,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "chokidar": "^3.5.1",
+    "react-app-rewired": "^2.1.8"
   }
 }
