@@ -1,4 +1,5 @@
 import {createAsyncThunk, createSlice} from '@reduxjs/toolkit';
+import {createSelector} from 'reselect';
 import {assemble_absolute_endpoint, client} from "../../api/client";
 
 const initialState = {
@@ -37,3 +38,17 @@ export const directorySlice = createSlice({
 export const selectDirectory = state => state.directory;
 
 export default directorySlice.reducer;
+
+const directoryContentSelector = state => state.directory.content;
+
+export const selectFileNodes = createSelector(
+  directoryContentSelector,
+  content => {
+    let fileNodes = new Set();
+    let renderResult = (nodes) => {
+      Array.isArray(nodes.children) ? nodes.children.map(node => renderResult(node)) : fileNodes.add(nodes.id)
+    }
+    renderResult(content);
+    return fileNodes;
+  }
+)

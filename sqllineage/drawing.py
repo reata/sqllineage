@@ -50,7 +50,8 @@ def script():
 def directory():
     def find_children(folder: Path):
         children = []
-        for p in folder.iterdir():
+        # sort with folder before file, and each in alphanumeric order
+        for p in sorted(folder.iterdir(), key=lambda _: (not _.is_dir(), _.name)):
             if p.is_dir():
                 children.append(
                     {"id": str(p), "name": p.name, "children": find_children(p)}

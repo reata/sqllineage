@@ -120,6 +120,7 @@ export function DAG(props) {
           onOpen={() => setOpen(true)}
           open={open}
           direction="left"
+          FabProps={{"size": "small"}}
         >
           <SpeedDialAction
             title="Save"

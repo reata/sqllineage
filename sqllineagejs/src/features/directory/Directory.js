@@ -5,13 +5,14 @@ import React, {useEffect} from "react";
 import TreeItem from "@material-ui/lab/TreeItem";
 import {makeStyles} from "@material-ui/core/styles";
 import {useDispatch, useSelector} from "react-redux";
-import {fetchDirectory, selectDirectory} from "./directorySlice";
+import {selectFileNodes, fetchDirectory, selectDirectory} from "./directorySlice";
 import {Loading} from "../widget/Loading";
 import {LoadError} from "../widget/LoadError";
 import Typography from "@material-ui/core/Typography";
 import FolderIcon from '@material-ui/icons/Folder';
 import DescriptionIcon from '@material-ui/icons/Description';
-import { useHistory } from "react-router-dom";
+import {useHistory} from "react-router-dom";
+import {Snackbar} from "@material-ui/core";
 
 
 const useStyles = makeStyles((theme) => ({
@@ -57,6 +58,8 @@ export function Directory(props) {
   const dispatch = useDispatch();
   const directoryState = useSelector(selectDirectory);
   const history = useHistory();
+  const [open, setOpen] = React.useState(false);
+  const fileNodes = useSelector(selectFileNodes);
 
   useEffect(() => {
     if (directoryState.status === "idle") {
@@ -71,11 +74,13 @@ export function Directory(props) {
     </StyledTreeItem>
   );
 
-  const handleSelect = (event, nodeIds) => {
-    if (nodeIds.endsWith(".sql")) {
-      history.push(`/?f=${nodeIds}`);
-    } else {
-      console.log("skip non sql file");
+  const handleSelect = (event, nodeId) => {
+    if (fileNodes.has(nodeId)) {
+      if (nodeId.endsWith(".sql")) {
+        history.push(`/?f=${nodeId}`);
+      } else {
+        setOpen(true);
+      }
     }
   };
 
@@ -84,14 +89,28 @@ export function Directory(props) {
   } else if (directoryState.status === "failed") {
     return <LoadError minHeight={props.height} message={directoryState.error}/>
   } else {
-    return <TreeView
-      className={classes.directory}
-      defaultCollapseIcon={<ExpandMoreIcon/>}
-      defaultExpanded={['root']}
-      defaultExpandIcon={<ChevronRightIcon/>}
-      onNodeSelect={handleSelect}
-    >
-      {renderTree(directoryState.content)}
-    </TreeView>
+    return <div>
+      <TreeView
+        className={classes.directory}
+        defaultCollapseIcon={<ExpandMoreIcon/>}
+        defaultExpanded={['root']}
+        defaultExpandIcon={<ChevronRightIcon/>}
+        onNodeSelect={handleSelect}
+      >
+        {renderTree(directoryState.content)}
+      </TreeView>
+      <Snackbar
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        open={open}
+        autoHideDuration={1000}
+        onClose={() => {
+          setOpen(false)
+        }}
+        message="Non SQL File Is Not Supported"
+      />
+    </div>
   }
 }
