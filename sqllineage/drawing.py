@@ -34,7 +34,8 @@ def lineage():
 
     req_args = Namespace(**request.get_json())
     sql = extract_sql_from_args(req_args)
-    resp = LineageRunner(sql).to_cytoscape()
+    lr = LineageRunner(sql, verbose=True)
+    resp = {"verbose": str(lr), "dag": lr.to_cytoscape()}
     return jsonify(resp)
 
 

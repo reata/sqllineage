@@ -3,6 +3,7 @@ import {assemble_absolute_endpoint, client} from "../../api/client";
 
 const initialState = {
   content: [],
+  verbose: "",
   status: 'idle',
   error: null,
   file: ""
@@ -29,8 +30,9 @@ export const dagSlice = createSlice({
       state.status = "loading"
     },
     [fetchDAG.fulfilled]: (state, action) => {
-      state.status = "succeeded"
-      state.content = action.payload
+      state.status = "succeeded";
+      state.content = action.payload.dag;
+      state.verbose = action.payload.verbose;
     },
     [fetchDAG.rejected]: (state, action) => {
       state.status = "failed"

@@ -12,6 +12,7 @@ import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import clsx from "clsx";
 import {Directory} from "./features/directory/Directory";
 import {BrowserRouter as Router} from "react-router-dom";
+import {DAGDesc} from "./features/dag/DAGDesc";
 
 const drawerWidth = "18vw";
 
@@ -98,7 +99,10 @@ export default function App() {
             <Box className={selectedValue === "dag" ? "" : classes.hide}>
               <DAG height={height} width={adjusted_width}/>
             </Box>
-            <Box className={selectedValue === "dag" ? classes.hide : ""}>
+            <Box className={selectedValue === "text" ? "" : classes.hide}>
+              <DAGDesc height={height} width={adjusted_width}/>
+            </Box>
+            <Box className={selectedValue === "script" ? "" : classes.hide}>
               <Editor height={height} width={adjusted_width}/>
             </Box>
           </Paper>
@@ -111,6 +115,11 @@ export default function App() {
                   value="dag"
                   control={<Radio color="primary"/>}
                   label="Lineage View"
+                />
+                <FormControlLabel
+                  value="text"
+                  control={<Radio color="primary"/>}
+                  label="Text View"
                 />
                 <FormControlLabel
                   value="script"
