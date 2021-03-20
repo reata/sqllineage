@@ -153,7 +153,11 @@ class LineageAnalyzer:
         elif isinstance(sub_token, IdentifierList):
             # This is to support join in ANSI-89 syntax
             for token in sub_token.tokens:
-                if isinstance(token, Identifier):
+                # when real name and alias name are the same, it means subquery here
+                if (
+                    isinstance(token, Identifier)
+                    and token.get_real_name() != token.get_alias()
+                ):
                     self._lineage_result.read.add(Table.create(token))
         elif isinstance(sub_token, Parenthesis):
             # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis

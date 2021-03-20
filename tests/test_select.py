@@ -148,6 +148,12 @@ def test_select_join_in_ansi89_syntax():
     helper("SELECT * FROM tab1 a, tab2 b", {"tab1", "tab2"})
 
 
+def test_select_join_in_ansi89_syntax_with_subquery():
+    helper(
+        "SELECT * FROM (SELECT * FROM tab1) a, (SELECT * FROM tab2) b", {"tab1", "tab2"}
+    )
+
+
 def test_with_select():
     helper("WITH tab1 AS (SELECT 1) SELECT * FROM tab1")
 
