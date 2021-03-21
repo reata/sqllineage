@@ -1,7 +1,9 @@
 import argparse
 import logging
+import os
 
 from sqllineage import DEFAULT_PORT
+from sqllineage.drawing import draw_lineage_graph
 from sqllineage.helpers import extract_sql_from_args
 from sqllineage.runner import LineageRunner
 
@@ -56,6 +58,13 @@ def main(args=None) -> None:
             runner.draw()
         else:
             print(runner)
+    elif args.graph_visualization:
+        return draw_lineage_graph(
+            **{
+                "p": args.p,
+                "f": os.path.join(os.path.dirname(__file__), "data/tpcds/query01.sql"),
+            }
+        )
     else:
         parser.print_help()
 
