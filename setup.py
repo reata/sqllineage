@@ -50,7 +50,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/reata/sqllineage",
     packages=find_packages(exclude=("tests",)),
-    package_data={"": [f"{STATIC_FOLDRE}/*", f"{STATIC_FOLDRE}/**/**/*"]},
+    package_data={"": [f"{STATIC_FOLDRE}/*", f"{STATIC_FOLDRE}/**/**/*", "data/**/*"]},
     include_package_data=True,
     classifiers=[
         "Development Status :: 5 - Production/Stable",

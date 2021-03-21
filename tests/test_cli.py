@@ -13,6 +13,7 @@ def test_cli_dummy(_):
     main(["-f", __file__])
     main(["-e", "select * from dual", "-f", __file__])
     main(["-f", __file__, "-g"])
+    main(["-g"])
     main(
         [
             "-e",
