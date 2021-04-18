@@ -2,6 +2,20 @@
 Changelog
 *********
 
+v1.2.0
+======
+:Date: April 18, 2021
+
+Feature
+-------------
+* A Full Fledged Frontend Visualization App (`#118 <https://github.com/reata/sqllineage/issues/118>`_)
+* Use TPC-DS Queries as Visualization Example (`#116 <https://github.com/reata/sqllineage/issues/116>`_)
+
+Enhancement
+-------------
+* Unit Test Failure With sqlparse==0.3.0, update dependency to be >=0.3.1 (`#117 <https://github.com/reata/sqllineage/issues/117>`_)
+* contributing guide (`#14 <https://github.com/reata/sqllineage/issues/14>`_)
+
 v1.1.4
 ======
 :Date: March 9, 2021
