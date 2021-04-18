@@ -17,15 +17,15 @@ import {Snackbar} from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
   directory: {
-    margin: theme.spacing(1)
+    marginLeft: theme.spacing(0.2)
   },
   labelRoot: {
     display: 'flex',
     alignItems: 'center',
-    padding: theme.spacing(0.5, 0),
+    padding: theme.spacing(0.1, 0),
   },
   labelIcon: {
-    marginRight: theme.spacing(1),
+    marginRight: theme.spacing(0.2),
   },
   labelText: {
     fontWeight: 'inherit',
