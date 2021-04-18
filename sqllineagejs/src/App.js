@@ -1,18 +1,21 @@
 import React, {useMemo} from 'react';
-import {Box, Drawer, FormControl, FormControlLabel, Grid, Paper, Radio, RadioGroup} from "@material-ui/core";
-import {DAG} from "./features/dag/DAG";
+import {Box, Drawer, FormControl, FormControlLabel, Grid, Paper, Radio, RadioGroup, Tooltip} from "@material-ui/core";
+import {DAG} from "./features/editor/DAG";
 import {Editor} from "./features/editor/Editor";
 import {makeStyles} from "@material-ui/core/styles";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import IconButton from "@material-ui/core/IconButton";
 import MenuIcon from "@material-ui/icons/Menu";
+import CreateIcon from "@material-ui/icons/Create";
 import Typography from "@material-ui/core/Typography";
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import clsx from "clsx";
 import {Directory} from "./features/directory/Directory";
-import {BrowserRouter as Router} from "react-router-dom";
-import {DAGDesc} from "./features/dag/DAGDesc";
+import {BrowserRouter as Router, Link} from "react-router-dom";
+import {DAGDesc} from "./features/editor/DAGDesc";
+import {useSelector} from "react-redux";
+import {selectEditor} from "./features/editor/editorSlice";
 
 const drawerWidth = "18vw";
 
@@ -28,7 +31,7 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   },
   content: {
-    padding: theme.spacing(1),
+    padding: theme.spacing(0.5),
     marginTop: theme.spacing(6),
     float: "right"
   },
@@ -48,10 +51,11 @@ const useStyles = makeStyles((theme) => ({
 
 export default function App() {
   const classes = useStyles();
+  const editorState = useSelector(selectEditor);
   const [selectedValue, setSelectedValue] = React.useState('dag');
   const [open, setOpen] = React.useState(false);
 
-  const height = "85vh", width = "99vw";
+  const height = "85vh", width = "99.5vw";
   const adjusted_width = useMemo(() => {
     return open ? (width.slice(0, -2) - drawerWidth.slice(0, -2)) + "vw" : width
   }, [open])
@@ -76,6 +80,24 @@ export default function App() {
               <Typography variant="h6" className={classes.title}>
                 SQLLineage
               </Typography>
+              {editorState.editable ?
+                <Tooltip title="Visualize Lineage By Filling In Your Own SQL" arrow>
+                  <div>Composing Mode</div>
+                </Tooltip> :
+                <Link to="/" style={{color: "white"}}>
+                  <Tooltip title="Enter Composing Mode to Visualize Your Own SQL" arrow>
+                    <IconButton
+                      color="inherit"
+                      onClick={() => {
+                        setSelectedValue("script");
+                        setOpen(false);
+                      }}
+                      >
+                        <CreateIcon/>
+                    </IconButton>
+                  </Tooltip>
+                </Link>
+              }
             </Toolbar>
           </AppBar>
           <Drawer
