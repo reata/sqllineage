@@ -60,12 +60,16 @@ def directory():
                 children.append({"id": str(p), "name": p.name})
         return children
 
-    path = Path(
-        request.get_json().get(
-            "f", os.path.join(os.path.dirname(__file__), "data/tpcds/query01.sql")
-        )
+    dir_conf_key = "SQLLINEAGE_DIRECTORY"
+    root = (
+        Path(os.environ[dir_conf_key])
+        if dir_conf_key in os.environ
+        else Path(
+            request.get_json().get(
+                "f", os.path.join(os.path.dirname(__file__), "data/tpcds/query01.sql")
+            )
+        ).parent
     )
-    root = path if path.is_dir() else path.parent
     data = {"id": str(root), "name": root.name, "children": find_children(root)}
     return jsonify(data)
 
