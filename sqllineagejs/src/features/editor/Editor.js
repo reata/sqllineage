@@ -4,29 +4,39 @@ import {fetchContent, fetchDAG, selectEditor, setContentComposed, setEditable, s
 import MonacoEditor from "react-monaco-editor";
 import {Loading} from "../widget/Loading";
 import {LoadError} from "../widget/LoadError";
-import {useLocation} from "react-router-dom";
+import {useHistory, useLocation} from "react-router-dom";
 
-const useFile = () => {
-  return (new URLSearchParams(useLocation().search)).get("f")
+const useQueryParam = () => {
+  return new URLSearchParams(useLocation().search)
 };
 
 export function Editor(props) {
   const dispatch = useDispatch();
   const editorState = useSelector(selectEditor);
-  const file = useFile();
+  const queryParam = useQueryParam();
+  const history = useHistory();
 
   useEffect(() => {
-    if (editorState.file !== file) {
-      dispatch(setFile(file));
-      if (file === null) {
-        dispatch(setEditable(true));
-        dispatch(fetchDAG({"e": editorState.contentComposed}))
-      } else {
-        dispatch(setEditable(false));
-        dispatch(fetchContent({"f": file}));
-        dispatch(fetchDAG({"f": file}));
+    let query = queryParam.get("e");
+    if (query !== null) {
+      dispatch(setContentComposed(query));
+      history.push("/");
+    } else {
+      let file = queryParam.get("f");
+      if (editorState.file !== file) {
+        dispatch(setFile(file));
+        if (file === null) {
+          dispatch(setEditable(true));
+          dispatch(fetchDAG({"e": editorState.contentComposed}))
+        } else {
+          dispatch(setEditable(false));
+          dispatch(fetchContent({"f": file}));
+          dispatch(fetchDAG({"f": file}));
+        }
       }
     }
+
+
   })
 
   const handleEditorDidMount = (editor, monaco) => {
