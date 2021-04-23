@@ -80,6 +80,7 @@ cli.show_server_banner = lambda *x: None  # type: ignore
 
 def draw_lineage_graph(**kwargs) -> None:
     port = kwargs.pop("p", DEFAULT_PORT)
+    ip = kwargs.pop("i", DEFAULT_HOST)
     querystring = urlencode({k: v for k, v in kwargs.items() if v})
-    print(f" * SQLLineage Running on http://localhost:{port}/?{querystring}")
-    app.run(port=port)
+    print(f" * SQLLineage Running on http://{ip}:{port}/?{querystring}")
+    app.run(host = ip, port=port)
