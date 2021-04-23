@@ -32,3 +32,4 @@ logging.config.dictConfig(DEFAULT_LOGGING)
 
 STATIC_FOLDRE = "build"
 DEFAULT_PORT = 5000
+DEFAULT_HOST = "localhost"
