@@ -1,34 +1,36 @@
 import {createAsyncThunk, createSlice} from '@reduxjs/toolkit';
-import {createSelector} from 'reselect';
 import {assemble_absolute_endpoint, client} from "../../api/client";
 
 const initialState = {
   content: {},
   status: 'idle',
-  error: null
+  error: null,
+  openNonSQLWarning: false
 };
 
-export const fetchDirectory = createAsyncThunk('directory/fetchDirectory', async () => {
-  let url = new URL(window.location.href);
-  return await client.post(
-    assemble_absolute_endpoint("/directory"),
-    Object.fromEntries(url.searchParams)
-  );
-});
+export const DirectoryAPI = async (payload) => {
+  return await client.post(assemble_absolute_endpoint("/directory"), payload);
+}
+
+export const fetchRootDirectory = createAsyncThunk('directory/fetchDirectory', DirectoryAPI);
 
 export const directorySlice = createSlice({
   name: 'directory',
   initialState,
-  reducers: {},
+  reducers: {
+    setOpenNonSQLWarning(state, action) {
+      state.openNonSQLWarning = action.payload
+    }
+  },
   extraReducers: {
-    [fetchDirectory.pending]: (state) => {
+    [fetchRootDirectory.pending]: (state) => {
       state.status = "loading"
     },
-    [fetchDirectory.fulfilled]: (state, action) => {
+    [fetchRootDirectory.fulfilled]: (state, action) => {
       state.status = "succeeded";
       state.content = action.payload
     },
-    [fetchDirectory.rejected]: (state, action) => {
+    [fetchRootDirectory.rejected]: (state, action) => {
       state.status = "failed"
       state.error = action.error.message
     }
@@ -36,19 +38,6 @@ export const directorySlice = createSlice({
 });
 
 export const selectDirectory = state => state.directory;
+export const {setOpenNonSQLWarning} = directorySlice.actions;
 
 export default directorySlice.reducer;
-
-const directoryContentSelector = state => state.directory.content;
-
-export const selectFileNodes = createSelector(
-  directoryContentSelector,
-  content => {
-    let fileNodes = new Set();
-    let renderResult = (nodes) => {
-      Array.isArray(nodes.children) ? nodes.children.map(node => renderResult(node)) : fileNodes.add(nodes.id)
-    }
-    renderResult(content);
-    return fileNodes;
-  }
-)
