@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from sqllineage import DATA_FOLDER, DEFAULT_PORT
-from sqllineage import STATIC_FOLDRE
+from sqllineage import STATIC_FOLDER
 from sqllineage.helpers import extract_sql_from_args
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 app = Flask(
     __name__,
     static_url_path="",
-    static_folder=os.path.join(os.path.dirname(__file__), STATIC_FOLDRE),
+    static_folder=os.path.join(os.path.dirname(__file__), STATIC_FOLDER),
 )
 CORS(app)
 
