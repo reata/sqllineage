@@ -7,7 +7,7 @@ import subprocess
 from setuptools import find_packages, setup
 from setuptools.command.egg_info import egg_info
 
-from sqllineage import NAME, STATIC_FOLDRE, VERSION
+from sqllineage import NAME, STATIC_FOLDER, VERSION
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -24,7 +24,7 @@ class EggInfoWithJS(egg_info):
     """
 
     def run(self) -> None:
-        static_path = os.path.join(NAME, STATIC_FOLDRE)
+        static_path = os.path.join(NAME, STATIC_FOLDER)
         if os.path.exists(static_path) or "READTHEDOCS" in os.environ:
             pass
         else:
@@ -36,7 +36,7 @@ class EggInfoWithJS(egg_info):
             subprocess.check_call(
                 shlex.split("npm run build"), cwd=js_path, shell=use_shell
             )
-            shutil.move(os.path.join(js_path, STATIC_FOLDRE), static_path)
+            shutil.move(os.path.join(js_path, STATIC_FOLDER), static_path)
         super().run()
 
 
@@ -50,7 +50,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/reata/sqllineage",
     packages=find_packages(exclude=("tests",)),
-    package_data={"": [f"{STATIC_FOLDRE}/*", f"{STATIC_FOLDRE}/**/**/*", "data/**/*"]},
+    package_data={"": [f"{STATIC_FOLDER}/*", f"{STATIC_FOLDER}/**/**/*", "data/**/*"]},
     include_package_data=True,
     classifiers=[
         "Development Status :: 5 - Production/Stable",

@@ -31,7 +31,7 @@ DEFAULT_LOGGING = {
 }
 logging.config.dictConfig(DEFAULT_LOGGING)
 
-STATIC_FOLDRE = "build"
+STATIC_FOLDER = "build"
 DATA_FOLDER = os.environ.get(
     "SQLLINEAGE_DIRECTORY", os.path.join(os.path.dirname(__file__), "data")
 )
