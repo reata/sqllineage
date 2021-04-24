@@ -1,4 +1,5 @@
 import logging.config
+import os
 
 NAME = "sqllineage"
 VERSION = "1.2.0"
@@ -31,4 +32,7 @@ DEFAULT_LOGGING = {
 logging.config.dictConfig(DEFAULT_LOGGING)
 
 STATIC_FOLDRE = "build"
+DATA_FOLDER = os.environ.get(
+    "SQLLINEAGE_DIRECTORY", os.path.join(os.path.dirname(__file__), "data")
+)
 DEFAULT_PORT = 5000

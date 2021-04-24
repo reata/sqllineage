@@ -1,3 +1,4 @@
+import os.path
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -14,4 +15,8 @@ def test_flask_handler(_):
         resp = c.post("/script", json=option)
         assert resp.status_code == HTTPStatus.OK
         resp = c.post("/directory", json={"f": __file__})
+        assert resp.status_code == HTTPStatus.OK
+        resp = c.post("/directory", json={"d": os.path.dirname(__file__)})
+        assert resp.status_code == HTTPStatus.OK
+        resp = c.post("/directory", json={})
         assert resp.status_code == HTTPStatus.OK

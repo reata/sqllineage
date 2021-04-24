@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from sqllineage import DEFAULT_PORT
+from sqllineage import DATA_FOLDER, DEFAULT_PORT
 from sqllineage import STATIC_FOLDRE
 from sqllineage.helpers import extract_sql_from_args
 
@@ -48,29 +48,22 @@ def script():
 
 @app.route("/directory", methods=["POST"])
 def directory():
-    def find_children(folder: Path):
-        children = []
-        # sort with folder before file, and each in alphanumeric order
-        for p in sorted(folder.iterdir(), key=lambda _: (not _.is_dir(), _.name)):
-            if p.is_dir():
-                children.append(
-                    {"id": str(p), "name": p.name, "children": find_children(p)}
-                )
-            else:
-                children.append({"id": str(p), "name": p.name})
-        return children
-
-    dir_conf_key = "SQLLINEAGE_DIRECTORY"
-    root = (
-        Path(os.environ[dir_conf_key])
-        if dir_conf_key in os.environ
-        else Path(
-            request.get_json().get(
-                "f", os.path.join(os.path.dirname(__file__), "data/tpcds/query01.sql")
-            )
-        ).parent
-    )
-    data = {"id": str(root), "name": root.name, "children": find_children(root)}
+    payload = request.get_json()
+    if payload.get("f"):
+        root = Path(payload["f"]).parent
+    elif payload.get("d"):
+        root = Path(payload["d"])
+    else:
+        root = Path(DATA_FOLDER)
+    data = {
+        "id": str(root),
+        "name": root.name,
+        "is_dir": True,
+        "children": [
+            {"id": str(p), "name": p.name, "is_dir": p.is_dir()}
+            for p in sorted(root.iterdir(), key=lambda _: (not _.is_dir(), _.name))
+        ],
+    }
     return jsonify(data)
 
 
