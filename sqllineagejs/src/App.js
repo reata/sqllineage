@@ -53,7 +53,7 @@ export default function App() {
   const classes = useStyles();
   const editorState = useSelector(selectEditor);
   const [selectedValue, setSelectedValue] = React.useState('dag');
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(true);
 
   const height = "85vh", width = "99.5vw";
   const adjusted_width = useMemo(() => {
