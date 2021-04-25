@@ -17,7 +17,6 @@ import {DAGDesc} from "./features/editor/DAGDesc";
 import {useSelector} from "react-redux";
 import {selectEditor} from "./features/editor/editorSlice";
 
-const drawerWidth = "18vw";
 
 const useStyles = makeStyles((theme) => ({
   appBar: {
@@ -39,7 +38,7 @@ const useStyles = makeStyles((theme) => ({
     display: "none"
   },
   drawerPaper: {
-    width: drawerWidth,
+    width: ({drawerWidth}) => drawerWidth + "vw",
   },
   contentShift: {
     transition: theme.transitions.create('margin', {
@@ -49,16 +48,19 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+
 export default function App() {
-  const classes = useStyles();
   const editorState = useSelector(selectEditor);
   const [selectedValue, setSelectedValue] = React.useState('dag');
   const [open, setOpen] = React.useState(true);
+  const [drawerWidth, setDrawerWidth] = React.useState(18);
+  const classes = useStyles({drawerWidth: drawerWidth});
 
-  const height = "85vh", width = "99.5vw";
-  const adjusted_width = useMemo(() => {
-    return open ? (width.slice(0, -2) - drawerWidth.slice(0, -2)) + "vw" : width
-  }, [open])
+  const height = "85vh";
+  const width = useMemo(() => {
+    let full_width = 100;
+    return (open ? full_width - drawerWidth : full_width) + "vw"
+  }, [open, drawerWidth])
 
   return (
     <Router>
@@ -92,8 +94,8 @@ export default function App() {
                         setSelectedValue("script");
                         setOpen(false);
                       }}
-                      >
-                        <CreateIcon/>
+                    >
+                      <CreateIcon/>
                     </IconButton>
                   </Tooltip>
                 </Link>
@@ -117,15 +119,15 @@ export default function App() {
             [classes.contentShift]: open,
           })}
         >
-          <Paper elevation="24" style={{height: height, width: adjusted_width}}>
+          <Paper elevation="24" style={{height: height, width: width}}>
             <Box className={selectedValue === "dag" ? "" : classes.hide}>
-              <DAG height={height} width={adjusted_width}/>
+              <DAG height={height} width={width}/>
             </Box>
             <Box className={selectedValue === "text" ? "" : classes.hide}>
-              <DAGDesc height={height} width={adjusted_width}/>
+              <DAGDesc height={height} width={width}/>
             </Box>
             <Box className={selectedValue === "script" ? "" : classes.hide}>
-              <Editor height={height} width={adjusted_width}/>
+              <Editor height={height} width={width}/>
             </Box>
           </Paper>
           <Grid container justify="center">
