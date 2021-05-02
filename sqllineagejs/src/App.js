@@ -46,7 +46,19 @@ const useStyles = makeStyles((theme) => ({
       duration: theme.transitions.duration.enteringScreen,
     }),
   },
+  dragger: {
+    width: '5px',
+    cursor: 'ew-resize',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: ({drawerWidth}) => drawerWidth + "vw",
+    backgroundColor: "#d7d7d7"
+  }
 }));
+
+
+let isResizing = null;
 
 
 export default function App() {
@@ -58,9 +70,37 @@ export default function App() {
 
   const height = "85vh";
   const width = useMemo(() => {
-    let full_width = 100;
+    let full_width = 99.5;
     return (open ? full_width - drawerWidth : full_width) + "vw"
   }, [open, drawerWidth])
+
+  const handleMouseDown = e => {
+    e.stopPropagation();
+    e.preventDefault();
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp)
+    isResizing = true;
+  };
+
+  const handleMouseMove = e => {
+    if (!isResizing) {
+      return;
+    }
+    let width = e.clientX * 100 / window.innerWidth;
+    let minWidth = 10, maxWidth = 50;
+    if (width > minWidth && width < maxWidth) {
+      setDrawerWidth(width);
+    }
+  }
+
+  const handleMouseUp = () => {
+    if (!isResizing) {
+      return;
+    }
+    isResizing = false;
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+  }
 
   return (
     <Router>
@@ -114,6 +154,11 @@ export default function App() {
             </Box>
           </Drawer>
         </Box>
+        <div
+          id="dragger"
+          onMouseDown={handleMouseDown}
+          className={classes.dragger}
+        />
         <main
           className={clsx(classes.content, {
             [classes.contentShift]: open,
