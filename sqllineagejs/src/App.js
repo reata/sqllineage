@@ -68,7 +68,7 @@ export default function App() {
   const [drawerWidth, setDrawerWidth] = React.useState(18);
   const classes = useStyles({drawerWidth: drawerWidth});
 
-  const height = "85vh";
+  const height = "90vh";
   const width = useMemo(() => {
     let full_width = 99.5;
     return (open ? full_width - drawerWidth : full_width) + "vw"
