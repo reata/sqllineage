@@ -17,7 +17,6 @@ import {DAGDesc} from "./features/editor/DAGDesc";
 import {useSelector} from "react-redux";
 import {selectEditor} from "./features/editor/editorSlice";
 
-const drawerWidth = "18vw";
 
 const useStyles = makeStyles((theme) => ({
   appBar: {
@@ -39,7 +38,7 @@ const useStyles = makeStyles((theme) => ({
     display: "none"
   },
   drawerPaper: {
-    width: drawerWidth,
+    width: ({drawerWidth}) => drawerWidth + "vw",
   },
   contentShift: {
     transition: theme.transitions.create('margin', {
@@ -47,18 +46,61 @@ const useStyles = makeStyles((theme) => ({
       duration: theme.transitions.duration.enteringScreen,
     }),
   },
+  dragger: {
+    width: '5px',
+    cursor: 'ew-resize',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: ({drawerWidth}) => drawerWidth + "vw",
+    backgroundColor: "#d7d7d7"
+  }
 }));
 
+
+let isResizing = null;
+
+
 export default function App() {
-  const classes = useStyles();
   const editorState = useSelector(selectEditor);
   const [selectedValue, setSelectedValue] = React.useState('dag');
   const [open, setOpen] = React.useState(true);
+  const [drawerWidth, setDrawerWidth] = React.useState(18);
+  const classes = useStyles({drawerWidth: drawerWidth});
 
-  const height = "85vh", width = "99.5vw";
-  const adjusted_width = useMemo(() => {
-    return open ? (width.slice(0, -2) - drawerWidth.slice(0, -2)) + "vw" : width
-  }, [open])
+  const height = "90vh";
+  const width = useMemo(() => {
+    let full_width = 99.5;
+    return (open ? full_width - drawerWidth : full_width) + "vw"
+  }, [open, drawerWidth])
+
+  const handleMouseDown = e => {
+    e.stopPropagation();
+    e.preventDefault();
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp)
+    isResizing = true;
+  };
+
+  const handleMouseMove = e => {
+    if (!isResizing) {
+      return;
+    }
+    let width = e.clientX * 100 / window.innerWidth;
+    let minWidth = 10, maxWidth = 50;
+    if (width > minWidth && width < maxWidth) {
+      setDrawerWidth(width);
+    }
+  }
+
+  const handleMouseUp = () => {
+    if (!isResizing) {
+      return;
+    }
+    isResizing = false;
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+  }
 
   return (
     <Router>
@@ -92,8 +134,8 @@ export default function App() {
                         setSelectedValue("script");
                         setOpen(false);
                       }}
-                      >
-                        <CreateIcon/>
+                    >
+                      <CreateIcon/>
                     </IconButton>
                   </Tooltip>
                 </Link>
@@ -112,20 +154,25 @@ export default function App() {
             </Box>
           </Drawer>
         </Box>
+        <div
+          id="dragger"
+          onMouseDown={handleMouseDown}
+          className={classes.dragger}
+        />
         <main
           className={clsx(classes.content, {
             [classes.contentShift]: open,
           })}
         >
-          <Paper elevation="24" style={{height: height, width: adjusted_width}}>
+          <Paper elevation="24" style={{height: height, width: width}}>
             <Box className={selectedValue === "dag" ? "" : classes.hide}>
-              <DAG height={height} width={adjusted_width}/>
+              <DAG height={height} width={width}/>
             </Box>
             <Box className={selectedValue === "text" ? "" : classes.hide}>
-              <DAGDesc height={height} width={adjusted_width}/>
+              <DAGDesc height={height} width={width}/>
             </Box>
             <Box className={selectedValue === "script" ? "" : classes.hide}>
-              <Editor height={height} width={adjusted_width}/>
+              <Editor height={height} width={width}/>
             </Box>
           </Paper>
           <Grid container justify="center">
