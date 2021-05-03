@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from sqllineage import DATA_FOLDER, DEFAULT_PORT
+from sqllineage import DATA_FOLDER, DEFAULT_HOST, DEFAULT_PORT
 from sqllineage import STATIC_FOLDER
 from sqllineage.helpers import extract_sql_from_args
 
@@ -72,7 +72,9 @@ cli.show_server_banner = lambda *x: None  # type: ignore
 
 
 def draw_lineage_graph(**kwargs) -> None:
-    port = kwargs.pop("p", DEFAULT_PORT)
+    host = kwargs.pop("host", DEFAULT_HOST)
+    port = kwargs.pop("port", DEFAULT_PORT)
     querystring = urlencode({k: v for k, v in kwargs.items() if v})
-    print(f" * SQLLineage Running on http://localhost:{port}/?{querystring}")
-    app.run(port=port)
+    path = f"/?{querystring}" if querystring else "/"
+    print(f" * SQLLineage Running on http://{host}:{port}{path}")
+    app.run(host=host, port=port)
