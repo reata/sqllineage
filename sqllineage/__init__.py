@@ -35,4 +35,5 @@ STATIC_FOLDER = "build"
 DATA_FOLDER = os.environ.get(
     "SQLLINEAGE_DIRECTORY", os.path.join(os.path.dirname(__file__), "data")
 )
+DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 5000

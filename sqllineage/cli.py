@@ -1,8 +1,7 @@
 import argparse
 import logging
-import os
 
-from sqllineage import DEFAULT_PORT
+from sqllineage import DEFAULT_HOST, DEFAULT_PORT
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.helpers import extract_sql_from_args
 from sqllineage.runner import LineageRunner
@@ -32,11 +31,20 @@ def main(args=None) -> None:
     parser.add_argument(
         "-g",
         "--graph-visualization",
-        help="show graph visualization of the lineage within a webserver",
+        help="show graph visualization of the lineage in a webserver",
         action="store_true",
     )
     parser.add_argument(
+        "-H",
+        "--host",
+        help="the host visualization webserver will be bind to",
+        type=str,
+        default=DEFAULT_HOST,
+        metavar="<hostname>",
+    )
+    parser.add_argument(
         "-p",
+        "--port",
         help="the port visualization webserver will be listening on",
         type=int,
         default=DEFAULT_PORT,
@@ -52,19 +60,18 @@ def main(args=None) -> None:
         runner = LineageRunner(
             sql,
             verbose=args.verbose,
-            draw_options={"p": args.p, "f": args.f if args.f else None},
+            draw_options={
+                "host": args.host,
+                "port": args.port,
+                "f": args.f if args.f else None,
+            },
         )
         if args.graph_visualization:
             runner.draw()
         else:
             print(runner)
     elif args.graph_visualization:
-        return draw_lineage_graph(
-            **{
-                "p": args.p,
-                "f": os.path.join(os.path.dirname(__file__), "data/tpcds/query01.sql"),
-            }
-        )
+        return draw_lineage_graph(**{"host": args.host, "port": args.port})
     else:
         parser.print_help()
 
