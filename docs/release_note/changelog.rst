@@ -2,6 +2,16 @@
 Changelog
 *********
 
+v1.2.1
+======
+:Date: May 3, 2021
+
+Enhancement
+-------------
+* option to specify hostname (`#142 <https://github.com/reata/sqllineage/issues/142>`_)
+* re-sizable directory tree drawer (`#140 <https://github.com/reata/sqllineage/issues/140>`_)
+* async loading for directory tree in frontend UI (`#138 <https://github.com/reata/sqllineage/issues/138>`_)
+
 v1.2.0
 ======
 :Date: April 18, 2021
