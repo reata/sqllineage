@@ -17,7 +17,9 @@ source and target tables, without worrying about Tokens, Keyword, Identifier and
 Behind the scene, SQLLineage uses the fantastic [`sqlparse`](https://github.com/andialbrecht/sqlparse) library to parse 
 the SQL command, and bring you all the human-readable result with ease.
 
-## Documentation
+## Demo & Documentation
+Talk is cheap, show me a [demo](https://sqllineage.herokuapp.com/).
+
 [Documentation](https://sqllineage.readthedocs.io) is online hosted by readthedocs, and you can check the 
 [release note](https://sqllineage.readthedocs.io/en/latest/release_note/changelog.html) there.
 
