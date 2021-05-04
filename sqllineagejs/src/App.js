@@ -53,7 +53,8 @@ const useStyles = makeStyles((theme) => ({
     top: 0,
     bottom: 0,
     left: ({drawerWidth}) => drawerWidth + "vw",
-    backgroundColor: "#d7d7d7"
+    backgroundColor: "transparent",
+    zIndex: 999
   }
 }));
 
@@ -70,7 +71,7 @@ export default function App() {
 
   const height = "90vh";
   const width = useMemo(() => {
-    let full_width = 99.5;
+    let full_width = 100;
     return (open ? full_width - drawerWidth : full_width) + "vw"
   }, [open, drawerWidth])
 
@@ -157,12 +158,10 @@ export default function App() {
         <div
           id="dragger"
           onMouseDown={handleMouseDown}
-          className={classes.dragger}
+          className={clsx(classes.dragger, {[classes.hide]: !open})}
         />
         <main
-          className={clsx(classes.content, {
-            [classes.contentShift]: open,
-          })}
+          className={clsx(classes.content, {[classes.contentShift]: open})}
         >
           <Paper elevation="24" style={{height: height, width: width}}>
             <Box className={selectedValue === "dag" ? "" : classes.hide}>
