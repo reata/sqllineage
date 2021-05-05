@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v1.2.2
+======
+:Date: May 5, 2021
+
+Bugfix
+-------------
+* resize dragger remain on the UI when drawer is closed  (`#145 <https://github.com/reata/sqllineage/issues/145>`_)
+
 v1.2.1
 ======
 :Date: May 3, 2021
