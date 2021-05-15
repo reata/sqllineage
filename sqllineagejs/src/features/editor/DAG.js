@@ -48,6 +48,9 @@ export function DAG(props) {
     return <Loading minHeight={props.height}/>
   } else if (editorState.dagStatus === "failed") {
     return <LoadError minHeight={props.height} message={editorState.dagError}/>
+  } else if (editorState.dagContent.length === 0) {
+    let message = `No Lineage Info found in ${editorState.editable ? "your SQL" : `SQL file ${editorState.file}`}. Please review the code in Script View.`
+    return <LoadError minHeight={props.height} message={message}/>
   } else {
     const stylesheet = [
       {
