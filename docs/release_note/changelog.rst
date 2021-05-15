@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v1.2.3
+======
+:Date: May 15, 2021
+
+Enhancement
+-------------
+* lineage API response exception handling  (`#148 <https://github.com/reata/sqllineage/issues/148>`_)
+
 v1.2.2
 ======
 :Date: May 5, 2021
