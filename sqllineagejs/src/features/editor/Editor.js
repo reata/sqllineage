@@ -40,11 +40,18 @@ export function Editor(props) {
   })
 
   const handleEditorDidMount = (editor, monaco) => {
+    const readOnly = monaco.editor.EditorOption.readOnly;
     editor.onDidBlurEditorText(() => {
-      const readOnly = 75;
       if (!editor.getOption(readOnly)) {
         dispatch(setContentComposed(editor.getValue()));
         dispatch(fetchDAG({"e": editor.getValue()}));
+      }
+    })
+    editor.onKeyDown(() => {
+      // This is a walk-around to trigger "Cannot editor in readonly editor". Be default this tooltip is only shown
+      // when user press backspace key on readonly editor, we want it with any key
+      if (editor.getOption(readOnly)) {
+        editor.trigger(monaco.KeyCode.Backspace, 'deleteLeft')
       }
     })
   }

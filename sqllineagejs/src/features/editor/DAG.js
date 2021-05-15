@@ -51,8 +51,7 @@ export function DAG(props) {
   } else if (editorState.dagContent.length === 0) {
     let message, info=false;
     if (editorState.editable) {
-      //  Use content instead of contentComposed, so that Welcome message only showed up once
-      if (editorState.content === "") {
+      if (editorState.contentComposed === "") {
         message = "Welcome to SQLLineage Playground.\n" +
           "Just paste your SQL in Script View and switch back here, you'll get DAG visualization for your SQL code.\n" +
           "Or select SQL file on the left directory tree for visualization.\n" +
