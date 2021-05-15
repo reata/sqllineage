@@ -165,7 +165,7 @@ class LineageAnalyzer:
             pass
         else:
             raise SQLLineageException(
-                "An Identifier is expected, got %s[value: %s] instead"
+                "An Identifier is expected, got %s[value: %s] instead."
                 % (type(sub_token).__name__, sub_token)
             )
 
@@ -175,7 +175,7 @@ class LineageAnalyzer:
             # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
             if not isinstance(sub_token.token_first(skip_cm=True), Identifier):
                 raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead"
+                    "An Identifier is expected, got %s[value: %s] instead."
                     % (type(sub_token).__name__, sub_token)
                 )
             self._lineage_result.write.add(
@@ -189,7 +189,7 @@ class LineageAnalyzer:
                 and isinstance(sub_token.right, Identifier)
             ):
                 raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead"
+                    "An Identifier is expected, got %s[value: %s] instead."
                     % (type(sub_token).__name__, sub_token)
                 )
             self._lineage_result.write.add(Table.create(sub_token.left))
@@ -197,7 +197,7 @@ class LineageAnalyzer:
         else:
             if not isinstance(sub_token, Identifier):
                 raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead"
+                    "An Identifier is expected, got %s[value: %s] instead."
                     % (type(sub_token).__name__, sub_token)
                 )
             if sub_token.token_first(skip_cm=True).ttype is Number.Integer:
@@ -217,7 +217,7 @@ class LineageAnalyzer:
                     self._extract_from_dml(temp_tab_token)
         else:
             raise SQLLineageException(
-                "An Identifier or IdentifierList is expected, got %s[value: %s] instead"
+                "An Identifier or IdentifierList is expected, got %s[value: %s] instead."
                 % (type(sub_token).__name__, sub_token)
             )
 

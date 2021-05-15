@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from werkzeug.exceptions import InternalServerError
 
 from sqllineage import DATA_FOLDER, DEFAULT_HOST, DEFAULT_PORT
 from sqllineage import STATIC_FOLDER
@@ -20,6 +21,12 @@ app = Flask(
     static_folder=os.path.join(os.path.dirname(__file__), STATIC_FOLDER),
 )
 CORS(app)
+
+
+@app.errorhandler(InternalServerError)
+def handle_500(e):
+    original = getattr(e, "original_exception", None)
+    return jsonify({"message": str(original)}), 400
 
 
 @app.route("/")
