@@ -51,7 +51,7 @@ class Table:
             self.schema = schema
             self.raw_name = escape_identifier_name(name)
         else:
-            raise SQLLineageException("Invalid format for table name: %s", name)
+            raise SQLLineageException("Invalid format for table name: %s.", name)
 
     def __str__(self):
         return f"{self.schema}.{self.raw_name.lower()}"

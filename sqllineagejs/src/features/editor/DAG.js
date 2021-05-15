@@ -47,10 +47,24 @@ export function DAG(props) {
   if (editorState.dagStatus === "loading") {
     return <Loading minHeight={props.height}/>
   } else if (editorState.dagStatus === "failed") {
-    return <LoadError minHeight={props.height} message={editorState.dagError}/>
+    return <LoadError minHeight={props.height} message={editorState.dagError + "\nPlease check your SQL code for potential syntax error in Script View."}/>
   } else if (editorState.dagContent.length === 0) {
-    let message = `No Lineage Info found in ${editorState.editable ? "your SQL" : `SQL file ${editorState.file}`}. Please review the code in Script View.`
-    return <LoadError minHeight={props.height} message={message}/>
+    let message, info=false;
+    if (editorState.editable) {
+      //  Use content instead of contentComposed, so that Welcome message only showed up once
+      if (editorState.content === "") {
+        message = "Welcome to SQLLineage Playground.\n" +
+          "Just paste your SQL in Script View and switch back here, you'll get DAG visualization for your SQL code.\n" +
+          "Or select SQL file on the left directory tree for visualization.\n" +
+          "Have fun!"
+        info = true
+      } else {
+        message = "No Lineage Info found in your SQL.\nPlease review your code in Script View."
+      }
+    } else {
+      message = `No Lineage Info found in SQL file ${editorState.file}.\nPlease review the code in Script View.`
+    }
+    return <LoadError minHeight={props.height} message={message} info={info}/>
   } else {
     const stylesheet = [
       {

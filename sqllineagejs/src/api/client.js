@@ -25,15 +25,13 @@ export async function client(endpoint, {body, ...customConfig} = {}) {
   }
 
   let data
-  try {
-    const response = await window.fetch(endpoint, config)
-    data = await response.json()
-    if (response.ok) {
-      return data
-    }
-    throw new Error(response.statusText)
-  } catch (err) {
-    return Promise.reject(err.message ? err.message : data)
+  const response = await window.fetch(endpoint, config)
+  data = await response.json()
+  if (response.ok) {
+    return data
+  } else {
+    // 4XX or 5XX, try use response.json() first, if not then fallback to statusText
+    return Promise.reject(data ? data : response.statusText)
   }
 }
 

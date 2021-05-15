@@ -20,3 +20,5 @@ def test_flask_handler(_):
         assert resp.status_code == HTTPStatus.OK
         resp = c.post("/directory", json={})
         assert resp.status_code == HTTPStatus.OK
+        resp = c.post("/lineage", json={"e": "select * from where foo='bar'"})
+        assert resp.status_code == HTTPStatus.BAD_REQUEST

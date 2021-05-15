@@ -11,7 +11,7 @@ export function DAGDesc(props) {
   if (editorState.dagStatus === "loading") {
     return <Loading minHeight={props.height}/>
   } else if (editorState.dagStatus === "failed") {
-    return <LoadError minHeight={props.height} message={editorState.dagError}/>
+    return <LoadError minHeight={props.height} message={editorState.dagError + "\nPlease check your SQL code for potential syntax error in Script View."}/>
   } else {
     const options = {
       minimap: {enabled: false},
