@@ -2,6 +2,16 @@
 Changelog
 *********
 
+v1.2.4
+======
+:Date: June 14, 2021
+
+Enhancement
+-------------
+* highlight selected node and its ancestors as well as children recursively  (`#156 <https://github.com/reata/sqllineage/issues/156>`_)
+* add support for database.schema.table as identifier name  (`#153 <https://github.com/reata/sqllineage/issues/153>`_)
+* add support for swap_partitions_between_tables  (`#152 <https://github.com/reata/sqllineage/issues/152>`_)
+
 v1.2.3
 ======
 :Date: May 15, 2021
