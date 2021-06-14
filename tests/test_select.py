@@ -9,6 +9,10 @@ def test_select_with_schema():
     helper("SELECT col1 FROM schema1.tab1", {"schema1.tab1"})
 
 
+def test_select_with_schema_and_database():
+    helper("SELECT col1 FROM db1.schema1.tbl1", {"db1.schema1.tbl1"})
+
+
 def test_select_with_table_name_in_backtick():
     helper("SELECT * FROM `tab1`", {"tab1"})
 

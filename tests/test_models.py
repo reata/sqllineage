@@ -7,8 +7,9 @@ from sqllineage.models import Schema, Table
 def test_repr_dummy():
     assert repr(Schema())
     assert repr(Table(""))
+    assert repr(Table("a.b.c"))
     with pytest.raises(SQLLineageException):
-        Table("a.b.c")
+        Table("a.b.c.d")
     with pytest.warns(Warning):
         Table("a.b", Schema("c"))
 
