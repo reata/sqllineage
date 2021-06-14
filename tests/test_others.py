@@ -103,6 +103,29 @@ def test_alter_table_rename():
     helper("alter table tab1 rename to tab2;", None, None)
 
 
+def test_alter_table_exchange_partition():
+    """
+    See https://cwiki.apache.org/confluence/display/Hive/Exchange+Partition for language manual
+    """
+    helper(
+        "alter table tab1 exchange partition(pt='part1') with table tab2",
+        {"tab2"},
+        {"tab1"},
+    )
+
+
+def test_swapping_partitions():
+    """
+    See https://www.vertica.com/docs/10.0.x/HTML/Content/Authoring/AdministratorsGuide/Partitions/SwappingPartitions.htm
+    for language specification
+    """
+    helper(
+        "select swap_partitions_between_tables('staging', 'min-range-value', 'max-range-value', 'target')",
+        {"staging"},
+        {"target"},
+    )
+
+
 def test_alter_target_table_name():
     helper(
         "insert overwrite tab1 select * from tab2; alter table tab1 rename to tab3;",

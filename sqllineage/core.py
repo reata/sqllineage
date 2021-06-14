@@ -14,6 +14,7 @@ from sqlparse.sql import (
 from sqlparse.tokens import Number
 
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.helpers import escape_identifier_name
 from sqllineage.models import Table
 
 SOURCE_TABLE_TOKENS = (
@@ -106,6 +107,9 @@ class LineageAnalyzer:
         keywords = [t for t in stmt.tokens if t.is_keyword]
         if any(k.normalized == "RENAME" for k in keywords) and len(tables) == 2:
             self._lineage_result.rename.add((tables[0], tables[1]))
+        if any(k.normalized == "EXCHANGE" for k in keywords) and len(tables) == 2:
+            self._lineage_result.write.add(tables[0])
+            self._lineage_result.read.add(tables[1])
 
     def _extract_from_dml(self, token: TokenList) -> None:
         source_table_token_flag = False
@@ -114,6 +118,21 @@ class LineageAnalyzer:
         for sub_token in token.tokens:
             if self.__token_negligible_before_tablename(sub_token):
                 continue
+
+            if (
+                isinstance(sub_token, Function)
+                and sub_token.get_name().lower() == "swap_partitions_between_tables"
+            ):
+                # a special handling for swap_partitions_between_tables function of Vertica SQL dialect
+                _, parenthesis = sub_token.tokens
+                _, identifier_list, _ = parenthesis.tokens
+                identifiers = list(identifier_list.get_identifiers())
+                self._lineage_result.read.add(
+                    Table(escape_identifier_name(identifiers[0].normalized))
+                )
+                self._lineage_result.write.add(
+                    Table(escape_identifier_name(identifiers[3].normalized))
+                )
 
             if isinstance(sub_token, TokenList):
                 self._extract_from_dml(sub_token)
