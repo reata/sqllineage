@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, {useEffect, useRef} from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 import dagre from 'cytoscape-dagre';
 import cytoscape from 'cytoscape';
@@ -44,12 +44,29 @@ export function DAG(props) {
     }
   }
 
+  useEffect(() => {
+    if (cyRef.current) {
+      let cy = cyRef.current._cy;
+      cy.on("mouseover", "node", function (e) {
+        let sel = e.target;
+        let elements = sel.union(sel.successors()).union(sel.predecessors())
+        elements.addClass("highlight");
+        cy.elements().difference(elements).addClass("semitransparent")
+      });
+      cy.on("mouseout", "node", function () {
+        cy.elements().removeClass("semitransparent");
+        cy.elements().removeClass("highlight");
+      });
+    }
+  })
+
   if (editorState.dagStatus === "loading") {
     return <Loading minHeight={props.height}/>
   } else if (editorState.dagStatus === "failed") {
-    return <LoadError minHeight={props.height} message={editorState.dagError + "\nPlease check your SQL code for potential syntax error in Script View."}/>
+    return <LoadError minHeight={props.height}
+                      message={editorState.dagError + "\nPlease check your SQL code for potential syntax error in Script View."}/>
   } else if (editorState.dagContent.length === 0) {
-    let message, info=false;
+    let message, info = false;
     if (editorState.editable) {
       if (editorState.contentComposed === "") {
         message = "Welcome to SQLLineage Playground.\n" +
@@ -76,7 +93,7 @@ export function DAG(props) {
           'text-halign': 'right',
           'font-size': 10,
           'color': '#35393e',
-          'background-color': '#3499d9',
+          'background-color': '#2fc1d3',
           'border-color': '#000',
           'border-width': 1,
           'border-opacity': 0.8
@@ -92,7 +109,17 @@ export function DAG(props) {
           'arrow-scale': 0.8,
           'curve-style': 'bezier'
         }
-      }
+      },
+      {
+        selector: '.highlight',
+        style: {
+          'background-color': '#076fa1',
+        }
+      },
+      {
+        selector: '.semitransparent',
+        style: {'opacity': '0.2'}
+      },
     ]
     const layout = {
       name: 'dagre',
