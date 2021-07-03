@@ -1,13 +1,13 @@
 from sqllineage.runner import LineageRunner
-from .helpers import helper
+from .helpers import assert_table_lineage_equal
 
 
 def test_use():
-    helper("USE db1")
+    assert_table_lineage_equal("USE db1")
 
 
 def test_table_name_case():
-    helper(
+    assert_table_lineage_equal(
         """insert overwrite table tab_a
 select * from tab_b
 union all
@@ -18,15 +18,17 @@ select * from TAB_B""",
 
 
 def test_create():
-    helper("CREATE TABLE tab1 (col1 STRING)", None, {"tab1"})
+    assert_table_lineage_equal("CREATE TABLE tab1 (col1 STRING)", None, {"tab1"})
 
 
 def test_create_if_not_exist():
-    helper("CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)", None, {"tab1"})
+    assert_table_lineage_equal(
+        "CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)", None, {"tab1"}
+    )
 
 
 def test_create_bucket_table():
-    helper(
+    assert_table_lineage_equal(
         "CREATE TABLE tab1 USING parquet CLUSTERED BY (col1) INTO 500 BUCKETS",
         None,
         {"tab1"},
@@ -34,19 +36,23 @@ def test_create_bucket_table():
 
 
 def test_create_as():
-    helper("CREATE TABLE tab1 AS SELECT * FROM tab2", {"tab2"}, {"tab1"})
+    assert_table_lineage_equal(
+        "CREATE TABLE tab1 AS SELECT * FROM tab2", {"tab2"}, {"tab1"}
+    )
 
 
 def test_create_like():
-    helper("CREATE TABLE tab1 LIKE tab2", {"tab2"}, {"tab1"})
+    assert_table_lineage_equal("CREATE TABLE tab1 LIKE tab2", {"tab2"}, {"tab1"})
 
 
 def test_create_select():
-    helper("CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"})
+    assert_table_lineage_equal(
+        "CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}
+    )
 
 
 def test_create_after_drop():
-    helper(
+    assert_table_lineage_equal(
         "DROP TABLE IF EXISTS tab1; CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)",
         None,
         {"tab1"},
@@ -54,11 +60,13 @@ def test_create_after_drop():
 
 
 def test_update():
-    helper("UPDATE tab1 SET col1='val1' WHERE col2='val2'", None, {"tab1"})
+    assert_table_lineage_equal(
+        "UPDATE tab1 SET col1='val1' WHERE col2='val2'", None, {"tab1"}
+    )
 
 
 def test_update_with_join():
-    helper(
+    assert_table_lineage_equal(
         "UPDATE tab1 a INNER JOIN tab2 b ON a.col1=b.col1 SET a.col2=b.col2",
         {"tab2"},
         {"tab1"},
@@ -66,11 +74,11 @@ def test_update_with_join():
 
 
 def test_drop():
-    helper("DROP TABLE IF EXISTS tab1", None, None)
+    assert_table_lineage_equal("DROP TABLE IF EXISTS tab1", None, None)
 
 
 def test_drop_with_comment():
-    helper(
+    assert_table_lineage_equal(
         """--comment
 DROP TABLE IF EXISTS tab1""",
         None,
@@ -79,7 +87,7 @@ DROP TABLE IF EXISTS tab1""",
 
 
 def test_drop_after_create():
-    helper(
+    assert_table_lineage_equal(
         "CREATE TABLE IF NOT EXISTS tab1 (col1 STRING);DROP TABLE IF EXISTS tab1",
         None,
         None,
@@ -90,24 +98,24 @@ def test_drop_tmp_tab_after_create():
     sql = """create table tab_a as select * from tab_b;
 insert overwrite table tab_c select * from tab_a;
 drop table tab_a;"""
-    helper(sql, {"tab_b"}, {"tab_c"})
+    assert_table_lineage_equal(sql, {"tab_b"}, {"tab_c"})
 
 
 def test_new_create_tab_as_tmp_table():
     sql = """create table tab_a as select * from tab_b;
 create table tab_c as select * from tab_a;"""
-    helper(sql, {"tab_b"}, {"tab_c"})
+    assert_table_lineage_equal(sql, {"tab_b"}, {"tab_c"})
 
 
 def test_alter_table_rename():
-    helper("alter table tab1 rename to tab2;", None, None)
+    assert_table_lineage_equal("alter table tab1 rename to tab2;", None, None)
 
 
 def test_alter_table_exchange_partition():
     """
     See https://cwiki.apache.org/confluence/display/Hive/Exchange+Partition for language manual
     """
-    helper(
+    assert_table_lineage_equal(
         "alter table tab1 exchange partition(pt='part1') with table tab2",
         {"tab2"},
         {"tab1"},
@@ -119,7 +127,7 @@ def test_swapping_partitions():
     See https://www.vertica.com/docs/10.0.x/HTML/Content/Authoring/AdministratorsGuide/Partitions/SwappingPartitions.htm
     for language specification
     """
-    helper(
+    assert_table_lineage_equal(
         "select swap_partitions_between_tables('staging', 'min-range-value', 'max-range-value', 'target')",
         {"staging"},
         {"target"},
@@ -127,7 +135,7 @@ def test_swapping_partitions():
 
 
 def test_alter_target_table_name():
-    helper(
+    assert_table_lineage_equal(
         "insert overwrite tab1 select * from tab2; alter table tab1 rename to tab3;",
         {"tab2"},
         {"tab3"},
@@ -135,27 +143,27 @@ def test_alter_target_table_name():
 
 
 def test_refresh_table():
-    helper("refresh table tab1", None, None)
+    assert_table_lineage_equal("refresh table tab1", None, None)
 
 
 def test_cache_table():
-    helper("cache table tab1", None, None)
+    assert_table_lineage_equal("cache table tab1", None, None)
 
 
 def test_uncache_table():
-    helper("uncache table tab1", None, None)
+    assert_table_lineage_equal("uncache table tab1", None, None)
 
 
 def test_uncache_table_if_exists():
-    helper("uncache table if exists tab1", None, None)
+    assert_table_lineage_equal("uncache table if exists tab1", None, None)
 
 
 def test_truncate_table():
-    helper("truncate table tab1", None, None)
+    assert_table_lineage_equal("truncate table tab1", None, None)
 
 
 def test_delete_from_table():
-    helper("delete from table tab1", None, None)
+    assert_table_lineage_equal("delete from table tab1", None, None)
 
 
 def test_split_statements():

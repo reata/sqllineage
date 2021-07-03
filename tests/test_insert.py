@@ -1,24 +1,28 @@
-from .helpers import helper
+from .helpers import assert_table_lineage_equal
 
 
 def test_insert_into():
-    helper("INSERT INTO tab1 VALUES (1, 2)", set(), {"tab1"})
+    assert_table_lineage_equal("INSERT INTO tab1 VALUES (1, 2)", set(), {"tab1"})
 
 
 def test_insert_into_with_keyword_table():
-    helper("INSERT INTO TABLE tab1 VALUES (1, 2)", set(), {"tab1"})
+    assert_table_lineage_equal("INSERT INTO TABLE tab1 VALUES (1, 2)", set(), {"tab1"})
 
 
 def test_insert_into_with_columns():
-    helper("INSERT INTO tab1 (col1, col2) SELECT * FROM tab2;", {"tab2"}, {"tab1"})
+    assert_table_lineage_equal(
+        "INSERT INTO tab1 (col1, col2) SELECT * FROM tab2;", {"tab2"}, {"tab1"}
+    )
 
 
 def test_insert_into_with_columns_and_select():
-    helper("INSERT INTO tab1 (col1, col2) SELECT * FROM tab2", {"tab2"}, {"tab1"})
+    assert_table_lineage_equal(
+        "INSERT INTO tab1 (col1, col2) SELECT * FROM tab2", {"tab2"}, {"tab1"}
+    )
 
 
 def test_insert_into_with_columns_and_select_union():
-    helper(
+    assert_table_lineage_equal(
         "INSERT INTO tab1 (col1, col2) SELECT * FROM tab2 UNION SELECT * FROM tab3",
         {"tab2", "tab3"},
         {"tab1"},
@@ -26,7 +30,7 @@ def test_insert_into_with_columns_and_select_union():
 
 
 def test_insert_into_partitions():
-    helper(
+    assert_table_lineage_equal(
         "INSERT INTO TABLE tab1 PARTITION (par1=1) SELECT * FROM tab2",
         {"tab2"},
         {"tab1"},
@@ -34,21 +38,25 @@ def test_insert_into_partitions():
 
 
 def test_insert_overwrite():
-    helper("INSERT OVERWRITE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"})
+    assert_table_lineage_equal(
+        "INSERT OVERWRITE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}
+    )
 
 
 def test_insert_overwrite_with_keyword_table():
-    helper("INSERT OVERWRITE TABLE tab1 SELECT col1 FROM tab2", {"tab2"}, {"tab1"})
+    assert_table_lineage_equal(
+        "INSERT OVERWRITE TABLE tab1 SELECT col1 FROM tab2", {"tab2"}, {"tab1"}
+    )
 
 
 def test_insert_overwrite_values():
-    helper(
+    assert_table_lineage_equal(
         "INSERT OVERWRITE tab1 VALUES ('val1', 'val2'), ('val3', 'val4')", {}, {"tab1"}
     )
 
 
 def test_insert_overwrite_from_self():
-    helper(
+    assert_table_lineage_equal(
         """INSERT OVERWRITE TABLE tab_1
 SELECT tab2.col_a from tab_2
 JOIN tab_1
@@ -59,7 +67,7 @@ ON tab_1.col_a = tab_2.cola""",
 
 
 def test_with_insert():
-    helper(
+    assert_table_lineage_equal(
         "WITH tab1 AS (SELECT * FROM tab2) INSERT INTO tab3 SELECT * FROM tab1",
         {"tab2"},
         {"tab3"},
@@ -67,7 +75,7 @@ def test_with_insert():
 
 
 def test_with_insert_overwrite():
-    helper(
+    assert_table_lineage_equal(
         "WITH tab1 AS (SELECT * FROM tab2) INSERT OVERWRITE tab3 SELECT * FROM tab1",
         {"tab2"},
         {"tab3"},
@@ -75,7 +83,7 @@ def test_with_insert_overwrite():
 
 
 def test_with_insert_plus_keyword_table():
-    helper(
+    assert_table_lineage_equal(
         "WITH tab1 AS (SELECT * FROM tab2) INSERT INTO TABLE tab3 SELECT * FROM tab1",
         {"tab2"},
         {"tab3"},
@@ -83,7 +91,7 @@ def test_with_insert_plus_keyword_table():
 
 
 def test_with_insert_overwrite_plus_keyword_table():
-    helper(
+    assert_table_lineage_equal(
         "WITH tab1 AS (SELECT * FROM tab2) INSERT OVERWRITE TABLE tab3 SELECT * FROM tab1",
         {"tab2"},
         {"tab3"},

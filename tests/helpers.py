@@ -2,11 +2,15 @@ from sqllineage.models import Table
 from sqllineage.runner import LineageRunner
 
 
-def helper(sql, source_tables=None, target_tables=None):
+def assert_table_lineage_equal(sql, source_tables=None, target_tables=None):
     lp = LineageRunner(sql)
-    assert set(lp.source_tables) == (
-        set() if source_tables is None else {Table(t) for t in source_tables}
-    )
-    assert set(lp.target_tables) == (
-        set() if target_tables is None else {Table(t) for t in target_tables}
-    )
+    for (_type, actual, expected) in zip(
+        ["Source", "Target"],
+        [lp.source_tables, lp.target_tables],
+        [source_tables, target_tables],
+    ):
+        actual = set(actual)
+        expected = set() if expected is None else {Table(t) for t in expected}
+        assert (
+            actual == expected
+        ), f"\n\tExpected {_type} Table: {expected}\n\tActual {_type} Table: {actual}"
