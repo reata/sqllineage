@@ -1,4 +1,4 @@
-from sqllineage.core import LineageResult
+from sqllineage.core.lineage_result import LineageResult
 
 
 def test_dummy():
