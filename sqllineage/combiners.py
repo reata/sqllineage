@@ -4,7 +4,7 @@ from typing import Set
 import networkx as nx
 from networkx import DiGraph
 
-from sqllineage.core import LineageResult
+from sqllineage.core.lineage_result import LineageResult
 from sqllineage.models import Table
 
 
