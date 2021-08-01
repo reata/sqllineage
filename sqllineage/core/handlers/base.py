@@ -47,3 +47,45 @@ class CurrentTokenBaseHandler:
 
     def handle(self, token: Token, lineage_result: LineageResult) -> None:
         raise NotImplementedError
+
+
+class SectionTokenBaseHandler:
+    """
+    This is to address an extract pattern when we should extract something from a section of tokens
+    """
+
+    def __init__(self) -> None:
+        self.start_indicator = False
+        self.end_indicator = False
+
+    def _indicate_start(self, token: Token) -> bool:
+        raise NotImplementedError
+
+    def _handle_start(self, token: Token, lineage_result: LineageResult) -> None:
+        raise NotImplementedError
+
+    def _indicate_end(self, token: Token) -> bool:
+        raise NotImplementedError
+
+    def _handle_end(self, token: Token, lineage_result: LineageResult) -> None:
+        raise NotImplementedError
+
+    def indicate_start(self, token: Token) -> None:
+        indicator = self._indicate_start(token)
+        if indicator:
+            self.start_indicator = True
+
+    def handle_start(self, token: Token, lineage_result: LineageResult) -> None:
+        if self.start_indicator:
+            self._handle_start(token, lineage_result)
+            self.start_indicator = False
+
+    def indicate_end(self, token: Token) -> None:
+        indicator = self._indicate_end(token)
+        if indicator:
+            self.end_indicator = True
+
+    def handle_end(self, token: Token, lineage_result: LineageResult) -> None:
+        if self.end_indicator:
+            self._handle_end(token, lineage_result)
+            self.end_indicator = False

@@ -1,6 +1,6 @@
-from typing import Set, TYPE_CHECKING, Tuple
+from typing import List, Set, TYPE_CHECKING, Tuple
 
-from sqllineage.models import Table
+from sqllineage.models import Column, Table
 
 
 class LineageResult:
@@ -17,14 +17,18 @@ class LineageResult:
     This is the most atomic representation of lineage result.
     """
 
-    __slots__ = ["read", "write", "rename", "drop", "intermediate"]
+    __slots__ = ["read", "write", "rename", "drop", "intermediate", "column"]
     if TYPE_CHECKING:
         read = write = drop = intermediate = set()  # type: Set[Table]
         rename = set()  # type: Set[Tuple[Table, Table]]
+        column = []  # type: List[Tuple[Column, Column]]
 
     def __init__(self) -> None:
         for attr in self.__slots__:
-            setattr(self, attr, set())
+            if attr == "column":
+                setattr(self, attr, [])
+            else:
+                setattr(self, attr, set())
 
     def __add__(self, other):
         lineage_result = LineageResult()
