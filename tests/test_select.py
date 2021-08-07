@@ -181,10 +181,10 @@ def test_with_select_one():
 
 def test_with_select_many():
     assert_table_lineage_equal(
-        "WITH "
-        "  cte1 AS (SELECT a, b FROM table1), "
-        "  cte2 AS (SELECT c, d FROM table2) "
-        "SELECT b, d FROM cte1 JOIN cte2 "
-        "WHERE cte1.a = cte2.c",
+        """WITH
+cte1 AS (SELECT a, b FROM table1),
+cte2 AS (SELECT c, d FROM table2)
+SELECT b, d FROM cte1 JOIN cte2
+WHERE cte1.a = cte2.c""",
         {"table1", "table2"},
     )

@@ -1,4 +1,12 @@
-from sqlparse.sql import Comment, Identifier, Statement, TokenList
+from sqlparse import tokens as T
+from sqlparse.sql import (
+    Comment,
+    Identifier,
+    IdentifierList,
+    Parenthesis,
+    Statement,
+    TokenList,
+)
 
 from sqllineage.core.handlers.base import CurrentTokenBaseHandler, NextTokenBaseHandler
 from sqllineage.core.lineage_result import LineageResult
@@ -60,7 +68,7 @@ class LineageAnalyzer:
             if self.__token_negligible_before_tablename(sub_token):
                 continue
 
-            if isinstance(sub_token, TokenList):
+            if self.__token_is_subquery(sub_token):
                 self._extract_from_dml(sub_token)
 
             for current_handler in current_handlers:
@@ -74,9 +82,47 @@ class LineageAnalyzer:
             for next_handler in next_handlers:
                 if next_handler.indicator:
                     next_handler.handle(sub_token, self._lineage_result)
-                    if next_handler.RE_EXTRACT:
-                        self._extract_from_dml(sub_token)
 
     @classmethod
     def __token_negligible_before_tablename(cls, token: TokenList) -> bool:
         return token.is_whitespace or isinstance(token, Comment)
+
+    @classmethod
+    def __token_is_subquery(cls, token: TokenList) -> bool:
+        is_subquery = False
+        if isinstance(token, Identifier):
+            # usually SubQuery is an Identifier, but not all Identifiers are SubQuery
+            is_subquery = cls.__identifier_is_subquery(token)
+        elif isinstance(token, IdentifierList):
+            # IdentifierList for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
+            is_subquery = any(
+                cls.__identifier_is_subquery(identifier)
+                for identifier in token.get_sublists()
+            )
+        elif isinstance(token, Parenthesis):
+            # Parenthesis for SubQuery without alias, this is valid syntax for certain SQL dialect
+            is_subquery = cls.__parenthesis_is_subquery(token)
+        return is_subquery
+
+    @classmethod
+    def __identifier_is_subquery(cls, token: Identifier) -> bool:
+        flag = False
+        kw_idx, kw = token.token_next_by(m=(T.Keyword, "AS"))
+        sublist = list(token.get_sublists())
+        if kw is not None and len(sublist) == 1:
+            # CTE: tbl AS (SELECT 1)
+            target = sublist[0]
+        else:
+            # normal subquery: (SELECT 1) tbl
+            target = token.token_first(skip_cm=True)
+        if isinstance(target, Parenthesis):
+            flag = cls.__parenthesis_is_subquery(target)
+        return flag
+
+    @classmethod
+    def __parenthesis_is_subquery(cls, token: Parenthesis) -> bool:
+        flag = False
+        _, sub_token = token.token_next_by(m=(T.DML, "SELECT"))
+        if sub_token is not None:
+            flag = True
+        return flag

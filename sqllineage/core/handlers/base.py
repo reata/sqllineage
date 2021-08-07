@@ -8,8 +8,6 @@ class NextTokenBaseHandler:
     This is to address an extract pattern when a specified token indicates we should extract something from next token.
     """
 
-    RE_EXTRACT = False
-
     def __init__(self) -> None:
         self.indicator = False
 
