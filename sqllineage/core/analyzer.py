@@ -15,7 +15,6 @@ from sqlparse.sql import (
 from sqllineage.core.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
-    SectionTokenBaseHandler,
 )
 from sqllineage.core.lineage_result import LineageResult
 from sqllineage.models import Table
@@ -72,9 +71,6 @@ class LineageAnalyzer:
         next_handlers = [
             handler_cls() for handler_cls in NextTokenBaseHandler.__subclasses__()
         ]
-        section_handlers = [
-            handler_cls() for handler_cls in SectionTokenBaseHandler.__subclasses__()
-        ]
         for sub_token in token.tokens:
             if self.__token_negligible_before_tablename(sub_token):
                 continue
@@ -88,19 +84,14 @@ class LineageAnalyzer:
             if sub_token.is_keyword:
                 for next_handler in next_handlers:
                     next_handler.indicate(sub_token)
-                for section_handler in section_handlers:
-                    section_handler.indicate_start(sub_token)
-                    section_handler.indicate_end(sub_token)
                 continue
 
             for next_handler in next_handlers:
                 if next_handler.indicator:
                     next_handler.handle(sub_token, self._lineage_result)
-            for section_handler in section_handlers:
-                if section_handler.start_indicator:
-                    section_handler.handle_start(sub_token, self._lineage_result)
-                if section_handler.end_indicator:
-                    section_handler.handle_end(sub_token, self._lineage_result)
+        else:
+            for next_handler in next_handlers:
+                next_handler.end_of_query_cleanup(self._lineage_result)
 
     @classmethod
     def __token_negligible_before_tablename(cls, token: TokenList) -> bool:
