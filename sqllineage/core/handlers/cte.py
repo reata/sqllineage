@@ -7,7 +7,6 @@ from sqllineage.models import Table
 
 
 class CTEHandler(NextTokenBaseHandler):
-    RE_EXTRACT = True
     CTE_TOKENS = ("WITH",)
 
     def _indicate(self, token: Token) -> bool:
