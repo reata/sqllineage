@@ -8,7 +8,7 @@ from sqllineage.models import Table
 
 
 class TargetHandler(NextTokenBaseHandler):
-    TARGET_TABLE_TOKENS = ("INTO", "OVERWRITE", "TABLE", "VIEW", "UPDATE")
+    TARGET_TABLE_TOKENS = ("COPY", "INTO", "OVERWRITE", "TABLE", "VIEW", "UPDATE")
 
     def _indicate(self, token: Token) -> bool:
         return token.normalized in self.TARGET_TABLE_TOKENS

@@ -1,6 +1,7 @@
 import re
 
 from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Token
+from sqlparse.tokens import Literal
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
 from sqllineage.core.lineage_result import LineageResult
@@ -43,6 +44,9 @@ class SourceHandler(NextTokenBaseHandler):
             # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
             # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
             pass
+        elif token.ttype == Literal.String.Single:
+            # The case when source is a path, like in "COPY tab1 FROM 's3://path'" which is valid Redshift SQL
+            lineage_result.read.add(Table(token.value))
         else:
             raise SQLLineageException(
                 "An Identifier is expected, got %s[value: %s] instead."

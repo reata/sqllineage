@@ -73,6 +73,28 @@ def test_update_with_join():
     )
 
 
+def test_copy_from():
+    """
+    See https://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html for syntax spec.
+    """
+    assert_table_lineage_equal(
+        "COPY tab1 FROM tab2",
+        {"tab2"},
+        {"tab1"},
+    )
+
+
+def test_copy_from_with_path():
+    """
+    See https://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html for syntax spec.
+    """
+    assert_table_lineage_equal(
+        "COPY tab1 FROM 's3://foobar'",
+        {"'s3://foobar'"},
+        {"tab1"},
+    )
+
+
 def test_drop():
     assert_table_lineage_equal("DROP TABLE IF EXISTS tab1", None, None)
 
