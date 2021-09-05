@@ -5,7 +5,7 @@ from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Toke
 from sqllineage.core.handlers.base import NextTokenBaseHandler
 from sqllineage.core.lineage_result import LineageResult
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.models import Table
+from sqllineage.models import SubQuery, Table
 
 
 class SourceHandler(NextTokenBaseHandler):
@@ -21,15 +21,17 @@ class SourceHandler(NextTokenBaseHandler):
             re.match(regex, token.normalized) for regex in self.SOURCE_TABLE_TOKENS
         ) and not isinstance(token.parent.parent, Function)
 
-    def _handle(self, token: Token, lineage_result: LineageResult) -> None:
+    def _handle(self, token: Token, lineage_result: LineageResult, **kwargs) -> None:
         if isinstance(token, Identifier):
             if isinstance(token.token_first(skip_cm=True), Parenthesis):
                 # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
                 # and this Identifier's get_real_name method would return alias name dt
                 # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
-                pass
+                lineage_result.read.add(
+                    SubQuery.of(token.token_first(skip_cm=True), token.get_real_name())
+                )
             else:
-                lineage_result.read.add(Table.create(token))
+                lineage_result.read.add(Table.of(token))
         elif isinstance(token, IdentifierList):
             # This is to support join in ANSI-89 syntax
             for token in token.tokens:
@@ -38,7 +40,7 @@ class SourceHandler(NextTokenBaseHandler):
                     isinstance(token, Identifier)
                     and token.get_real_name() != token.get_alias()
                 ):
-                    lineage_result.read.add(Table.create(token))
+                    lineage_result.read.add(Table.of(token))
         elif isinstance(token, Parenthesis):
             # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
             # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL

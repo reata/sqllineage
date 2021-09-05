@@ -12,7 +12,7 @@ class CTEHandler(NextTokenBaseHandler):
     def _indicate(self, token: Token) -> bool:
         return token.normalized in self.CTE_TOKENS
 
-    def _handle(self, token: Token, lineage_result: LineageResult) -> None:
+    def _handle(self, token: Token, lineage_result: LineageResult, **kwargs) -> None:
         if isinstance(token, Identifier):
             cte = [token]
         elif isinstance(token, IdentifierList):
@@ -23,4 +23,4 @@ class CTEHandler(NextTokenBaseHandler):
                 % (type(token).__name__, token)
             )
         for token in cte:
-            lineage_result.intermediate.add(Table.create(token))
+            lineage_result.intermediate.add(Table.of(token))

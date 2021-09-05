@@ -17,11 +17,18 @@ class ColumnHandler(NextTokenBaseHandler):
         # OVER here is to handle window function like row_number()
         return token.normalized in ("SELECT", "OVER")
 
-    def _handle(self, token: Token, lineage_result: LineageResult) -> None:
-        if lineage_result.write:
-            if len(lineage_result.write) > 1:
-                raise SQLLineageException
-            target_table = list(lineage_result.write)[0]
+    def _handle(
+        self, token: Token, lineage_result: LineageResult, subquery_name=None, **kwargs
+    ) -> None:
+        target_table = None
+        if subquery_name is not None:
+            target_table = subquery_name
+        else:
+            if lineage_result.write:
+                if len(lineage_result.write) > 1:
+                    raise SQLLineageException
+                target_table = list(lineage_result.write)[0]
+        if target_table:
             column_token_types = (Identifier, Function, Operation, Case)
             if isinstance(token, column_token_types) or token.ttype is Wildcard:
                 column = [token]
@@ -32,16 +39,17 @@ class ColumnHandler(NextTokenBaseHandler):
                     if isinstance(sub_token, column_token_types)
                 ]
             else:
-                raise SQLLineageException
+                # SELECT constant value will end up here
+                column = []
             for token in column:
                 self.target_columns.append(Column.of(token, target_table))
 
-    def end_of_query_cleanup(self, lineage_result: LineageResult) -> None:
+    def end_of_query_cleanup(
+        self, lineage_result: LineageResult, subquery_name=None, **kwargs
+    ) -> None:
         for column in self.target_columns:
             for source_table in lineage_result.read:
                 source_columns = column.to_source_columns(source_table)
                 for source_column in source_columns:
                     self.source_columns.append(source_column)
-                    combination = (source_column, column)
-                    if combination not in lineage_result.column:
-                        lineage_result.column.append(combination)
+                    lineage_result.graph.add_edge(source_column, column)

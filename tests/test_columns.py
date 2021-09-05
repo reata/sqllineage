@@ -108,3 +108,14 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql, [("tab2.col1", "tab1.max(col1)"), ("tab2.col2", "tab1.max(col2)")]
     )
+
+
+def test_select_column_in_subquery():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT col1
+FROM (SELECT col1 FROM tab2) dt"""
+    assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col1")])
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT col1
+FROM (SELECT col1, col2 FROM tab2) dt"""
+    assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col1")])

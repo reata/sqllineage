@@ -1,4 +1,5 @@
 import warnings
+from typing import Optional, Union
 
 from sqlparse import tokens as T
 from sqlparse.sql import (
@@ -77,7 +78,7 @@ class Table:
         return hash(str(self))
 
     @staticmethod
-    def create(identifier: Identifier):
+    def of(identifier: Identifier):
         # rewrite identifier's get_real_name method, by matching the last dot instead of the first dot, so that the
         # real name for a.b.c will be c instead of b
         dot_idx, _ = identifier._token_matching(
@@ -105,31 +106,60 @@ class Partition:
     pass
 
 
+class SubQuery:
+    def __init__(self, token: Parenthesis, query: str, name: Optional[str]):
+        """
+        Data Class for SubQuery
+
+        :param token: subquery token
+        :param query: query text
+        :param name: subquery name
+        """
+        if name is None:
+            self.name = "<subquery>"
+        else:
+            self.name = name
+        self.query = query
+        self.token = token
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "SubQuery: " + str(self)
+
+    @staticmethod
+    def of(parenthesis: Parenthesis, name: Optional[str]):
+        return SubQuery(parenthesis, parenthesis.value, name)
+
+
 class Column:
-    def __init__(self, name: str, table: Table = None, **kwargs):
+    def __init__(self, name: str, parent: Union[Table, SubQuery] = None, **kwargs):
         """
         Data Class for Column
 
         :param name: column name
-        :param table: table as defined by :class:`Table`
+        :param parent: :class:`Table` or :class:`SubQuery`
         :param kwargs:
         """
         if "." not in name:
-            if table is None:
+            if parent is None:
                 raise SQLLineageException
             else:
-                self.table = table
+                self.parent = parent
                 self.raw_name = escape_identifier_name(name)
         else:
             table_name, column_name = name.rsplit(".", 1)
-            self.table = Table(table_name)
+            self.parent = Table(table_name)
             self.raw_name = escape_identifier_name(column_name)
-            if table:
-                warnings.warn("Name is in table.column format, talbe param is ignored")
+            if parent:
+                warnings.warn(
+                    "Name is in parent.column format, parent param is ignored"
+                )
         self.source_raw_names = kwargs.pop("source_raw_names", (self.raw_name,))
 
     def __str__(self):
-        return f"{self.table}.{self.raw_name.lower()}"
+        return f"{self.parent}.{self.raw_name.lower()}"
 
     def __repr__(self):
         return "Column: " + str(self)
@@ -141,7 +171,7 @@ class Column:
         return hash(str(self))
 
     @staticmethod
-    def of(token: Token, table: Table):
+    def of(token: Token, parent: Union[Table, SubQuery]):
         if isinstance(token, Identifier):
             # handle column alias
             alias = token.get_alias()
@@ -149,13 +179,13 @@ class Column:
                 kw_idx, kw = token.token_next_by(m=(T.Keyword, "AS"))
                 expr = token.token_prev(kw_idx)[1]
                 source_raw_names = Column._extract_source_raw_names(expr)
-                return Column(alias, table, source_raw_names=source_raw_names)
+                return Column(alias, parent, source_raw_names=source_raw_names)
             else:
-                return Column(token.get_real_name(), table)
+                return Column(token.get_real_name(), parent)
         else:
             # handle non alias scenario
             source_raw_names = Column._extract_source_raw_names(token)
-            return Column(token.value, table, source_raw_names=source_raw_names)
+            return Column(token.value, parent, source_raw_names=source_raw_names)
 
     @staticmethod
     def _extract_source_raw_names(token: Token):

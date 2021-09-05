@@ -18,15 +18,15 @@ def assert_table_lineage_equal(sql, source_tables=None, target_tables=None):
 
 def assert_column_lineage_equal(sql, column_lineages=None):
     column_lineages = (
-        [
+        {
             (
                 Column(lineage[0]),
                 Column(lineage[1]),
             )
             for lineage in column_lineages
-        ]
+        }
         if column_lineages
-        else []
+        else set()
     )
     lr = LineageRunner(sql)
     lr._eval()
