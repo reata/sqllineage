@@ -17,7 +17,7 @@ class NextTokenBaseHandler:
         """
         raise NotImplementedError
 
-    def _handle(self, token: Token, lineage_result: LineageResult) -> None:
+    def _handle(self, token: Token, lineage_result: LineageResult, **kwargs) -> None:
         """
         Handle the indicated token, and update the lienage result accordingly
         """
@@ -31,15 +31,15 @@ class NextTokenBaseHandler:
         if indicator:
             self.indicator = True
 
-    def handle(self, token: Token, lineage_result: LineageResult):
+    def handle(self, token: Token, lineage_result: LineageResult, **kwargs):
         """
         Handle and set indicator back to False
         """
         if self.indicator:
-            self._handle(token, lineage_result)
+            self._handle(token, lineage_result, **kwargs)
             self.indicator = False
 
-    def end_of_query_cleanup(self, lineage_result: LineageResult) -> None:
+    def end_of_query_cleanup(self, lineage_result: LineageResult, **kwargs) -> None:
         """
         Optional hook to be called at the end of statement or subquery
         """
