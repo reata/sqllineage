@@ -10,6 +10,10 @@ FROM tab2"""
 SELECT col1 AS col2
 FROM tab2"""
     assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col2")])
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT tab2.col1 AS col2
+FROM tab2"""
+    assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col2")])
 
 
 def test_select_column_wildcard():
@@ -17,6 +21,12 @@ def test_select_column_wildcard():
 SELECT *
 FROM tab2"""
     assert_column_lineage_equal(sql, [("tab2.*", "tab1.*")])
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT *
+FROM tab2 a
+         INNER JOIN tab3 b
+                    ON a.id = b.id"""
+    assert_column_lineage_equal(sql, [("tab2.*", "tab1.*"), ("tab3.*", "tab1.*")])
 
 
 def test_select_column_using_function():
@@ -119,3 +129,44 @@ FROM (SELECT col1 FROM tab2) dt"""
 SELECT col1
 FROM (SELECT col1, col2 FROM tab2) dt"""
     assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col1")])
+
+
+def test_select_column_from_table_join():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT tab2.col1,
+       tab3.col2
+FROM tab2
+         INNER JOIN tab3
+                    ON tab2.id = tab3.id"""
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.col1"), ("tab3.col2", "tab1.col2")]
+    )
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT tab2.col1 AS col3,
+       tab3.col2 AS col4
+FROM tab2
+         INNER JOIN tab3
+                    ON tab2.id = tab3.id"""
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.col3"), ("tab3.col2", "tab1.col4")]
+    )
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT a.col1 AS col3,
+       b.col2 AS col4
+FROM tab2 a
+         INNER JOIN tab3 b
+                    ON a.id = b.id"""
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.col3"), ("tab3.col2", "tab1.col4")]
+    )
+
+
+def test_select_column_without_table_prefix_from_table_join():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT col1
+FROM tab2 a
+         INNER JOIN tab3 b
+                    ON a.id = b.id"""
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.col1"), ("tab3.col1", "tab1.col1")]
+    )
