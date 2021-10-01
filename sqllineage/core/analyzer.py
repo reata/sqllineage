@@ -105,7 +105,7 @@ class LineageAnalyzer:
                 )
         # Extract each subquery and merge to parent lineage
         for subquery in subqueries:
-            lineage_result |= self._extract_from_dml(subquery.token, subquery.name)
+            lineage_result |= self._extract_from_dml(subquery.token, subquery.raw_name)
         return lineage_result
 
     @classmethod

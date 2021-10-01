@@ -31,25 +31,24 @@ class ColumnHandler(NextTokenBaseHandler):
         if target_table:
             column_token_types = (Identifier, Function, Operation, Case)
             if isinstance(token, column_token_types) or token.ttype is Wildcard:
-                column = [token]
+                column_tokens = [token]
             elif isinstance(token, IdentifierList):
-                column = [
+                column_tokens = [
                     sub_token
                     for sub_token in token.tokens
                     if isinstance(sub_token, column_token_types)
                 ]
             else:
                 # SELECT constant value will end up here
-                column = []
-            for token in column:
+                column_tokens = []
+            for token in column_tokens:
                 self.target_columns.append(Column.of(token, target_table))
 
     def end_of_query_cleanup(
         self, lineage_result: LineageResult, subquery_name=None, **kwargs
     ) -> None:
         for column in self.target_columns:
-            for source_table in lineage_result.read:
-                source_columns = column.to_source_columns(source_table)
-                for source_column in source_columns:
-                    self.source_columns.append(source_column)
-                    lineage_result.graph.add_edge(source_column, column)
+            source_columns = column.to_source_columns(lineage_result.read)
+            for source_column in source_columns:
+                self.source_columns.append(source_column)
+                lineage_result.graph.add_edge(source_column, column)
