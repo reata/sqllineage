@@ -12,61 +12,68 @@ from sqlparse.sql import (
     TokenList,
 )
 
+from sqllineage.combiners import combine_subquery_lineage
 from sqllineage.core.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
 )
-from sqllineage.core.lineage_result import LineageResult
+from sqllineage.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.models import SubQuery, Table
 
 
 class LineageAnalyzer:
     """SQL Statement Level Lineage Analyzer."""
 
-    def __init__(self) -> None:
-        self._lineage_result = LineageResult()
-
-    def analyze(self, stmt: Statement) -> LineageResult:
+    def analyze(self, stmt: Statement) -> StatementLineageHolder:
         """
-        to analyze the Statement and store the result into :class:`LineageResult`.
+        to analyze the Statement and store the result into :class:`sqllineage.holders.StatementLineageHolder`.
 
         :param stmt: a SQL statement parsed by `sqlparse`
         """
-        if stmt.get_type() == "DROP":
-            self._extract_from_ddl_drop(stmt)
-        elif stmt.get_type() == "ALTER":
-            self._extract_from_ddl_alter(stmt)
-        elif (
+        if (
             stmt.get_type() == "DELETE"
             or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"
             or stmt.token_first(skip_cm=True).normalized.upper() == "REFRESH"
             or stmt.token_first(skip_cm=True).normalized == "CACHE"
             or stmt.token_first(skip_cm=True).normalized.upper() == "UNCACHE"
         ):
-            pass
+            holder = StatementLineageHolder()
+        elif stmt.get_type() == "DROP":
+            holder = self._extract_from_ddl_drop(stmt)
+        elif stmt.get_type() == "ALTER":
+            holder = self._extract_from_ddl_alter(stmt)
         else:
             # DML parsing logic also applies to CREATE DDL
-            self._lineage_result = self._extract_from_dml(stmt)
-        return self._lineage_result
+            holder = self._extract_from_dml(stmt).to_stmt_lineage_holder()
+        return holder
 
-    def _extract_from_ddl_drop(self, stmt: Statement) -> None:
+    @classmethod
+    def _extract_from_ddl_drop(cls, stmt: Statement) -> StatementLineageHolder:
+        holder = StatementLineageHolder()
         for table in {Table.of(t) for t in stmt.tokens if isinstance(t, Identifier)}:
-            self._lineage_result.drop.add(table)
+            holder.drop.add(table)
+        return holder
 
-    def _extract_from_ddl_alter(self, stmt: Statement) -> None:
+    @classmethod
+    def _extract_from_ddl_alter(cls, stmt: Statement) -> StatementLineageHolder:
+        holder = StatementLineageHolder()
         tables = [Table.of(t) for t in stmt.tokens if isinstance(t, Identifier)]
         keywords = [t for t in stmt.tokens if t.is_keyword]
         if any(k.normalized == "RENAME" for k in keywords) and len(tables) == 2:
-            self._lineage_result.rename.add((tables[0], tables[1]))
+            holder.rename.add((tables[0], tables[1]))
         if any(k.normalized == "EXCHANGE" for k in keywords) and len(tables) == 2:
-            self._lineage_result.write.add(tables[0])
-            self._lineage_result.read.add(tables[1])
+            holder.write.add(tables[0])
+            holder.read.add(tables[1])
+        return holder
 
-    def _extract_from_dml(self, token: TokenList, subquery_name=None) -> LineageResult:
-        lineage_result = LineageResult()
+    @classmethod
+    def _extract_from_dml(
+        cls, token: TokenList, subquery_name=None
+    ) -> SubQueryLineageHolder:
+        holder = SubQueryLineageHolder()
         if subquery_name is not None:
             # If within subquery, then manually add subquery as target table
-            lineage_result.write.add(SubQuery.of(token, subquery_name))
+            holder.write.add(SubQuery.of(token, subquery_name))
         current_handlers = [
             handler_cls() for handler_cls in CurrentTokenBaseHandler.__subclasses__()
         ]
@@ -76,16 +83,16 @@ class LineageAnalyzer:
 
         subqueries = []
         for sub_token in token.tokens:
-            if self.__token_negligible_before_tablename(sub_token):
+            if cls.__token_negligible_before_tablename(sub_token):
                 continue
 
-            for subquery in self.parse_subquery(sub_token):
+            for subquery in cls.parse_subquery(sub_token):
                 # Collecting subquery on the way, hold on parsing until last
                 # so that each handler don't have to worry about what's inside subquery
                 subqueries.append(subquery)
 
             for current_handler in current_handlers:
-                current_handler.handle(sub_token, lineage_result)
+                current_handler.handle(sub_token, holder)
 
             if sub_token.is_keyword:
                 for next_handler in next_handlers:
@@ -94,19 +101,18 @@ class LineageAnalyzer:
 
             for next_handler in next_handlers:
                 if next_handler.indicator:
-                    next_handler.handle(
-                        sub_token, lineage_result, subquery_name=subquery_name
-                    )
+                    next_handler.handle(sub_token, holder, subquery_name=subquery_name)
         else:
             # call end of query hook here as loop is over
             for next_handler in next_handlers:
-                next_handler.end_of_query_cleanup(
-                    lineage_result, subquery_name=subquery_name
-                )
+                next_handler.end_of_query_cleanup(holder, subquery_name=subquery_name)
         # Extract each subquery and merge to parent lineage
-        for subquery in subqueries:
-            lineage_result |= self._extract_from_dml(subquery.token, subquery.raw_name)
-        return lineage_result
+        subquery_holders = [holder] + [
+            cls._extract_from_dml(subquery.token, subquery.raw_name)
+            for subquery in subqueries
+        ]
+        # In top level query, convert subquery lineage holder to a statement lineage holder
+        return combine_subquery_lineage(*subquery_holders)
 
     @classmethod
     def __token_negligible_before_tablename(cls, token: TokenList) -> bool:

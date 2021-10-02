@@ -30,8 +30,8 @@ def assert_column_lineage_equal(sql, column_lineages=None):
     )
     lr = LineageRunner(sql)
     lr._eval()
-    assert len(lr._lineage_results) == 1
-    lineage_result = lr._lineage_results[0]
+    assert len(lr._stmt_holders) == 1
+    holder = lr._stmt_holders[0]
     assert (
-        lineage_result.column == column_lineages
-    ), f"\n\tExpected Lineage: {column_lineages}\n\tActual Lineage: {lineage_result.column}"
+        holder.column == column_lineages
+    ), f"\n\tExpected Lineage: {column_lineages}\n\tActual Lineage: {holder.column}"

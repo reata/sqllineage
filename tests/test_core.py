@@ -1,5 +1,5 @@
-from sqllineage.core.lineage_result import LineageResult
+from sqllineage.holders import StatementLineageHolder
 
 
 def test_dummy():
-    assert str(LineageResult()) == repr(LineageResult())
+    assert str(StatementLineageHolder()) == repr(StatementLineageHolder())

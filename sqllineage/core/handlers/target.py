@@ -2,8 +2,8 @@ from sqlparse.sql import Comparison, Function, Identifier, Token
 from sqlparse.tokens import Number
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
-from sqllineage.core.lineage_result import LineageResult
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.holders import SubQueryLineageHolder
 from sqllineage.models import Table
 
 
@@ -13,7 +13,7 @@ class TargetHandler(NextTokenBaseHandler):
     def _indicate(self, token: Token) -> bool:
         return token.normalized in self.TARGET_TABLE_TOKENS
 
-    def _handle(self, token: Token, lineage_result: LineageResult, **kwargs) -> None:
+    def _handle(self, token: Token, holder: SubQueryLineageHolder, **kwargs) -> None:
         if isinstance(token, Function):
             # insert into tab (col1, col2) values (val1, val2); Here tab (col1, col2) will be parsed as Function
             # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
@@ -22,7 +22,7 @@ class TargetHandler(NextTokenBaseHandler):
                     "An Identifier is expected, got %s[value: %s] instead."
                     % (type(token).__name__, token)
                 )
-            lineage_result.write.add(Table.of(token.token_first(skip_cm=True)))
+            holder.write.add(Table.of(token.token_first(skip_cm=True)))
         elif isinstance(token, Comparison):
             # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
             # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
@@ -34,8 +34,8 @@ class TargetHandler(NextTokenBaseHandler):
                     "An Identifier is expected, got %s[value: %s] instead."
                     % (type(token).__name__, token)
                 )
-            lineage_result.write.add(Table.of(token.left))
-            lineage_result.read.add(Table.of(token.right))
+            holder.write.add(Table.of(token.left))
+            holder.read.add(Table.of(token.right))
         else:
             if not isinstance(token, Identifier):
                 raise SQLLineageException(
@@ -46,4 +46,4 @@ class TargetHandler(NextTokenBaseHandler):
                 # Special Handling for Spark Bucket Table DDL
                 pass
             else:
-                lineage_result.write.add(Table.of(token))
+                holder.write.add(Table.of(token))
