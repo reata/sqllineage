@@ -2,8 +2,8 @@ from sqlparse.sql import Case, Function, Identifier, IdentifierList, Operation, 
 from sqlparse.tokens import Wildcard
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
-from sqllineage.core.lineage_result import LineageResult
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.holders import SubQueryLineageHolder
 from sqllineage.models import Column
 
 
@@ -18,16 +18,16 @@ class ColumnHandler(NextTokenBaseHandler):
         return token.normalized in ("SELECT", "OVER")
 
     def _handle(
-        self, token: Token, lineage_result: LineageResult, subquery_name=None, **kwargs
+        self, token: Token, holder: SubQueryLineageHolder, subquery_name=None, **kwargs
     ) -> None:
         target_table = None
         if subquery_name is not None:
             target_table = subquery_name
         else:
-            if lineage_result.write:
-                if len(lineage_result.write) > 1:
+            if holder.write:
+                if len(holder.write) > 1:
                     raise SQLLineageException
-                target_table = list(lineage_result.write)[0]
+                target_table = list(holder.write)[0]
         if target_table:
             column_token_types = (Identifier, Function, Operation, Case)
             if isinstance(token, column_token_types) or token.ttype is Wildcard:
@@ -45,10 +45,10 @@ class ColumnHandler(NextTokenBaseHandler):
                 self.target_columns.append(Column.of(token, target_table))
 
     def end_of_query_cleanup(
-        self, lineage_result: LineageResult, subquery_name=None, **kwargs
+        self, holder: SubQueryLineageHolder, subquery_name=None, **kwargs
     ) -> None:
         for column in self.target_columns:
-            source_columns = column.to_source_columns(lineage_result.read)
+            source_columns = column.to_source_columns(holder.read)
             for source_column in source_columns:
                 self.source_columns.append(source_column)
-                lineage_result.graph.add_edge(source_column, column)
+                holder.graph.add_edge(source_column, column)

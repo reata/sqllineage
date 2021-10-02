@@ -4,7 +4,7 @@ from typing import Dict, List
 import sqlparse
 from sqlparse.sql import Statement
 
-from sqllineage.combiners import combine
+from sqllineage.combiners import combine_statement_lineage
 from sqllineage.core import LineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
@@ -71,11 +71,11 @@ Target Tables:
     {intermediate_tables}"""
         if self._verbose:
             result = ""
-            for i, lineage_result in enumerate(self._lineage_results):
+            for i, holder in enumerate(self._stmt_holders):
                 stmt_short = statements[i].replace("\n", "")
                 if len(stmt_short) > 50:
                     stmt_short = stmt_short[:50] + "..."
-                content = str(lineage_result).replace("\n", "\n    ")
+                content = str(holder).replace("\n", "\n    ")
                 result += f"""Statement #{i + 1}: {stmt_short}
     {content}
 """
@@ -87,7 +87,7 @@ Target Tables:
         """
         to turn the DAG into cytoscape format.
         """
-        return to_cytoscape(self._combined_lineage_result.lineage_graph)
+        return to_cytoscape(self._sql_holder.lineage_graph)
 
     def draw(self) -> None:
         """
@@ -120,23 +120,21 @@ Target Tables:
         """
         a list of source :class:`sqllineage.models.Table`
         """
-        return sorted(self._combined_lineage_result.source_tables, key=lambda x: str(x))
+        return sorted(self._sql_holder.source_tables, key=lambda x: str(x))
 
     @lazy_property
     def target_tables(self) -> List[Table]:
         """
         a list of target :class:`sqllineage.models.Table`
         """
-        return sorted(self._combined_lineage_result.target_tables, key=lambda x: str(x))
+        return sorted(self._sql_holder.target_tables, key=lambda x: str(x))
 
     @lazy_property
     def intermediate_tables(self) -> List[Table]:
         """
         a list of intermediate :class:`sqllineage.models.Table`
         """
-        return sorted(
-            self._combined_lineage_result.intermediate_tables, key=lambda x: str(x)
-        )
+        return sorted(self._sql_holder.intermediate_tables, key=lambda x: str(x))
 
     def _eval(self):
         self._stmt = [
@@ -144,6 +142,6 @@ Target Tables:
             for s in sqlparse.parse(self._sql.strip(), self._encoding)
             if s.token_first(skip_cm=True)
         ]
-        self._lineage_results = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
-        self._combined_lineage_result = combine(*self._lineage_results)
+        self._stmt_holders = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
+        self._sql_holder = combine_statement_lineage(*self._stmt_holders)
         self._evaluated = True

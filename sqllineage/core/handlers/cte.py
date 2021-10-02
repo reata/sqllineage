@@ -1,8 +1,8 @@
 from sqlparse.sql import Identifier, IdentifierList, Token
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
-from sqllineage.core.lineage_result import LineageResult
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.holders import SubQueryLineageHolder
 from sqllineage.models import Table
 
 
@@ -12,7 +12,7 @@ class CTEHandler(NextTokenBaseHandler):
     def _indicate(self, token: Token) -> bool:
         return token.normalized in self.CTE_TOKENS
 
-    def _handle(self, token: Token, lineage_result: LineageResult, **kwargs) -> None:
+    def _handle(self, token: Token, holder: SubQueryLineageHolder, **kwargs) -> None:
         if isinstance(token, Identifier):
             cte = [token]
         elif isinstance(token, IdentifierList):
@@ -23,4 +23,4 @@ class CTEHandler(NextTokenBaseHandler):
                 % (type(token).__name__, token)
             )
         for token in cte:
-            lineage_result.intermediate.add(Table.of(token))
+            holder.intermediate.add(Table.of(token))

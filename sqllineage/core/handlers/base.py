@@ -1,6 +1,6 @@
 from sqlparse.sql import Token
 
-from sqllineage.core.lineage_result import LineageResult
+from sqllineage.holders import SubQueryLineageHolder
 
 
 class NextTokenBaseHandler:
@@ -17,7 +17,7 @@ class NextTokenBaseHandler:
         """
         raise NotImplementedError
 
-    def _handle(self, token: Token, lineage_result: LineageResult, **kwargs) -> None:
+    def _handle(self, token: Token, holder: SubQueryLineageHolder, **kwargs) -> None:
         """
         Handle the indicated token, and update the lienage result accordingly
         """
@@ -31,15 +31,15 @@ class NextTokenBaseHandler:
         if indicator:
             self.indicator = True
 
-    def handle(self, token: Token, lineage_result: LineageResult, **kwargs):
+    def handle(self, token: Token, holder: SubQueryLineageHolder, **kwargs):
         """
         Handle and set indicator back to False
         """
         if self.indicator:
-            self._handle(token, lineage_result, **kwargs)
+            self._handle(token, holder, **kwargs)
             self.indicator = False
 
-    def end_of_query_cleanup(self, lineage_result: LineageResult, **kwargs) -> None:
+    def end_of_query_cleanup(self, holder: SubQueryLineageHolder, **kwargs) -> None:
         """
         Optional hook to be called at the end of statement or subquery
         """
@@ -51,5 +51,5 @@ class CurrentTokenBaseHandler:
     This is to address an extract pattern when we should extract something from current token
     """
 
-    def handle(self, token: Token, lineage_result: LineageResult) -> None:
+    def handle(self, token: Token, holder: SubQueryLineageHolder) -> None:
         raise NotImplementedError
