@@ -23,4 +23,4 @@ class CTEHandler(NextTokenBaseHandler):
                 % (type(token).__name__, token)
             )
         for token in cte:
-            holder.intermediate.add(Table.of(token))
+            holder.add_cte(Table.of(token))

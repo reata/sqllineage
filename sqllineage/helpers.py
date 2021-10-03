@@ -1,7 +1,31 @@
 import logging
 from argparse import Namespace
+from enum import Enum, unique
+
 
 logger = logging.getLogger(__name__)
+
+
+class NodeTag:
+    READ = "read"
+    WRITE = "write"
+    CTE = "cte"
+    DROP = "drop"
+    SOURCE_ONLY = "source_only"
+    TARGET_ONLY = "target_only"
+    SELFLOOP = "selfloop"
+
+
+@unique
+class EdgeType(Enum):
+    LINEAGE = 1
+    HAS_COLUMN = 2
+    RENAME = 3
+
+
+class LineageLevel:
+    TABLE = "table"
+    COLUMN = "column"
 
 
 def escape_identifier_name(name: str):

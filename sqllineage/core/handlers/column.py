@@ -51,4 +51,4 @@ class ColumnHandler(NextTokenBaseHandler):
             source_columns = column.to_source_columns(holder.read)
             for source_column in source_columns:
                 self.source_columns.append(source_column)
-                holder.graph.add_edge(source_column, column)
+                holder.add_column_lineage(source_column, column)

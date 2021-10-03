@@ -19,5 +19,5 @@ class SwapPartitionHandler(CurrentTokenBaseHandler):
             _, parenthesis = token.tokens
             _, identifier_list, _ = parenthesis.tokens
             identifiers = list(identifier_list.get_identifiers())
-            holder.read.add(Table(escape_identifier_name(identifiers[0].normalized)))
-            holder.write.add(Table(escape_identifier_name(identifiers[3].normalized)))
+            holder.add_read(Table(escape_identifier_name(identifiers[0].normalized)))
+            holder.add_write(Table(escape_identifier_name(identifiers[3].normalized)))
