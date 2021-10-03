@@ -1,9 +1,10 @@
 import argparse
 import logging
+import pprint
 
 from sqllineage import DEFAULT_HOST, DEFAULT_PORT
 from sqllineage.drawing import draw_lineage_graph
-from sqllineage.helpers import extract_sql_from_args
+from sqllineage.helpers import LineageLevel, extract_sql_from_args
 from sqllineage.runner import LineageRunner
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,13 @@ def main(args=None) -> None:
         "--verbose",
         help="increase output verbosity, show statement level lineage result",
         action="store_true",
+    )
+    parser.add_argument(
+        "-l",
+        "--level",
+        help="lineage level, column or table, default at table level",
+        choices=[LineageLevel.TABLE, LineageLevel.COLUMN],
+        default=LineageLevel.TABLE,
     )
     parser.add_argument(
         "-g",
@@ -68,6 +76,8 @@ def main(args=None) -> None:
         )
         if args.graph_visualization:
             runner.draw()
+        elif args.level == LineageLevel.COLUMN:
+            pprint.pprint(runner.column_lineage)
         else:
             print(runner)
     elif args.graph_visualization:

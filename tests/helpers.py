@@ -3,10 +3,10 @@ from sqllineage.runner import LineageRunner
 
 
 def assert_table_lineage_equal(sql, source_tables=None, target_tables=None):
-    lp = LineageRunner(sql)
+    lr = LineageRunner(sql)
     for (_type, actual, expected) in zip(
         ["Source", "Target"],
-        [lp.source_tables, lp.target_tables],
+        [lr.source_tables, lr.target_tables],
         [source_tables, target_tables],
     ):
         actual = set(actual)
@@ -17,7 +17,7 @@ def assert_table_lineage_equal(sql, source_tables=None, target_tables=None):
 
 
 def assert_column_lineage_equal(sql, column_lineages=None):
-    column_lineages = (
+    expected = (
         {
             (
                 Column(lineage[0]),
@@ -29,9 +29,7 @@ def assert_column_lineage_equal(sql, column_lineages=None):
         else set()
     )
     lr = LineageRunner(sql)
-    lr._eval()
-    assert len(lr._stmt_holders) == 1
-    holder = lr._stmt_holders[0]
+    actual = set(lr.column_lineage)
     assert (
-        holder.column == column_lineages
-    ), f"\n\tExpected Lineage: {column_lineages}\n\tActual Lineage: {holder.column}"
+        set(actual) == expected
+    ), f"\n\tExpected Lineage: {expected}\n\tActual Lineage: {actual}"

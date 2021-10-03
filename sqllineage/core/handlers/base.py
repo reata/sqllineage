@@ -19,7 +19,7 @@ class NextTokenBaseHandler:
 
     def _handle(self, token: Token, holder: SubQueryLineageHolder, **kwargs) -> None:
         """
-        Handle the indicated token, and update the lienage result accordingly
+        Handle the indicated token, and update the lineage result accordingly
         """
         raise NotImplementedError
 

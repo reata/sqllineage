@@ -1,14 +1,14 @@
 import logging
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import sqlparse
 from sqlparse.sql import Statement
 
-from sqllineage.combiners import combine_statement_lineage
 from sqllineage.core import LineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
+from sqllineage.holders import SQLLineageHolder
 from sqllineage.io import to_cytoscape
-from sqllineage.models import Table
+from sqllineage.models import Column, Table
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ Target Tables:
         """
         to turn the DAG into cytoscape format.
         """
-        return to_cytoscape(self._sql_holder.lineage_graph)
+        return to_cytoscape(self._sql_holder.table_lineage_graph)
 
     def draw(self) -> None:
         """
@@ -136,6 +136,13 @@ Target Tables:
         """
         return sorted(self._sql_holder.intermediate_tables, key=lambda x: str(x))
 
+    @lazy_property
+    def column_lineage(self) -> List[Tuple[Column, Column]]:
+        """
+        a list of column tuple :class:`sqllineage.models.Column`
+        """
+        return sorted(self._sql_holder.column_lineage, key=lambda x: str(x))
+
     def _eval(self):
         self._stmt = [
             s
@@ -143,5 +150,5 @@ Target Tables:
             if s.token_first(skip_cm=True)
         ]
         self._stmt_holders = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
-        self._sql_holder = combine_statement_lineage(*self._stmt_holders)
+        self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
         self._evaluated = True

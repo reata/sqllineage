@@ -11,6 +11,7 @@ def test_cli_dummy(_):
     main([])
     main(["-e", "select * from dual"])
     main(["-f", __file__])
+    main(["-f", __file__, "-l", "column"])
     main(["-e", "select * from dual", "-f", __file__])
     main(["-f", __file__, "-g"])
     main(["-g"])

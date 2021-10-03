@@ -22,7 +22,7 @@ class TargetHandler(NextTokenBaseHandler):
                     "An Identifier is expected, got %s[value: %s] instead."
                     % (type(token).__name__, token)
                 )
-            holder.write.add(Table.of(token.token_first(skip_cm=True)))
+            holder.add_write(Table.of(token.token_first(skip_cm=True)))
         elif isinstance(token, Comparison):
             # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
             # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
@@ -34,8 +34,8 @@ class TargetHandler(NextTokenBaseHandler):
                     "An Identifier is expected, got %s[value: %s] instead."
                     % (type(token).__name__, token)
                 )
-            holder.write.add(Table.of(token.left))
-            holder.read.add(Table.of(token.right))
+            holder.add_write(Table.of(token.left))
+            holder.add_read(Table.of(token.right))
         else:
             if not isinstance(token, Identifier):
                 raise SQLLineageException(
@@ -46,4 +46,4 @@ class TargetHandler(NextTokenBaseHandler):
                 # Special Handling for Spark Bucket Table DDL
                 pass
             else:
-                holder.write.add(Table.of(token))
+                holder.add_write(Table.of(token))

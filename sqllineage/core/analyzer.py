@@ -12,7 +12,6 @@ from sqlparse.sql import (
     TokenList,
 )
 
-from sqllineage.combiners import combine_subquery_lineage
 from sqllineage.core.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
@@ -44,14 +43,14 @@ class LineageAnalyzer:
             holder = self._extract_from_ddl_alter(stmt)
         else:
             # DML parsing logic also applies to CREATE DDL
-            holder = self._extract_from_dml(stmt).to_stmt_lineage_holder()
+            holder = StatementLineageHolder.of(self._extract_from_dml(stmt))
         return holder
 
     @classmethod
     def _extract_from_ddl_drop(cls, stmt: Statement) -> StatementLineageHolder:
         holder = StatementLineageHolder()
         for table in {Table.of(t) for t in stmt.tokens if isinstance(t, Identifier)}:
-            holder.drop.add(table)
+            holder.add_drop(table)
         return holder
 
     @classmethod
@@ -60,10 +59,10 @@ class LineageAnalyzer:
         tables = [Table.of(t) for t in stmt.tokens if isinstance(t, Identifier)]
         keywords = [t for t in stmt.tokens if t.is_keyword]
         if any(k.normalized == "RENAME" for k in keywords) and len(tables) == 2:
-            holder.rename.add((tables[0], tables[1]))
+            holder.add_rename(tables[0], tables[1])
         if any(k.normalized == "EXCHANGE" for k in keywords) and len(tables) == 2:
-            holder.write.add(tables[0])
-            holder.read.add(tables[1])
+            holder.add_write(tables[0])
+            holder.add_read(tables[1])
         return holder
 
     @classmethod
@@ -73,7 +72,7 @@ class LineageAnalyzer:
         holder = SubQueryLineageHolder()
         if subquery_name is not None:
             # If within subquery, then manually add subquery as target table
-            holder.write.add(SubQuery.of(token, subquery_name))
+            holder.add_write(SubQuery.of(token, subquery_name))
         current_handlers = [
             handler_cls() for handler_cls in CurrentTokenBaseHandler.__subclasses__()
         ]
@@ -107,12 +106,9 @@ class LineageAnalyzer:
             for next_handler in next_handlers:
                 next_handler.end_of_query_cleanup(holder, subquery_name=subquery_name)
         # Extract each subquery and merge to parent lineage
-        subquery_holders = [holder] + [
-            cls._extract_from_dml(subquery.token, subquery.raw_name)
-            for subquery in subqueries
-        ]
-        # In top level query, convert subquery lineage holder to a statement lineage holder
-        return combine_subquery_lineage(*subquery_holders)
+        for subquery in subqueries:
+            holder |= cls._extract_from_dml(subquery.token, subquery.raw_name)
+        return holder
 
     @classmethod
     def __token_negligible_before_tablename(cls, token: TokenList) -> bool:
