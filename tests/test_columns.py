@@ -129,6 +129,10 @@ FROM (SELECT col1 FROM tab2) dt"""
 SELECT col1
 FROM (SELECT col1, col2 FROM tab2) dt"""
     assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col1")])
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT col1
+FROM (SELECT col1 FROM tab2)"""
+    assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col1")])
 
 
 def test_select_column_from_table_join():
@@ -167,6 +171,16 @@ SELECT col1
 FROM tab2 a
          INNER JOIN tab3 b
                     ON a.id = b.id"""
+    assert_column_lineage_equal(sql, [("col1", "tab1.col1")])
+
+
+def test_select_column_from_same_table_multiple_time_using_different_alias():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT a.col1 AS col2,
+       b.col1 AS col3
+FROM tab2 a
+         JOIN tab2 b
+              ON a.parent_id = b.id"""
     assert_column_lineage_equal(
-        sql, [("tab2.col1", "tab1.col1"), ("tab3.col1", "tab1.col1")]
+        sql, [("tab2.col1", "tab1.col2"), ("tab2.col1", "tab1.col3")]
     )

@@ -1,5 +1,5 @@
 import itertools
-from typing import Set, Tuple, Union
+from typing import Dict, Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
@@ -11,10 +11,10 @@ from sqllineage.models import Column, SubQuery, Table
 class ColumnLineageMixin:
     @property
     def column_lineage(self) -> Set[Tuple[Column, Column]]:
-        self._graph: DiGraph  # For mypy attribute checking
+        self.graph: DiGraph  # For mypy attribute checking
         # filter all the column node in the graph
-        column_nodes = [n for n in self._graph.nodes if isinstance(n, Column)]
-        column_graph = self._graph.subgraph(column_nodes)
+        column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
+        column_graph = self.graph.subgraph(column_nodes)
         source_columns = {column for column, deg in column_graph.in_degree if deg == 0}
         # if a column lineage path ends at SubQuery, then it should be pruned
         target_columns = {
@@ -24,7 +24,7 @@ class ColumnLineageMixin:
         }
         columns = set()
         for (source, target) in itertools.product(source_columns, target_columns):
-            if list(nx.all_simple_paths(self._graph, source, target)):
+            if list(nx.all_simple_paths(self.graph, source, target)):
                 columns.add((source, target))
         return columns
 
@@ -59,6 +59,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def add_read(self, value) -> None:
         self._property_setter(value, NodeTag.READ)
+        # the same table can be add (in SQL: joined) multiple times with different alias
+        self.graph.add_edge(value, value.alias, type=EdgeType.HAS_ALIAS)
 
     @property
     def write(self) -> Set[Union[SubQuery, Table]]:
@@ -74,10 +76,30 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     def add_cte(self, value) -> None:
         self._property_setter(value, NodeTag.CTE)
 
+    @property
+    def alias_mapping(self) -> Dict[str, Union[Table, SubQuery]]:
+        """
+        A table can be refer to as alias, table name, or database_name.table_name, create the mapping here.
+        For SubQuery, it's only alias then.
+        """
+        return {
+            **{
+                tgt: src
+                for src, tgt, attr in self.graph.edges(data=True)
+                if attr.get("type") == EdgeType.HAS_ALIAS
+            },
+            **{
+                table.raw_name: table for table in self.read if isinstance(table, Table)
+            },
+            **{str(table): table for table in self.read if isinstance(table, Table)},
+        }
+
     def add_column_lineage(self, src: Column, tgt: Column) -> None:
         self.graph.add_edge(src, tgt, type=EdgeType.LINEAGE)
-        self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
         self.graph.add_edge(tgt.parent, tgt, type=EdgeType.HAS_COLUMN)
+        if src.parent is not None:
+            # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
+            self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
 
 
 class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
@@ -141,7 +163,7 @@ class SQLLineageHolder(ColumnLineageMixin):
 
         :param graph: the Directed Acyclic Graph holding all the combined lineage result.
         """
-        self._graph = graph
+        self.graph = graph
         self._selfloop_tables = self.__retrieve_tag_tables(NodeTag.SELFLOOP)
         self._sourceonly_tables = self.__retrieve_tag_tables(NodeTag.SOURCE_ONLY)
         self._targetonly_tables = self.__retrieve_tag_tables(NodeTag.TARGET_ONLY)
@@ -151,8 +173,8 @@ class SQLLineageHolder(ColumnLineageMixin):
         """
         The table level DiGraph held by SQLLineageHolder
         """
-        table_nodes = [n for n in self._graph.nodes if isinstance(n, Table)]
-        return self._graph.subgraph(table_nodes)
+        table_nodes = [n for n in self.graph.nodes if isinstance(n, Table)]
+        return self.graph.subgraph(table_nodes)
 
     @property
     def source_tables(self) -> Set[Table]:
@@ -198,7 +220,7 @@ class SQLLineageHolder(ColumnLineageMixin):
     def __retrieve_tag_tables(self, tag) -> Set[Table]:
         return {
             table
-            for table, attr in self._graph.nodes(data=True)
+            for table, attr in self.graph.nodes(data=True)
             if attr.get(tag) is True
         }
 

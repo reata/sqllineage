@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Set, Union
+from typing import Dict, Optional, Set, Union
 
 from sqlparse import tokens as T
 from sqlparse.engine import grouping
@@ -66,7 +66,7 @@ class Table:
             self.raw_name = escape_identifier_name(table_name)
             if schema:
                 warnings.warn("Name is in schema.table format, schema param is ignored")
-        self.alias = kwargs.pop("alias", None)
+        self.alias = kwargs.pop("alias", self.raw_name)
 
     def __str__(self):
         return f"{self.schema}.{self.raw_name.lower()}"
@@ -112,38 +112,36 @@ class Partition:
 
 
 class SubQuery:
-    def __init__(self, token: Parenthesis, query: str, name: Optional[str]):
+    def __init__(self, token: Parenthesis, alias: Optional[str]):
         """
         Data Class for SubQuery
 
         :param token: subquery token
-        :param query: query text
-        :param name: subquery name
+        :param alias: subquery name
         """
-        if name is None:
-            self.raw_name = "<subquery>"
-        else:
-            self.raw_name = name
-        self.query = query
         self.token = token
+        self._query = token.value
+        self.alias = alias if alias is not None else f"subquery_{hash(self)}"
 
     def __str__(self):
-        return self.raw_name
+        return self.alias
 
     def __repr__(self):
         return "SubQuery: " + str(self)
 
-    @property
-    def alias(self):
-        return self.raw_name
+    def __eq__(self, other):
+        return type(self) is type(other) and self._query == other._query
+
+    def __hash__(self):
+        return hash(self._query)
 
     @staticmethod
-    def of(parenthesis: Parenthesis, name: Optional[str]):
-        return SubQuery(parenthesis, parenthesis.value, name)
+    def of(parenthesis: Parenthesis, alias: Optional[str]):
+        return SubQuery(parenthesis, alias)
 
 
 class Column:
-    def __init__(self, name: str, parent: Union[Table, SubQuery] = None, **kwargs):
+    def __init__(self, name: str, **kwargs):
         """
         Data Class for Column
 
@@ -151,24 +149,21 @@ class Column:
         :param parent: :class:`Table` or :class:`SubQuery`
         :param kwargs:
         """
-        if "." not in name:
-            if parent is None:
-                raise SQLLineageException
-            else:
-                self.parent = parent
-                self.raw_name = escape_identifier_name(name)
-        else:
+        if "." in name:
             table_name, column_name = name.rsplit(".", 1)
-            self.parent = Table(table_name)
+            self._parent: Set[Union[Table, SubQuery]] = {Table(table_name)}
             self.raw_name = escape_identifier_name(column_name)
-            if parent:
-                warnings.warn(
-                    "Name is in parent.column format, parent param is ignored"
-                )
+        else:
+            self._parent = set()
+            self.raw_name = escape_identifier_name(name)
         self.source_raw_names = kwargs.pop("source_raw_names", ((self.raw_name, None),))
 
     def __str__(self):
-        return f"{self.parent}.{self.raw_name.lower()}"
+        return (
+            f"{self.parent}.{self.raw_name.lower()}"
+            if self.parent is not None
+            else f"{self.raw_name.lower()}"
+        )
 
     def __repr__(self):
         return "Column: " + str(self)
@@ -179,22 +174,32 @@ class Column:
     def __hash__(self):
         return hash(str(self))
 
+    @property
+    def parent(self) -> Optional[Union[Table, SubQuery]]:
+        return list(self._parent)[0] if len(self._parent) == 1 else None
+
+    @parent.setter
+    def parent(self, value: Union[Table, SubQuery]):
+        self._parent.add(value)
+
     @staticmethod
-    def of(token: Token, parent: Union[Table, SubQuery]):
+    def of(token: Token):
         if isinstance(token, Identifier):
             alias = token.get_alias()
             if alias:
                 # handle column alias, including alias for column name or Case, Function
                 kw_idx, kw = token.token_next_by(m=(T.Keyword, "AS"))
+                if kw_idx is None:
+                    # alias without AS
+                    kw_idx, _ = token.token_next_by(i=Identifier)
                 idx, _ = token.token_prev(kw_idx, skip_cm=True)
                 expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
                 source_raw_names = Column._extract_source_raw_names(expr)
-                return Column(alias, parent, source_raw_names=source_raw_names)
+                return Column(alias, source_raw_names=source_raw_names)
             else:
                 # select column name directly without alias
                 return Column(
                     token.get_real_name(),
-                    parent,
                     source_raw_names=(
                         (token.get_real_name(), token.get_parent_name()),
                     ),
@@ -202,7 +207,7 @@ class Column:
         else:
             # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
             source_raw_names = Column._extract_source_raw_names(token)
-            return Column(token.value, parent, source_raw_names=source_raw_names)
+            return Column(token.value, source_raw_names=source_raw_names)
 
     @staticmethod
     def _extract_source_raw_names(token: Token):
@@ -236,19 +241,34 @@ class Column:
             source_raw_names = ((token.value, None),)
         return source_raw_names
 
-    def to_source_columns(self, source_tables: Set[Union[SubQuery, Table]]):
-        table_dict = {table.raw_name: table for table in source_tables}
-        table_dict.update(
-            {table.alias: table for table in source_tables if table.alias}
-        )
-        source_columns = []
+    def to_source_columns(self, alias_mapping: Dict[str, Union[Table, SubQuery]]):
+        """
+        Best guess for source table given all the possible table/subquery and their alias.
+        """
+
+        def _to_src_col(name: str, parent: Union[Table, SubQuery] = None):
+            col = Column(name)
+            if parent:
+                col.parent = parent
+            return col
+
+        source_columns = set()
         for (src_col, src_tbl) in self.source_raw_names:
             if src_tbl is None:
-                # SELECT * OR SELECT col (without table prefix), src_tbl is NONE
-                for table in source_tables:
-                    # TODO: add some mark so that we know column might not exist in this table
-                    source_columns.append(Column(src_col, table))
+                if src_col == "*":
+                    # select *
+                    for table in set(alias_mapping.values()):
+                        source_columns.add(_to_src_col(src_col, table))
+                else:
+                    # select column without specifying table prefix
+                    src_col = _to_src_col(src_col, None)
+                    for table in set(alias_mapping.values()):
+                        # in case of only one table, we get the right answer
+                        # in case of multiple tables, a bunch of possible tables are set
+                        src_col.parent = table
+                    source_columns.add(src_col)
             else:
-                # any chance we might see dict.get return None here?
-                source_columns.append(Column(src_col, table_dict.get(src_tbl)))
+                if alias_mapping.get(src_tbl):
+                    source_columns.add(_to_src_col(src_col, alias_mapping.get(src_tbl)))
+                # any chance we might see dict.get return unknown_table here?
         return source_columns

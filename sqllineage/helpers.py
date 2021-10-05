@@ -19,8 +19,9 @@ class NodeTag:
 @unique
 class EdgeType(Enum):
     LINEAGE = 1
-    HAS_COLUMN = 2
-    RENAME = 3
+    RENAME = 2
+    HAS_COLUMN = 3
+    HAS_ALIAS = 4
 
 
 class LineageLevel:

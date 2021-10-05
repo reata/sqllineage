@@ -67,12 +67,12 @@ class LineageAnalyzer:
 
     @classmethod
     def _extract_from_dml(
-        cls, token: TokenList, subquery_name=None
+        cls, token: TokenList, subquery: SubQuery = None
     ) -> SubQueryLineageHolder:
         holder = SubQueryLineageHolder()
-        if subquery_name is not None:
+        if subquery is not None:
             # If within subquery, then manually add subquery as target table
-            holder.add_write(SubQuery.of(token, subquery_name))
+            holder.add_write(subquery)
         current_handlers = [
             handler_cls() for handler_cls in CurrentTokenBaseHandler.__subclasses__()
         ]
@@ -85,10 +85,10 @@ class LineageAnalyzer:
             if cls.__token_negligible_before_tablename(sub_token):
                 continue
 
-            for subquery in cls.parse_subquery(sub_token):
+            for sq in cls.parse_subquery(sub_token):
                 # Collecting subquery on the way, hold on parsing until last
                 # so that each handler don't have to worry about what's inside subquery
-                subqueries.append(subquery)
+                subqueries.append(sq)
 
             for current_handler in current_handlers:
                 current_handler.handle(sub_token, holder)
@@ -100,14 +100,14 @@ class LineageAnalyzer:
 
             for next_handler in next_handlers:
                 if next_handler.indicator:
-                    next_handler.handle(sub_token, holder, subquery_name=subquery_name)
+                    next_handler.handle(sub_token, holder)
         else:
             # call end of query hook here as loop is over
             for next_handler in next_handlers:
-                next_handler.end_of_query_cleanup(holder, subquery_name=subquery_name)
-        # Extract each subquery and merge to parent lineage
-        for subquery in subqueries:
-            holder |= cls._extract_from_dml(subquery.token, subquery.raw_name)
+                next_handler.end_of_query_cleanup(holder)
+        # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
+        for sq in subqueries:
+            holder |= cls._extract_from_dml(sq.token, sq)
         return holder
 
     @classmethod
@@ -128,8 +128,8 @@ class LineageAnalyzer:
                     cls._parse_subquery_from_identifier(identifier)
                     for identifier in token.get_sublists()
                 ],
+                [],
             )
-            list()
         elif isinstance(token, Parenthesis) and cls._is_parenthesis_subquery(token):
             # Parenthesis for SubQuery without alias, this is valid syntax for certain SQL dialect
             result = [SubQuery.of(token, None)]
