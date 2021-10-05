@@ -12,7 +12,7 @@ class CTEHandler(NextTokenBaseHandler):
     def _indicate(self, token: Token) -> bool:
         return token.normalized in self.CTE_TOKENS
 
-    def _handle(self, token: Token, holder: SubQueryLineageHolder, **kwargs) -> None:
+    def _handle(self, token: Token, holder: SubQueryLineageHolder) -> None:
         if isinstance(token, Identifier):
             cte = [token]
         elif isinstance(token, IdentifierList):

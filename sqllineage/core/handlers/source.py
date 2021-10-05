@@ -21,7 +21,7 @@ class SourceHandler(NextTokenBaseHandler):
             re.match(regex, token.normalized) for regex in self.SOURCE_TABLE_TOKENS
         ) and not isinstance(token.parent.parent, Function)
 
-    def _handle(self, token: Token, holder: SubQueryLineageHolder, **kwargs) -> None:
+    def _handle(self, token: Token, holder: SubQueryLineageHolder) -> None:
         if isinstance(token, Identifier):
             if isinstance(token.token_first(skip_cm=True), Parenthesis):
                 # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
@@ -44,7 +44,7 @@ class SourceHandler(NextTokenBaseHandler):
         elif isinstance(token, Parenthesis):
             # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
             # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
-            pass
+            holder.add_read(SubQuery.of(token, None))
         else:
             raise SQLLineageException(
                 "An Identifier is expected, got %s[value: %s] instead."

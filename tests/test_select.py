@@ -188,3 +188,13 @@ SELECT b, d FROM cte1 JOIN cte2
 WHERE cte1.a = cte2.c""",
         {"table1", "table2"},
     )
+
+
+def test_select_group_by():
+    assert_table_lineage_equal(
+        "SELECT col1, col2 FROM tab1 GROUP BY col1, col2", {"tab1"}
+    )
+
+
+def test_select_group_by_ordinal():
+    assert_table_lineage_equal("SELECT col1, col2 FROM tab1 GROUP BY 1, 2", {"tab1"})

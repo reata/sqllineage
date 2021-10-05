@@ -1,13 +1,16 @@
 import pytest
+from sqlparse.sql import Parenthesis
 
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.models import Schema, Table
+from sqllineage.models import Column, Schema, SubQuery, Table
 
 
 def test_repr_dummy():
     assert repr(Schema())
     assert repr(Table(""))
     assert repr(Table("a.b.c"))
+    assert repr(SubQuery(Parenthesis(), ""))
+    assert repr(Column("a.b"))
     with pytest.raises(SQLLineageException):
         Table("a.b.c.d")
     with pytest.warns(Warning):
