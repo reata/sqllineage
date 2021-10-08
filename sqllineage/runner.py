@@ -141,7 +141,17 @@ Target Tables:
         """
         a list of column tuple :class:`sqllineage.models.Column`
         """
-        return sorted(self._sql_holder.column_lineage, key=lambda x: str(x))
+        # sort by target column, and then source column
+        return sorted(
+            self._sql_holder.column_lineage, key=lambda x: (str(x[-1]), str(x[0]))
+        )
+
+    def print_column_lineage(self) -> None:
+        for path in self.column_lineage:
+            print(" <- ".join(str(col) for col in reversed(path)))
+
+    def print_table_lineage(self) -> None:
+        print(str(self))
 
     def _eval(self):
         self._stmt = [
