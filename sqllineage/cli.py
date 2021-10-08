@@ -1,6 +1,5 @@
 import argparse
 import logging
-import pprint
 
 from sqllineage import DEFAULT_HOST, DEFAULT_PORT
 from sqllineage.drawing import draw_lineage_graph
@@ -77,9 +76,9 @@ def main(args=None) -> None:
         if args.graph_visualization:
             runner.draw()
         elif args.level == LineageLevel.COLUMN:
-            pprint.pprint(runner.column_lineage)
+            runner.print_column_lineage()
         else:
-            print(runner)
+            runner.print_table_lineage()
     elif args.graph_visualization:
         return draw_lineage_graph(**{"host": args.host, "port": args.port})
     else:

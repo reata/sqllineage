@@ -10,7 +10,7 @@ from sqllineage.models import Column, SubQuery, Table
 
 class ColumnLineageMixin:
     @property
-    def column_lineage(self) -> Set[Tuple[Column, Column]]:
+    def column_lineage(self) -> Set[Tuple[Column, ...]]:
         self.graph: DiGraph  # For mypy attribute checking
         # filter all the column node in the graph
         column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
@@ -24,8 +24,10 @@ class ColumnLineageMixin:
         }
         columns = set()
         for (source, target) in itertools.product(source_columns, target_columns):
-            if list(nx.all_simple_paths(self.graph, source, target)):
-                columns.add((source, target))
+            simple_paths = list(nx.all_simple_paths(self.graph, source, target))
+            if len(simple_paths) == 1:
+                columns.add(tuple(simple_paths[0]))
+            # we can ignore when simple path doesn't exist, but could there be more than one simple path?
         return columns
 
 
