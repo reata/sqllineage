@@ -6,6 +6,7 @@ from sqlparse.sql import Statement
 
 from sqllineage.core import LineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
+from sqllineage.helpers import LineageLevel
 from sqllineage.holders import SQLLineageHolder
 from sqllineage.io import to_cytoscape
 from sqllineage.models import Column, Table
@@ -83,11 +84,14 @@ Target Tables:
         return combined
 
     @lazy_method
-    def to_cytoscape(self) -> List[Dict[str, Dict[str, str]]]:
+    def to_cytoscape(self, level=LineageLevel.TABLE) -> List[Dict[str, Dict[str, str]]]:
         """
         to turn the DAG into cytoscape format.
         """
-        return to_cytoscape(self._sql_holder.table_lineage_graph)
+        if level == LineageLevel.COLUMN:
+            return to_cytoscape(self._sql_holder.column_lineage_graph, compound=True)
+        else:
+            return to_cytoscape(self._sql_holder.table_lineage_graph)
 
     def draw(self) -> None:
         """

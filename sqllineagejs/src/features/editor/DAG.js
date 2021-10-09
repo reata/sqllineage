@@ -6,24 +6,31 @@ import {useSelector} from "react-redux";
 import {selectEditor} from "./editorSlice";
 import {Loading} from "../widget/Loading";
 import {LoadError} from "../widget/LoadError";
-import {SpeedDial, SpeedDialIcon} from "@material-ui/lab";
+import {SpeedDial, SpeedDialIcon, ToggleButton, ToggleButtonGroup} from "@material-ui/lab";
 import {makeStyles} from "@material-ui/core/styles";
 import SpeedDialAction from '@material-ui/lab/SpeedDialAction';
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import ZoomInIcon from '@material-ui/icons/ZoomIn';
 import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
 import ZoomOutIcon from '@material-ui/icons/ZoomOut';
+import TableChartIcon from '@material-ui/icons/TableChart';
+import ViewWeekIcon from '@material-ui/icons/ViewWeek';
+import {Tooltip} from "@material-ui/core";
 
 cytoscape.use(dagre);
 
 const useStyles = makeStyles((theme) => ({
   speedDial: {
     position: 'absolute',
-    '&.MuiSpeedDial-directionLeft': {
-      bottom: theme.spacing(5),
-      right: theme.spacing(2),
-    }
+    bottom: theme.spacing(5),
+    right: theme.spacing(2),
   },
+  floatingButton: {
+    position: 'absolute',
+    right: theme.spacing(0),
+    bottom: theme.spacing(50),
+    zIndex: 100
+  }
 }))
 
 
@@ -31,7 +38,14 @@ export function DAG(props) {
   const classes = useStyles();
   const editorState = useSelector(selectEditor);
   const [open, setOpen] = React.useState(false);
+  const [level, setLevel] = React.useState("table");
   const cyRef = useRef(null);
+
+  const layout = {
+    name: 'dagre',
+    rankDir: 'LR',
+    rankSep: 200,
+  };
 
   const handleSave = () => {
     if (cyRef.current) {
@@ -44,14 +58,29 @@ export function DAG(props) {
     }
   }
 
+  const handleLevel = (event, value) => {
+    if (cyRef.current) {
+      let cy = cyRef.current._cy;
+      let data = value === "column" ? editorState.dagColumn : editorState.dagContent;
+      cy.elements().remove();
+      cy.add(data);
+      cy.makeLayout(layout).run();
+      setLevel(value);
+    }
+  }
+
   useEffect(() => {
     if (cyRef.current) {
       let cy = cyRef.current._cy;
       cy.on("mouseover", "node", function (e) {
         let sel = e.target;
-        let elements = sel.union(sel.successors()).union(sel.predecessors())
-        elements.addClass("highlight");
-        cy.elements().difference(elements).addClass("semitransparent")
+        // current node has parent node: children node to highlight in column lineage
+        // or no parent node in the graph, meaning table lineage: every node is children node
+        if (sel.parent().size() > 0 || cy.elements().filter(node => node.isParent()).size() === 0) {
+          let elements = sel.union(sel.successors()).union(sel.predecessors())
+          elements.addClass("highlight");
+          cy.elements().filter(node => node.isChild()).difference(elements).addClass("semitransparent")
+        }
       });
       cy.on("mouseout", "node", function () {
         cy.elements().removeClass("semitransparent");
@@ -100,6 +129,38 @@ export function DAG(props) {
         }
       },
       {
+        selector: ':parent',
+        style: {
+          'content': (elem) => elem.data()["type"] + ": " + elem.data()["id"],
+          'font-size': 16,
+          'font-weight': 'bold',
+          'text-halign': 'center',
+          'text-valign': 'top'
+        }
+      },
+      {
+        selector: ':parent[type = "Table"]',
+        style: {
+          'background-color': '#f5f5f5',
+          'border-color': '#00516c',
+        }
+      },
+      {
+        selector: ':parent[type = "SubQuery"]',
+        style: {
+          'background-color': '#f5f5f5',
+          'border-color': '#b46c4f',
+        }
+      },
+      {
+        selector: ':parent[type = "Table or SubQuery"]',
+        style: {
+          'background-color': '#f5f5f5',
+          'border-color': '#b46c4f',
+          'border-style': 'dashed',
+        }
+      },
+      {
         selector: 'edge',
         style: {
           width: 1,
@@ -121,11 +182,6 @@ export function DAG(props) {
         style: {'opacity': '0.2'}
       },
     ]
-    const layout = {
-      name: 'dagre',
-      rankDir: 'LR',
-      rankSep: 200,
-    };
     const style = {width: props.width, height: props.height};
     return (
       <div>
@@ -140,6 +196,25 @@ export function DAG(props) {
           wheelSensitivity={0.2}
           ref={cyRef}
         />
+        <ToggleButtonGroup
+          orientation="vertical"
+          value={level}
+          exclusive
+          onChange={handleLevel}
+          aria-label="lineage level"
+          className={classes.floatingButton}
+        >
+          <ToggleButton value="table">
+            <Tooltip title="Table Level Lineage">
+              <TableChartIcon/>
+            </Tooltip>
+          </ToggleButton>
+          <ToggleButton value="column">
+            <Tooltip title="Column Level Lineage">
+              <ViewWeekIcon/>
+            </Tooltip>
+          </ToggleButton>
+        </ToggleButtonGroup>
         <SpeedDial
           ariaLabel="SpeedDial example"
           className={classes.speedDial}
