@@ -179,6 +179,14 @@ class SQLLineageHolder(ColumnLineageMixin):
         return self.graph.subgraph(table_nodes)
 
     @property
+    def column_lineage_graph(self) -> DiGraph:
+        """
+        The column level DiGraph held by SQLLineageHolder
+        """
+        column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
+        return self.graph.subgraph(column_nodes)
+
+    @property
     def source_tables(self) -> Set[Table]:
         """
         a list of source :class:`sqllineage.models.Table`
@@ -249,6 +257,8 @@ class SQLLineageHolder(ColumnLineageMixin):
                 read, write = holder.read, holder.write
                 if holder.cte:
                     read -= holder.cte
+                    for n in holder.cte:
+                        g.remove_node(n)
                 if len(read) > 0 and len(write) == 0:
                     # source only table comes from SELECT statement
                     g.add_nodes_from(read, **{NodeTag.SOURCE_ONLY: True})

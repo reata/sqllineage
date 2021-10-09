@@ -11,7 +11,7 @@ from werkzeug.exceptions import InternalServerError
 
 from sqllineage import DATA_FOLDER, DEFAULT_HOST, DEFAULT_PORT
 from sqllineage import STATIC_FOLDER
-from sqllineage.helpers import extract_sql_from_args
+from sqllineage.helpers import LineageLevel, extract_sql_from_args
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,11 @@ def lineage():
     req_args = Namespace(**request.get_json())
     sql = extract_sql_from_args(req_args)
     lr = LineageRunner(sql, verbose=True)
-    resp = {"verbose": str(lr), "dag": lr.to_cytoscape()}
+    resp = {
+        "verbose": str(lr),
+        "dag": lr.to_cytoscape(),
+        "column": lr.to_cytoscape(LineageLevel.COLUMN),
+    }
     return jsonify(resp)
 
 

@@ -9,6 +9,7 @@ const initialState = {
   editorStatus: 'idle',
   editorError: null,
   dagContent: [],
+  dagColumn: [],
   dagVerbose: "",
   dagStatus: 'idle',
   dagError: null
@@ -55,6 +56,7 @@ export const editorSlice = createSlice({
       state.dagStatus = "succeeded";
       state.dagContent = action.payload.dag;
       state.dagVerbose = action.payload.verbose;
+      state.dagColumn = action.payload.column;
     },
     [fetchDAG.rejected]: (state, action) => {
       state.dagStatus = "failed";
