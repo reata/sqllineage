@@ -3,7 +3,7 @@ from sqlparse.sql import Identifier, IdentifierList, Token
 from sqllineage.core.handlers.base import NextTokenBaseHandler
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import Table
+from sqllineage.models import SubQuery
 
 
 class CTEHandler(NextTokenBaseHandler):
@@ -23,4 +23,7 @@ class CTEHandler(NextTokenBaseHandler):
                 % (type(token).__name__, token)
             )
         for token in cte:
-            holder.add_cte(Table.of(token))
+            # CTE: tbl AS (SELECT 1), tbl is alias and (SELECT 1) is subquery Parenthesis
+            holder.add_cte(
+                SubQuery.of(next(token.get_sublists()), token.get_real_name())
+            )

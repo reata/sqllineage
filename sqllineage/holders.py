@@ -72,7 +72,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         self._property_setter(value, NodeTag.WRITE)
 
     @property
-    def cte(self) -> Set[Union[Table]]:
+    def cte(self) -> Set[SubQuery]:
         return self._property_getter(NodeTag.CTE)  # type: ignore
 
     def add_cte(self, value) -> None:
@@ -255,10 +255,6 @@ class SQLLineageHolder(ColumnLineageMixin):
                         g.remove_node(table_new)
             else:
                 read, write = holder.read, holder.write
-                if holder.cte:
-                    read -= holder.cte
-                    for n in holder.cte:
-                        g.remove_node(n)
                 if len(read) > 0 and len(write) == 0:
                     # source only table comes from SELECT statement
                     g.add_nodes_from(read, **{NodeTag.SOURCE_ONLY: True})

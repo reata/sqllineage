@@ -190,6 +190,20 @@ WHERE cte1.a = cte2.c""",
     )
 
 
+def test_with_select_using_alias():
+    assert_table_lineage_equal(
+        "WITH wtab1 AS (SELECT * FROM schema1.tab1) SELECT * FROM wtab1 wt",
+        {"schema1.tab1"},
+    )
+
+
+def test_with_select_join_table_with_same_name():
+    assert_table_lineage_equal(
+        "WITH wtab1 AS (SELECT * FROM schema1.tab1) SELECT * FROM wtab1 CROSS JOIN db.wtab1",
+        {"schema1.tab1", "db.wtab1"},
+    )
+
+
 def test_select_group_by():
     assert_table_lineage_equal(
         "SELECT col1, col2 FROM tab1 GROUP BY col1, col2", {"tab1"}

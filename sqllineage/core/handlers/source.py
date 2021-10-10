@@ -1,4 +1,5 @@
 import re
+from typing import Union
 
 from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Token
 
@@ -31,7 +32,7 @@ class SourceHandler(NextTokenBaseHandler):
                     SubQuery.of(token.token_first(skip_cm=True), token.get_real_name())
                 )
             else:
-                holder.add_read(Table.of(token))
+                holder.add_read(self._get_table_or_subquery(token, holder))
         elif isinstance(token, IdentifierList):
             # This is to support join in ANSI-89 syntax
             for token in token.tokens:
@@ -40,7 +41,7 @@ class SourceHandler(NextTokenBaseHandler):
                     isinstance(token, Identifier)
                     and token.get_real_name() != token.get_alias()
                 ):
-                    holder.add_read(Table.of(token))
+                    holder.add_read(self._get_table_or_subquery(token, holder))
         elif isinstance(token, Parenthesis):
             # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
             # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
@@ -50,3 +51,14 @@ class SourceHandler(NextTokenBaseHandler):
                 "An Identifier is expected, got %s[value: %s] instead."
                 % (type(token).__name__, token)
             )
+
+    @classmethod
+    def _get_table_or_subquery(
+        cls, token: Identifier, holder: SubQueryLineageHolder
+    ) -> Union[SubQuery, Table]:
+        cte_dict = {s.alias: s for s in holder.cte}
+        return (
+            Table.of(token)
+            if "." in token.value
+            else cte_dict.get(token.get_real_name(), Table.of(token))
+        )
