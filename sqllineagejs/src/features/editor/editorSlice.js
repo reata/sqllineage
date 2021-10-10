@@ -10,6 +10,7 @@ const initialState = {
   editorError: null,
   dagContent: [],
   dagColumn: [],
+  dagLevel: "table",
   dagVerbose: "",
   dagStatus: 'idle',
   dagError: null
@@ -35,6 +36,9 @@ export const editorSlice = createSlice({
     },
     setFile(state, action) {
       state.file = action.payload
+    },
+    setDagLevel(state, action) {
+      state.dagLevel = action.payload
     }
   },
   extraReducers: {
@@ -66,6 +70,6 @@ export const editorSlice = createSlice({
 });
 
 export const selectEditor = state => state.editor;
-export const {setContentComposed, setEditable, setFile} = editorSlice.actions;
+export const {setContentComposed, setDagLevel, setEditable, setFile} = editorSlice.actions;
 
 export default editorSlice.reducer;

@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Union
 
 from sqlparse import tokens as T
 from sqlparse.engine import grouping
@@ -181,6 +181,10 @@ class Column:
     @parent.setter
     def parent(self, value: Union[Table, SubQuery]):
         self._parent.add(value)
+
+    @property
+    def parent_candidates(self) -> List[Union[Table, SubQuery]]:
+        return sorted(self._parent, key=lambda p: str(p))
 
     @staticmethod
     def of(token: Token):

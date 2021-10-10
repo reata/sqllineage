@@ -2,8 +2,8 @@ import React, {useEffect, useRef} from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 import dagre from 'cytoscape-dagre';
 import cytoscape from 'cytoscape';
-import {useSelector} from "react-redux";
-import {selectEditor} from "./editorSlice";
+import {useDispatch, useSelector} from "react-redux";
+import {selectEditor, setDagLevel} from "./editorSlice";
 import {Loading} from "../widget/Loading";
 import {LoadError} from "../widget/LoadError";
 import {SpeedDial, SpeedDialIcon, ToggleButton, ToggleButtonGroup} from "@material-ui/lab";
@@ -36,9 +36,9 @@ const useStyles = makeStyles((theme) => ({
 
 export function DAG(props) {
   const classes = useStyles();
+  const dispatch = useDispatch();
   const editorState = useSelector(selectEditor);
   const [open, setOpen] = React.useState(false);
-  const [level, setLevel] = React.useState("table");
   const cyRef = useRef(null);
 
   const layout = {
@@ -64,8 +64,8 @@ export function DAG(props) {
       let data = value === "column" ? editorState.dagColumn : editorState.dagContent;
       cy.elements().remove();
       cy.add(data);
-      cy.makeLayout(layout).run();
-      setLevel(value);
+      cy.layout(layout).run();
+      dispatch(setDagLevel(value));
     }
   }
 
@@ -81,10 +81,49 @@ export function DAG(props) {
           elements.addClass("highlight");
           cy.elements().filter(node => node.isChild()).difference(elements).addClass("semitransparent")
         }
+        // if current node has parent candidates in column lineage mode, add them temporarily
+        let parents = sel.data().parent_candidates;
+        if (parents !== undefined && parents.length > 1) {
+          let tmp_elem = parents.map(p => [
+            {"data": {"id": p.name, "type": p.type, "temporary": true}},
+            {
+              "data": {
+                "id": sel.data().id + "-" + p.name,
+                "source": sel.data().id,
+                "target": p.name,
+                "temporary": true
+              }
+            }
+          ]).reduce((x, y) => x.concat(y));
+          if (cy.elements().filter(n => n.data().temporary === true).size() === 0) {
+            let zoom = cy.zoom();
+            let pan = cy.pan();
+            cy.add(tmp_elem);
+            cy.elements().filter(n => n.data().temporary === undefined).lock();
+            cy.elements().filter(n => n.data().temporary === true || n.data().id === sel.data().id)
+              .layout({
+                "boundingBox": {
+                  "x1": sel.position().x,
+                  "y1": sel.position().y,
+                  "w": 200,
+                  "h": 200
+                },
+                "circle": true,
+                "name": "breadthfirst",
+              })
+              .run();
+            cy.viewport({
+              "zoom": zoom,
+              "pan": pan
+            });
+          }
+        }
       });
       cy.on("mouseout", "node", function () {
         cy.elements().removeClass("semitransparent");
         cy.elements().removeClass("highlight");
+        cy.remove(cy.elements().filter(n => n.data().temporary === true));
+        cy.elements().filter(n => n.data().temporary === undefined).unlock();
       });
     }
   })
@@ -181,6 +220,28 @@ export function DAG(props) {
         selector: '.semitransparent',
         style: {'opacity': '0.2'}
       },
+      {
+        selector: 'node[temporary]',
+        style: {
+          'background-color': '#f5f5f5',
+          'border-color': '#b46c4f',
+          'border-style': 'dashed',
+          'content': (elem) => elem.data()["type"] + ": " + elem.data()["id"],
+          'font-size': 16,
+          'font-weight': 'bold',
+          'shape': 'rectangle',
+          'text-halign': 'center',
+          'text-valign': 'top',
+        }
+      },
+      {
+        selector: 'edge[temporary]',
+        style: {
+          'line-color': '#b46c4f',
+          'line-style': 'dashed',
+          'target-arrow-color': '#b46c4f',
+        }
+      },
     ]
     const style = {width: props.width, height: props.height};
     return (
@@ -198,7 +259,7 @@ export function DAG(props) {
         />
         <ToggleButtonGroup
           orientation="vertical"
-          value={level}
+          value={editorState.dagLevel}
           exclusive
           onChange={handleLevel}
           aria-label="lineage level"

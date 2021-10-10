@@ -1,6 +1,14 @@
 import React, {useEffect} from "react";
 import {useDispatch, useSelector} from "react-redux";
-import {fetchContent, fetchDAG, selectEditor, setContentComposed, setEditable, setFile} from "./editorSlice";
+import {
+  fetchContent,
+  fetchDAG,
+  selectEditor,
+  setContentComposed,
+  setDagLevel,
+  setEditable,
+  setFile
+} from "./editorSlice";
 import MonacoEditor from "react-monaco-editor";
 import {Loading} from "../widget/Loading";
 import {LoadError} from "../widget/LoadError";
@@ -25,6 +33,7 @@ export function Editor(props) {
       let file = queryParam.get("f");
       if (editorState.file !== file) {
         dispatch(setFile(file));
+        dispatch(setDagLevel("table"));
         if (file === null) {
           dispatch(setEditable(true));
           dispatch(fetchDAG({"e": editorState.contentComposed}))
