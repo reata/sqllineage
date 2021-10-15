@@ -75,19 +75,19 @@ FROM tab2"""
 
 def test_select_column_using_case_when():
     sql = """INSERT OVERWRITE TABLE tab1
-SELECT CASE WHEN col1 = 1 THEN "V1" WHEN col1 = 2 THEN "V2" END
+SELECT CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [
             (
                 "tab2.col1",
-                'tab1.CASE WHEN col1 = 1 THEN "V1" WHEN col1 = 2 THEN "V2" END',
-            )
+                "tab1.CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END",
+            ),
         ],
     )
     sql = """INSERT OVERWRITE TABLE tab1
-SELECT CASE WHEN col1 = 1 THEN "V1" WHEN col1 = 2 THEN "V2" END AS col2
+SELECT CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END AS col2
 FROM tab2"""
     assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col2")])
 
@@ -183,4 +183,56 @@ FROM tab2 a
               ON a.parent_id = b.id"""
     assert_column_lineage_equal(
         sql, [("tab2.col1", "tab1.col2"), ("tab2.col1", "tab1.col3")]
+    )
+
+
+def test_comment_after_column():
+    sql = """INSERT OVERWRITE TABLE tab1
+    SELECT
+    a.col1
+    --, a.col2
+    , a.col3
+    FROM
+    tab2 a
+    """
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.col1"), ("tab2.col3", "tab1.col3")]
+    )
+
+
+def test_cast_with_comparison():
+    sql = """
+    INSERT OVERWRITE TABLE tab1
+    select cast(col1=1 as int) col1, col2=col3 col2
+    from tab2;
+    """
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.col1"), ("tab2.col2", "tab1.col2"), ("tab2.col3", "tab1.col2")]
+    )
+
+
+def test_complex_window_function():
+    sql = """
+    INSERT OVERWRITE TABLE tab1
+    SELECT tab2.col1 AS col1
+        , MAX(tab2.col1) OVER (PARTITION BY tab2.col2) AS col2
+    FROM tab2
+    """
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.col1"), ("tab2.col1", "tab1.col2"), ("tab2.col2", "tab1.col2")]
+    )
+
+def test_window_function_in_subquery():
+    sql = """
+    insert into tab1
+    select rn from (
+        select
+            ROW_NUMBER() OVER (PARTITION BY col1, col2) rn
+        from tab2
+    ) sub
+    where rn = 1
+    ;
+    """
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.rn"), ("tab2.col2", "tab1.rn")]
     )

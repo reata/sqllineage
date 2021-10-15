@@ -8,6 +8,7 @@ from sqlparse.sql import (
     Comparison,
     Function,
     Identifier,
+    IdentifierList,
     Operation,
     Parenthesis,
     Token,
@@ -197,6 +198,14 @@ class Column:
                     # alias without AS
                     kw_idx, _ = token.token_next_by(i=Identifier)
                 idx, _ = token.token_prev(kw_idx, skip_cm=True)
+                if idx is None:
+                    # select column name directly without alias
+                    return Column(
+                        token.get_real_name(),
+                        source_raw_names=(
+                            (token.get_real_name(), token.get_parent_name()),
+                        ),
+                    )
                 expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
                 source_raw_names = Column._extract_source_raw_names(expr)
                 return Column(alias, source_raw_names=source_raw_names)
@@ -218,32 +227,54 @@ class Column:
         if isinstance(token, Function):
             # max(col1) AS col2
             source_raw_names = tuple(
-                (token.get_real_name(), token.get_parent_name())
-                for token in token.get_parameters()
-                if isinstance(token, Identifier)
+                x
+                for tk in token.get_parameters()
+                for x in Column._extract_source_raw_names(tk)
             )
         elif isinstance(token, (Operation, Parenthesis)):
             # col1 + col2 AS col3
             # (PARTITIONBY col1 ORDERBY col2 DESC)
             source_raw_names = tuple(
-                (token.get_real_name(), token.get_parent_name())
-                for token in token.get_sublists()
-                if isinstance(token, Identifier)
+                x
+                for tk in token.get_sublists()
+                for x in Column._extract_source_raw_names(tk)
             )
         elif isinstance(token, Case):
             # CASE WHEN col1 = 2 THEN "V1" WHEN col1 = "2" THEN "V2" END AS col2
             source_raw_names = tuple(
-                (token.left.get_real_name(), token.get_parent_name())
-                for token in token.get_sublists()
-                if isinstance(token, Comparison)
+                x
+                for tk in token.get_sublists()
+                for x in Column._extract_source_raw_names(tk)
+            )
+        elif isinstance(token, Comparison):
+            from_left = Column._extract_source_raw_names(token.left)
+            from_right = Column._extract_source_raw_names(token.right)
+            source_raw_names = (*from_left, *from_right)
+        elif isinstance(token, IdentifierList):
+            source_raw_names = tuple(
+                x
+                for tk in token.get_sublists()
+                for x in Column._extract_source_raw_names(tk)
             )
         elif isinstance(token, Identifier):
+            # cast(a=1 as int)
+            source_raw_names = tuple(
+                x
+                for tk in token.get_sublists()
+                for x in Column._extract_source_raw_names(tk)
+            )
             # col1 AS col2
-            source_raw_names = ((token.get_real_name(), token.get_parent_name()),)
+            if not source_raw_names:
+                source_raw_names = ((token.get_real_name(), token.get_parent_name()),)
         else:
-            # select *
-            source_raw_names = ((token.value, None),)
+            # Handle literals other than *
+            if token.ttype[0] == T.Literal[0] and token.value != "*":
+                source_raw_names = tuple()
+            else:
+                # select *
+                source_raw_names = ((token.value, None),)
         return source_raw_names
+
 
     def to_source_columns(self, alias_mapping: Dict[str, Union[Table, SubQuery]]):
         """

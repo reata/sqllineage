@@ -98,7 +98,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def add_column_lineage(self, src: Column, tgt: Column) -> None:
         self.graph.add_edge(src, tgt, type=EdgeType.LINEAGE)
-        self.graph.add_edge(tgt.parent, tgt, type=EdgeType.HAS_COLUMN)
+        if tgt.parent is not None:
+            self.graph.add_edge(tgt.parent, tgt, type=EdgeType.HAS_COLUMN)
         if src.parent is not None:
             # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
             self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
