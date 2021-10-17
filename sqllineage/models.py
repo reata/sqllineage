@@ -198,14 +198,7 @@ class Column:
                     # alias without AS
                     kw_idx, _ = token.token_next_by(i=Identifier)
                 idx, _ = token.token_prev(kw_idx, skip_cm=True)
-                if idx is None:
-                    # select column name directly without alias
-                    return Column(
-                        token.get_real_name(),
-                        source_raw_names=(
-                            (token.get_real_name(), token.get_parent_name()),
-                        ),
-                    )
+
                 expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
                 source_raw_names = Column._extract_source_raw_names(expr)
                 return Column(alias, source_raw_names=source_raw_names)

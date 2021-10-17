@@ -186,12 +186,26 @@ FROM tab2 a
     )
 
 
-def test_comment_after_column():
+def test_comment_after_column_comma_first():
     sql = """INSERT OVERWRITE TABLE tab1
     SELECT
     a.col1
     --, a.col2
     , a.col3
+    FROM
+    tab2 a
+    """
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.col1"), ("tab2.col3", "tab1.col3")]
+    )
+
+
+def test_comment_after_column_comma_last():
+    sql = """INSERT OVERWRITE TABLE tab1
+    SELECT
+    a.col1,
+    -- a.col2,
+    a.col3
     FROM
     tab2 a
     """

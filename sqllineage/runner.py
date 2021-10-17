@@ -160,7 +160,11 @@ Target Tables:
     def _eval(self):
         self._stmt = [
             s
-            for s in sqlparse.parse(self._sql.strip(), self._encoding)
+            for s in sqlparse.parse(
+                    # first apply sqlparser formatting just to get rid of comments, which cause
+                    # inconsistencies in parsing output
+                    sqlparse.format(self._sql.strip(), self._encoding, strip_comments=True),
+                self._encoding)
             if s.token_first(skip_cm=True)
         ]
         self._stmt_holders = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]

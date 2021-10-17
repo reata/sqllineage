@@ -29,7 +29,6 @@ class ColumnHandler(NextTokenBaseHandler):
         else:
             # SELECT constant value will end up here
             column_tokens = []
-
         for token in column_tokens:
             self.columns.append(Column.of(token))
 
