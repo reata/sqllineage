@@ -268,7 +268,6 @@ class Column:
                 source_raw_names = ((token.value, None),)
         return source_raw_names
 
-
     def to_source_columns(self, alias_mapping: Dict[str, Union[Table, SubQuery]]):
         """
         Best guess for source table given all the possible table/subquery and their alias.
