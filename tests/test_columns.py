@@ -211,17 +211,6 @@ def test_cast_with_comparison():
     )
 
 
-def test_complex_window_function():
-    sql = """
-    INSERT OVERWRITE TABLE tab1
-    SELECT tab2.col1 AS col1
-        , MAX(tab2.col1) OVER (PARTITION BY tab2.col2) AS col2
-    FROM tab2
-    """
-    assert_column_lineage_equal(
-        sql, [("tab2.col1", "tab1.col1"), ("tab2.col1", "tab1.col2"), ("tab2.col2", "tab1.col2")]
-    )
-
 def test_window_function_in_subquery():
     sql = """
     insert into tab1
