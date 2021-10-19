@@ -38,7 +38,6 @@ FROM tab2"""
 SELECT max(col1) AS col2
 FROM tab2"""
     assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col2")])
-
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT cast(col1 as timestamp)
 FROM tab2"""
@@ -47,6 +46,15 @@ FROM tab2"""
 SELECT cast(col1 as timestamp) as col2
 FROM tab2"""
     assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col2")])
+
+
+def test_select_column_using_function_with_complex_parameter():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT if(col1 = 'foo' AND col2 = 'bar', 1, 0) AS flag
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql, [("tab2.col1", "tab1.flag"), ("tab2.col2", "tab1.flag")]
+    )
 
 
 def test_select_column_using_window_function():
@@ -221,7 +229,12 @@ def test_cast_with_comparison():
     from tab2;
     """
     assert_column_lineage_equal(
-        sql, [("tab2.col1", "tab1.col1"), ("tab2.col2", "tab1.col2"), ("tab2.col3", "tab1.col2")]
+        sql,
+        [
+            ("tab2.col1", "tab1.col1"),
+            ("tab2.col2", "tab1.col2"),
+            ("tab2.col3", "tab1.col2"),
+        ],
     )
 
 
