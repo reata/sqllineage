@@ -35,6 +35,7 @@ class LineageAnalyzer:
             or stmt.token_first(skip_cm=True).normalized.upper() == "REFRESH"
             or stmt.token_first(skip_cm=True).normalized == "CACHE"
             or stmt.token_first(skip_cm=True).normalized.upper() == "UNCACHE"
+            or stmt.token_first(skip_cm=True).normalized == "SHOW"
         ):
             holder = StatementLineageHolder()
         elif stmt.get_type() == "DROP":
