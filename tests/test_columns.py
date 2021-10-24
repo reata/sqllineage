@@ -247,6 +247,12 @@ def test_cast_with_comparison():
     )
 
 
+def test_cast_using_constant():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT cast('2012-12-21' as date) as col2"""
+    assert_column_lineage_equal(sql)
+
+
 def test_window_function_in_subquery():
     sql = """
     insert into tab1
