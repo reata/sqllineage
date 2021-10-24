@@ -1,5 +1,5 @@
-from sqllineage.helpers import LineageLevel
 from sqllineage.runner import LineageRunner
+from sqllineage.utils.constant import LineageLevel
 
 
 def test_runner_dummy():

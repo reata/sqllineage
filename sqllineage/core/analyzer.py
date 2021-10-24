@@ -9,7 +9,6 @@ from sqlparse.sql import (
     Comparison,
     Identifier,
     IdentifierList,
-    Parenthesis,
     Statement,
     TokenList,
 )
@@ -18,8 +17,9 @@ from sqllineage.core.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
 )
-from sqllineage.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.models import SubQuery, Table
+from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
+from sqllineage.core.models import SubQuery, Table
+from sqllineage.utils.sqlparse import is_subquery
 
 
 class LineageAnalyzer:
@@ -133,7 +133,7 @@ class LineageAnalyzer:
                 ],
                 [],
             )
-        elif cls._is_subquery(token):
+        elif is_subquery(token):
             # Parenthesis for SubQuery without alias, this is valid syntax for certain SQL dialect
             result = [SubQuery.of(token, None)]
         return result
@@ -156,21 +156,12 @@ class LineageAnalyzer:
             # CASE WHEN (SELECT count(*) from tab1) > 0 THEN (SELECT count(*) FROM tab1) ELSE -1
             for tk in target.get_sublists():
                 if isinstance(tk, Comparison):
-                    if cls._is_subquery(tk.left):
+                    if is_subquery(tk.left):
                         subquery.append(SubQuery.of(tk.left, tk.left.get_real_name()))
-                    if cls._is_subquery(tk.right):
+                    if is_subquery(tk.right):
                         subquery.append(SubQuery.of(tk.right, tk.right.get_real_name()))
-                elif cls._is_subquery(tk):
+                elif is_subquery(tk):
                     subquery.append(SubQuery.of(tk, token.get_real_name()))
-        if cls._is_subquery(target):
+        if is_subquery(target):
             subquery = [SubQuery.of(target, token.get_real_name())]
         return subquery
-
-    @classmethod
-    def _is_subquery(cls, token: TokenList) -> bool:
-        flag = False
-        if isinstance(token, Parenthesis):
-            _, sub_token = token.token_next_by(m=(T.DML, "SELECT"))
-            if sub_token is not None:
-                flag = True
-        return flag

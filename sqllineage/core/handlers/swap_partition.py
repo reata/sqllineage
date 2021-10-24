@@ -1,9 +1,9 @@
 from sqlparse.sql import Function, Token
 
 from sqllineage.core.handlers.base import CurrentTokenBaseHandler
-from sqllineage.helpers import escape_identifier_name
-from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import Table
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import Table
+from sqllineage.utils.helpers import escape_identifier_name
 
 
 class SwapPartitionHandler(CurrentTokenBaseHandler):

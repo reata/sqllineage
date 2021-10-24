@@ -17,7 +17,7 @@ from sqlparse.sql import (
 from sqlparse.utils import imt
 
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.helpers import escape_identifier_name
+from sqllineage.utils.helpers import escape_identifier_name
 
 
 class Schema:

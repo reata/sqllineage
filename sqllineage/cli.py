@@ -3,8 +3,9 @@ import logging
 
 from sqllineage import DEFAULT_HOST, DEFAULT_PORT
 from sqllineage.drawing import draw_lineage_graph
-from sqllineage.helpers import LineageLevel, extract_sql_from_args
 from sqllineage.runner import LineageRunner
+from sqllineage.utils.constant import LineageLevel
+from sqllineage.utils.helpers import extract_sql_from_args
 
 logger = logging.getLogger(__name__)
 

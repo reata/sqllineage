@@ -4,9 +4,9 @@ from typing import Union
 from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Token
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import SubQuery, Table
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import SubQuery, Table
 
 
 class SourceHandler(NextTokenBaseHandler):
