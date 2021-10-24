@@ -18,6 +18,7 @@ from sqlparse.utils import imt
 
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.helpers import escape_identifier_name
+from sqllineage.utils.sqlparse import get_parameters
 
 
 class Schema:
@@ -218,10 +219,9 @@ class Column:
     def _extract_source_raw_names(token: Token):
         if isinstance(token, Function):
             # max(col1) AS col2
-            # token.get_parameters() produce problematic result for if(col1 = 'foo' AND col2 = 'bar', 1, 0)
             source_raw_names = tuple(
                 x
-                for tk in token.tokens[-1].get_sublists()
+                for tk in get_parameters(token)
                 for x in Column._extract_source_raw_names(tk)
             )
         elif isinstance(token, Parenthesis):
