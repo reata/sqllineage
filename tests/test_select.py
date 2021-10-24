@@ -90,6 +90,19 @@ def test_select_subquery():
     assert_table_lineage_equal("SELECT col1 FROM (SELECT col1 FROM tab1) dt", {"tab1"})
 
 
+def test_select_subquery_in_case():
+    assert_table_lineage_equal(
+        """SELECT
+CASE WHEN (SELECT count(*) FROM tab1 WHERE col1 = 'tab2') = 1 THEN (SELECT count(*) FROM tab2) ELSE 0 END AS cnt""",
+        {"tab1", "tab2"},
+    )
+    assert_table_lineage_equal(
+        """SELECT
+CASE WHEN 1 = (SELECT count(*) FROM tab1 WHERE col1 = 'tab2') THEN (SELECT count(*) FROM tab2) ELSE 0 END AS cnt""",
+        {"tab1", "tab2"},
+    )
+
+
 def test_select_subquery_without_alias():
     """this syntax is valid in SparkSQL, not for MySQL"""
     assert_table_lineage_equal("SELECT col1 FROM (SELECT col1 FROM tab1)", {"tab1"})
