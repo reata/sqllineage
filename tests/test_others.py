@@ -166,6 +166,10 @@ def test_delete_from_table():
     assert_table_lineage_equal("delete from table tab1", None, None)
 
 
+def test_show_create_table():
+    assert_table_lineage_equal("show create table tab1", None, None)
+
+
 def test_split_statements():
     sql = "SELECT * FROM tab1; SELECT * FROM tab2;"
     assert len(LineageRunner(sql).statements()) == 2
