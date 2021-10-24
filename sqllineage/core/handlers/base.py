@@ -1,6 +1,6 @@
 from sqlparse.sql import Token
 
-from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.core.holders import SubQueryLineageHolder
 
 
 class NextTokenBaseHandler:

@@ -4,8 +4,8 @@ from typing import Dict, Set, Tuple, Union
 import networkx as nx
 from networkx import DiGraph
 
-from sqllineage.helpers import EdgeType, NodeTag
-from sqllineage.models import Column, SubQuery, Table
+from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.utils.constant import EdgeType, NodeTag
 
 
 class ColumnLineageMixin:

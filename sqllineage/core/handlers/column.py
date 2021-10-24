@@ -2,9 +2,9 @@ from sqlparse.sql import Case, Function, Identifier, IdentifierList, Operation, 
 from sqlparse.tokens import Wildcard
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import Column
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import Column
 
 
 class ColumnHandler(NextTokenBaseHandler):

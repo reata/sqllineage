@@ -11,7 +11,8 @@ from werkzeug.exceptions import InternalServerError
 
 from sqllineage import DATA_FOLDER, DEFAULT_HOST, DEFAULT_PORT
 from sqllineage import STATIC_FOLDER
-from sqllineage.helpers import LineageLevel, extract_sql_from_args
+from sqllineage.utils.constant import LineageLevel
+from sqllineage.utils.helpers import extract_sql_from_args
 
 logger = logging.getLogger(__name__)
 

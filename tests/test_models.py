@@ -1,8 +1,8 @@
 import pytest
 from sqlparse.sql import Parenthesis
 
+from sqllineage.core.models import Column, Schema, SubQuery, Table
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.models import Column, Schema, SubQuery, Table
 
 
 def test_repr_dummy():
