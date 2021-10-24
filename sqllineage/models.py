@@ -261,7 +261,11 @@ class Column:
                 source_raw_names = ((token.get_real_name(), token.get_parent_name()),)
         else:
             # Handle literals other than *
-            if token.ttype[0] == T.Literal[0] and token.value != "*":
+            if (
+                token.ttype is not None
+                and token.ttype[0] == T.Literal[0]
+                and token.value != "*"
+            ):
                 source_raw_names = tuple()
             else:
                 # select *

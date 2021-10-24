@@ -4,7 +4,9 @@ from typing import List
 
 from sqlparse import tokens as T
 from sqlparse.sql import (
+    Case,
     Comment,
+    Comparison,
     Identifier,
     IdentifierList,
     Parenthesis,
@@ -131,7 +133,7 @@ class LineageAnalyzer:
                 ],
                 [],
             )
-        elif isinstance(token, Parenthesis) and cls._is_parenthesis_subquery(token):
+        elif cls._is_subquery(token):
             # Parenthesis for SubQuery without alias, this is valid syntax for certain SQL dialect
             result = [SubQuery.of(token, None)]
         return result
@@ -150,14 +152,25 @@ class LineageAnalyzer:
         else:
             # normal subquery: (SELECT 1) tbl
             target = token.token_first(skip_cm=True)
-        if isinstance(target, Parenthesis) and cls._is_parenthesis_subquery(target):
+        if isinstance(target, Case):
+            # CASE WHEN (SELECT count(*) from tab1) > 0 THEN (SELECT count(*) FROM tab1) ELSE -1
+            for tk in target.get_sublists():
+                if isinstance(tk, Comparison):
+                    if cls._is_subquery(tk.left):
+                        subquery.append(SubQuery.of(tk.left, tk.left.get_real_name()))
+                    if cls._is_subquery(tk.right):
+                        subquery.append(SubQuery.of(tk.right, tk.right.get_real_name()))
+                elif cls._is_subquery(tk):
+                    subquery.append(SubQuery.of(tk, token.get_real_name()))
+        if cls._is_subquery(target):
             subquery = [SubQuery.of(target, token.get_real_name())]
         return subquery
 
     @classmethod
-    def _is_parenthesis_subquery(cls, token: Parenthesis) -> bool:
+    def _is_subquery(cls, token: TokenList) -> bool:
         flag = False
-        _, sub_token = token.token_next_by(m=(T.DML, "SELECT"))
-        if sub_token is not None:
-            flag = True
+        if isinstance(token, Parenthesis):
+            _, sub_token = token.token_next_by(m=(T.DML, "SELECT"))
+            if sub_token is not None:
+                flag = True
         return flag
