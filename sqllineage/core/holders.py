@@ -9,8 +9,7 @@ from sqllineage.utils.constant import EdgeType, NodeTag
 
 
 class ColumnLineageMixin:
-    @property
-    def column_lineage(self) -> Set[Tuple[Column, ...]]:
+    def get_column_lineage(self, exclude_subquery=True) -> Set[Tuple[Column, ...]]:
         self.graph: DiGraph  # For mypy attribute checking
         # filter all the column node in the graph
         column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
@@ -20,8 +19,12 @@ class ColumnLineageMixin:
         target_columns = {
             node
             for node, deg in column_graph.out_degree
-            if isinstance(node, Column) and deg == 0 and isinstance(node.parent, Table)
+            if isinstance(node, Column) and deg == 0
         }
+        if exclude_subquery:
+            target_columns = {
+                node for node in target_columns if isinstance(node.parent, Table)
+            }
         columns = set()
         for (source, target) in itertools.product(source_columns, target_columns):
             simple_paths = list(nx.all_simple_paths(self.graph, source, target))

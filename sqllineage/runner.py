@@ -141,18 +141,19 @@ Target Tables:
         """
         return sorted(self._sql_holder.intermediate_tables, key=lambda x: str(x))
 
-    @lazy_property
-    def column_lineage(self) -> List[Tuple[Column, Column]]:
+    @lazy_method
+    def get_column_lineage(self, exclude_subquery=True) -> List[Tuple[Column, Column]]:
         """
         a list of column tuple :class:`sqllineage.models.Column`
         """
         # sort by target column, and then source column
         return sorted(
-            self._sql_holder.column_lineage, key=lambda x: (str(x[-1]), str(x[0]))
+            self._sql_holder.get_column_lineage(exclude_subquery),
+            key=lambda x: (str(x[-1]), str(x[0])),
         )
 
     def print_column_lineage(self) -> None:
-        for path in self.column_lineage:
+        for path in self.get_column_lineage():
             print(" <- ".join(str(col) for col in reversed(path)))
 
     def print_table_lineage(self) -> None:

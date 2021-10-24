@@ -100,6 +100,15 @@ FROM tab2"""
     assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col2")])
 
 
+def test_select_column_using_case_when_with_subquery():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT CASE WHEN (SELECT avg(col1) FROM tab3) > 0 AND col2 = 1 THEN (SELECT avg(col1) FROM tab3) ELSE 0 END AS col1
+FROM tab4"""
+    assert_column_lineage_equal(
+        sql, [("tab4.col2", "tab1.col1"), ("tab3.col1", "tab1.col1")]
+    )
+
+
 def test_select_column_with_table_prefix():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT tab2.col1

@@ -29,7 +29,7 @@ def assert_column_lineage_equal(sql, column_lineages=None):
         else set()
     )
     lr = LineageRunner(sql)
-    actual = {(lineage[0], lineage[-1]) for lineage in set(lr.column_lineage)}
+    actual = {(lineage[0], lineage[-1]) for lineage in set(lr.get_column_lineage())}
     assert (
         set(actual) == expected
     ), f"\n\tExpected Lineage: {expected}\n\tActual Lineage: {actual}"
