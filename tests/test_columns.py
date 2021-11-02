@@ -1,3 +1,5 @@
+import pytest
+
 from .helpers import assert_column_lineage_equal
 
 
@@ -232,10 +234,9 @@ def test_comment_after_column_comma_last():
 
 
 def test_cast_with_comparison():
-    sql = """
-    INSERT OVERWRITE TABLE tab1
-    select cast(col1=1 as int) col1, col2=col3 col2
-    from tab2;
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT cast(col1 = 1 AS int) col1, col2 = col3 col2
+FROM tab2;
     """
     assert_column_lineage_equal(
         sql,
@@ -247,9 +248,17 @@ def test_cast_with_comparison():
     )
 
 
+@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "datetime"])
+def test_cast_to_data_type(dtype):
+    sql = f"""INSERT OVERWRITE TABLE tab1
+SELECT cast(col1 as {dtype}) AS col1
+FROM tab2"""
+    assert_column_lineage_equal(sql, [("tab2.col1", "tab1.col1")])
+
+
 def test_cast_using_constant():
     sql = """INSERT OVERWRITE TABLE tab1
-SELECT cast('2012-12-21' as date) as col2"""
+SELECT cast('2012-12-21' as date) AS col2"""
     assert_column_lineage_equal(sql)
 
 
