@@ -270,15 +270,16 @@ class Column:
                 for x in Column._extract_source_raw_names(tk)
             )
         elif isinstance(token, Identifier):
-            # cast(a=1 as int)
-            source_raw_names = tuple(
-                x
-                for tk in token.get_sublists()
-                for x in Column._extract_source_raw_names(tk)
-            )
-            # col1 AS col2, cast('2021-12-21' as date)
-            if not source_raw_names and token.get_real_name() is not None:
+            if token.get_real_name():
+                # col1 AS col2
                 source_raw_names = ((token.get_real_name(), token.get_parent_name()),)
+            else:
+                # col1=1 AS int
+                source_raw_names = tuple(
+                    x
+                    for tk in token.get_sublists()
+                    for x in Column._extract_source_raw_names(tk)
+                )
         else:
             # Handle literals other than *
             if (
