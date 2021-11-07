@@ -59,6 +59,30 @@ def test_create_after_drop():
     )
 
 
+def test_create_using_serde():
+    # Check https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormats&SerDe
+    # here with is not an indicator for CTE
+    assert_table_lineage_equal(
+        """CREATE TABLE apachelog (
+  host STRING,
+  identity STRING,
+  user STRING,
+  time STRING,
+  request STRING,
+  status STRING,
+  size STRING,
+  referer STRING,
+  agent STRING)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'
+WITH SERDEPROPERTIES (
+  "input.regex" = "([^]*) ([^]*) ([^]*) (-|\\[^\\]*\\]) ([^ \"]*|\"[^\"]*\") (-|[0-9]*) (-|[0-9]*)(?: ([^ \"]*|\".*\") ([^ \"]*|\".*\"))?"
+)
+STORED AS TEXTFILE""",  # noqa
+        None,
+        {"apachelog"},
+    )
+
+
 def test_update():
     assert_table_lineage_equal(
         "UPDATE tab1 SET col1='val1' WHERE col2='val2'", None, {"tab1"}
