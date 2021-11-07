@@ -64,35 +64,3 @@ ON tab_1.col_a = tab_2.cola""",
         {"tab_1", "tab_2"},
         {"tab_1"},
     )
-
-
-def test_with_insert():
-    assert_table_lineage_equal(
-        "WITH tab1 AS (SELECT * FROM tab2) INSERT INTO tab3 SELECT * FROM tab1",
-        {"tab2"},
-        {"tab3"},
-    )
-
-
-def test_with_insert_overwrite():
-    assert_table_lineage_equal(
-        "WITH tab1 AS (SELECT * FROM tab2) INSERT OVERWRITE tab3 SELECT * FROM tab1",
-        {"tab2"},
-        {"tab3"},
-    )
-
-
-def test_with_insert_plus_keyword_table():
-    assert_table_lineage_equal(
-        "WITH tab1 AS (SELECT * FROM tab2) INSERT INTO TABLE tab3 SELECT * FROM tab1",
-        {"tab2"},
-        {"tab3"},
-    )
-
-
-def test_with_insert_overwrite_plus_keyword_table():
-    assert_table_lineage_equal(
-        "WITH tab1 AS (SELECT * FROM tab2) INSERT OVERWRITE TABLE tab3 SELECT * FROM tab1",
-        {"tab2"},
-        {"tab3"},
-    )
