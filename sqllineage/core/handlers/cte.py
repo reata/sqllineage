@@ -23,7 +23,7 @@ class CTEHandler(NextTokenBaseHandler):
                 % (type(token).__name__, token)
             )
         for token in cte:
-            # CTE: tbl AS (SELECT 1), tbl is alias and (SELECT 1) is subquery Parenthesis
-            holder.add_cte(
-                SubQuery.of(next(token.get_sublists()), token.get_real_name())
-            )
+            sublist = list(token.get_sublists())
+            if sublist:
+                # CTE: tbl AS (SELECT 1), tbl is alias and (SELECT 1) is subquery Parenthesis
+                holder.add_cte(SubQuery.of(sublist[0], token.get_real_name()))
