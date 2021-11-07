@@ -181,42 +181,6 @@ def test_select_join_in_ansi89_syntax_with_subquery():
     )
 
 
-def test_with_select():
-    assert_table_lineage_equal("WITH tab1 AS (SELECT 1) SELECT * FROM tab1")
-
-
-def test_with_select_one():
-    assert_table_lineage_equal(
-        "WITH wtab1 AS (SELECT * FROM schema1.tab1) SELECT * FROM wtab1",
-        {"schema1.tab1"},
-    )
-
-
-def test_with_select_many():
-    assert_table_lineage_equal(
-        """WITH
-cte1 AS (SELECT a, b FROM table1),
-cte2 AS (SELECT c, d FROM table2)
-SELECT b, d FROM cte1 JOIN cte2
-WHERE cte1.a = cte2.c""",
-        {"table1", "table2"},
-    )
-
-
-def test_with_select_using_alias():
-    assert_table_lineage_equal(
-        "WITH wtab1 AS (SELECT * FROM schema1.tab1) SELECT * FROM wtab1 wt",
-        {"schema1.tab1"},
-    )
-
-
-def test_with_select_join_table_with_same_name():
-    assert_table_lineage_equal(
-        "WITH wtab1 AS (SELECT * FROM schema1.tab1) SELECT * FROM wtab1 CROSS JOIN db.wtab1",
-        {"schema1.tab1", "db.wtab1"},
-    )
-
-
 def test_select_group_by():
     assert_table_lineage_equal(
         "SELECT col1, col2 FROM tab1 GROUP BY col1, col2", {"tab1"}

@@ -50,6 +50,15 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def __or__(self, other):
         self.graph = nx.compose(self.graph, other.graph)
+        cte_alias = [s.alias for s in self.cte]
+        for table in self.read:
+            # When referring to previously defined CTE in another CTE, that CTE will be misidentified as Table
+            if (
+                isinstance(table, Table)
+                and table.schema.raw_name == table.schema.unknown
+                and table.raw_name in cte_alias
+            ):
+                self.graph.remove_node(table)
         return self
 
     def _property_getter(self, prop) -> Set[Union[SubQuery, Table]]:
