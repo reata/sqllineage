@@ -198,10 +198,14 @@ class Column:
                 if kw_idx is None:
                     # alias without AS
                     kw_idx, _ = token.token_next_by(i=Identifier)
-                idx, _ = token.token_prev(kw_idx, skip_cm=True)
-                expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
-                source_raw_names = Column._extract_source_raw_names(expr)
-                return Column(alias, source_raw_names=source_raw_names)
+                if kw_idx is None:
+                    # invalid syntax: col AS, without alias
+                    return Column(alias)
+                else:
+                    idx, _ = token.token_prev(kw_idx, skip_cm=True)
+                    expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
+                    source_raw_names = Column._extract_source_raw_names(expr)
+                    return Column(alias, source_raw_names=source_raw_names)
             else:
                 # select column name directly without alias
                 return Column(

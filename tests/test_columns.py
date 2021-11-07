@@ -1,5 +1,6 @@
 import pytest
 
+from sqllineage.runner import LineageRunner
 from .helpers import assert_column_lineage_equal
 
 
@@ -276,3 +277,13 @@ def test_window_function_in_subquery():
     assert_column_lineage_equal(
         sql, [("tab2.col1", "tab1.rn"), ("tab2.col2", "tab1.rn")]
     )
+
+
+def test_invalid_syntax_as_without_alias():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT col1,
+       col2 as,
+       col3
+FROM tab2"""
+    # just assure no exception, don't guarantee the result
+    LineageRunner(sql).print_column_lineage()
