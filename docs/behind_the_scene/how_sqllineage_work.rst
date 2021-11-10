@@ -15,17 +15,17 @@ be subquery or identifier. For subquery, we just recursively calling extract fun
 to get its value.
 
 .. warning::
-    Here is just a simplified description. In reality, we could easily see ``Comment`` coming after "FROM", or subquery
+    This is just a simplified explanation. In reality, we could easily see ``Comment`` coming after "FROM", or subquery
     mistakenly parsed as ``Identifier`` or ``Parenthesis``. These are all corner cases we should resolve in real world.
 
 Some other simple rules in SQLLineage:
 
-1. Things go after Keyword **"From"**, all kinds of **"JOIN"** will be source table.
+1. Things go after Keyword **"FROM"**, all kinds of **"JOIN"** will be source table.
 
 2. Things go after Keyword **"INTO"**, **"OVERWRITE"**, **"TABLE"**, **"VIEW"** will be target table. (Though there are
    exceptions like drop table statement)
 
-3. Things go after Keyword **"With"** will be intermediate table.
+3. Things go after Keyword **"With"** will be CTE (Common Table Expression).
 
 The rest thing is just tedious work. We collect all kinds of sql, handle various edge cases and make these simple rules
 robust enough.

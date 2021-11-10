@@ -249,7 +249,7 @@ class SQLLineageHolder(ColumnLineageMixin):
     @staticmethod
     def of(*args: StatementLineageHolder):
         """
-        To combine multiple :class:`sqllineage.holders.StatementLineageHolder` into
+        To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
         """
         g = DiGraph()
