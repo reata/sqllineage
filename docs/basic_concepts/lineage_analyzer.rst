@@ -4,14 +4,8 @@ LineageAnalyzer
 
 LineageAnalyzer contains the core processing logic for one-statement SQL analysis.
 
-sqllineage.core.LineageAnalyzer
-===============================
+sqllineage.core.analyzer.LineageAnalyzer
+========================================
 
-.. autoclass:: sqllineage.core.LineageAnalyzer
+.. autoclass:: sqllineage.core.analyzer.LineageAnalyzer
     :members:
-
-
-sqllineage.core.LineageResult
-=============================
-
-.. autoclass:: sqllineage.core.LineageResult

@@ -63,7 +63,7 @@ Basic concepts
 
    basic_concepts/lineage_runner
    basic_concepts/lineage_analyzer
-   basic_concepts/lineage_combiner
+   basic_concepts/lineage_holder
    basic_concepts/lineage_model
 
 :doc:`basic_concepts/lineage_runner`
@@ -72,8 +72,8 @@ Basic concepts
 :doc:`basic_concepts/lineage_analyzer`
     LineageAnalyzer: The core functionality of analyze one SQL statement
 
-:doc:`basic_concepts/lineage_combiner`
-    LineageCombiner: To combine all the atomic lineage result together into a Directed Acyclic Graph
+:doc:`basic_concepts/lineage_holder`
+    LineageCombiner: To hold lineage result at different level
 
 :doc:`basic_concepts/lineage_model`
     The data classes for SQLLineage

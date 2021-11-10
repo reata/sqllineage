@@ -4,13 +4,19 @@ LineageModels
 
 Several data classes in this module.
 
-sqllineage.models.Table
-=======================
+sqllineage.core.models.Schema
+=============================
 
-.. autoclass:: sqllineage.models.Table
+.. autoclass:: sqllineage.core.models.Schema
 
 
-sqllineage.models.Schema
-========================
+sqllineage.core.models.Table
+=============================
 
-.. autoclass:: sqllineage.models.Schema
+.. autoclass:: sqllineage.core.models.Table
+
+
+sqllineage.core.models.Column
+=============================
+
+.. autoclass:: sqllineage.core.models.Column
