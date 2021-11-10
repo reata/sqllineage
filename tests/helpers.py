@@ -17,17 +17,15 @@ def assert_table_lineage_equal(sql, source_tables=None, target_tables=None):
 
 
 def assert_column_lineage_equal(sql, column_lineages=None):
-    expected = (
-        {
-            (
-                Column(lineage[0]),
-                Column(lineage[1]),
-            )
-            for lineage in column_lineages
-        }
-        if column_lineages
-        else set()
-    )
+    expected = set()
+    if column_lineages:
+        for src, tgt in column_lineages:
+            src_col = Column(src[1])
+            if src[0] is not None:
+                src_col.parent = Table(src[0])
+            tgt_col = Column(tgt[1])
+            tgt_col.parent = Table(tgt[0])
+            expected.add((src_col, tgt_col))
     lr = LineageRunner(sql)
     actual = {(lineage[0], lineage[-1]) for lineage in set(lr.get_column_lineage())}
     assert (

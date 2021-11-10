@@ -151,13 +151,8 @@ class Column:
         :param parent: :class:`Table` or :class:`SubQuery`
         :param kwargs:
         """
-        if "." in name:
-            table_name, column_name = name.rsplit(".", 1)
-            self._parent: Set[Union[Table, SubQuery]] = {Table(table_name)}
-            self.raw_name = escape_identifier_name(column_name)
-        else:
-            self._parent = set()
-            self.raw_name = escape_identifier_name(name)
+        self._parent: Set[Union[Table, SubQuery]] = set()
+        self.raw_name = escape_identifier_name(name)
         self.source_raw_names = kwargs.pop("source_raw_names", ((self.raw_name, None),))
 
     def __str__(self):
@@ -198,10 +193,14 @@ class Column:
                 if kw_idx is None:
                     # alias without AS
                     kw_idx, _ = token.token_next_by(i=Identifier)
-                idx, _ = token.token_prev(kw_idx, skip_cm=True)
-                expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
-                source_raw_names = Column._extract_source_raw_names(expr)
-                return Column(alias, source_raw_names=source_raw_names)
+                if kw_idx is None:
+                    # invalid syntax: col AS, without alias
+                    return Column(alias)
+                else:
+                    idx, _ = token.token_prev(kw_idx, skip_cm=True)
+                    expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
+                    source_raw_names = Column._extract_source_raw_names(expr)
+                    return Column(alias, source_raw_names=source_raw_names)
             else:
                 # select column name directly without alias
                 return Column(
