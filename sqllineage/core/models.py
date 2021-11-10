@@ -151,13 +151,8 @@ class Column:
         :param parent: :class:`Table` or :class:`SubQuery`
         :param kwargs:
         """
-        if "." in name:
-            table_name, column_name = name.rsplit(".", 1)
-            self._parent: Set[Union[Table, SubQuery]] = {Table(table_name)}
-            self.raw_name = escape_identifier_name(column_name)
-        else:
-            self._parent = set()
-            self.raw_name = escape_identifier_name(name)
+        self._parent: Set[Union[Table, SubQuery]] = set()
+        self.raw_name = escape_identifier_name(name)
         self.source_raw_names = kwargs.pop("source_raw_names", ((self.raw_name, None),))
 
     def __str__(self):
