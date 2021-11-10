@@ -1,14 +1,14 @@
 repos:
   - repo: https://github.com/psf/black
-    rev: 20.8b1
+    rev: 21.10b0
     hooks:
       - id: black
         language_version: python3.6
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.4
+    rev: 3.9.2
     hooks:
       - id: flake8
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.790
+    rev: v0.910-1
     hooks:
     - id: mypy
