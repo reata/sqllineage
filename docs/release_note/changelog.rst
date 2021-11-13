@@ -2,6 +2,18 @@
 Changelog
 *********
 
+v1.3.0
+======
+:Date: November 13, 2021
+
+Feature
+-------------
+* Column-Level Lineage  (`#103 <https://github.com/reata/sqllineage/issues/103>`_)
+
+Bugfix
+-------------
+* SHOW CREATE TABLE parsed as target table  (`#167 <https://github.com/reata/sqllineage/issues/167>`_)
+
 v1.2.4
 ======
 :Date: June 14, 2021
