@@ -42,6 +42,7 @@ Behind the scene
    behind_the_scene/why_sqllineage
    behind_the_scene/how_sqllineage_work
    behind_the_scene/dos_and_donts
+   behind_the_scene/column-level_lineage_design
 
 :doc:`behind_the_scene/why_sqllineage`
     The motivation of writing SQLLineage

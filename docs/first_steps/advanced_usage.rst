@@ -50,6 +50,46 @@ And if you want to see lineage result for every SQL statement, just toggle verbo
         db1.table1
 
 
+Column-Level Lineage
+====================
+
+We also support column level lineage in command line interface, set level option to column, all column lineage path
+will be printed.
+
+.. code-block:: sql
+
+    INSERT OVERWRITE TABLE foo
+    SELECT a.col1,
+           b.col1     AS col2,
+           c.col3_sum AS col3,
+           col4,
+           d.*
+    FROM bar a
+             JOIN baz b
+                  ON a.id = b.bar_id
+             LEFT JOIN (SELECT bar_id, sum(col3) AS col3_sum
+                        FROM qux
+                        GROUP BY bar_id) c
+                       ON a.id = sq.bar_id
+             CROSS JOIN quux d;
+
+    INSERT OVERWRITE TABLE corge
+    SELECT col1,
+           col2
+    FROM foo;
+
+support this sql is stored in test.sql file.
+
+.. code-block:: bash
+
+    $ sqllineage -f test.sql -l column
+    <default>.corge.col1 <- <default>.foo.col1 <- <default>.bar.col1
+    <default>.corge.col2 <- <default>.foo.col2 <- <default>.baz.col1
+    <default>.foo.* <- <default>.quux.*
+    <default>.foo.col3 <- c.col3_sum <- <default>.qux.col3
+    <default>.foo.col4 <- col4
+
+
 Lineage Visualization
 =====================
 

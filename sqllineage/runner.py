@@ -154,14 +154,14 @@ Target Tables:
 
     def print_column_lineage(self) -> None:
         """
-        print column level lineage in stdout
+        print column level lineage to stdout
         """
         for path in self.get_column_lineage():
             print(" <- ".join(str(col) for col in reversed(path)))
 
     def print_table_lineage(self) -> None:
         """
-        print table level lineage in stdout
+        print table level lineage to stdout
         """
         print(str(self))
 
