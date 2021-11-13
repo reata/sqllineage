@@ -74,17 +74,21 @@ will be printed.
              CROSS JOIN quux d;
 
     INSERT OVERWRITE TABLE corge
-    SELECT col1,
-           col2
-    FROM foo;
+    SELECT a.col1,
+           a.col2 + b.col2 AS col2
+    FROM foo a
+             LEFT JOIN grault b
+                  ON a.col1 = b.col1;
 
-support this sql is stored in test.sql file.
+
+Suppose this sql is stored in a file called foo.sql
 
 .. code-block:: bash
 
-    $ sqllineage -f test.sql -l column
+    $ sqllineage -f foo.sql -l column
     <default>.corge.col1 <- <default>.foo.col1 <- <default>.bar.col1
     <default>.corge.col2 <- <default>.foo.col2 <- <default>.baz.col1
+    <default>.corge.col2 <- <default>.grault.col2
     <default>.foo.* <- <default>.quux.*
     <default>.foo.col3 <- c.col3_sum <- <default>.qux.col3
     <default>.foo.col4 <- col4
@@ -95,11 +99,20 @@ Lineage Visualization
 
 One more cool feature, if you want a graph visualization for the lineage result, toggle graph-visualization option
 
+Still using the above SQL file:
+
 .. code-block:: bash
 
-    sqllineage -g -e "insert into db1.table11 select * from db2.table21 union select * from db2.table22; insert into db3.table3 select * from db1.table11 join db1.table12;"
+    sqllineage -g -f foo.sql
 
-A webserver will be started, showing DAG representation of the lineage result in browser:
+A webserver will be started, showing DAG representation of the lineage result in browser.
 
-.. image:: ../_static/Figure_1.png
-   :alt: Lineage visualization
+Table-Level Lineage:
+
+.. image:: ../_static/table.jpg
+   :alt: Table lineage visualization
+
+Column-Level Lineage:
+
+.. image:: ../_static/column.jpg
+   :alt: Column lineage visualization
