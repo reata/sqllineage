@@ -93,10 +93,57 @@ Intermediate Tables:
     db1.table1
 ```
 
+### Column-Level Lineage
+We also support column level lineage in command line interface, set level option to column, all column lineage path will 
+be printed.
+
+```sql
+INSERT OVERWRITE TABLE foo
+SELECT a.col1,
+       b.col1     AS col2,
+       c.col3_sum AS col3,
+       col4,
+       d.*
+FROM bar a
+         JOIN baz b
+              ON a.id = b.bar_id
+         LEFT JOIN (SELECT bar_id, sum(col3) AS col3_sum
+                    FROM qux
+                    GROUP BY bar_id) c
+                   ON a.id = sq.bar_id
+         CROSS JOIN quux d;
+
+INSERT OVERWRITE TABLE corge
+SELECT a.col1,
+       a.col2 + b.col2 AS col2
+FROM foo a
+         LEFT JOIN grault b
+              ON a.col1 = b.col1;
+```
+
+Suppose this sql is stored in a file called foo.sql
+
+```
+$ sqllineage -f foo.sql -l column
+<default>.corge.col1 <- <default>.foo.col1 <- <default>.bar.col1
+<default>.corge.col2 <- <default>.foo.col2 <- <default>.baz.col1
+<default>.corge.col2 <- <default>.grault.col2
+<default>.foo.* <- <default>.quux.*
+<default>.foo.col3 <- c.col3_sum <- <default>.qux.col3
+<default>.foo.col4 <- col4
+```
+
 ### Lineage Visualization
 One more cool feature, if you want a graph visualization for the lineage result, toggle graph-visualization option
+
+Still using the above SQL file
 ```
-sqllineage -g -e "insert into db1.table11 select * from db2.table21 union select * from db2.table22; insert into db3.table3 select * from db1.table11 join db1.table12;"
+sqllineage -g -f foo.sql
 ```
 A webserver will be started, showing DAG representation of the lineage result in browser:
-<img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/Figure_1.png">
+
+Table-Level Lineage
+<img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/table.jpg">
+
+Column-Level Lineage
+<img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/column.jpg">
