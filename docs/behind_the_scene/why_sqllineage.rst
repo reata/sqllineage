@@ -2,7 +2,7 @@
 Why SQLLineage
 **************
 
-When I was a data engineer, SQL is something people can't avoid in this industry. I guess it still is since you're
+Back when I was a data engineer, SQL is something people can't avoid in this industry. I guess it still is since you're
 reading this. However popular, it doesn't change the fact the SQL code can be nested, verbose and very difficult to read.
 Oftentimes, I found myself lost in thousands lines of SQL code full of seemingly invaluable business logic.
 I have to dive deep to understand which tables this SQL script are reading, how they're joined together and the result
@@ -17,9 +17,9 @@ feed it to my system, and I'll show them the correct jobs they should depend on 
 Back then, I wasn't equipped with the right tool though. Without much understanding of parsing, lexical analyser, let alone
 a real compiler, regular expression was my weapon of choice. And the strategy is simple enough, whenever I see "from"
 or "join", I extract the word after it as source table. Whenever I see "insert overwrite", a target table must follow
-upon. I know you must have already figured out the pitfalls that comes with this approach. How about when "from" is in a
-comment, or even when it is a string value used in where condition? These are all true, but somehow, I managed to
-survive with this approach plus all kinds of if-else logic. Simple as it is, 80% of the time, I got it right.
+upon. I know you must have already figured out several pitfalls that comes with this approach. How about when "from" is
+in a comment, or even when it is a string value used in where condition? These are all valid points, but somehow, I
+managed to survive with this approach plus all kinds of if-else logic. Simple as it is, 80% of the time, I got it right.
 
 But to be more accurate, even get it right 100% of the time, I don't think regular expression could do the trick. So I
 searched the internet, tons of sql parsers, while no handy/friendly tool to use these parsers to analyze the SQL lineage,

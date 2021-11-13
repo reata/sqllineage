@@ -14,7 +14,7 @@ three steps:
 3. Calling :class:`sqllineage.core.holders.SQLLineageHolder.of` function to assemble the list of
    :class:`sqllineage.core.holders.StatementLineageHolder` into one :class:`sqllineage.core.holders.SQLLineageHolder`.
 
-:class:`sqllineage.core.holders.SQLLineageHolder` then will serve for lineage summary, in words or in visualization
+:class:`sqllineage.core.holders.SQLLineageHolder` then will serve for lineage summary, in text or in visualization
 form.
 
 sqllineage.runner.LineageRunner

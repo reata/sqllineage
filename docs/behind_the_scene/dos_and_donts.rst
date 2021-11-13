@@ -13,11 +13,12 @@ DOs
 
 DONTs
 =====
-* Column-level lineage will not be included since that would require metadata information for 100% accurate lineage
-  tracing, or we won't be able to trace situation like ``select *``. However, there's no unified metadata service for all
-  kinds of SQL systems.
+* Column-level lineage will not be 100% accurate because that would require metadata information. However, there's no
+  unified metadata service for all kinds of SQL systems. For the moment, in column-level lineage, column-to-table
+  resolution is conducted in a best-effort way, meaning we only provide possible table candidates for situation like
+  ``select *`` or ``select col from tab1 join tab2``.
 * Likewise for Partition-level lineage. Until we find a way to not involve metadata service, we will not go for this.
 
 .. note::
-    Column-level lineage is still do-able if we can tolerate information missing for ``select *``. Let's see what will
-    happen in future versions.
+    100% accurate Column-level lineage is still do-able if we can provide some kind of a plugin system for user to
+    register their metadata instead of us maintaining it. Let's see what will happen in future versions.

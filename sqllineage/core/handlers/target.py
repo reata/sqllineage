@@ -8,6 +8,8 @@ from sqllineage.exceptions import SQLLineageException
 
 
 class TargetHandler(NextTokenBaseHandler):
+    """Target Table Handler."""
+
     TARGET_TABLE_TOKENS = ("INTO", "OVERWRITE", "TABLE", "VIEW", "UPDATE")
 
     def _indicate(self, token: Token) -> bool:

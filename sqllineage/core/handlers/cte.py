@@ -7,6 +7,8 @@ from sqllineage.exceptions import SQLLineageException
 
 
 class CTEHandler(NextTokenBaseHandler):
+    """Common Table Expression (With Queries) Handler."""
+
     CTE_TOKENS = ("WITH",)
 
     def _indicate(self, token: Token) -> bool:

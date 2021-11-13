@@ -4,28 +4,28 @@ LineageHolder
 
 LineageHolder is an abstraction to hold the lineage result analyzed by LineageAnalyzer at different level.
 
-At the bottom level, we have :class:`sqllineage.core.holder.SubQueryLineageHolder` to hold lineage at subquery level.
+At the bottom, we have :class:`sqllineage.core.holder.SubQueryLineageHolder` to hold lineage at subquery level.
 This is used internally for :class:`sqllineage.core.analyzer.LineageAnalyzer`, which generate
 :class:`sqllineage.core.holder.StatementLineageHolder` as the result of lineage at SQL statement level.
 And to assemble multiple :class:`sqllineage.core.holder.StatementLineageHolder` into a DAG based data structure serving
 for the final output, we have :class:`sqllineage.core.holders.SQLLineageHolder`
 
 
-sqllineage.core.holders.SubQueryLineageHolder
+SubQueryLineageHolder
 ==============================================
 
 .. autoclass:: sqllineage.core.holders.SubQueryLineageHolder
     :members:
 
 
-sqllineage.core.holders.StatementLineageHolder
+StatementLineageHolder
 ==============================================
 
 .. autoclass:: sqllineage.core.holders.StatementLineageHolder
     :members:
 
 
-sqllineage.core.holders.SQLLineageHolder
+SQLLineageHolder
 ==============================================
 
 .. autoclass:: sqllineage.core.holders.SQLLineageHolder

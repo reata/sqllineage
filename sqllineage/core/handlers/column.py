@@ -8,6 +8,8 @@ from sqllineage.exceptions import SQLLineageException
 
 
 class ColumnHandler(NextTokenBaseHandler):
+    """Source & Target Column Handler."""
+
     def __init__(self):
         self.columns = []
         super().__init__()

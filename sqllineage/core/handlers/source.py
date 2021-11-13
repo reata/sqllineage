@@ -10,6 +10,8 @@ from sqllineage.exceptions import SQLLineageException
 
 
 class SourceHandler(NextTokenBaseHandler):
+    """Source Table Handler."""
+
     SOURCE_TABLE_TOKENS = (
         r"FROM",
         # inspired by https://github.com/andialbrecht/sqlparse/blob/master/sqlparse/keywords.py
