@@ -41,10 +41,17 @@ export function DAG(props) {
   const [open, setOpen] = React.useState(false);
   const cyRef = useRef(null);
 
-  const layout = {
+  const layoutTable = {
     name: 'dagre',
     rankDir: 'LR',
     rankSep: 200,
+    nodeSep: 50,
+  };
+  const layoutColumn = {
+    name: 'dagre',
+    rankDir: 'LR',
+    rankSep: 60,
+    nodeSep: 15,
   };
 
   const handleSave = () => {
@@ -62,6 +69,7 @@ export function DAG(props) {
     if (cyRef.current) {
       let cy = cyRef.current._cy;
       let data = value === "column" ? editorState.dagColumn : editorState.dagContent;
+      let layout = value === "column" ? layoutColumn : layoutTable;
       cy.elements().remove();
       cy.add(data);
       cy.layout(layout).run();
@@ -250,7 +258,7 @@ export function DAG(props) {
           elements={editorState.dagContent}
           stylesheet={stylesheet}
           style={style}
-          layout={layout}
+          layout={layoutTable}
           zoom={1}
           minZoom={0.5}
           maxZoom={2}
