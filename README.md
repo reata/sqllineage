@@ -73,15 +73,15 @@ $ sqllineage -v -e "insert into db1.table1 select * from db2.table2; insert into
 Statement #1: insert into db1.table1 select * from db2.table2;
     table read: [Table: db2.table2]
     table write: [Table: db1.table1]
+    table cte: []
     table rename: []
     table drop: []
-    table intermediate: []
 Statement #2: insert into db3.table3 select * from db1.table1;
     table read: [Table: db1.table1]
     table write: [Table: db3.table3]
+    table cte: []
     table rename: []
     table drop: []
-    table intermediate: []
 ==========
 Summary:
 Statements(#): 2
@@ -142,8 +142,10 @@ sqllineage -g -f foo.sql
 ```
 A webserver will be started, showing DAG representation of the lineage result in browser:
 
-Table-Level Lineage
-<img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/table.jpg">
+- Table-Level Lineage
 
-Column-Level Lineage
-<img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/column.jpg">
+<img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/table.jpg" alt="Table-Level Lineage">
+
+- Column-Level Lineage
+
+<img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/column.jpg" alt="Column-Level Lineage">
