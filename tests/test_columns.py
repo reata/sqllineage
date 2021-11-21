@@ -330,6 +330,13 @@ SELECT wt.col1 FROM wtab1 wt"""
     assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
 
 
+def test_column_reference_from_cte_using_prefix():
+    sql = """WITH wtab1 AS (SELECT col1 FROM tab2)
+INSERT OVERWRITE TABLE tab1
+SELECT wtab1.col1 FROM wtab1"""
+    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+
+
 def test_column_reference_with_ansi89_join():
     sql = """INSERT OVERWRITE TABLE tab3
 SELECT a.id,

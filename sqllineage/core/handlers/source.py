@@ -58,7 +58,10 @@ class SourceHandler(NextTokenBaseHandler):
             if "." not in identifier.value:
                 cte = cte_dict.get(identifier.get_real_name())
                 if cte is not None:
-                    read = SubQuery.of(cte.token, identifier.get_alias())
+                    # could reference CTE with or without alias
+                    read = SubQuery.of(
+                        cte.token, identifier.get_alias() or identifier.get_real_name()
+                    )
             if read is None:
                 read = Table.of(identifier)
         holder.add_read(read)
