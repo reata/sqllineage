@@ -2,11 +2,8 @@ from functools import reduce
 from operator import add
 from typing import List
 
-from sqlparse import tokens as T
 from sqlparse.sql import (
-    Case,
     Comment,
-    Comparison,
     Identifier,
     IdentifierList,
     Statement,
@@ -19,7 +16,7 @@ from sqllineage.core.handlers.base import (
 )
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.models import SubQuery, Table
-from sqllineage.utils.sqlparse import is_subquery
+from sqllineage.utils.sqlparse import get_subquery_parentheses, is_subquery
 
 
 class LineageAnalyzer:
@@ -141,27 +138,9 @@ class LineageAnalyzer:
     @classmethod
     def _parse_subquery_from_identifier(cls, token: Identifier) -> List[SubQuery]:
         """
-        the returned list is either empty when no SubQuery parsed or list of one SubQuery
+        convert Tuple[Parenthesis, str] to sqllineage.core.models.SubQuery
         """
-        subquery = []
-        kw_idx, kw = token.token_next_by(m=(T.Keyword, "AS"))
-        sublist = list(token.get_sublists())
-        if kw is not None and len(sublist) == 1:
-            # CTE: tbl AS (SELECT 1)
-            target = sublist[0]
-        else:
-            # normal subquery: (SELECT 1) tbl
-            target = token.token_first(skip_cm=True)
-        if isinstance(target, Case):
-            # CASE WHEN (SELECT count(*) from tab1) > 0 THEN (SELECT count(*) FROM tab1) ELSE -1
-            for tk in target.get_sublists():
-                if isinstance(tk, Comparison):
-                    if is_subquery(tk.left):
-                        subquery.append(SubQuery.of(tk.left, tk.left.get_real_name()))
-                    if is_subquery(tk.right):
-                        subquery.append(SubQuery.of(tk.right, tk.right.get_real_name()))
-                elif is_subquery(tk):
-                    subquery.append(SubQuery.of(tk, token.get_real_name()))
-        if is_subquery(target):
-            subquery = [SubQuery.of(target, token.get_real_name())]
-        return subquery
+        return [
+            SubQuery.of(parenthesis, alias)
+            for parenthesis, alias in get_subquery_parentheses(token)
+        ]
