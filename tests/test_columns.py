@@ -328,3 +328,23 @@ def test_column_reference_from_cte_using_alias():
 INSERT OVERWRITE TABLE tab1
 SELECT wt.col1 FROM wtab1 wt"""
     assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+
+
+def test_column_reference_with_ansi89_join():
+    sql = """INSERT OVERWRITE TABLE tab3
+SELECT a.id,
+       a.name AS name1,
+       b.name AS name2
+FROM (SELECT id, name
+      FROM tab1) a,
+     (SELECT id, name
+      FROM tab2) b
+WHERE a.id = b.id"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (("tab1", "id"), ("tab3", "id")),
+            (("tab1", "name"), ("tab3", "name1")),
+            (("tab2", "name"), ("tab3", "name2")),
+        ],
+    )
