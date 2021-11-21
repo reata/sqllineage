@@ -59,8 +59,8 @@ class SourceHandler(NextTokenBaseHandler):
         cls, token: Identifier, holder: SubQueryLineageHolder
     ) -> Union[SubQuery, Table]:
         cte_dict = {s.alias: s for s in holder.cte}
-        return (
-            Table.of(token)
-            if "." in token.value
-            else cte_dict.get(token.get_real_name(), Table.of(token))
-        )
+        if "." not in token.value:
+            cte = cte_dict.get(token.get_real_name())
+            if cte is not None:
+                return SubQuery.of(cte.token, token.get_alias())
+        return Table.of(token)

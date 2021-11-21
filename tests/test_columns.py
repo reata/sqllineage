@@ -321,3 +321,10 @@ SELECT col1,
 FROM tab2"""
     # just assure no exception, don't guarantee the result
     LineageRunner(sql).print_column_lineage()
+
+
+def test_column_reference_from_cte_using_alias():
+    sql = """WITH wtab1 AS (SELECT col1 FROM tab2)
+INSERT OVERWRITE TABLE tab1
+SELECT wt.col1 FROM wtab1 wt"""
+    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
