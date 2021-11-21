@@ -83,7 +83,7 @@ class Table:
         return hash(str(self))
 
     @staticmethod
-    def of(identifier: Identifier):
+    def of(identifier: Identifier) -> "Table":
         # rewrite identifier's get_real_name method, by matching the last dot instead of the first dot, so that the
         # real name for a.b.c will be c instead of b
         dot_idx, _ = identifier._token_matching(
@@ -138,7 +138,7 @@ class SubQuery:
         return hash(self._query)
 
     @staticmethod
-    def of(parenthesis: Parenthesis, alias: Optional[str]):
+    def of(parenthesis: Parenthesis, alias: Optional[str]) -> "SubQuery":
         return SubQuery(parenthesis, alias)
 
 
