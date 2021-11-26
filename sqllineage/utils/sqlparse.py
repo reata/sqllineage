@@ -1,7 +1,9 @@
-from typing import List, Tuple
+from typing import List
 
 from sqlparse import tokens as T
 from sqlparse.sql import Case, Comparison, Function, Identifier, Parenthesis, TokenList
+
+from sqllineage.utils.entities import SubQueryTuple
 
 
 def is_subquery(token: TokenList) -> bool:
@@ -13,7 +15,7 @@ def is_subquery(token: TokenList) -> bool:
     return flag
 
 
-def get_subquery_parentheses(token: Identifier) -> List[Tuple[Parenthesis, str]]:
+def get_subquery_parentheses(token: Identifier) -> List[SubQueryTuple]:
     """
     Retrieve subquery list from identifier
     the returned list is either empty when no subquery parsed or list of [parenthesis, alias] tuple
@@ -32,13 +34,13 @@ def get_subquery_parentheses(token: Identifier) -> List[Tuple[Parenthesis, str]]
         for tk in target.get_sublists():
             if isinstance(tk, Comparison):
                 if is_subquery(tk.left):
-                    subquery.append((tk.left, tk.left.get_real_name()))
+                    subquery.append(SubQueryTuple(tk.left, tk.left.get_real_name()))
                 if is_subquery(tk.right):
-                    subquery.append((tk.right, tk.right.get_real_name()))
+                    subquery.append(SubQueryTuple(tk.right, tk.right.get_real_name()))
             elif is_subquery(tk):
-                subquery.append((tk, token.get_real_name()))
+                subquery.append(SubQueryTuple(tk, token.get_real_name()))
     if is_subquery(target):
-        subquery = [(target, token.get_real_name())]
+        subquery = [SubQueryTuple(target, token.get_real_name())]
     return subquery
 
 

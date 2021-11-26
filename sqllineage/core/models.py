@@ -17,6 +17,7 @@ from sqlparse.sql import (
 from sqlparse.utils import imt
 
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
 from sqllineage.utils.sqlparse import get_parameters
 
@@ -153,7 +154,7 @@ class Column:
         """
         self._parent: Set[Union[Table, SubQuery]] = set()
         self.raw_name = escape_identifier_name(name)
-        self.source_raw_names = kwargs.pop("source_raw_names", ((self.raw_name, None),))
+        self.source_columns = kwargs.pop("source_columns", ((self.raw_name, None),))
 
     def __str__(self):
         return (
@@ -199,30 +200,28 @@ class Column:
                 else:
                     idx, _ = token.token_prev(kw_idx, skip_cm=True)
                     expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
-                    source_raw_names = Column._extract_source_raw_names(expr)
-                    return Column(alias, source_raw_names=source_raw_names)
+                    source_columns = Column._extract_source_columns(expr)
+                    return Column(alias, source_columns=source_columns)
             else:
                 # select column name directly without alias
                 return Column(
                     token.get_real_name(),
-                    source_raw_names=(
-                        (token.get_real_name(), token.get_parent_name()),
-                    ),
+                    source_columns=((token.get_real_name(), token.get_parent_name()),),
                 )
         else:
             # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
-            source_raw_names = Column._extract_source_raw_names(token)
-            return Column(token.value, source_raw_names=source_raw_names)
+            source_columns = Column._extract_source_columns(token)
+            return Column(token.value, source_columns=source_columns)
 
     @staticmethod
-    def _extract_source_raw_names(token: Token):
+    def _extract_source_columns(token: Token) -> List[ColumnQualifierTuple]:
         if isinstance(token, Function):
             # max(col1) AS col2
-            source_raw_names = tuple(
-                x
+            source_columns = [
+                cqt
                 for tk in get_parameters(token)
-                for x in Column._extract_source_raw_names(tk)
-            )
+                for cqt in Column._extract_source_columns(tk)
+            ]
         elif isinstance(token, Parenthesis):
             # This is to avoid circular import
             from sqllineage.runner import LineageRunner
@@ -232,53 +231,58 @@ class Column:
                 # (SELECT avg(col1) AS col1 FROM tab3), used after WHEN or THEN in CASE clause
                 src_cols = [
                     lineage[0]
-                    for lineage in LineageRunner(token.value).get_column_lineage(False)
+                    for lineage in LineageRunner(token.value).get_column_lineage(
+                        exclude_subquery=False
+                    )
                 ]
-                source_raw_names = tuple(
-                    (src_col.raw_name, src_col.parent.raw_name) for src_col in src_cols
-                )
+                source_columns = [
+                    ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
+                    for src_col in src_cols
+                ]
             else:
                 # (PARTITION BY col1 ORDER BY col2 DESC)
-                source_raw_names = tuple(
-                    x
+                source_columns = [
+                    cqt
                     for tk in token.get_sublists()
-                    for x in Column._extract_source_raw_names(tk)
-                )
+                    for cqt in Column._extract_source_columns(tk)
+                ]
         elif isinstance(token, Operation):
             # col1 + col2 AS col3
-            source_raw_names = tuple(
-                x
+            source_columns = [
+                cqt
                 for tk in token.get_sublists()
-                for x in Column._extract_source_raw_names(tk)
-            )
+                for cqt in Column._extract_source_columns(tk)
+            ]
         elif isinstance(token, Case):
             # CASE WHEN col1 = 2 THEN "V1" WHEN col1 = "2" THEN "V2" END AS col2
-            source_raw_names = tuple(
-                x
+            source_columns = [
+                cqt
                 for tk in token.get_sublists()
-                for x in Column._extract_source_raw_names(tk)
-            )
+                for cqt in Column._extract_source_columns(tk)
+            ]
         elif isinstance(token, Comparison):
-            from_left = Column._extract_source_raw_names(token.left)
-            from_right = Column._extract_source_raw_names(token.right)
-            source_raw_names = (*from_left, *from_right)
+            source_columns = Column._extract_source_columns(
+                token.left
+            ) + Column._extract_source_columns(token.right)
         elif isinstance(token, IdentifierList):
-            source_raw_names = tuple(
-                x
+            source_columns = [
+                cqt
                 for tk in token.get_sublists()
-                for x in Column._extract_source_raw_names(tk)
-            )
+                for cqt in Column._extract_source_columns(tk)
+            ]
         elif isinstance(token, Identifier):
             if token.get_real_name():
                 # col1 AS col2
-                source_raw_names = ((token.get_real_name(), token.get_parent_name()),)
+                source_columns = [
+                    ColumnQualifierTuple(token.get_real_name(), token.get_parent_name())
+                ]
             else:
                 # col1=1 AS int
-                source_raw_names = tuple(
-                    x
+                source_columns = [
+                    cqt
                     for tk in token.get_sublists()
-                    for x in Column._extract_source_raw_names(tk)
-                )
+                    for cqt in Column._extract_source_columns(tk)
+                ]
         else:
             # Handle literals other than *
             if (
@@ -286,11 +290,11 @@ class Column:
                 and token.ttype[0] == T.Literal[0]
                 and token.value != "*"
             ):
-                source_raw_names = tuple()
+                source_columns = []
             else:
                 # select *
-                source_raw_names = ((token.value, None),)
-        return source_raw_names
+                source_columns = [ColumnQualifierTuple(token.value, None)]
+        return source_columns
 
     def to_source_columns(self, alias_mapping: Dict[str, Union[Table, SubQuery]]):
         """
@@ -304,14 +308,14 @@ class Column:
             return col
 
         source_columns = set()
-        for (src_col, src_tbl) in self.source_raw_names:
-            if src_tbl is None:
+        for (src_col, qualifier) in self.source_columns:
+            if qualifier is None:
                 if src_col == "*":
                     # select *
                     for table in set(alias_mapping.values()):
                         source_columns.add(_to_src_col(src_col, table))
                 else:
-                    # select column without specifying table prefix
+                    # select unqualified column
                     src_col = _to_src_col(src_col, None)
                     for table in set(alias_mapping.values()):
                         # in case of only one table, we get the right answer
@@ -319,8 +323,10 @@ class Column:
                         src_col.parent = table
                     source_columns.add(src_col)
             else:
-                if alias_mapping.get(src_tbl):
-                    source_columns.add(_to_src_col(src_col, alias_mapping.get(src_tbl)))
+                if alias_mapping.get(qualifier):
+                    source_columns.add(
+                        _to_src_col(src_col, alias_mapping.get(qualifier))
+                    )
                 else:
-                    source_columns.add(_to_src_col(src_col, Table(src_tbl)))
+                    source_columns.add(_to_src_col(src_col, Table(qualifier)))
         return source_columns

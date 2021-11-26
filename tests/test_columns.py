@@ -1,6 +1,7 @@
 import pytest
 
 from sqllineage.runner import LineageRunner
+from sqllineage.utils.entities import ColumnQualifierTuple
 from .helpers import assert_column_lineage_equal
 
 
@@ -8,29 +9,44 @@ def test_select_column():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1 AS col2
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col2"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+    )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT tab2.col1 AS col2
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col2"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+    )
 
 
 def test_select_column_wildcard():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT *
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "*"), ("tab1", "*"))])
+    assert_column_lineage_equal(
+        sql, [(ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1"))]
+    )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT *
 FROM tab2 a
          INNER JOIN tab3 b
                     ON a.id = b.id"""
     assert_column_lineage_equal(
-        sql, [(("tab2", "*"), ("tab1", "*")), (("tab3", "*"), ("tab1", "*"))]
+        sql,
+        [
+            (ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1")),
+            (ColumnQualifierTuple("*", "tab3"), ColumnQualifierTuple("*", "tab1")),
+        ],
     )
 
 
@@ -38,21 +54,41 @@ def test_select_column_using_function():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT max(col1)
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "max(col1)"))])
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("max(col1)", "tab1"),
+            )
+        ],
+    )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT max(col1) AS col2
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col2"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+    )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT cast(col1 as timestamp)
 FROM tab2"""
     assert_column_lineage_equal(
-        sql, [(("tab2", "col1"), ("tab1", "cast(col1 as timestamp)"))]
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("cast(col1 as timestamp)", "tab1"),
+            )
+        ],
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT cast(col1 as timestamp) as col2
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col2"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+    )
 
 
 def test_select_column_using_function_with_complex_parameter():
@@ -62,8 +98,14 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [
-            (("tab2", "col1"), ("tab1", "flag")),
-            (("tab2", "col2"), ("tab1", "flag")),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("flag", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("flag", "tab1"),
+            ),
         ],
     )
 
@@ -75,8 +117,14 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [
-            (("tab2", "col1"), ("tab1", "rnum")),
-            (("tab2", "col2"), ("tab1", "rnum")),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("rnum", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("rnum", "tab1"),
+            ),
         ],
     )
 
@@ -88,8 +136,14 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [
-            (("tab2", "col1"), ("tab1", "col1 + col2")),
-            (("tab2", "col2"), ("tab1", "col1 + col2")),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1 + col2", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col1 + col2", "tab1"),
+            ),
         ],
     )
     sql = """INSERT OVERWRITE TABLE tab1
@@ -97,21 +151,42 @@ SELECT col1 + col2 AS col3
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
-        [(("tab2", "col1"), ("tab1", "col3")), (("tab2", "col2"), ("tab1", "col3"))],
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
     )
 
 
-def test_select_column_using_expression_with_table_prefix_without_column_alias():
+def test_select_column_using_expression_with_table_qualifier_without_column_alias():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT a.col1 + a.col2 + a.col3 + a.col4
 FROM tab2 a"""
     assert_column_lineage_equal(
         sql,
         [
-            (("tab2", "col1"), ("tab1", "a.col1 + a.col2 + a.col3 + a.col4")),
-            (("tab2", "col2"), ("tab1", "a.col1 + a.col2 + a.col3 + a.col4")),
-            (("tab2", "col3"), ("tab1", "a.col1 + a.col2 + a.col3 + a.col4")),
-            (("tab2", "col4"), ("tab1", "a.col1 + a.col2 + a.col3 + a.col4")),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("a.col1 + a.col2 + a.col3 + a.col4", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("a.col1 + a.col2 + a.col3 + a.col4", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col3", "tab2"),
+                ColumnQualifierTuple("a.col1 + a.col2 + a.col3 + a.col4", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col4", "tab2"),
+                ColumnQualifierTuple("a.col1 + a.col2 + a.col3 + a.col4", "tab1"),
+            ),
         ],
     )
 
@@ -124,15 +199,20 @@ FROM tab2"""
         sql,
         [
             (
-                ("tab2", "col1"),
-                ("tab1", "CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END"),
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple(
+                    "CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END", "tab1"
+                ),
             ),
         ],
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END AS col2
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col2"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+    )
 
 
 def test_select_column_using_case_when_with_subquery():
@@ -141,19 +221,34 @@ SELECT CASE WHEN (SELECT avg(col1) FROM tab3) > 0 AND col2 = 1 THEN (SELECT avg(
 FROM tab4"""
     assert_column_lineage_equal(
         sql,
-        [(("tab4", "col2"), ("tab1", "col1")), (("tab3", "col1"), ("tab1", "col1"))],
+        [
+            (
+                ColumnQualifierTuple("col2", "tab4"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab3"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+        ],
     )
 
 
-def test_select_column_with_table_prefix():
+def test_select_column_with_table_qualifier():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT tab2.col1
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT t.col1
 FROM tab2 AS t"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
 
 
 def test_select_columns():
@@ -163,7 +258,16 @@ col2
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
-        [(("tab2", "col1"), ("tab1", "col1")), (("tab2", "col2"), ("tab1", "col2"))],
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT max(col1),
@@ -172,8 +276,14 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [
-            (("tab2", "col1"), ("tab1", "max(col1)")),
-            (("tab2", "col2"), ("tab1", "max(col2)")),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("max(col1)", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("max(col2)", "tab1"),
+            ),
         ],
     )
 
@@ -182,15 +292,24 @@ def test_select_column_in_subquery():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1
 FROM (SELECT col1 FROM tab2) dt"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1
 FROM (SELECT col1, col2 FROM tab2) dt"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1
 FROM (SELECT col1 FROM tab2)"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
 
 
 def test_select_column_from_table_join():
@@ -202,7 +321,16 @@ FROM tab2
                     ON tab2.id = tab3.id"""
     assert_column_lineage_equal(
         sql,
-        [(("tab2", "col1"), ("tab1", "col1")), (("tab3", "col2"), ("tab1", "col2"))],
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab3"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT tab2.col1 AS col3,
@@ -212,7 +340,16 @@ FROM tab2
                     ON tab2.id = tab3.id"""
     assert_column_lineage_equal(
         sql,
-        [(("tab2", "col1"), ("tab1", "col3")), (("tab3", "col2"), ("tab1", "col4"))],
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab3"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT a.col1 AS col3,
@@ -222,17 +359,29 @@ FROM tab2 a
                     ON a.id = b.id"""
     assert_column_lineage_equal(
         sql,
-        [(("tab2", "col1"), ("tab1", "col3")), (("tab3", "col2"), ("tab1", "col4"))],
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab3"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
     )
 
 
-def test_select_column_without_table_prefix_from_table_join():
+def test_select_column_without_table_qualifier_from_table_join():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1
 FROM tab2 a
          INNER JOIN tab3 b
                     ON a.id = b.id"""
-    assert_column_lineage_equal(sql, [((None, "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", None), ColumnQualifierTuple("col1", "tab1"))],
+    )
 
 
 def test_select_column_from_same_table_multiple_time_using_different_alias():
@@ -244,7 +393,16 @@ FROM tab2 a
               ON a.parent_id = b.id"""
     assert_column_lineage_equal(
         sql,
-        [(("tab2", "col1"), ("tab1", "col2")), (("tab2", "col1"), ("tab1", "col3"))],
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
     )
 
 
@@ -256,7 +414,16 @@ SELECT a.col1
 FROM tab2 a"""
     assert_column_lineage_equal(
         sql,
-        [(("tab2", "col1"), ("tab1", "col1")), (("tab2", "col3"), ("tab1", "col3"))],
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col3", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
     )
 
 
@@ -268,7 +435,16 @@ SELECT a.col1,
 FROM tab2 a"""
     assert_column_lineage_equal(
         sql,
-        [(("tab2", "col1"), ("tab1", "col1")), (("tab2", "col3"), ("tab1", "col3"))],
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col3", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
     )
 
 
@@ -279,9 +455,18 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [
-            (("tab2", "col1"), ("tab1", "col1")),
-            (("tab2", "col2"), ("tab1", "col2")),
-            (("tab2", "col3"), ("tab1", "col2")),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col3", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
         ],
     )
 
@@ -291,7 +476,10 @@ def test_cast_to_data_type(dtype):
     sql = f"""INSERT OVERWRITE TABLE tab1
 SELECT cast(col1 as {dtype}) AS col1
 FROM tab2"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
 
 
 def test_cast_using_constant():
@@ -309,7 +497,11 @@ SELECT rn FROM (
 ) sub
 WHERE rn = 1"""
     assert_column_lineage_equal(
-        sql, [(("tab2", "col1"), ("tab1", "rn")), (("tab2", "col2"), ("tab1", "rn"))]
+        sql,
+        [
+            (ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("rn", "tab1")),
+            (ColumnQualifierTuple("col2", "tab2"), ColumnQualifierTuple("rn", "tab1")),
+        ],
     )
 
 
@@ -327,14 +519,20 @@ def test_column_reference_from_cte_using_alias():
     sql = """WITH wtab1 AS (SELECT col1 FROM tab2)
 INSERT OVERWRITE TABLE tab1
 SELECT wt.col1 FROM wtab1 wt"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
 
 
-def test_column_reference_from_cte_using_prefix():
+def test_column_reference_from_cte_using_qualifier():
     sql = """WITH wtab1 AS (SELECT col1 FROM tab2)
 INSERT OVERWRITE TABLE tab1
 SELECT wtab1.col1 FROM wtab1"""
-    assert_column_lineage_equal(sql, [(("tab2", "col1"), ("tab1", "col1"))])
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
 
 
 def test_column_reference_with_ansi89_join():
@@ -350,8 +548,14 @@ WHERE a.id = b.id"""
     assert_column_lineage_equal(
         sql,
         [
-            (("tab1", "id"), ("tab3", "id")),
-            (("tab1", "name"), ("tab3", "name1")),
-            (("tab2", "name"), ("tab3", "name2")),
+            (ColumnQualifierTuple("id", "tab1"), ColumnQualifierTuple("id", "tab3")),
+            (
+                ColumnQualifierTuple("name", "tab1"),
+                ColumnQualifierTuple("name1", "tab3"),
+            ),
+            (
+                ColumnQualifierTuple("name", "tab2"),
+                ColumnQualifierTuple("name2", "tab3"),
+            ),
         ],
     )
