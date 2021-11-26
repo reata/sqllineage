@@ -20,11 +20,11 @@ def assert_column_lineage_equal(sql, column_lineages=None):
     expected = set()
     if column_lineages:
         for src, tgt in column_lineages:
-            src_col = Column(src[1])
-            if src[0] is not None:
-                src_col.parent = Table(src[0])
-            tgt_col = Column(tgt[1])
-            tgt_col.parent = Table(tgt[0])
+            src_col = Column(src.column)
+            if src.qualifier is not None:
+                src_col.parent = Table(src.qualifier)
+            tgt_col = Column(tgt.column)
+            tgt_col.parent = Table(tgt.qualifier)
             expected.add((src_col, tgt_col))
     lr = LineageRunner(sql)
     actual = {(lineage[0], lineage[-1]) for lineage in set(lr.get_column_lineage())}

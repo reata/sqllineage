@@ -138,7 +138,7 @@ class LineageAnalyzer:
     @classmethod
     def _parse_subquery_from_identifier(cls, token: Identifier) -> List[SubQuery]:
         """
-        convert Tuple[Parenthesis, str] to sqllineage.core.models.SubQuery
+        convert SubQueryTuple to sqllineage.core.models.SubQuery
         """
         return [
             SubQuery.of(parenthesis, alias)
