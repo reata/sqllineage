@@ -129,6 +129,39 @@ FROM tab2"""
     )
 
 
+def test_select_column_using_window_function_with_parameters():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT col0,
+       max(col3) OVER (PARTITION BY col1 ORDER BY col2 DESC) AS rnum,
+       col4
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col0", "tab2"),
+                ColumnQualifierTuple("col0", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("rnum", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("rnum", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col3", "tab2"),
+                ColumnQualifierTuple("rnum", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col4", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
+    )
+
+
 def test_select_column_using_expression():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1 + col2

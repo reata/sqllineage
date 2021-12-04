@@ -1,7 +1,10 @@
-from typing import List
+import itertools
+from typing import Iterator, List
 
 from sqlparse import tokens as T
+from sqlparse.engine.grouping import _group, group_functions
 from sqlparse.sql import Case, Comparison, Function, Identifier, Parenthesis, TokenList
+from sqlparse.utils import recurse
 
 from sqllineage.utils.entities import SubQueryTuple
 
@@ -48,5 +51,49 @@ def get_parameters(token: Function):
     """
     This is a replacement for sqlparse.sql.Function.get_parameters(), which produces problematic result for:
         if(col1 = 'foo' AND col2 = 'bar', 1, 0)
+    This implementation ignores the constant parameter as we don't need them for column lineage for now
     """
-    return token.tokens[-1].get_sublists()
+    if isinstance(token, Window):
+        return token.get_parameters()
+    else:
+        return token.tokens[-1].get_sublists()
+
+
+class Window(Function):
+    """window function + OVER keyword + window defn"""
+
+    def get_parameters(self) -> Iterator[TokenList]:
+        return itertools.chain(
+            get_parameters(self.get_window_function()),
+            self.get_window_defn().get_sublists(),
+        )
+
+    def get_window_function(self) -> Function:
+        return self.tokens[0]
+
+    def get_window_defn(self) -> Parenthesis:
+        return self.tokens[-1]
+
+
+@recurse(Window)
+def group_window(tlist):
+    def match(token):
+        return token.is_keyword and token.normalized == "OVER"
+
+    def valid_prev(token):
+        return isinstance(token, Function)
+
+    def valid_next(token):
+        return isinstance(token, Parenthesis)
+
+    def post(tlist, pidx, tidx, nidx):
+        return pidx, nidx
+
+    _group(
+        tlist, Window, match, valid_prev, valid_next, post, extend=False, recurse=False
+    )
+
+
+def group_function_with_window(tlist):
+    group_functions(tlist)
+    group_window(tlist)

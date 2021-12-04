@@ -1,6 +1,20 @@
 import logging.config
 import os
 
+
+def _monkey_patch() -> None:
+    try:
+        from sqlparse.engine import grouping
+        from sqllineage.utils.sqlparse import group_function_with_window
+
+        grouping.group_functions = group_function_with_window
+    except ImportError:
+        # when imported by setup.py for constant variables, dependency is not ready yet
+        pass
+
+
+_monkey_patch()
+
 NAME = "sqllineage"
 VERSION = "1.3.0"
 DEFAULT_LOGGING = {
