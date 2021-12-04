@@ -15,8 +15,7 @@ class ColumnHandler(NextTokenBaseHandler):
         super().__init__()
 
     def _indicate(self, token: Token) -> bool:
-        # OVER here is to handle window function like row_number()
-        return token.normalized in ("SELECT", "OVER")
+        return bool(token.normalized == "SELECT")
 
     def _handle(self, token: Token, holder: SubQueryLineageHolder) -> None:
         column_token_types = (Identifier, Function, Operation, Case)

@@ -225,27 +225,18 @@ class Column:
         elif isinstance(token, Parenthesis):
             # This is to avoid circular import
             from sqllineage.runner import LineageRunner
-            from sqllineage.utils.sqlparse import is_subquery
 
-            if is_subquery(token):
-                # (SELECT avg(col1) AS col1 FROM tab3), used after WHEN or THEN in CASE clause
-                src_cols = [
-                    lineage[0]
-                    for lineage in LineageRunner(token.value).get_column_lineage(
-                        exclude_subquery=False
-                    )
-                ]
-                source_columns = [
-                    ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
-                    for src_col in src_cols
-                ]
-            else:
-                # (PARTITION BY col1 ORDER BY col2 DESC)
-                source_columns = [
-                    cqt
-                    for tk in token.get_sublists()
-                    for cqt in Column._extract_source_columns(tk)
-                ]
+            # (SELECT avg(col1) AS col1 FROM tab3), used after WHEN or THEN in CASE clause
+            src_cols = [
+                lineage[0]
+                for lineage in LineageRunner(token.value).get_column_lineage(
+                    exclude_subquery=False
+                )
+            ]
+            source_columns = [
+                ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
+                for src_col in src_cols
+            ]
         elif isinstance(token, Operation):
             # col1 + col2 AS col3
             source_columns = [
