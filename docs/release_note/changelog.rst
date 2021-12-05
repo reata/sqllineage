@@ -2,17 +2,31 @@
 Changelog
 *********
 
+v1.3.1
+======
+:Date: December 5, 2021
+
+Enhancement
+-------------
+* test against Python 3.10 (`#186 <https://github.com/reata/sqllineage/issues/186>`_)
+
+Bugfix
+-------------
+* Alias Parsed As Table Name for Column Lineage Using ANSI-89 Join (`#190 <https://github.com/reata/sqllineage/issues/190>`_)
+* CTE Parsed As Source Table When Referencing Column From CTE Using Alias (`#189 <https://github.com/reata/sqllineage/issues/189>`_)
+* window function with parameter parsed as two columns (`#184 <https://github.com/reata/sqllineage/issues/184>`_)
+
 v1.3.0
 ======
 :Date: November 13, 2021
 
 Feature
 -------------
-* Column-Level Lineage  (`#103 <https://github.com/reata/sqllineage/issues/103>`_)
+* Column-Level Lineage (`#103 <https://github.com/reata/sqllineage/issues/103>`_)
 
 Bugfix
 -------------
-* SHOW CREATE TABLE parsed as target table  (`#167 <https://github.com/reata/sqllineage/issues/167>`_)
+* SHOW CREATE TABLE parsed as target table (`#167 <https://github.com/reata/sqllineage/issues/167>`_)
 
 v1.2.4
 ======
@@ -20,9 +34,9 @@ v1.2.4
 
 Enhancement
 -------------
-* highlight selected node and its ancestors as well as children recursively  (`#156 <https://github.com/reata/sqllineage/issues/156>`_)
-* add support for database.schema.table as identifier name  (`#153 <https://github.com/reata/sqllineage/issues/153>`_)
-* add support for swap_partitions_between_tables  (`#152 <https://github.com/reata/sqllineage/issues/152>`_)
+* highlight selected node and its ancestors as well as children recursively (`#156 <https://github.com/reata/sqllineage/issues/156>`_)
+* add support for database.schema.table as identifier name (`#153 <https://github.com/reata/sqllineage/issues/153>`_)
+* add support for swap_partitions_between_tables (`#152 <https://github.com/reata/sqllineage/issues/152>`_)
 
 v1.2.3
 ======
@@ -30,7 +44,7 @@ v1.2.3
 
 Enhancement
 -------------
-* lineage API response exception handling  (`#148 <https://github.com/reata/sqllineage/issues/148>`_)
+* lineage API response exception handling (`#148 <https://github.com/reata/sqllineage/issues/148>`_)
 
 v1.2.2
 ======
@@ -38,7 +52,7 @@ v1.2.2
 
 Bugfix
 -------------
-* resize dragger remain on the UI when drawer is closed  (`#145 <https://github.com/reata/sqllineage/issues/145>`_)
+* resize dragger remain on the UI when drawer is closed (`#145 <https://github.com/reata/sqllineage/issues/145>`_)
 
 v1.2.1
 ======
