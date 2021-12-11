@@ -52,7 +52,8 @@ FROM tab2 a
 
 def test_select_column_using_function():
     sql = """INSERT OVERWRITE TABLE tab1
-SELECT max(col1)
+SELECT max(col1),
+       count(*)
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
@@ -60,15 +61,26 @@ FROM tab2"""
             (
                 ColumnQualifierTuple("col1", "tab2"),
                 ColumnQualifierTuple("max(col1)", "tab1"),
-            )
+            ),
+            (
+                ColumnQualifierTuple("*", "tab2"),
+                ColumnQualifierTuple("count(*)", "tab1"),
+            ),
         ],
     )
     sql = """INSERT OVERWRITE TABLE tab1
-SELECT max(col1) AS col2
+SELECT max(col1) AS col2,
+       count(*)  AS cnt
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
-        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+            (ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("cnt", "tab1")),
+        ],
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT cast(col1 as timestamp)

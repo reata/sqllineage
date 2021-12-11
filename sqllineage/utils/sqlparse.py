@@ -1,9 +1,9 @@
 import itertools
 from typing import Iterator, List
 
-from sqlparse import tokens as T
 from sqlparse.engine.grouping import _group, group_functions
 from sqlparse.sql import Case, Comparison, Function, Identifier, Parenthesis, TokenList
+from sqlparse.tokens import DML, Keyword, Wildcard
 from sqlparse.utils import recurse
 
 from sqllineage.utils.entities import SubQueryTuple
@@ -12,7 +12,7 @@ from sqllineage.utils.entities import SubQueryTuple
 def is_subquery(token: TokenList) -> bool:
     flag = False
     if isinstance(token, Parenthesis):
-        _, sub_token = token.token_next_by(m=(T.DML, "SELECT"))
+        _, sub_token = token.token_next_by(m=(DML, "SELECT"))
         if sub_token is not None:
             flag = True
     return flag
@@ -24,7 +24,7 @@ def get_subquery_parentheses(token: Identifier) -> List[SubQueryTuple]:
     the returned list is either empty when no subquery parsed or list of [parenthesis, alias] tuple
     """
     subquery = []
-    kw_idx, kw = token.token_next_by(m=(T.Keyword, "AS"))
+    kw_idx, kw = token.token_next_by(m=(Keyword, "AS"))
     sublist = list(token.get_sublists())
     if kw is not None and len(sublist) == 1:
         # CTE: tbl AS (SELECT 1)
@@ -56,7 +56,9 @@ def get_parameters(token: Function):
     if isinstance(token, Window):
         return token.get_parameters()
     else:
-        return token.tokens[-1].get_sublists()
+        return [
+            tk for tk in token.tokens[-1].tokens if tk.is_group or tk.ttype == Wildcard
+        ]
 
 
 class Window(Function):
