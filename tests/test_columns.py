@@ -580,6 +580,35 @@ SELECT wtab1.col1 FROM wtab1"""
     )
 
 
+def test_column_reference_from_previous_defined_cte():
+    sql = """WITH
+cte1 AS (SELECT a FROM tab1),
+cte2 AS (SELECT a FROM cte1)
+INSERT OVERWRITE TABLE tab2
+SELECT a FROM cte2"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("a", "tab1"), ColumnQualifierTuple("a", "tab2"))],
+    )
+
+
+def test_multiple_column_references_from_previous_defined_cte():
+    sql = """WITH
+cte1 AS (SELECT a, b FROM tab1),
+cte2 AS (SELECT a, max(b) AS b_max, count(b) AS b_cnt FROM cte1 GROUP BY a)
+INSERT OVERWRITE TABLE tab2
+SELECT cte1.a, cte2.b_max, cte2.b_cnt FROM cte1 JOIN cte2
+WHERE cte1.a = cte2.a"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("a", "tab1"), ColumnQualifierTuple("a", "tab2")),
+            (ColumnQualifierTuple("b", "tab1"), ColumnQualifierTuple("b_max", "tab2")),
+            (ColumnQualifierTuple("b", "tab1"), ColumnQualifierTuple("b_cnt", "tab2")),
+        ],
+    )
+
+
 def test_column_reference_with_ansi89_join():
     sql = """INSERT OVERWRITE TABLE tab3
 SELECT a.id,
