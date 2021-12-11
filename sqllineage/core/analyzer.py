@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import add
-from typing import List
+from typing import List, NamedTuple, Optional, Set
 
 from sqlparse.sql import (
     Comment,
@@ -17,6 +17,11 @@ from sqllineage.core.handlers.base import (
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.models import SubQuery, Table
 from sqllineage.utils.sqlparse import get_subquery_parentheses, is_subquery
+
+
+class AnalyzerContext(NamedTuple):
+    subquery: Optional[SubQuery] = None
+    prev_cte: Optional[Set[SubQuery]] = None
 
 
 class LineageAnalyzer:
@@ -43,7 +48,9 @@ class LineageAnalyzer:
             holder = self._extract_from_ddl_alter(stmt)
         else:
             # DML parsing logic also applies to CREATE DDL
-            holder = StatementLineageHolder.of(self._extract_from_dml(stmt))
+            holder = StatementLineageHolder.of(
+                self._extract_from_dml(stmt, AnalyzerContext())
+            )
         return holder
 
     @classmethod
@@ -67,12 +74,16 @@ class LineageAnalyzer:
 
     @classmethod
     def _extract_from_dml(
-        cls, token: TokenList, subquery: SubQuery = None
+        cls, token: TokenList, context: AnalyzerContext
     ) -> SubQueryLineageHolder:
         holder = SubQueryLineageHolder()
-        if subquery is not None:
+        if context.prev_cte is not None:
+            # CTE can be referenced by subsequent CTEs
+            for cte in context.prev_cte:
+                holder.add_cte(cte)
+        if context.subquery is not None:
             # If within subquery, then manually add subquery as target table
-            holder.add_write(subquery)
+            holder.add_write(context.subquery)
         current_handlers = [
             handler_cls() for handler_cls in CurrentTokenBaseHandler.__subclasses__()
         ]
@@ -107,7 +118,7 @@ class LineageAnalyzer:
                 next_handler.end_of_query_cleanup(holder)
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
-            holder |= cls._extract_from_dml(sq.token, sq)
+            holder |= cls._extract_from_dml(sq.token, AnalyzerContext(sq, holder.cte))
         return holder
 
     @classmethod
