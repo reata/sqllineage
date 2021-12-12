@@ -4,6 +4,7 @@ from typing import List, NamedTuple, Optional, Set
 
 from sqlparse.sql import (
     Comment,
+    Function,
     Identifier,
     IdentifierList,
     Statement,
@@ -128,8 +129,9 @@ class LineageAnalyzer:
     @classmethod
     def parse_subquery(cls, token: TokenList) -> List[SubQuery]:
         result = []
-        if isinstance(token, Identifier):
+        if isinstance(token, (Identifier, Function)):
             # usually SubQuery is an Identifier, but not all Identifiers are SubQuery
+            # Function for CTE without AS keyword
             result = cls._parse_subquery_from_identifier(token)
         elif isinstance(token, IdentifierList):
             # IdentifierList for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
