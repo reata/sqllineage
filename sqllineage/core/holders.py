@@ -4,8 +4,11 @@ from typing import Dict, Set, Tuple, Union
 import networkx as nx
 from networkx import DiGraph
 
-from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.utils.constant import EdgeType, NodeTag
+
+
+DATASET_CLASSES = (Path, Table)
 
 
 class ColumnLineageMixin:
@@ -65,7 +68,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     def add_read(self, value) -> None:
         self._property_setter(value, NodeTag.READ)
         # the same table can be add (in SQL: joined) multiple times with different alias
-        self.graph.add_edge(value, value.alias, type=EdgeType.HAS_ALIAS)
+        if hasattr(value, "alias"):
+            self.graph.add_edge(value, value.alias, type=EdgeType.HAS_ALIAS)
 
     @property
     def write(self) -> Set[Union[SubQuery, Table]]:
@@ -130,11 +134,11 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
 
     @property
     def read(self) -> Set[Table]:  # type: ignore
-        return {t for t in super().read if isinstance(t, Table)}
+        return {t for t in super().read if isinstance(t, DATASET_CLASSES)}
 
     @property
     def write(self) -> Set[Table]:  # type: ignore
-        return {t for t in super().write if isinstance(t, Table)}
+        return {t for t in super().write if isinstance(t, DATASET_CLASSES)}
 
     @property
     def drop(self) -> Set[Table]:
@@ -178,7 +182,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         """
         The table level DiGraph held by SQLLineageHolder
         """
-        table_nodes = [n for n in self.graph.nodes if isinstance(n, Table)]
+        table_nodes = [n for n in self.graph.nodes if isinstance(n, DATASET_CLASSES)]
         return self.graph.subgraph(table_nodes)
 
     @property

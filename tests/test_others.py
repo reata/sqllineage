@@ -97,6 +97,14 @@ def test_update_with_join():
     )
 
 
+def test_copy_from_table():
+    assert_table_lineage_equal(
+        "COPY tab1 FROM tab2",
+        {"tab2"},
+        {"tab1"},
+    )
+
+
 def test_drop():
     assert_table_lineage_equal("DROP TABLE IF EXISTS tab1", None, None)
 

@@ -110,6 +110,23 @@ class Table:
         return Table(real_name, schema, **kwargs)
 
 
+class Path:
+    def __init__(self, uri: str):
+        self.uri = escape_identifier_name(uri)
+
+    def __str__(self):
+        return self.uri
+
+    def __repr__(self):
+        return "Path: " + str(self)
+
+    def __eq__(self, other):
+        return type(self) is type(other) and self.uri == other.uri
+
+    def __hash__(self):
+        return hash(self.uri)
+
+
 class Partition:
     pass
 
@@ -159,7 +176,7 @@ class Column:
     def __str__(self):
         return (
             f"{self.parent}.{self.raw_name.lower()}"
-            if self.parent is not None
+            if self.parent is not None and not isinstance(self.parent, Path)
             else f"{self.raw_name.lower()}"
         )
 
