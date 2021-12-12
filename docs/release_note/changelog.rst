@@ -2,6 +2,16 @@
 Changelog
 *********
 
+v1.3.2
+======
+:Date: December 12, 2021
+
+Enhancement
+-------------
+* support optional AS keyword in CTE (`#198 <https://github.com/reata/sqllineage/issues/198>`_)
+* support referring to a CTE in subsequent CTEs (`#196 <https://github.com/reata/sqllineage/issues/196>`_)
+* support for Redshift 'copy from' syntax (`#164 <https://github.com/reata/sqllineage/issues/164>`_)
+
 v1.3.1
 ======
 :Date: December 5, 2021
@@ -12,8 +22,8 @@ Enhancement
 
 Bugfix
 -------------
-* Alias Parsed As Table Name for Column Lineage Using ANSI-89 Join (`#190 <https://github.com/reata/sqllineage/issues/190>`_)
-* CTE Parsed As Source Table When Referencing Column From CTE Using Alias (`#189 <https://github.com/reata/sqllineage/issues/189>`_)
+* alias parsed as table name for column lineage using ANSI-89 Join (`#190 <https://github.com/reata/sqllineage/issues/190>`_)
+* CTE parsed as source table when referencing column from cte using alias (`#189 <https://github.com/reata/sqllineage/issues/189>`_)
 * window function with parameter parsed as two columns (`#184 <https://github.com/reata/sqllineage/issues/184>`_)
 
 v1.3.0
