@@ -1,16 +1,16 @@
 from sqlparse.sql import Comparison, Function, Identifier, Token
-from sqlparse.tokens import Number
+from sqlparse.tokens import Literal, Number
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Table
+from sqllineage.core.models import Path, Table
 from sqllineage.exceptions import SQLLineageException
 
 
 class TargetHandler(NextTokenBaseHandler):
     """Target Table Handler."""
 
-    TARGET_TABLE_TOKENS = ("INTO", "OVERWRITE", "TABLE", "VIEW", "UPDATE")
+    TARGET_TABLE_TOKENS = ("INTO", "OVERWRITE", "TABLE", "VIEW", "UPDATE", "COPY")
 
     def _indicate(self, token: Token) -> bool:
         return token.normalized in self.TARGET_TABLE_TOKENS
@@ -38,6 +38,8 @@ class TargetHandler(NextTokenBaseHandler):
                 )
             holder.add_write(Table.of(token.left))
             holder.add_read(Table.of(token.right))
+        elif token.ttype == Literal.String.Single:
+            holder.add_write(Path(token.value))
         else:
             if not isinstance(token, Identifier):
                 raise SQLLineageException(

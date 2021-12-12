@@ -186,7 +186,7 @@ export function DAG(props) {
         }
       },
       {
-        selector: ':parent[type = "Table"]',
+        selector: ':parent[type = "Table"], :parent[type = "Path"]',
         style: {
           'background-color': '#f5f5f5',
           'border-color': '#00516c',

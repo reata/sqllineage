@@ -10,7 +10,11 @@ def assert_table_lineage_equal(sql, source_tables=None, target_tables=None):
         [source_tables, target_tables],
     ):
         actual = set(actual)
-        expected = set() if expected is None else {Table(t) for t in expected}
+        expected = (
+            set()
+            if expected is None
+            else {Table(t) if isinstance(t, str) else t for t in expected}
+        )
         assert (
             actual == expected
         ), f"\n\tExpected {_type} Table: {expected}\n\tActual {_type} Table: {actual}"
