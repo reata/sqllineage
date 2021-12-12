@@ -1,7 +1,7 @@
 import re
 from typing import Union
 
-from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Token
+from sqlparse.sql import Identifier, IdentifierList, Parenthesis, Token
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
 from sqllineage.core.holders import SubQueryLineageHolder
@@ -20,10 +20,9 @@ class SourceHandler(NextTokenBaseHandler):
     )
 
     def _indicate(self, token: Token) -> bool:
-        # SELECT trim(BOTH '  ' FROM '  abc  '); Here FROM is not a source table flag
         return any(
             re.match(regex, token.normalized) for regex in self.SOURCE_TABLE_TOKENS
-        ) and not isinstance(token.parent.parent, Function)
+        )
 
     def _handle(self, token: Token, holder: SubQueryLineageHolder) -> None:
         if isinstance(token, Identifier):

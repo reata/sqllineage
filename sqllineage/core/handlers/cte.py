@@ -1,4 +1,4 @@
-from sqlparse.sql import Identifier, IdentifierList, Token
+from sqlparse.sql import Function, Identifier, IdentifierList, Token
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
 from sqllineage.core.holders import SubQueryLineageHolder
@@ -15,10 +15,14 @@ class CTEHandler(NextTokenBaseHandler):
         return token.normalized in self.CTE_TOKENS
 
     def _handle(self, token: Token, holder: SubQueryLineageHolder) -> None:
-        if isinstance(token, Identifier):
+        # when CTE used without AS, it will be parsed as Function. This syntax is valid in SparkSQL
+        column_token_types = (Identifier, Function)
+        if isinstance(token, column_token_types):
             cte = [token]
         elif isinstance(token, IdentifierList):
-            cte = [token for token in token.tokens if isinstance(token, Identifier)]
+            cte = [
+                token for token in token.tokens if isinstance(token, column_token_types)
+            ]
         else:
             raise SQLLineageException(
                 "An Identifier or IdentifierList is expected, got %s[value: %s] instead."

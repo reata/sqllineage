@@ -24,14 +24,18 @@ def get_subquery_parentheses(token: Identifier) -> List[SubQueryTuple]:
     the returned list is either empty when no subquery parsed or list of [parenthesis, alias] tuple
     """
     subquery = []
-    kw_idx, kw = token.token_next_by(m=(Keyword, "AS"))
+    as_idx, as_ = token.token_next_by(m=(Keyword, "AS"))
     sublist = list(token.get_sublists())
-    if kw is not None and len(sublist) == 1:
+    if as_ is not None and len(sublist) == 1:
         # CTE: tbl AS (SELECT 1)
         target = sublist[0]
     else:
-        # normal subquery: (SELECT 1) tbl
-        target = token.token_first(skip_cm=True)
+        if isinstance(token, Function):
+            # CTE without AS: tbl (SELECT 1)
+            target = token.tokens[-1]
+        else:
+            # normal subquery: (SELECT 1) tbl
+            target = token.token_first(skip_cm=True)
     if isinstance(target, Case):
         # CASE WHEN (SELECT count(*) from tab1) > 0 THEN (SELECT count(*) FROM tab1) ELSE -1
         for tk in target.get_sublists():
