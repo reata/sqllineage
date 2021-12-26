@@ -1,12 +1,11 @@
 import itertools
-from typing import Dict, Set, Tuple, Union
+from typing import Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
 
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.utils.constant import EdgeType, NodeTag
-
 
 DATASET_CLASSES = (Path, Table)
 
@@ -84,24 +83,6 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def add_cte(self, value) -> None:
         self._property_setter(value, NodeTag.CTE)
-
-    @property
-    def alias_mapping(self) -> Dict[str, Union[Table, SubQuery]]:
-        """
-        A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
-        For SubQuery, it's only alias then.
-        """
-        return {
-            **{
-                tgt: src
-                for src, tgt, attr in self.graph.edges(data=True)
-                if attr.get("type") == EdgeType.HAS_ALIAS
-            },
-            **{
-                table.raw_name: table for table in self.read if isinstance(table, Table)
-            },
-            **{str(table): table for table in self.read if isinstance(table, Table)},
-        }
 
     def add_column_lineage(self, src: Column, tgt: Column) -> None:
         self.graph.add_edge(src, tgt, type=EdgeType.LINEAGE)
