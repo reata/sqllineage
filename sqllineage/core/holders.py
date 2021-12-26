@@ -275,4 +275,25 @@ class SQLLineageHolder(ColumnLineageMixin):
                         g.add_edge(source, target, type=EdgeType.LINEAGE)
         for table in {e[0] for e in nx.selfloop_edges(g)}:
             g.nodes[table][NodeTag.SELFLOOP] = True
+        # find all the columns that we can't assign accurately to a parent table (with multiple parent candidates)
+        unresolved_cols = [
+            (s, t)
+            for s, t in g.edges
+            if isinstance(s, Column) and len(s.parent_candidates) > 1
+        ]
+        for unresolved_col, tgt_col in unresolved_cols:
+            # check if there's only one parent candidate contains the column with same name
+            src_cols = []
+            for parent in unresolved_col.parent_candidates:
+                src_col = Column(unresolved_col.raw_name)
+                src_col.parent = parent
+                if g.has_edge(parent, src_col):
+                    src_cols.append(src_col)
+            if len(src_cols) == 1:
+                g.add_edge(src_cols[0], tgt_col, type=EdgeType.LINEAGE)
+                g.remove_edge(unresolved_col, tgt_col)
+        # when unresolved column got resolved, it will be orphan node, and we can remove it
+        for node in [n for n, deg in g.degree if deg == 0]:
+            if isinstance(node, Column) and len(node.parent_candidates) > 1:
+                g.remove_node(node)
         return SQLLineageHolder(g)

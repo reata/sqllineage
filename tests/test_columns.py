@@ -633,3 +633,19 @@ WHERE a.id = b.id"""
             ),
         ],
     )
+
+
+def test_smarter_column_resolution_using_query_context():
+    sql = """WITH
+cte1 AS (SELECT a, b FROM tab1),
+cte2 AS (SELECT c, d FROM tab2)
+INSERT OVERWRITE TABLE tab3
+SELECT b, d FROM cte1 JOIN cte2
+WHERE cte1.a = cte2.c"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("b", "tab1"), ColumnQualifierTuple("b", "tab3")),
+            (ColumnQualifierTuple("d", "tab2"), ColumnQualifierTuple("d", "tab3")),
+        ],
+    )
