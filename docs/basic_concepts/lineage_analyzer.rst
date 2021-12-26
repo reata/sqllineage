@@ -30,9 +30,3 @@ CTEHandler
 ========================================
 
 .. autoclass:: sqllineage.core.handlers.cte.CTEHandler
-
-
-ColumnHandler
-========================================
-
-.. autoclass:: sqllineage.core.handlers.column.ColumnHandler
