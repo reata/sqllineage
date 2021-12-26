@@ -649,3 +649,44 @@ WHERE cte1.a = cte2.c"""
             (ColumnQualifierTuple("d", "tab2"), ColumnQualifierTuple("d", "tab3")),
         ],
     )
+
+
+def test_column_reference_using_union():
+    sql = """INSERT OVERWRITE TABLE tab3
+SELECT col1
+FROM tab1
+UNION ALL
+SELECT col1
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col1", "tab3"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab3"),
+            ),
+        ],
+    )
+    sql = """INSERT OVERWRITE TABLE tab3
+SELECT col1
+FROM tab1
+UNION
+SELECT col1
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col1", "tab3"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab3"),
+            ),
+        ],
+    )
