@@ -1,8 +1,16 @@
 import itertools
-from typing import Iterator, List
+from typing import Iterator, List, Union
 
 from sqlparse.engine.grouping import _group, group_functions
-from sqlparse.sql import Case, Comparison, Function, Identifier, Parenthesis, TokenList
+from sqlparse.sql import (
+    Case,
+    Comparison,
+    Function,
+    Identifier,
+    Parenthesis,
+    TokenList,
+    Where,
+)
 from sqlparse.tokens import DML, Keyword, Wildcard
 from sqlparse.utils import recurse
 
@@ -18,9 +26,11 @@ def is_subquery(token: TokenList) -> bool:
     return flag
 
 
-def get_subquery_parentheses(token: Identifier) -> List[SubQueryTuple]:
+def get_subquery_parentheses(
+    token: Union[Identifier, Function, Where]
+) -> List[SubQueryTuple]:
     """
-    Retrieve subquery list from identifier
+    Retrieve subquery list
     the returned list is either empty when no subquery parsed or list of [parenthesis, alias] tuple
     """
     subquery = []
@@ -33,10 +43,13 @@ def get_subquery_parentheses(token: Identifier) -> List[SubQueryTuple]:
         if isinstance(token, Function):
             # CTE without AS: tbl (SELECT 1)
             target = token.tokens[-1]
+        elif isinstance(token, Where):
+            # WHERE col1 IN (SELECT max(col1) FROM tab2)
+            target = token
         else:
             # normal subquery: (SELECT 1) tbl
             target = token.token_first(skip_cm=True)
-    if isinstance(target, Case):
+    if isinstance(target, (Case, Where)):
         # CASE WHEN (SELECT count(*) from tab1) > 0 THEN (SELECT count(*) FROM tab1) ELSE -1
         for tk in target.get_sublists():
             if isinstance(tk, Comparison):

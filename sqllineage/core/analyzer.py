@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import add
-from typing import List, NamedTuple, Optional, Set
+from typing import List, NamedTuple, Optional, Set, Union
 
 from sqlparse.sql import (
     Comment,
@@ -9,6 +9,7 @@ from sqlparse.sql import (
     IdentifierList,
     Statement,
     TokenList,
+    Where,
 )
 
 from sqllineage.core.handlers.base import (
@@ -129,16 +130,16 @@ class LineageAnalyzer:
     @classmethod
     def parse_subquery(cls, token: TokenList) -> List[SubQuery]:
         result = []
-        if isinstance(token, (Identifier, Function)):
+        if isinstance(token, (Identifier, Function, Where)):
             # usually SubQuery is an Identifier, but not all Identifiers are SubQuery
             # Function for CTE without AS keyword
-            result = cls._parse_subquery_from_identifier(token)
+            result = cls._parse_subquery(token)
         elif isinstance(token, IdentifierList):
             # IdentifierList for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
             result = reduce(
                 add,
                 [
-                    cls._parse_subquery_from_identifier(identifier)
+                    cls._parse_subquery(identifier)
                     for identifier in token.get_sublists()
                 ],
                 [],
@@ -149,7 +150,9 @@ class LineageAnalyzer:
         return result
 
     @classmethod
-    def _parse_subquery_from_identifier(cls, token: Identifier) -> List[SubQuery]:
+    def _parse_subquery(
+        cls, token: Union[Identifier, Function, Where]
+    ) -> List[SubQuery]:
         """
         convert SubQueryTuple to sqllineage.core.models.SubQuery
         """

@@ -108,6 +108,15 @@ def test_select_subquery_without_alias():
     assert_table_lineage_equal("SELECT col1 FROM (SELECT col1 FROM tab1)", {"tab1"})
 
 
+def test_select_subquery_in_where_clause():
+    assert_table_lineage_equal(
+        """SELECT col1
+FROM tab1
+WHERE col1 IN (SELECT max(col1) FROM tab2)""",
+        {"tab1", "tab2"},
+    )
+
+
 def test_select_inner_join():
     assert_table_lineage_equal("SELECT * FROM tab1 INNER JOIN tab2", {"tab1", "tab2"})
 
