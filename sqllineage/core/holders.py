@@ -67,7 +67,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def add_read(self, value) -> None:
         self._property_setter(value, NodeTag.READ)
-        # the same table can be add (in SQL: joined) multiple times with different alias
+        # the same table can be added (in SQL: joined) multiple times with different alias
         if hasattr(value, "alias"):
             self.graph.add_edge(value, value.alias, type=EdgeType.HAS_ALIAS)
 
@@ -88,7 +88,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     @property
     def alias_mapping(self) -> Dict[str, Union[Table, SubQuery]]:
         """
-        A table can be refer to as alias, table name, or database_name.table_name, create the mapping here.
+        A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
         For SubQuery, it's only alias then.
         """
         return {
