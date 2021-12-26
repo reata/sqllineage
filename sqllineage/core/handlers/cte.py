@@ -16,12 +16,12 @@ class CTEHandler(NextTokenBaseHandler):
 
     def _handle(self, token: Token, holder: SubQueryLineageHolder) -> None:
         # when CTE used without AS, it will be parsed as Function. This syntax is valid in SparkSQL
-        column_token_types = (Identifier, Function)
-        if isinstance(token, column_token_types):
+        cte_token_types = (Identifier, Function)
+        if isinstance(token, cte_token_types):
             cte = [token]
         elif isinstance(token, IdentifierList):
             cte = [
-                token for token in token.tokens if isinstance(token, column_token_types)
+                token for token in token.tokens if isinstance(token, cte_token_types)
             ]
         else:
             raise SQLLineageException(
