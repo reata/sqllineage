@@ -2,6 +2,19 @@
 Changelog
 *********
 
+v1.3.3
+======
+:Date: December 26, 2021
+
+Enhancement
+-------------
+* smarter column-to-table resolution using query context (`#203 <https://github.com/reata/sqllineage/issues/203>`_)
+
+Bugfix
+-------------
+* column lineage for union operation (`#207 <https://github.com/reata/sqllineage/issues/207>`_)
+* subquery in where clause not parsed for table lineage (`#204 <https://github.com/reata/sqllineage/issues/204>`_)
+
 v1.3.2
 ======
 :Date: December 12, 2021
