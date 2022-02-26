@@ -20,6 +20,14 @@ from sqllineage.utils.entities import SubQueryTuple
 def is_subquery(token: TokenList) -> bool:
     flag = False
     if isinstance(token, Parenthesis):
+        # in case of subquery in nested parenthesis, find the innermost one first
+        while True:
+            _, sub_paren = token.token_next_by(i=Parenthesis)
+            if sub_paren is not None:
+                token = sub_paren
+            else:
+                break
+        # check if innermost parenthesis contains SELECT
         _, sub_token = token.token_next_by(m=(DML, "SELECT"))
         if sub_token is not None:
             flag = True
