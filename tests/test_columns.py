@@ -209,6 +209,25 @@ FROM tab2"""
     )
 
 
+def test_select_column_using_expression_in_parenthesis():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT (col1 + col2) AS col3
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
+    )
+
+
 def test_select_column_using_expression_with_table_qualifier_without_column_alias():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT a.col1 + a.col2 + a.col3 + a.col4
