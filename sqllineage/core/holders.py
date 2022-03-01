@@ -215,11 +215,11 @@ class SQLLineageHolder(ColumnLineageMixin):
         intermediate_tables -= self.__retrieve_tag_tables(NodeTag.SELFLOOP)
         return intermediate_tables
 
-    def __retrieve_tag_tables(self, tag) -> Set[Table]:
+    def __retrieve_tag_tables(self, tag) -> Set[Union[Path, Table]]:
         return {
             table
             for table, attr in self.graph.nodes(data=True)
-            if attr.get(tag) is True
+            if attr.get(tag) is True and isinstance(table, DATASET_CLASSES)
         }
 
     @staticmethod

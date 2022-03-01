@@ -57,6 +57,16 @@ def test_insert_overwrite_values():
 
 def test_insert_overwrite_from_self():
     assert_table_lineage_equal(
+        """INSERT OVERWRITE TABLE foo
+SELECT col FROM foo
+WHERE flag IS NOT NULL""",
+        {"foo"},
+        {"foo"},
+    )
+
+
+def test_insert_overwrite_from_self_with_join():
+    assert_table_lineage_equal(
         """INSERT OVERWRITE TABLE tab_1
 SELECT tab_2.col_a from tab_2
 JOIN tab_1
