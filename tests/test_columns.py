@@ -548,7 +548,9 @@ FROM tab2"""
     )
 
 
-@pytest.mark.parametrize("dtype", ["decimal(18, 0)"])
+@pytest.mark.parametrize(
+    "dtype", ["string", "timestamp", "date", "datetime", "decimal(18, 0)"]
+)
 def test_cast_to_data_type_with_case_when(dtype):
     sql = f"""INSERT OVERWRITE TABLE tab1
 SELECT cast(case when col1 > 0 then col2 else col3 end as {dtype}) AS col1
