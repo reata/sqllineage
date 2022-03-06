@@ -2,6 +2,20 @@
 Changelog
 *********
 
+v1.3.4
+======
+:Date: March 6, 2022
+
+Enhancement
+-------------
+* update black to stable version (`#222 <https://github.com/reata/sqllineage/issues/222>`_)
+
+Bugfix
+-------------
+* table/column lineage mixed up for self dependent SQL (`#219 <https://github.com/reata/sqllineage/issues/219>`_)
+* problem with SELECT CAST(CASE WHEN ...END AS DECIMAL(M,N)) AS col_name (`#215 <https://github.com/reata/sqllineage/issues/215>`_)
+* failed to parse source table from subquery with more than one parenthesis (`#213 <https://github.com/reata/sqllineage/issues/213>`_)
+
 v1.3.3
 ======
 :Date: December 26, 2021
