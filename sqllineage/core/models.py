@@ -287,17 +287,21 @@ class Column:
                 for cqt in Column._extract_source_columns(tk)
             ]
         elif isinstance(token, Identifier):
-            if token.get_real_name():
-                # col1 AS col2
-                source_columns = [
-                    ColumnQualifierTuple(token.get_real_name(), token.get_parent_name())
-                ]
-            else:
-                # col1=1 AS int
+            real_name = token.get_real_name()
+            if real_name is None or (
+                real_name == "decimal" and isinstance(token.tokens[-1], Function)
+            ):
+                # real name is None: col1=1 AS int
+                # real_name is decimal: case when col1 > 0 then col2 else col3 end as decimal(18, 0)
                 source_columns = [
                     cqt
                     for tk in token.get_sublists()
                     for cqt in Column._extract_source_columns(tk)
+                ]
+            else:
+                # col1 AS col2
+                source_columns = [
+                    ColumnQualifierTuple(token.get_real_name(), token.get_parent_name())
                 ]
         else:
             # Handle literals other than *
