@@ -2,12 +2,25 @@ import logging.config
 import os
 
 
+def _patch_adding_window_function_token() -> None:
+    from sqlparse.engine import grouping
+    from sqllineage.utils.sqlparse import group_function_with_window
+
+    grouping.group_functions = group_function_with_window
+
+
+def _patch_adding_builtin_type() -> None:
+    from sqlparse import tokens
+    from sqlparse.keywords import KEYWORDS
+
+    KEYWORDS["STRING"] = tokens.Name.Builtin
+    KEYWORDS["DATETIME"] = tokens.Name.Builtin
+
+
 def _monkey_patch() -> None:
     try:
-        from sqlparse.engine import grouping
-        from sqllineage.utils.sqlparse import group_function_with_window
-
-        grouping.group_functions = group_function_with_window
+        _patch_adding_window_function_token()
+        _patch_adding_builtin_type()
     except ImportError:
         # when imported by setup.py for constant variables, dependency is not ready yet
         pass
