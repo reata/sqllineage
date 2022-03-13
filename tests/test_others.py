@@ -41,6 +41,18 @@ def test_create_as():
     )
 
 
+def test_create_as_with_parenthesis_around_select_statement():
+    assert_table_lineage_equal(
+        "CREATE TABLE tab1 AS (SELECT * FROM tab2)", {"tab2"}, {"tab1"}
+    )
+
+
+def test_create_as_with_parenthesis_around_table_name():
+    assert_table_lineage_equal(
+        "CREATE TABLE tab1 AS SELECT * FROM (tab2)", {"tab2"}, {"tab1"}
+    )
+
+
 def test_create_like():
     assert_table_lineage_equal("CREATE TABLE tab1 LIKE tab2", {"tab2"}, {"tab1"})
 
