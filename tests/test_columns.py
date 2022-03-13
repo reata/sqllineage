@@ -737,3 +737,29 @@ FROM tab2"""
             ),
         ],
     )
+
+
+def test_column_lineage_multiple_paths_for_same_column():
+    sql = """INSERT OVERWRITE TABLE tab2
+SELECT tab1.id,
+       coalesce(join_table_1.col1, join_table_2.col1, join_table_3.col1) AS col1
+FROM tab1
+         LEFT JOIN (SELECT id, col1 FROM tab1 WHERE flag = 1) AS join_table_1
+                   ON tab1.id = join_table_1.id
+         LEFT JOIN (SELECT id, col1 FROM tab1 WHERE flag = 2) AS join_table_2
+                   ON tab1.id = join_table_2.id
+         LEFT JOIN (SELECT id, col1 FROM tab1 WHERE flag = 3) AS join_table_3
+                   ON tab1.id = join_table_3.id"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("id", "tab1"),
+                ColumnQualifierTuple("id", "tab2"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col1", "tab2"),
+            ),
+        ],
+    )

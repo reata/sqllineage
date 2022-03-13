@@ -30,9 +30,8 @@ class ColumnLineageMixin:
         columns = set()
         for (source, target) in itertools.product(source_columns, target_columns):
             simple_paths = list(nx.all_simple_paths(self.graph, source, target))
-            if len(simple_paths) == 1:
-                columns.add(tuple(simple_paths[0]))
-            # we can ignore when simple path doesn't exist, but could there be more than one simple path?
+            for path in simple_paths:
+                columns.add(tuple(path))
         return columns
 
 
