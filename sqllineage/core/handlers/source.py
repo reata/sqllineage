@@ -17,7 +17,7 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.constant import EdgeType
-from sqllineage.utils.sqlparse import get_subquery_parentheses
+from sqllineage.utils.sqlparse import get_subquery_parentheses, is_subquery
 
 
 class SourceHandler(NextTokenBaseHandler):
@@ -65,9 +65,13 @@ class SourceHandler(NextTokenBaseHandler):
                     self._get_dataset_from_identifier(identifier, holder)
                 )
         elif isinstance(token, Parenthesis):
-            # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
-            # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
-            self.tables.append(SubQuery.of(token, None))
+            if is_subquery(token):
+                # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
+                # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
+                self.tables.append(SubQuery.of(token, None))
+            else:
+                # SELECT * FROM (tab2), which is valid syntax
+                self._handle(token.tokens[1], holder)
         elif token.ttype == Literal.String.Single:
             self.tables.append(Path(token.value))
         else:
