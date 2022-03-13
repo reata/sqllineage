@@ -22,8 +22,8 @@ def is_subquery(token: TokenList) -> bool:
     if isinstance(token, Parenthesis):
         # in case of subquery in nested parenthesis, find the innermost one first
         while True:
-            _, sub_paren = token.token_next_by(i=Parenthesis)
-            if sub_paren is not None:
+            idx, sub_paren = token.token_next_by(i=Parenthesis)
+            if sub_paren is not None and idx == 1:
                 token = sub_paren
             else:
                 break
