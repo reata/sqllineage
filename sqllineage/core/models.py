@@ -304,16 +304,12 @@ class Column:
                     ColumnQualifierTuple(token.get_real_name(), token.get_parent_name())
                 ]
         else:
-            # Handle literals other than *
-            if (
-                token.ttype is not None
-                and token.ttype[0] == T.Literal[0]
-                and token.value != "*"
-            ):
-                source_columns = []
-            else:
+            if token.ttype == T.Wildcard:
                 # select *
                 source_columns = [ColumnQualifierTuple(token.value, None)]
+            else:
+                # typically, T.Literal here
+                source_columns = []
         return source_columns
 
     def to_source_columns(self, alias_mapping: Dict[str, Union[Table, SubQuery]]):
