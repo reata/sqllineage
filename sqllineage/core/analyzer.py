@@ -3,7 +3,6 @@ from operator import add
 from typing import List, NamedTuple, Optional, Set, Union
 
 from sqlparse.sql import (
-    Comment,
     Function,
     Identifier,
     IdentifierList,
@@ -18,7 +17,11 @@ from sqllineage.core.handlers.base import (
 )
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.models import SubQuery, Table
-from sqllineage.utils.sqlparse import get_subquery_parentheses, is_subquery
+from sqllineage.utils.sqlparse import (
+    get_subquery_parentheses,
+    is_subquery,
+    is_token_negligible,
+)
 
 
 class AnalyzerContext(NamedTuple):
@@ -95,7 +98,7 @@ class LineageAnalyzer:
 
         subqueries = []
         for sub_token in token.tokens:
-            if cls.__token_negligible_before_tablename(sub_token):
+            if is_token_negligible(sub_token):
                 continue
 
             for sq in cls.parse_subquery(sub_token):
@@ -122,10 +125,6 @@ class LineageAnalyzer:
         for sq in subqueries:
             holder |= cls._extract_from_dml(sq.token, AnalyzerContext(sq, holder.cte))
         return holder
-
-    @classmethod
-    def __token_negligible_before_tablename(cls, token: TokenList) -> bool:
-        return token.is_whitespace or isinstance(token, Comment)
 
     @classmethod
     def parse_subquery(cls, token: TokenList) -> List[SubQuery]:
