@@ -580,6 +580,26 @@ FROM tab2"""
 @pytest.mark.parametrize(
     "dtype", ["string", "timestamp", "date", "datetime", "decimal(18, 0)"]
 )
+def test_nested_cast_to_data_type(dtype):
+    sql = f"""INSERT OVERWRITE TABLE tab1
+SELECT cast(cast(col1 AS {dtype}) AS {dtype}) AS col1
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
+    sql = f"""INSERT OVERWRITE TABLE tab1
+SELECT cast(cast(cast(cast(cast(col1 AS {dtype}) AS {dtype}) AS {dtype}) AS {dtype}) AS {dtype}) AS col1
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
+
+
+@pytest.mark.parametrize(
+    "dtype", ["string", "timestamp", "date", "datetime", "decimal(18, 0)"]
+)
 def test_cast_to_data_type_with_case_when(dtype):
     sql = f"""INSERT OVERWRITE TABLE tab1
 SELECT cast(case when col1 > 0 then col2 else col3 end as {dtype}) AS col1

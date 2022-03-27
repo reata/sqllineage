@@ -288,11 +288,14 @@ class Column:
             ]
         elif isinstance(token, Identifier):
             real_name = token.get_real_name()
-            if real_name is None or (
-                real_name == "decimal" and isinstance(token.tokens[-1], Function)
-            ):
+            if (
                 # real name is None: col1=1 AS int
+                real_name is None
                 # real_name is decimal: case when col1 > 0 then col2 else col3 end as decimal(18, 0)
+                or (real_name == "decimal" and isinstance(token.tokens[-1], Function))
+                # real_name is cast: cast(col1 AS string) AS string
+                or (real_name == "cast" and isinstance(token.tokens[0], Function))
+            ):
                 source_columns = [
                     cqt
                     for tk in token.get_sublists()
