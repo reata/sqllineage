@@ -17,16 +17,21 @@ from sqlparse.utils import recurse
 from sqllineage.utils.entities import SubQueryTuple
 
 
+def get_innermost_parenthesis(token: Parenthesis):
+    # in case of subquery in nested parenthesis, find the innermost one first
+    while True:
+        idx, sub_paren = token.token_next_by(i=Parenthesis)
+        if sub_paren is not None and idx == 1:
+            token = sub_paren
+        else:
+            break
+    return token
+
+
 def is_subquery(token: TokenList) -> bool:
     flag = False
     if isinstance(token, Parenthesis):
-        # in case of subquery in nested parenthesis, find the innermost one first
-        while True:
-            idx, sub_paren = token.token_next_by(i=Parenthesis)
-            if sub_paren is not None and idx == 1:
-                token = sub_paren
-            else:
-                break
+        token = get_innermost_parenthesis(token)
         # check if innermost parenthesis contains SELECT
         _, sub_token = token.token_next_by(m=(DML, "SELECT"))
         if sub_token is not None:
@@ -68,7 +73,9 @@ def get_subquery_parentheses(
             elif is_subquery(tk):
                 subquery.append(SubQueryTuple(tk, token.get_real_name()))
     if is_subquery(target):
-        subquery = [SubQueryTuple(target, token.get_real_name())]
+        subquery = [
+            SubQueryTuple(get_innermost_parenthesis(target), token.get_real_name())
+        ]
     return subquery
 
 
