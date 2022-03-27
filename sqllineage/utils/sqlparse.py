@@ -4,6 +4,7 @@ from typing import Iterator, List, Union
 from sqlparse.engine.grouping import _group, group_functions
 from sqlparse.sql import (
     Case,
+    Comment,
     Comparison,
     Function,
     Identifier,
@@ -17,11 +18,20 @@ from sqlparse.utils import recurse
 from sqllineage.utils.entities import SubQueryTuple
 
 
+def is_token_negligible(token: TokenList) -> bool:
+    # utility to skip tokens like whitespace or comment
+    return token.is_whitespace or isinstance(token, Comment)
+
+
 def get_innermost_parenthesis(token: Parenthesis):
     # in case of subquery in nested parenthesis, find the innermost one first
     while True:
         idx, sub_paren = token.token_next_by(i=Parenthesis)
-        if sub_paren is not None and idx == 1:
+        if sub_paren is not None and (
+            idx == 1
+            or (idx > 1 and all(is_token_negligible(t) for t in token.tokens[1:idx]))
+        ):
+            # either the subsequent parenthesis is closely followed or there is only whitespace/comment in between
             token = sub_paren
         else:
             break
