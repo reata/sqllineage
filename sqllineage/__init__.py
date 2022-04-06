@@ -1,4 +1,3 @@
-import logging.config
 import os
 
 
@@ -56,7 +55,6 @@ DEFAULT_LOGGING = {
         },
     },
 }
-logging.config.dictConfig(DEFAULT_LOGGING)
 
 STATIC_FOLDER = "build"
 DATA_FOLDER = os.environ.get(
