@@ -1,7 +1,9 @@
 import argparse
 import logging
+import logging.config
 
-from sqllineage import DEFAULT_HOST, DEFAULT_PORT
+
+from sqllineage import DEFAULT_HOST, DEFAULT_LOGGING, DEFAULT_PORT
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
@@ -16,6 +18,8 @@ def main(args=None) -> None:
 
     :param args: the command line arguments for sqllineage command
     """
+    logging.config.dictConfig(DEFAULT_LOGGING)
+
     parser = argparse.ArgumentParser(
         prog="sqllineage", description="SQL Lineage Parser."
     )
