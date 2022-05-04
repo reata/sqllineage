@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Set, Union
 
 from sqlparse import tokens as T
 from sqlparse.engine import grouping
+from sqlparse.keywords import is_keyword
 from sqlparse.sql import (
     Case,
     Comparison,
@@ -288,13 +289,19 @@ class Column:
             ]
         elif isinstance(token, Identifier):
             real_name = token.get_real_name()
+            # ignore function dtypes that don't need to check for extract column
+            FUNC_DTYPE = ["decimal", "numeric"]
+            has_function = any(
+                isinstance(t, Function) and t.get_real_name() not in FUNC_DTYPE
+                for t in token.tokens
+            )
+            is_kw = is_keyword(real_name) if real_name is not None else False
             if (
                 # real name is None: col1=1 AS int
                 real_name is None
                 # real_name is decimal: case when col1 > 0 then col2 else col3 end as decimal(18, 0)
-                or (real_name == "decimal" and isinstance(token.tokens[-1], Function))
-                # real_name is cast: cast(col1 AS string) AS string
-                or (real_name == "cast" and isinstance(token.tokens[0], Function))
+                or (real_name in FUNC_DTYPE and isinstance(token.tokens[-1], Function))
+                or (is_kw and has_function)
             ):
                 source_columns = [
                     cqt

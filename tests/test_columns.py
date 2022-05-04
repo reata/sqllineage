@@ -812,3 +812,29 @@ FROM tab1
             ),
         ],
     )
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        "coalesce(col1, 0) as varchar",
+        "if(col1 > 100, 100, col1) as varchar",
+        "ln(col1) as varchar",
+        "conv(col1, 10, 2) as varchar",
+        "ln(cast(coalesce(col1, '0') as int)) as varchar",
+        "coalesce(col1, 0) as decimal(10, 6)",
+    ],
+)
+def test_column_try_cast_with_func(func):
+    sql = f"""INSERT OVERWRITE TABLE tab2
+SELECT try_cast({func}) AS col2
+FROM tab1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col2", "tab2"),
+            ),
+        ],
+    )
