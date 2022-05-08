@@ -838,3 +838,18 @@ FROM tab1"""
             ),
         ],
     )
+
+
+def test_column_with_div():
+    sql = """INSERT OVERWRITE TABLE tab2
+SELECT cast(conv(col1, 16, 10) as bigint) div 5 AS col2
+FROM tab1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col2", "tab2"),
+            ),
+        ],
+    )

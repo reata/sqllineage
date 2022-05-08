@@ -16,10 +16,18 @@ def _patch_adding_builtin_type() -> None:
     KEYWORDS["DATETIME"] = tokens.Name.Builtin
 
 
+def _patch_adding_operator_type() -> None:
+    from sqlparse import tokens
+    from sqlparse.keywords import KEYWORDS
+
+    KEYWORDS["DIV"] = tokens.Operator
+
+
 def _monkey_patch() -> None:
     try:
         _patch_adding_window_function_token()
         _patch_adding_builtin_type()
+        _patch_adding_operator_type()
     except ImportError:
         # when imported by setup.py for constant variables, dependency is not ready yet
         pass
