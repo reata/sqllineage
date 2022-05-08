@@ -26,7 +26,6 @@ class CTEHandler(NextTokenBaseHandler):
         elif isinstance(token, Parenthesis):
             # CREATE TABLE tbl1 (col1 VARCHAR) WITH (bucketed_by = ARRAY['col1'], bucket_count = 256).
             # This syntax is valid for bucketing in Trino and not the CTE
-            self._handle(token.tokens[1], holder)
             cte = []
         else:
             raise SQLLineageException(
