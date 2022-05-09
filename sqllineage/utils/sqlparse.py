@@ -130,6 +130,15 @@ def group_window(tlist):
 
 @recurse(Function)
 def group_functions_as(tlist):
+    """
+    This function is to allow parsing columns in functions with CTAS syntax like:
+        CREATE TABLE tbl1 AS SELECT coalesce(t1.col1, 0) AS col1 FROM t1;
+    The code is mostly taken from original sqlparse.sql.group_functions by
+    replacing with one condition.
+
+    This is no longer needed if this PR get merged:
+    https://github.com/andialbrecht/sqlparse/pull/662
+    """
     has_as = False
     for tmp_token in tlist.tokens:
         if tmp_token.value == "AS":
