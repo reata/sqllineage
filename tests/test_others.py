@@ -101,6 +101,15 @@ STORED AS TEXTFILE""",  # noqa
     )
 
 
+def test_bucket_with_using_parenthesis():
+    assert_table_lineage_equal(
+        """CREATE TABLE tbl1 (col1 VARCHAR)
+  WITH (bucketed_on = array['col1'], bucket_count = 256);""",
+        None,
+        {"tbl1"},
+    )
+
+
 def test_update():
     assert_table_lineage_equal(
         "UPDATE tab1 SET col1='val1' WHERE col2='val2'", None, {"tab1"}
