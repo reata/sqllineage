@@ -139,11 +139,17 @@ def group_functions_as(tlist):
     This is no longer needed if this PR get merged:
     https://github.com/andialbrecht/sqlparse/pull/662
     """
+    has_create = False
+    has_table = False
     has_as = False
     for tmp_token in tlist.tokens:
+        if tmp_token.value == "CREATE":
+            has_create = True
+        if tmp_token.value == "TABLE":
+            has_table = True
         if tmp_token.value == "AS":
             has_as = True
-    if not has_as:
+    if not has_create or not has_table or not has_as:
         return
 
     tidx, token = tlist.token_next_by(t=Name)
