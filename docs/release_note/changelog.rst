@@ -2,6 +2,22 @@
 Changelog
 *********
 
+v1.3.5
+======
+:Date: May 10, 2022
+
+Enhancement
+-------------
+* support parsing column in cast/try_cast with function (`#254 <https://github.com/reata/sqllineage/issues/254>`_)
+* support parsing WITH for bucketing in Trino (`#251 <https://github.com/reata/sqllineage/issues/251>`_)
+
+Bugfix
+-------------
+* incorrect column lineage with nested cast (`#240 <https://github.com/reata/sqllineage/issues/240>`_)
+* column lineages from boolean expression (`#236 <https://github.com/reata/sqllineage/issues/236>`_)
+* using JOIN with ON/USING keyword fails to determine source tables when followed by a parenthesis (`#233 <https://github.com/reata/sqllineage/issues/233>`_)
+* failure to handle multiple lineage path for same column (`#228 <https://github.com/reata/sqllineage/issues/228>`_)
+
 v1.3.4
 ======
 :Date: March 6, 2022
