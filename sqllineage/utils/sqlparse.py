@@ -11,7 +11,7 @@ from sqlparse.sql import (
     TokenList,
     Where,
 )
-from sqlparse.tokens import DML, Keyword, Wildcard
+from sqlparse.tokens import DML, Keyword, Name, Wildcard
 from sqlparse.utils import recurse
 
 from sqllineage.utils.entities import SubQueryTuple
@@ -128,6 +128,39 @@ def group_window(tlist):
     )
 
 
+@recurse(Function)
+def group_functions_as(tlist):
+    """
+    This function is to allow parsing columns in functions with CTAS syntax like:
+        CREATE TABLE tbl1 AS SELECT coalesce(t1.col1, 0) AS col1 FROM t1;
+    The code is mostly taken from original sqlparse.sql.group_functions by
+    replacing with one condition.
+
+    This is no longer needed if this PR get merged:
+    https://github.com/andialbrecht/sqlparse/pull/662
+    """
+    has_create = False
+    has_table = False
+    has_as = False
+    for tmp_token in tlist.tokens:
+        if tmp_token.value == "CREATE":
+            has_create = True
+        if tmp_token.value == "TABLE":
+            has_table = True
+        if tmp_token.value == "AS":
+            has_as = True
+    if not has_create or not has_table or not has_as:
+        return
+
+    tidx, token = tlist.token_next_by(t=Name)
+    while token:
+        nidx, next_ = tlist.token_next(tidx)
+        if isinstance(next_, Parenthesis):
+            tlist.group_tokens(Function, tidx, nidx)
+        tidx, token = tlist.token_next_by(t=Name, idx=tidx)
+
+
 def group_function_with_window(tlist):
     group_functions(tlist)
+    group_functions_as(tlist)
     group_window(tlist)

@@ -838,3 +838,29 @@ FROM tab1"""
             ),
         ],
     )
+
+
+def test_column_with_ctas_and_func():
+    sql = """CREATE TABLE tab2 AS
+SELECT
+  coalesce(col1, 0) AS col1,
+  IF(
+    col1 IS NOT NULL,
+    1,
+    NULL
+  ) AS col2
+FROM
+  tab1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col1", "tab2"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col2", "tab2"),
+            ),
+        ],
+    )
