@@ -1,8 +1,16 @@
-#Grab the latest Python3.6 image
-FROM python:3.6.13-slim
+FROM nikolaik/python-nodejs:python3.10-nodejs18-slim
 
-# Install dependencies
-RUN pip install --no-cache-dir -q sqllineage
+# copy source files to docker image
+ARG CWD=/mnt/sqllineage
+ADD sqllineage/ ${CWD}/sqllineage
+ADD sqllineagejs/ ${CWD}/sqllineagejs
+COPY setup.py README.md ${CWD}/
+WORKDIR ${CWD}
+
+# build wheel package, install and remove all source code
+RUN python setup.py bdist_wheel  \
+    && pip install dist/*.whl  \
+    && rm -rf ${CWD}/*
 
 # Run the image as a non-root user
 RUN adduser --quiet sqllineage
