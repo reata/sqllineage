@@ -225,6 +225,22 @@ def test_delete_from_table():
     assert_table_lineage_equal("delete from table tab1", None, None)
 
 
+def test_lateral_view_using_json_tuple():
+    sql = """INSERT OVERWRITE TABLE foo
+SELECT sc.id, q.item0, q.item1
+FROM bar sc
+LATERAL VIEW json_tuple(sc.json, 'key1', 'key2') q AS item0, item1"""
+    assert_table_lineage_equal(sql, {"bar"}, {"foo"})
+
+
+def test_lateral_view_outer():
+    sql = """INSERT OVERWRITE TABLE foo
+SELECT sc.id, q.col1
+FROM bar sc
+LATERAL VIEW OUTER explode(sc.json_array) q AS col1"""
+    assert_table_lineage_equal(sql, {"bar"}, {"foo"})
+
+
 def test_show_create_table():
     assert_table_lineage_equal("show create table tab1", None, None)
 
