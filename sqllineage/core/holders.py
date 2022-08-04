@@ -222,7 +222,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         }
 
     @staticmethod
-    def of(*args: StatementLineageHolder):
+    def of_digraph(*args: StatementLineageHolder) -> DiGraph:
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
@@ -276,4 +276,13 @@ class SQLLineageHolder(ColumnLineageMixin):
         for node in [n for n, deg in g.degree if deg == 0]:
             if isinstance(node, Column) and len(node.parent_candidates) > 1:
                 g.remove_node(node)
+        return g
+
+    @staticmethod
+    def of(*args: StatementLineageHolder):
+        """
+        To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
+        :class:`sqllineage.holders.SQLLineageHolder`
+        """
+        g = SQLLineageHolder.of_digraph(*args)
         return SQLLineageHolder(g)
