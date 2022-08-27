@@ -49,7 +49,10 @@ class LineageAnalyzer:
             holder = StatementLineageHolder()
         elif stmt.get_type() == "DROP":
             holder = self._extract_from_ddl_drop(stmt)
-        elif stmt.get_type() == "ALTER":
+        elif (
+            stmt.get_type() == "ALTER"
+            or stmt.token_first(skip_cm=True).normalized == "RENAME"
+        ):
             holder = self._extract_from_ddl_alter(stmt)
         else:
             # DML parsing logic also applies to CREATE DDL
@@ -68,10 +71,23 @@ class LineageAnalyzer:
     @classmethod
     def _extract_from_ddl_alter(cls, stmt: Statement) -> StatementLineageHolder:
         holder = StatementLineageHolder()
-        tables = [Table.of(t) for t in stmt.tokens if isinstance(t, Identifier)]
+        tables = []
+        for t in stmt.tokens:
+            if isinstance(t, Identifier):
+                tables.append(Table.of(t))
+            elif isinstance(t, IdentifierList):
+                for identifier in t.get_identifiers():
+                    tables.append(Table.of(identifier))
         keywords = [t for t in stmt.tokens if t.is_keyword]
-        if any(k.normalized == "RENAME" for k in keywords) and len(tables) == 2:
-            holder.add_rename(tables[0], tables[1])
+        if any(k.normalized == "RENAME" for k in keywords):
+            if stmt.get_type() == "ALTER" and len(tables) == 2:
+                holder.add_rename(tables[0], tables[1])
+            elif (
+                stmt.token_first(skip_cm=True).normalized == "RENAME"
+                and len(tables) % 2 == 0
+            ):
+                for i in range(0, len(tables), 2):
+                    holder.add_rename(tables[i], tables[i + 1])
         if any(k.normalized == "EXCHANGE" for k in keywords) and len(tables) == 2:
             holder.add_write(tables[0])
             holder.add_read(tables[1])
