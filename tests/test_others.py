@@ -170,6 +170,18 @@ def test_alter_table_rename():
     assert_table_lineage_equal("alter table tab1 rename to tab2;", None, None)
 
 
+def test_rename_table():
+    """
+    This syntax is MySQL specific:
+     https://dev.mysql.com/doc/refman/8.0/en/rename-table.html
+    """
+    assert_table_lineage_equal("rename table tab1 to tab2", None, None)
+
+
+def test_rename_tables():
+    assert_table_lineage_equal("rename table tab1 to tab2, tab3 to tab4", None, None)
+
+
 def test_alter_table_exchange_partition():
     """
     See https://cwiki.apache.org/confluence/display/Hive/Exchange+Partition for language manual
