@@ -2,6 +2,21 @@
 Changelog
 *********
 
+v1.3.6
+======
+:Date: Aug 28, 2022
+
+Enhancement
+-------------
+* support MySQL RENAME TABLE statement (`#267 <https://github.com/reata/sqllineage/issues/267>`_)
+* auto deploy to Heroku with GitHub Actions (`#232 <https://github.com/reata/sqllineage/issues/232>`_)
+
+Bugfix
+-------------
+* handling parenthesis around subquery between union (`#270 <https://github.com/reata/sqllineage/issues/270>`_)
+* unable to extract alias of columns using function with CTAS (`#253 <https://github.com/reata/sqllineage/issues/253>`_)
+* exception when using lateral view (`#225 <https://github.com/reata/sqllineage/issues/225>`_)
+
 v1.3.5
 ======
 :Date: May 10, 2022
