@@ -222,7 +222,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         }
 
     @staticmethod
-    def of_digraph(*args: StatementLineageHolder) -> DiGraph:
+    def _build_digraph(*args: StatementLineageHolder) -> DiGraph:
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
@@ -284,5 +284,5 @@ class SQLLineageHolder(ColumnLineageMixin):
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
         """
-        g = SQLLineageHolder.of_digraph(*args)
+        g = SQLLineageHolder._build_digraph(*args)
         return SQLLineageHolder(g)
