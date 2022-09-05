@@ -74,6 +74,9 @@ class SourceHandler(NextTokenBaseHandler):
                 self._handle(token.tokens[1], holder)
         elif token.ttype == Literal.String.Single:
             self.tables.append(Path(token.value))
+        # If we have a CREATE TABLE AS SELECT * FROM VALUES (...), this stops the parser erroring out:
+        elif type(token).__name__ == "Token" and str(token)[0:6].lower() == "values":
+            pass
         else:
             raise SQLLineageException(
                 "An Identifier is expected, got %s[value: %s] instead."
