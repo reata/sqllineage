@@ -292,3 +292,26 @@ def test_split_statements_with_desc():
 
 DESC tab1;"""
     assert len(LineageRunner(sql).statements()) == 2
+
+
+def test_create_table_with_openrowset():
+    # Check for issue #290 (https://github.com/reata/sqllineage/issues/290)
+    assert_table_lineage_equal(
+        """
+        CREATE OR ALTER VIEW tbl1 AS
+        SELECT  *  FROM
+            OPENROWSET(
+                BULK ( '/container/thing/**'
+                     , '/lake-raw/this_file_doesnt_exist.parquet' )
+                ,DATA_SOURCE = 'some_datasource', FORMAT = 'Parquet'
+        -- Contents of the file columns are defined in the below:
+        ) WITH (
+            [filepath] VARCHAR(255)
+            ,[last_calibration_time] VARCHAR(255)
+            ,[calibration_start_time] VARCHAR(255)
+            ,[calibration_end_time] VARCHAR(255)
+        ) AS t
+        ;""",
+        None,
+        {"tbl1"},
+    )

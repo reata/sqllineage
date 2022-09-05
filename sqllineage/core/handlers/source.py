@@ -74,6 +74,12 @@ class SourceHandler(NextTokenBaseHandler):
                 self._handle(token.tokens[1], holder)
         elif token.ttype == Literal.String.Single:
             self.tables.append(Path(token.value))
+        elif (
+            type(token).__name__ == "Function"
+            and str(token)[0:10].lower() == "openrowset"
+        ):
+            # Handle OPENROWSET in T-SQL (Issue #290) - allows views to SELECT from filesystems on T-SQL
+            pass
         else:
             raise SQLLineageException(
                 "An Identifier is expected, got %s[value: %s] instead."
