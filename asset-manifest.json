@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "https://reata.github.io/sqllineage/static/css/main.10278381.css",
-    "main.js": "https://reata.github.io/sqllineage/static/js/main.cb944872.js",
+    "main.js": "https://reata.github.io/sqllineage/static/js/main.2b88886c.js",
     "static/js/333.97bcedbd.chunk.js": "https://reata.github.io/sqllineage/static/js/333.97bcedbd.chunk.js",
     "editor.worker.js": "https://reata.github.io/sqllineage/editor.worker.js",
     "static/media/codicon.ttf": "https://reata.github.io/sqllineage/static/media/codicon.4168b9c11e5075e9cfe6.ttf",
     "index.html": "https://reata.github.io/sqllineage/index.html",
     "main.10278381.css.map": "https://reata.github.io/sqllineage/static/css/main.10278381.css.map",
-    "main.cb944872.js.map": "https://reata.github.io/sqllineage/static/js/main.cb944872.js.map",
+    "main.2b88886c.js.map": "https://reata.github.io/sqllineage/static/js/main.2b88886c.js.map",
     "333.97bcedbd.chunk.js.map": "https://reata.github.io/sqllineage/static/js/333.97bcedbd.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.10278381.css",
-    "static/js/main.cb944872.js"
+    "static/js/main.2b88886c.js"
   ]
 }
