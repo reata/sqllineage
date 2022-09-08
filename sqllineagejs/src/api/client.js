@@ -2,10 +2,9 @@
 // https://kentcdodds.com/blog/replace-axios-with-a-simple-custom-fetch-wrapper
 
 export function assemble_absolute_endpoint(relative_endpoint) {
-  let url = new URL(window.location.href);
-  let backend_port = process.env.REACT_APP_BACKEND_PORT;
-  let backend_origin = backend_port ? url.origin.replace(url.port, backend_port) : url.origin;
-  return `${backend_origin}${relative_endpoint}`
+  let backend_api = process.env.REACT_APP_BACKEND_API;
+  let api_prefix = backend_api ? backend_api : (new URL(window.location.href)).origin;
+  return `${api_prefix}${relative_endpoint}`
 }
 
 export async function client(endpoint, {body, ...customConfig} = {}) {
