@@ -320,7 +320,7 @@ def test_view_as_select_from_values_no_colnames():
     # Below uses inferred column names from the underlying values statement
     assert_table_lineage_equal(
         """CREATE OR ALTER VIEW tbl1 AS
-    SELECT * FROM  (VALUES
+    SELECT * FROM  (vAlUeS-- Test case assumptions
     ('data','thing1','1971-01-01 00:00:00', '1971-01-01 00:00:10', '91', 'some text')
     , ('data','thing2','1971-01-01 00:00:10', '1971-01-01 00:00:20', '92', 'some text')
     , ('data','thing3','1971-01-01 00:00:10', '1971-01-01 00:00:20', '92', 'some text')
