@@ -18,7 +18,7 @@ Behind the scene, SQLLineage uses the fantastic [`sqlparse`](https://github.com/
 the SQL command, and bring you all the human-readable result with ease.
 
 ## Demo & Documentation
-Talk is cheap, show me a [demo](https://sqllineage.herokuapp.com/).
+Talk is cheap, show me a [demo](https://reata.github.io/sqllineage/).
 
 [Documentation](https://sqllineage.readthedocs.io) is online hosted by readthedocs, and you can check the 
 [release note](https://sqllineage.readthedocs.io/en/latest/release_note/changelog.html) there.
