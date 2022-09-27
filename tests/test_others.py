@@ -294,24 +294,37 @@ DESC tab1;"""
     assert len(LineageRunner(sql).statements()) == 2
 
 
-def test_create_table_with_openrowset():
-    # Check for issue #290 (https://github.com/reata/sqllineage/issues/290)
+def test_view_as_select_from_values_with_colnames():
+    # Test for Issue #292 where a view can be defined as a set of values (was erroring).
+    # Below uses explicit column names and types, recast from the underlying values statement
     assert_table_lineage_equal(
-        """
-        CREATE OR ALTER VIEW tbl1 AS
-        SELECT  *  FROM
-            OPENROWSET(
-                BULK ( '/container/thing/**'
-                     , '/lake-raw/this_file_doesnt_exist.parquet' )
-                ,DATA_SOURCE = 'some_datasource', FORMAT = 'Parquet'
-        -- Contents of the file columns are defined in the below:
-        ) WITH (
-            [filepath] VARCHAR(255)
-            ,[last_calibration_time] VARCHAR(255)
-            ,[calibration_start_time] VARCHAR(255)
-            ,[calibration_end_time] VARCHAR(255)
-        ) AS t
-        ;""",
+        """CREATE OR ALTER VIEW tbl1 AS
+    SELECT  cast(my_overrides.col1 as varchar(100)) as col1
+   , cast(my_overrides.col2 as varchar(100)) as col2
+   , cast(my_overrides.col3 as datetime2) as col3
+   , cast(my_overrides.col4 as datetime2) as col4
+   , cast(my_overrides.col5 as smallint) as col5
+   , cast(my_overrides.col6 as varchar(1024)) as col6
+    FROM  (VALUES
+     ('data','thing1','1971-01-01 00:00:00', '1971-01-01 00:00:10', '91', 'some text')
+   , ('data','thing2','1971-01-01 00:00:10', '1971-01-01 00:00:20', '92', 'some text')
+   , ('data','thing3','1971-01-01 00:00:10', '1971-01-01 00:00:20', '92', 'some text')
+ )my_overrides(col1, col2, col3, col4, col5, col6);""",
+        None,
+        {"tbl1"},
+    )
+
+
+def test_view_as_select_from_values_no_colnames():
+    # Test for Issue #292 where a view can be defined as a set of values (was erroring).
+    # Below uses inferred column names from the underlying values statement
+    assert_table_lineage_equal(
+        """CREATE OR ALTER VIEW tbl1 AS
+    SELECT * FROM  (vAlUeS-- Test case assumptions
+    ('data','thing1','1971-01-01 00:00:00', '1971-01-01 00:00:10', '91', 'some text')
+    , ('data','thing2','1971-01-01 00:00:10', '1971-01-01 00:00:20', '92', 'some text')
+    , ('data','thing3','1971-01-01 00:00:10', '1971-01-01 00:00:20', '92', 'some text')
+    )my_overrides(col1, col2, col3, col4, col5, col6);""",
         None,
         {"tbl1"},
     )
