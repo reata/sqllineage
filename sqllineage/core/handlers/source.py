@@ -69,6 +69,10 @@ class SourceHandler(NextTokenBaseHandler):
                 # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
                 # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
                 self.tables.append(SubQuery.of(token, None))
+            elif token.tokens[1].is_keyword and token.tokens[1].normalized == "VALUES":
+                # If we have a CREATE TABLE AS SELECT * FROM VALUES (...), this stops the parser erroring out.
+                # In the future, we could parse the VALUES statement as columns.
+                pass
             else:
                 # SELECT * FROM (tab2), which is valid syntax
                 self._handle(token.tokens[1], holder)
