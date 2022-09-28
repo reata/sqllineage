@@ -5,6 +5,9 @@ logger = logging.getLogger(__name__)
 
 
 def escape_identifier_name(name: str):
+    """
+    Removes singlequotes ('), doublequotes (") and backticks (`) from a string. Used to sanitise file paths.
+    """
     return name.strip("`").strip('"').strip("'")
 
 

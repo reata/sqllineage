@@ -55,8 +55,65 @@ class SourceHandler(NextTokenBaseHandler):
         else:
             self._handle_table(token, holder)
 
+    def _handle_openrowset(self, token: Token) -> None:
+        """
+        Holds logic to handle openrowset token.
+        """
+        format_statement_found = False
+        datasource_statement_found = False
+        datasource_string_value = ""
+        tokens_to_append_to_paths = []
+        for (
+            each
+        ) in (
+            token.flatten()
+        ):  # Search every token that's a subtoken of the OPENROWSET token
+            if (
+                str.casefold(each.value) == "bulk"
+            ):  # Look for BULK statement to find the table address
+                for bulk_subtoken in token.flatten():
+                    # If we enounter the FORMAT statement, we want to ignore the next String token
+                    # as it describes the file format, not the table source
+                    if str.casefold(bulk_subtoken.value) == "format":
+                        format_statement_found = True
+                    # Here is where we ignore the next String token if we've found the FORMAT statement
+                    elif (
+                        format_statement_found
+                        and bulk_subtoken.ttype == Literal.String.Single
+                    ):
+                        format_statement_found = False  # Reset the flag
+                    # If we encounter the DATASOURCE statement, we want to capture the next String token
+                    # and append it to the front of all the file paths we've found
+                    elif str.casefold(bulk_subtoken.value) == "data_source":
+                        datasource_statement_found = True
+                    # Here is where we capture the next String token if we've found the DATA_SOURCE statement
+                    elif (
+                        datasource_statement_found
+                        and bulk_subtoken.ttype == Literal.String.Single
+                    ):
+                        datasource_statement_found = False
+                        datasource_string_value = bulk_subtoken.value.replace("'", "")
+                    # If it isn't after 'FORMAT', Append any token that's a String Literal starting with a quote
+                    # to the table list (i.e. a file path)
+                    elif (
+                        bulk_subtoken.ttype == Literal.String.Single
+                        and bulk_subtoken.value[0] == "'"
+                    ):
+                        tokens_to_append_to_paths.append(
+                            bulk_subtoken.value.replace("'", "")
+                        )
+        # Append the tokens we found to the list of paths
+        for each in tokens_to_append_to_paths:
+            self.tables.append(Path(datasource_string_value + each))
+
     def _handle_table(self, token: Token, holder: SubQueryLineageHolder) -> None:
-        if isinstance(token, Identifier):
+        # Handle Openrowset, which can be parsed as Identifier or as a Function depending how long the arguments are
+        if str(list(token.flatten())[0]).casefold() == "openrowset" and (
+            isinstance(token, Identifier) or isinstance(token, Function)
+        ):
+            self._handle_openrowset(token)
+        # The next token is the table address
+        elif isinstance(token, Identifier):
             self.tables.append(self._get_dataset_from_identifier(token, holder))
         elif isinstance(token, IdentifierList):
             # This is to support join in ANSI-89 syntax
@@ -78,12 +135,6 @@ class SourceHandler(NextTokenBaseHandler):
                 self._handle(token.tokens[1], holder)
         elif token.ttype == Literal.String.Single:
             self.tables.append(Path(token.value))
-        elif (
-            type(token).__name__ == "Function"
-            and str(token)[0:10].lower() == "openrowset"
-        ):
-            # Handle OPENROWSET in T-SQL (Issue #290) - allows views to SELECT from filesystems on T-SQL
-            pass
         else:
             raise SQLLineageException(
                 "An Identifier is expected, got %s[value: %s] instead."
@@ -133,6 +184,7 @@ class SourceHandler(NextTokenBaseHandler):
     def _get_dataset_from_identifier(
         cls, identifier: Identifier, holder: SubQueryLineageHolder
     ) -> Union[Path, Table, SubQuery]:
+        # Match syntax to SparkSQL run directly on files (e.g. SELECT * FROM data_source.`examples/src/main/resources/`)
         path_match = re.match(r"(parquet|csv|json)\.`(.*)`", identifier.value)
         if path_match is not None:
             return Path(path_match.groups()[1])
