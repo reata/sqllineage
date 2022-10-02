@@ -44,6 +44,12 @@ For table, there's a way to get its name.
     subquery without alias (valid syntax in certain SQL dialect) mistakenly parsed as ``Parenthesis``. These are all
     corner cases we should resolve in real world.
 
+.. note::
+    Strictly speaking, sqlparse is generating a parse tree instead of an abstract syntax tree. There two terms are often
+    used interchangeably, and indeed they're similar conceptually. They're both tree structure in slightly different
+    abstraction layer. In the AST, information like comments and grouping symbols (parenthesis) are not represented.
+    Removing comment doesn't change the code logic and parenthesis are already implicitly represented by the tree structure.
+
 Some other simple rules in SQLLineage:
 
 1. Things go after Keyword **"FROM"**, all kinds of **"JOIN"** will be source table.
