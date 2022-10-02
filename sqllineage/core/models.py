@@ -18,7 +18,7 @@ from sqlparse.sql import (
 from sqlparse.utils import imt
 
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.utils.entities import ColumnQualifierTuple
+from sqllineage.utils.entities import ColumnExpression, ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
 from sqllineage.utils.sqlparse import get_parameters, is_subquery
 
@@ -173,6 +173,7 @@ class Column:
         self._parent: Set[Union[Table, SubQuery]] = set()
         self.raw_name = escape_identifier_name(name)
         self.source_columns = kwargs.pop("source_columns", ((self.raw_name, None),))
+        self.expression = kwargs.pop("expression", ColumnExpression(True, None))
 
     def __str__(self):
         return (
@@ -219,17 +220,26 @@ class Column:
                     idx, _ = token.token_prev(kw_idx, skip_cm=True)
                     expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
                     source_columns = Column._extract_source_columns(expr)
-                    return Column(alias, source_columns=source_columns)
+                    return Column(
+                        alias,
+                        source_columns=source_columns,
+                        expression=ColumnExpression(False, expr),
+                    )
             else:
                 # select column name directly without alias
                 return Column(
                     token.get_real_name(),
                     source_columns=((token.get_real_name(), token.get_parent_name()),),
+                    expression=ColumnExpression(True, None),
                 )
         else:
             # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
             source_columns = Column._extract_source_columns(token)
-            return Column(token.value, source_columns=source_columns)
+            return Column(
+                token.value,
+                source_columns=source_columns,
+                expression=ColumnExpression(False, token),
+            )
 
     @staticmethod
     def _extract_source_columns(token: Token) -> List[ColumnQualifierTuple]:
