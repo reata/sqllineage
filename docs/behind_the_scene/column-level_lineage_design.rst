@@ -58,6 +58,10 @@ A newly introduced ColumnHandler will also be based on NextTokenBaseHandler (col
 plus a end-of-(sub)query hook. Because only until end of query could we know all the source tables. If we don't have
 all the source tables and their alias, we can't assign the column to table correctly.
 
+.. warning::
+    To handle UNION clause, ColumnHandler is now merged into SourceHandler, due to the fact that we need source tables
+    info breaking down into sub-statement level, end of the whole query would be to late.
+
 **Steps for Full Implementation**
 
 1. Atomic column logic handling: alias, case when, function, expression, etc.
