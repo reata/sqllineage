@@ -1,7 +1,7 @@
 import argparse
 import logging
 import logging.config
-
+import sys
 
 from sqllineage import DEFAULT_HOST, DEFAULT_LOGGING, DEFAULT_PORT
 from sqllineage.drawing import draw_lineage_graph
@@ -62,12 +62,20 @@ def main(args=None) -> None:
         default=DEFAULT_PORT,
         metavar="<port_number>{0..65536}",
     )
+    parser.add_argument(
+        "-j", "--json-out", help="export lineage in JSON format", action="store_true"
+    )
     args = parser.parse_args(args)
     if args.e and args.f:
         logging.warning(
             "Both -e and -f options are specified. -e option will be ignored"
         )
-    if args.f or args.e:
+    if args.graph_visualization and args.json_out:
+        logging.error(
+            "Both -g and -j options are specified. Only one is allowed. Exiting."
+        )
+        sys.exit(1)
+    elif args.f or args.e:
         sql = extract_sql_from_args(args)
         runner = LineageRunner(
             sql,
@@ -80,10 +88,8 @@ def main(args=None) -> None:
         )
         if args.graph_visualization:
             runner.draw()
-        elif args.level == LineageLevel.COLUMN:
-            runner.print_column_lineage()
         else:
-            runner.print_table_lineage()
+            runner.print_lineage(lineage_level=args.level, json_out=args.json_out)
     elif args.graph_visualization:
         return draw_lineage_graph(**{"host": args.host, "port": args.port})
     else:

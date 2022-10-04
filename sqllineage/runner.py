@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Dict, List, Tuple
 
@@ -152,18 +153,26 @@ Target Tables:
             key=lambda x: (str(x[-1]), str(x[0])),
         )
 
-    def print_column_lineage(self) -> None:
+    def print_lineage(self, lineage_level, json_out) -> None:
         """
-        print column level lineage to stdout
+        Print lineage to stdout depending on type requested
         """
-        for path in self.get_column_lineage():
-            print(" <- ".join(str(col) for col in reversed(path)))
-
-    def print_table_lineage(self) -> None:
-        """
-        print table level lineage to stdout
-        """
-        print(str(self))
+        if json_out:  # Print lineage in JSON format
+            if lineage_level == LineageLevel.COLUMN:
+                json_data = {
+                    "dag": self.to_cytoscape(),
+                    "column": self.to_cytoscape(LineageLevel.COLUMN),
+                }
+            else:
+                json_data = {"dag": self.to_cytoscape()}
+            print(json.dumps(json_data, indent=None))
+        else:
+            # Print lineage in standard format
+            if lineage_level == LineageLevel.COLUMN:
+                for path in self.get_column_lineage():
+                    print(" <- ".join(str(col) for col in reversed(path)))
+            else:
+                print(str(self))
 
     def _eval(self):
         self._stmt = [
