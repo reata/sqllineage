@@ -22,3 +22,32 @@ DONTs
 .. note::
     100% accurate Column-level lineage is still do-able if we can provide some kind of a plugin system for user to
     register their metadata instead of us maintaining it. Let's see what will happen in future versions.
+
+Static Code Analysis Approach Explained
+=======================================
+
+This is the typical flow of how SQL is parsed and executed from compiling perspective:
+
+1. Lexical Analysis: transform SQL string into token stream.
+2. Parsing: transform token stream into unresolved AST.
+3. Semantic Analysis: annotate unresolved AST with real table/column reference using database catalog.
+4. Optimize with Intermediate Representation: transform AST to execution plan, and optimize with predicate pushdown,
+   column pruning, boolean simplification, limit combination, join strategy, etc.
+5. Code Gen: This only makes sense in distributed SQL system. Generating primitive on underlying computing framework,
+   like MapReduce Job, or RDD operation, based on the optimized execution plan.
+
+.. note::
+    Semantic analysis is a compiler term. In data world, it's often referred to as catalog resolution. For some systems,
+    unresolved AST is transformed to unsolved execution plan first. With catalog resolution, a resolved execution plan
+    is then ready for later optimization phases.
+
+SQLLineage is working on the abstraction layer of unresolved AST, right after parsing phase is done. The good side is that
+SQLLineage is dialect-agnostic and able to function without database catalog. The bad side is of course the inaccuracy
+on column-level lineage when we don't know what's behind ``select *``.
+
+The alternative way is starting the lineage analysis on the abstraction layer of resolved AST, or execution plan. That
+ties lineage analysis tightly with the SQL system so it won't function without a live connection to database. But that will
+give user an accurate result and the source code of database can be used to save a lot of coding effort.
+
+To combine the good side of both approaches, in the long term, SQLLineage will introduce an optional resolution phase,
+followed by the current unresolved lineage result, where user can register metadata information in a programmatic way.

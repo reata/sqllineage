@@ -2,6 +2,9 @@
 Why SQLLineage
 **************
 
+How It Starts
+=============
+
 Back when I was a data engineer, SQL is something people can't avoid in this industry. I guess it still is since you're
 reading this. However popular, it doesn't change the fact the SQL code can be nested, verbose and very difficult to read.
 Oftentimes, I found myself lost in thousands lines of SQL code full of seemingly invaluable business logic.
@@ -29,3 +32,30 @@ and b) sql developers with the knowledge to write it while without technical kno
 parsed, analyzed and executed.
 
 **With SQLLineage, it's all just human-readable lineage result**.
+
+
+Broader Use Case
+================
+SQL lineage, or data lineage if we include generic non-SQL jobs, is the jewel in the data engineering crown. A well maintained
+lineage service can greatly ease the pain felt among different roles in a data team.
+
+Here's a few classical use cases for lineage:
+
+- For Data Producer
+    - **Dependency Recommendation**: recommending dependency for jobs, detecting missing or unnecessary dependency
+      to avoid potential issues.
+    - **Impact analysis**: notifying downstream customer when data quality issue happens, tracing back to upstream for
+      root cause analysis, understanding how much impact it would be when changing a table/column.
+    - **Development Standard Enforcement**: detecting anti-pattern like one job producing multiple production tables, or
+      temporary table/view created without being accessed later.
+    - **Job ETA Prediction and Alert**: predicting table delay and potential SLA miss with job running information.
+
+- For Data Governor
+    - **Table/Column Lifecycle**: identifying unused tables/columns, and retiring it.
+    - **GDPR Compliance**: propagating the PII columns tag along the lineage path, easing the manually tagging process.
+      Foundation for later PII encryption and GDPR deletion.
+
+- For Data Consumer
+    - **Understanding data flow**: discovering table, understanding the table description as well as the table flow.
+    - **Verify business logic**: making sure the information I use is sourcing from the correct dataset with correct
+      transformation.
