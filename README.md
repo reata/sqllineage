@@ -94,8 +94,8 @@ Intermediate Tables:
 ```
 
 ### Column-Level Lineage
-We also support column level lineage in command line interface, set level option to column, all column lineage path will 
-be printed.
+We also support column level lineage in command line interface, set level option to column (`--level=column` flag),
+and all column lineage path will be printed.
 
 ```sql
 INSERT OVERWRITE TABLE foo
@@ -132,6 +132,10 @@ $ sqllineage -f foo.sql -l column
 <default>.foo.col3 <- c.col3_sum <- <default>.qux.col3
 <default>.foo.col4 <- col4
 ```
+
+### JSON Lineage Output
+Both table (regular) and column-level lineage are exportable by the tool, using the `--json-out` flag.
+This flag works with the column-level lineage (`--level=column`) flag too.
 
 ### Lineage Visualization
 One more cool feature, if you want a graph visualization for the lineage result, toggle graph-visualization option
