@@ -124,3 +124,6 @@ yarn-error.log*
 
 # Optional eslint cache
 .eslintcache
+
+# VSCode
+.vscode/*
