@@ -244,17 +244,22 @@ class SQLLineageHolder(ColumnLineageMixin):
                 read, write = holder.read, holder.write
                 if len(read) > 0 and len(write) == 0:
                     # source only table comes from SELECT statement
-                    g.add_nodes_from(read, **{NodeTag.SOURCE_ONLY: True})
+                    nx.set_node_attributes(
+                        g, {table: True for table in read}, NodeTag.SOURCE_ONLY
+                    )
                 elif len(read) == 0 and len(write) > 0:
                     # target only table comes from case like: 1) INSERT/UPDATE constant values; 2) CREATE TABLE
-                    g.add_nodes_from(write, **{NodeTag.TARGET_ONLY: True})
+                    nx.set_node_attributes(
+                        g, {table: True for table in write}, NodeTag.TARGET_ONLY
+                    )
                 else:
-                    g.add_nodes_from(read)
-                    g.add_nodes_from(write)
                     for source, target in itertools.product(read, write):
                         g.add_edge(source, target, type=EdgeType.LINEAGE)
-        for table in {e[0] for e in nx.selfloop_edges(g)}:
-            g.nodes[table][NodeTag.SELFLOOP] = True
+        nx.set_node_attributes(
+            g,
+            {table: True for table in {e[0] for e in nx.selfloop_edges(g)}},
+            NodeTag.SELFLOOP,
+        )
         # find all the columns that we can't assign accurately to a parent table (with multiple parent candidates)
         unresolved_cols = [
             (s, t)
