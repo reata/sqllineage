@@ -68,9 +68,6 @@ setup(
     install_requires=[
         "sqlparse>=0.3.1",
         "networkx>=2.4",
-        "flask",
-        "flask_cors",
-        "werkzeug",
     ],
     entry_points={"console_scripts": ["sqllineage = sqllineage.cli:main"]},
     extras_require={

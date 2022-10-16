@@ -6,7 +6,7 @@ import pytest
 from sqllineage.cli import main
 
 
-@patch("flask.Flask.run")
+@patch("socketserver.BaseServer.serve_forever")
 def test_cli_dummy(_):
     main([])
     main(["-e", "select * from dual"])

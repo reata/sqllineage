@@ -1,66 +1,156 @@
-import logging
-import os
-import sys
-from argparse import Namespace
-from pathlib import Path
-from urllib.parse import urlencode
+"""
+app is a wsgi application which accepts environ and start_response as argument.
+Here We implement a simple flask-like api to avoid explicitly add it as dependency.
+wsgiref is used to spawn a server from sqllineage commandline. To serve production traffic, you can/should put
+the app behind a real production server like gunicorn or uwsgi, as app is wsgi compatible.
+A simple gunicorn example: gunicorn sqllineage.drawing:app
+"""
 
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from werkzeug.exceptions import InternalServerError
+import json
+import logging
+import mimetypes
+import os
+from argparse import Namespace
+from http import HTTPStatus
+from pathlib import Path
+from typing import Any, Callable, Dict, List
+from urllib.parse import urlencode
+from wsgiref.simple_server import make_server
 
 from sqllineage import DATA_FOLDER, DEFAULT_HOST, DEFAULT_PORT
 from sqllineage import STATIC_FOLDER
+from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import extract_sql_from_args
 
 logger = logging.getLogger(__name__)
 
-app = Flask(
-    __name__,
-    static_url_path="",
-    static_folder=os.path.join(os.path.dirname(__file__), STATIC_FOLDER),
-)
-CORS(app)
+
+class SQLLineageApp:
+    def __init__(self) -> None:
+        self.routes: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {}
+
+    def route(self, path: str):
+        def wrapper(handler):
+            self.routes[path] = handler
+            return handler
+
+        return wrapper
+
+    def __call__(self, environ, start_response) -> List[bytes]:
+        static_folder = Path(os.path.dirname(__file__)).joinpath(Path(STATIC_FOLDER))
+        request_method = environ["REQUEST_METHOD"]
+        path_info = environ["PATH_INFO"]
+        try:
+            if request_method == "GET":
+                mimetype = "text/html; charset=utf-8"
+                if path_info == "/":
+                    static_fname = str(static_folder.joinpath(Path("index.html")))
+                else:
+                    if ".." in path_info:
+                        # Do not allow going back to parent path of static folder
+                        return self.handle_404(start_response)
+                    static_file = static_folder.joinpath(Path(path_info.strip("/")))
+                    if static_file.exists():
+                        static_fname = str(static_file)
+                        optional_mimetype = mimetypes.guess_type(path_info)[0]
+                        mimetype = (
+                            optional_mimetype
+                            if optional_mimetype is not None
+                            else mimetype
+                        )
+                    else:
+                        return self.handle_404(start_response)
+                with open(static_fname, "rb") as f:
+                    text = f.read()
+                return self.handle_200_text(start_response, mimetype, text)
+            elif request_method == "POST":
+                if path_info in self.routes:
+                    request_body_size = int(environ["CONTENT_LENGTH"])
+                    request_body = environ["wsgi.input"].read(request_body_size)
+                    payload = json.loads(request_body)
+                    data = self.routes[path_info](payload)
+                    return self.handle_200_json(start_response, data)
+                else:
+                    return self.handle_404(start_response)
+            else:
+                return self.handle_405(start_response)
+        except (SystemExit, IsADirectoryError, FileNotFoundError):
+            return self.handle_404(start_response)
+        except SQLLineageException as e:
+            return self.handle_400(start_response, str(e))
+
+    @staticmethod
+    def handle_200_text(start_response, mimetype, text) -> List[bytes]:
+        status_code = HTTPStatus.OK
+        start_response(
+            f"{status_code.value} {status_code.phrase}", [("Content-type", mimetype)]
+        )
+        return [text]
+
+    def handle_200_json(self, start_response, data) -> List[bytes]:
+        return self.handle_json_response(start_response, HTTPStatus.OK, data)
+
+    def handle_400(self, start_response, message) -> List[bytes]:
+        return self.handle_client_error_response(
+            start_response, HTTPStatus.BAD_REQUEST, message
+        )
+
+    def handle_404(self, start_response) -> List[bytes]:
+        message = "File Not Found"
+        return self.handle_client_error_response(
+            start_response, HTTPStatus.NOT_FOUND, message
+        )
+
+    def handle_405(self, start_response) -> List[bytes]:
+        message = "Method Not Allowed"
+        return self.handle_client_error_response(
+            start_response, HTTPStatus.METHOD_NOT_ALLOWED, message
+        )
+
+    def handle_client_error_response(
+        self, start_response, status_code, message
+    ) -> List[bytes]:
+        data = {"message": message}
+        return self.handle_json_response(start_response, status_code, data)
+
+    @staticmethod
+    def handle_json_response(start_response, status_code, data) -> List[bytes]:
+        start_response(
+            f"{status_code.value} {status_code.phrase}",
+            [("Content-type", "application/json")],
+        )
+        return [json.dumps(data).encode("utf-8")]
 
 
-@app.errorhandler(InternalServerError)
-def handle_500(e):
-    original = getattr(e, "original_exception", None)
-    return jsonify({"message": str(original)}), 400
+app = SQLLineageApp()
 
 
-@app.route("/")
-def index():
-    return app.send_static_file("index.html")
-
-
-@app.route("/lineage", methods=["POST"])
-def lineage():
+@app.route("/lineage")
+def lineage(payload):
     # this is to avoid circular import
     from sqllineage.runner import LineageRunner
 
-    req_args = Namespace(**request.get_json())
+    req_args = Namespace(**payload)
     sql = extract_sql_from_args(req_args)
     lr = LineageRunner(sql, verbose=True)
-    resp = {
+    data = {
         "verbose": str(lr),
         "dag": lr.to_cytoscape(),
         "column": lr.to_cytoscape(LineageLevel.COLUMN),
     }
-    return jsonify(resp)
+    return data
 
 
-@app.route("/script", methods=["POST"])
-def script():
-    req_args = Namespace(**request.get_json())
+@app.route("/script")
+def script(payload):
+    req_args = Namespace(**payload)
     sql = extract_sql_from_args(req_args)
-    return jsonify({"content": sql})
+    return {"content": sql}
 
 
-@app.route("/directory", methods=["POST"])
-def directory():
-    payload = request.get_json()
+@app.route("/directory")
+def directory(payload):
     if payload.get("f"):
         root = Path(payload["f"]).parent
     elif payload.get("d"):
@@ -76,11 +166,7 @@ def directory():
             for p in sorted(root.iterdir(), key=lambda _: (not _.is_dir(), _.name))
         ],
     }
-    return jsonify(data)
-
-
-cli = sys.modules["flask.cli"]
-cli.show_server_banner = lambda *x: None  # type: ignore
+    return data
 
 
 def draw_lineage_graph(**kwargs) -> None:
@@ -88,5 +174,6 @@ def draw_lineage_graph(**kwargs) -> None:
     port = kwargs.pop("port", DEFAULT_PORT)
     querystring = urlencode({k: v for k, v in kwargs.items() if v})
     path = f"/?{querystring}" if querystring else "/"
-    print(f" * SQLLineage Running on http://{host}:{port}{path}")
-    app.run(host=host, port=port)
+    with make_server(host, port, app) as httpd:
+        print(f" * SQLLineage Running on http://{host}:{port}{path}")
+        httpd.serve_forever()
