@@ -21,6 +21,7 @@ def extract_sql_from_args(args: Namespace) -> str:
             logger.exception("No such file: %s", args.f)
             exit(1)
         except PermissionError:
+            # On Windows, open a directory as file throws PermissionError
             logger.exception("Permission denied when reading file '%s'", args.f)
             exit(1)
     elif getattr(args, "e", None):
