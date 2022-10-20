@@ -43,6 +43,8 @@ def test_handler():
     assert container.status.startswith(str(HTTPStatus.OK.value))
     mock_request("POST", "/directory", {})
     assert container.status.startswith(str(HTTPStatus.OK.value))
+    mock_request("OPTIONS", "/directory", {})
+    assert container.status.startswith(str(HTTPStatus.OK.value))
     # 400
     mock_request("POST", "/lineage", {"e": "SELECT * FROM where foo='bar'"})
     assert container.status.startswith(str(HTTPStatus.BAD_REQUEST.value))
@@ -56,6 +58,8 @@ def test_handler():
     mock_request("POST", "/non-exist-resource", {"e": "SELECT * FROM where foo='bar'"})
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
     mock_request("GET", "/../cli.py")
+    assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
+    mock_request("OPTIONS", "/non-exist-resource")
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
     # 405
     mock_request("PUT", "/")
