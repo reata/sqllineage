@@ -73,6 +73,22 @@ class SQLLineageApp:
                     return self.handle_200_json(start_response, data)
                 else:
                     return self.handle_404(start_response)
+            elif request_method == "OPTIONS":
+                if path_info in self.routes:
+                    start_response(
+                        "200 OK",
+                        [
+                            ("Access-Control-Allow-Origin", "*"),
+                            (
+                                "Access-Control-Allow-Headers",
+                                "Content-Type",
+                            ),
+                            ("Access-Control-Allow-Methods", "POST"),
+                        ],
+                    )
+                    return []
+                else:
+                    return self.handle_404(start_response)
             else:
                 return self.handle_405(start_response)
         except (SystemExit, IsADirectoryError, FileNotFoundError, PermissionError):
@@ -118,7 +134,10 @@ class SQLLineageApp:
     def handle_json_response(start_response, status_code, data) -> List[bytes]:
         start_response(
             f"{status_code.value} {status_code.phrase}",
-            [("Content-type", "application/json")],
+            [
+                ("Content-type", "application/json"),
+                ("Access-Control-Allow-Origin", "*"),
+            ],
         )
         return [json.dumps(data).encode("utf-8")]
 
