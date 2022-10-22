@@ -89,6 +89,15 @@ def is_subquery(token: TokenList) -> bool:
     return flag
 
 
+def is_values_clause(token: Parenthesis) -> bool:
+    for t in token.tokens:
+        if is_token_negligible(t):
+            continue
+        if t.match(Keyword, "VALUES"):
+            return True
+    return False
+
+
 def get_subquery_parentheses(
     token: Union[Identifier, Function, Where]
 ) -> List[SubQueryTuple]:
