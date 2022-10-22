@@ -67,7 +67,7 @@ def test_select_with_comment_after_from():
 
 def test_select_with_comment_after_join():
     assert_table_lineage_equal(
-        "select * from tab1 join --comment\ntab2 on tab1.x = tab2.x", {"tab1", "tab2"}
+        "SELECT * FROM tab1 JOIN --comment\ntab2 ON tab1.x = tab2.x", {"tab1", "tab2"}
     )
 
 
@@ -83,7 +83,7 @@ def test_select_with_table_alias():
 
 
 def test_select_count():
-    assert_table_lineage_equal("SELECT COUNT(*) FROM tab1", {"tab1"})
+    assert_table_lineage_equal("SELECT count(*) FROM tab1", {"tab1"})
 
 
 def test_select_subquery():
@@ -172,7 +172,7 @@ def test_select_full_outer_join():
 
 def test_select_full_outer_join_with_full_as_alias():
     assert_table_lineage_equal(
-        "SELECT * FROM tab1 AS full FULL OUTER JOIN tab2", {"tab1", "tab2"}
+        "SELECT * FROM tab1 AS FULL FULL OUTER JOIN tab2", {"tab1", "tab2"}
     )
 
 
@@ -182,7 +182,7 @@ def test_select_cross_join():
 
 def test_select_cross_join_with_on():
     assert_table_lineage_equal(
-        "SELECT * FROM tab1 CROSS JOIN tab2 on tab1.col1 = tab2.col2", {"tab1", "tab2"}
+        "SELECT * FROM tab1 CROSS JOIN tab2 ON tab1.col1 = tab2.col2", {"tab1", "tab2"}
     )
 
 
@@ -212,3 +212,34 @@ def test_select_group_by():
 
 def test_select_group_by_ordinal():
     assert_table_lineage_equal("SELECT col1, col2 FROM tab1 GROUP BY 1, 2", {"tab1"})
+
+
+def test_select_from_values():
+    assert_table_lineage_equal("SELECT * FROM (VALUES (1, 2))")
+
+
+def test_select_from_values_newline():
+    assert_table_lineage_equal("SELECT * FROM (\nVALUES (1, 2))")
+
+
+def test_select_from_values_with_alias():
+    assert_table_lineage_equal("SELECT * FROM (VALUES (1, 2)) AS t(col1, col2)")
+
+
+def test_select_from_unnest():
+    # unnest function is Presto specific
+    assert_table_lineage_equal(
+        "SELECT student, score FROM tests CROSS JOIN UNNEST(scores) AS t (score)",
+        {"tests"},
+    )
+
+
+def test_select_from_unnest_with_ordinality():
+    sql = """SELECT numbers, n, a
+FROM (
+  VALUES
+    (ARRAY[2, 5]),
+    (ARRAY[7, 8, 9])
+) AS x (numbers)
+CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);"""
+    assert_table_lineage_equal(sql)

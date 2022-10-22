@@ -17,7 +17,11 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.constant import EdgeType
-from sqllineage.utils.sqlparse import get_subquery_parentheses, is_subquery
+from sqllineage.utils.sqlparse import (
+    get_subquery_parentheses,
+    is_subquery,
+    is_values_clause,
+)
 
 
 class SourceHandler(NextTokenBaseHandler):
@@ -57,27 +61,27 @@ class SourceHandler(NextTokenBaseHandler):
 
     def _handle_table(self, token: Token, holder: SubQueryLineageHolder) -> None:
         if isinstance(token, Identifier):
-            self.tables.append(self._get_dataset_from_identifier(token, holder))
+            self._add_dataset_from_identifier(token, holder)
         elif isinstance(token, IdentifierList):
             # This is to support join in ANSI-89 syntax
             for identifier in token.get_sublists():
-                self.tables.append(
-                    self._get_dataset_from_identifier(identifier, holder)
-                )
+                self._add_dataset_from_identifier(identifier, holder)
         elif isinstance(token, Parenthesis):
             if is_subquery(token):
                 # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
                 # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
                 self.tables.append(SubQuery.of(token, None))
-            elif token.tokens[1].is_keyword and token.tokens[1].normalized == "VALUES":
-                # If we have a CREATE TABLE AS SELECT * FROM VALUES (...), this stops the parser erroring out.
-                # In the future, we could parse the VALUES statement as columns.
+            elif is_values_clause(token):
+                # SELECT * FROM (VALUES ...), no operation needed
                 pass
             else:
                 # SELECT * FROM (tab2), which is valid syntax
                 self._handle(token.tokens[1], holder)
         elif token.ttype == Literal.String.Single:
             self.tables.append(Path(token.value))
+        elif isinstance(token, Function):
+            # functions like unnest can generate a sequence of values as source, ignore it for now
+            pass
         else:
             raise SQLLineageException(
                 "An Identifier is expected, got %s[value: %s] instead."
@@ -123,13 +127,20 @@ class SourceHandler(NextTokenBaseHandler):
                     ):
                         holder.add_column_lineage(src_col, tgt_col)
 
-    @classmethod
-    def _get_dataset_from_identifier(
-        cls, identifier: Identifier, holder: SubQueryLineageHolder
-    ) -> Union[Path, Table, SubQuery]:
+    def _add_dataset_from_identifier(
+        self, identifier: Identifier, holder: SubQueryLineageHolder
+    ) -> None:
+        dataset: Union[Path, Table, SubQuery]
+        first_token = identifier.token_first(skip_cm=True)
+        if isinstance(first_token, Function):
+            # function() as alias, no dataset involved
+            return
+        elif isinstance(first_token, Parenthesis) and is_values_clause(first_token):
+            # (VALUES ...) AS alias, no dataset involved
+            return
         path_match = re.match(r"(parquet|csv|json)\.`(.*)`", identifier.value)
         if path_match is not None:
-            return Path(path_match.groups()[1])
+            dataset = Path(path_match.groups()[1])
         else:
             read: Union[Table, SubQuery, None] = None
             subqueries = get_subquery_parentheses(identifier)
@@ -150,7 +161,8 @@ class SourceHandler(NextTokenBaseHandler):
                         )
                 if read is None:
                     read = Table.of(identifier)
-            return read
+            dataset = read
+        self.tables.append(dataset)
 
     @classmethod
     def _get_alias_mapping_from_table_group(
