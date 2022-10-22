@@ -80,7 +80,7 @@ class SourceHandler(NextTokenBaseHandler):
         elif token.ttype == Literal.String.Single:
             self.tables.append(Path(token.value))
         elif isinstance(token, Function):
-            # functions like unnest can generate a sequence of values as source, ignore it for now
+            # functions like unnest or generator can output a sequence of values as source, ignore it for now
             pass
         else:
             raise SQLLineageException(

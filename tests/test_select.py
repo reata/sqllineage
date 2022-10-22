@@ -243,3 +243,11 @@ FROM (
 ) AS x (numbers)
 CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);"""
     assert_table_lineage_equal(sql)
+
+
+def test_select_from_generator():
+    # generator is Snowflake specific
+    sql = """SELECT seq4(), uniform(1, 10, random(12))
+FROM table(generator()) v
+ORDER BY 1;"""
+    assert_table_lineage_equal(sql)
