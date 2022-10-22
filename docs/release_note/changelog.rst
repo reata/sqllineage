@@ -2,6 +2,21 @@
 Changelog
 *********
 
+v1.3.7
+======
+:Date: Oct 22, 2022
+
+Enhancement
+-------------
+* migrate demo site off Heroku to GitHub Pages (`#288 <https://github.com/reata/sqllineage/issues/288>`_)
+* remove flask-related dependencies by implementing a wsgi app (`#287 <https://github.com/reata/sqllineage/issues/287>`_)
+
+Bugfix
+-------------
+* exception with VALUES clause (`#292 <https://github.com/reata/sqllineage/issues/292>`_)
+* exception with Presto unnest function (`#272 <https://github.com/reata/sqllineage/issues/272>`_)
+* exception with snowflake generator statement (`#214 <https://github.com/reata/sqllineage/issues/214>`_)
+
 v1.3.6
 ======
 :Date: Aug 28, 2022
