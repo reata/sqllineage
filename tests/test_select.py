@@ -234,6 +234,14 @@ def test_select_from_unnest():
     )
 
 
+def test_select_from_unnest_parsed_as_keyword():
+    # an extra space after UNNEST changes the AST structure
+    assert_table_lineage_equal(
+        "SELECT student, score FROM tests CROSS JOIN UNNEST (scores) AS t (score)",
+        {"tests"},
+    )
+
+
 def test_select_from_unnest_with_ordinality():
     sql = """SELECT numbers, n, a
 FROM (

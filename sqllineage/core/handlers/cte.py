@@ -1,9 +1,8 @@
-from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Token
+from sqlparse.sql import Function, Identifier, IdentifierList, Token
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import SubQuery
-from sqllineage.exceptions import SQLLineageException
 
 
 class CTEHandler(NextTokenBaseHandler):
@@ -23,15 +22,10 @@ class CTEHandler(NextTokenBaseHandler):
             cte = [
                 token for token in token.tokens if isinstance(token, cte_token_types)
             ]
-        elif isinstance(token, Parenthesis):
-            # CREATE TABLE tbl1 (col1 VARCHAR) WITH (bucketed_by = ARRAY['col1'], bucket_count = 256).
-            # This syntax is valid for bucketing in Trino and not the CTE
-            cte = []
         else:
-            raise SQLLineageException(
-                "An Identifier or IdentifierList is expected, got %s[value: %s] instead."
-                % (type(token).__name__, token)
-            )
+            # CREATE TABLE tbl1 (col1 VARCHAR) WITH (bucketed_by = ARRAY['col1'], bucket_count = 256).
+            # This syntax is valid for bucketing in Trino and not the CTE, token will be Parenthesis here
+            cte = []
         for token in cte:
             sublist = list(token.get_sublists())
             if sublist:
