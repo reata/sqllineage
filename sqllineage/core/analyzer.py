@@ -46,11 +46,6 @@ class LineageAnalyzer:
     def _extract_from_dml(
         cls, token: TokenList, context: AnalyzerContext
     ) -> SubQueryLineageHolder:
-
-        # SELECT -> Keyword
-        # *
-        # FROM
-        # table
         holder = SubQueryLineageHolder()
         if context.prev_cte is not None:
             # CTE can be referenced by subsequent CTEs
