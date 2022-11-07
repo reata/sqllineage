@@ -27,9 +27,7 @@ class NextTokenBaseHandler:
         """
         Set indicator to True only when _indicate returns True
         """
-        indicator = self._indicate(token)
-        if indicator:
-            self.indicator = True
+        self.indicator = self._indicate(token)
 
     def handle(self, token: Token, holder: SubQueryLineageHolder):
         """
