@@ -1,16 +1,22 @@
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 import sqlparse
+from sqlfluff.api.simple import get_simple_config
+from sqlfluff.core import Linter
+from sqlfluff.core.linter import ParsedString
+from sqlfluff.core.parser import BaseSegment
+from sqllineage.exceptions import SQLLineageException
 from sqlparse.sql import Statement
 
 from sqllineage.core import LineageAnalyzer
-from sqllineage.core.holders import SQLLineageHolder
+from sqllineage.core.holders import SQLLineageHolder, StatementLineageHolder
 from sqllineage.core.models import Column, Table
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
+from sqllineage.sqlfluff_core.analyzer import SqlFluffLineageAnalyzer
 from sqllineage.utils.constant import LineageLevel
-
+from sqllineage.utils.helpers import clean_parentheses
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +42,7 @@ class LineageRunner(object):
         encoding: str = None,
         verbose: bool = False,
         draw_options: Dict[str, str] = None,
+        dialect: Optional[str] = "ansi",
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -50,6 +57,9 @@ class LineageRunner(object):
         self._draw_options = draw_options if draw_options else {}
         self._evaluated = False
         self._stmt: List[Statement] = []
+        self._sqlfluff_linter = Linter(
+            config=get_simple_config(dialect=dialect, config_path=None)
+        )
 
     @lazy_method
     def __str__(self):
@@ -171,11 +181,39 @@ Target Tables:
             for s in sqlparse.parse(
                 # first apply sqlparser formatting just to get rid of comments, which cause
                 # inconsistencies in parsing output
-                sqlparse.format(self._sql.strip(), self._encoding, strip_comments=True),
+                clean_parentheses(
+                    sqlparse.format(
+                        self._sql.strip(), self._encoding, strip_comments=True
+                    )
+                ),
                 self._encoding,
             )
             if s.token_first(skip_cm=True)
         ]
-        self._stmt_holders = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
+
+        self._stmt_holders = [self.run_lineage_analyzer(stmt) for stmt in self._stmt]
         self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
         self._evaluated = True
+
+    def run_lineage_analyzer(self, stmt: Statement) -> StatementLineageHolder:
+        parsed_string = self._sqlfluff_linter.parse_string(stmt.value)
+        statement_segment = self._get_statement_segment(parsed_string)
+        if statement_segment and SqlFluffLineageAnalyzer.can_analyze(statement_segment):
+            if "unparsable" in statement_segment.descendant_type_set:
+
+                raise SQLLineageException(
+                    f"The query [\n{statement_segment.raw}\n] contains an unparsable segment."
+                )
+            return SqlFluffLineageAnalyzer().analyze(statement_segment)
+        return LineageAnalyzer().analyze(stmt)
+
+    @staticmethod
+    def _get_statement_segment(parsed_string: ParsedString) -> BaseSegment:
+        return next(
+            (
+                x.segments[0]
+                for x in parsed_string.tree.segments
+                if x.type == "statement"
+            ),
+            None,
+        )

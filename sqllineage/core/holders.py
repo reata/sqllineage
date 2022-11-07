@@ -139,7 +139,7 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
         self.graph.add_edge(src, tgt, type=EdgeType.RENAME)
 
     @staticmethod
-    def of(holder: SubQueryLineageHolder):
+    def of(holder: SubQueryLineageHolder) -> "StatementLineageHolder":
         stmt_holder = StatementLineageHolder()
         stmt_holder.graph = holder.graph
         return stmt_holder

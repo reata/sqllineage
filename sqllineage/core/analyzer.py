@@ -16,7 +16,7 @@ from sqllineage.core.handlers.base import (
     NextTokenBaseHandler,
 )
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.core.models import SubQuery, Table
+from sqllineage.core.models import SubQuery
 from sqllineage.utils.sqlparse import (
     get_subquery_parentheses,
     is_subquery,
@@ -38,65 +38,19 @@ class LineageAnalyzer:
 
         :param stmt: a SQL statement parsed by `sqlparse`
         """
-        if (
-            stmt.get_type() == "DELETE"
-            or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"
-            or stmt.token_first(skip_cm=True).normalized.upper() == "REFRESH"
-            or stmt.token_first(skip_cm=True).normalized == "CACHE"
-            or stmt.token_first(skip_cm=True).normalized.upper() == "UNCACHE"
-            or stmt.token_first(skip_cm=True).normalized == "SHOW"
-        ):
-            holder = StatementLineageHolder()
-        elif stmt.get_type() == "DROP":
-            holder = self._extract_from_ddl_drop(stmt)
-        elif (
-            stmt.get_type() == "ALTER"
-            or stmt.token_first(skip_cm=True).normalized == "RENAME"
-        ):
-            holder = self._extract_from_ddl_alter(stmt)
-        else:
-            # DML parsing logic also applies to CREATE DDL
-            holder = StatementLineageHolder.of(
-                self._extract_from_dml(stmt, AnalyzerContext())
-            )
-        return holder
-
-    @classmethod
-    def _extract_from_ddl_drop(cls, stmt: Statement) -> StatementLineageHolder:
-        holder = StatementLineageHolder()
-        for table in {Table.of(t) for t in stmt.tokens if isinstance(t, Identifier)}:
-            holder.add_drop(table)
-        return holder
-
-    @classmethod
-    def _extract_from_ddl_alter(cls, stmt: Statement) -> StatementLineageHolder:
-        holder = StatementLineageHolder()
-        tables = []
-        for t in stmt.tokens:
-            if isinstance(t, Identifier):
-                tables.append(Table.of(t))
-            elif isinstance(t, IdentifierList):
-                for identifier in t.get_identifiers():
-                    tables.append(Table.of(identifier))
-        keywords = [t for t in stmt.tokens if t.is_keyword]
-        if any(k.normalized == "RENAME" for k in keywords):
-            if stmt.get_type() == "ALTER" and len(tables) == 2:
-                holder.add_rename(tables[0], tables[1])
-            elif (
-                stmt.token_first(skip_cm=True).normalized == "RENAME"
-                and len(tables) % 2 == 0
-            ):
-                for i in range(0, len(tables), 2):
-                    holder.add_rename(tables[i], tables[i + 1])
-        if any(k.normalized == "EXCHANGE" for k in keywords) and len(tables) == 2:
-            holder.add_write(tables[0])
-            holder.add_read(tables[1])
-        return holder
+        return StatementLineageHolder.of(
+            self._extract_from_dml(stmt, AnalyzerContext())
+        )
 
     @classmethod
     def _extract_from_dml(
         cls, token: TokenList, context: AnalyzerContext
     ) -> SubQueryLineageHolder:
+
+        # SELECT -> Keyword
+        # *
+        # FROM
+        # table
         holder = SubQueryLineageHolder()
         if context.prev_cte is not None:
             # CTE can be referenced by subsequent CTEs
@@ -113,9 +67,8 @@ class LineageAnalyzer:
         ]
 
         subqueries = []
-        for sub_token in token.tokens:
-            if is_token_negligible(sub_token):
-                continue
+        tokens = [t for t in token.tokens if not is_token_negligible(t)]
+        for sub_token in tokens:
 
             for sq in cls.parse_subquery(sub_token):
                 # Collecting subquery on the way, hold on parsing until last
