@@ -55,6 +55,11 @@ class SqlFluffLineageAnalyzer:
             holder = StatementLineageHolder.of(
                 self._extract_from_dml_select(stmt, AnalyzerContext())
             )
+        elif stmt.type == "insert_statement":
+            holder = StatementLineageHolder.of(
+                self._extract_from_dml_insert(stmt, AnalyzerContext())
+            )
+
         else:
             raise NotImplementedError("Can not extract from DML queries")
         return holder
@@ -129,6 +134,57 @@ class SqlFluffLineageAnalyzer:
                 sq.segment, AnalyzerContext(sq, holder.cte)
             )
         return holder
+    
+    @classmethod
+    def _extract_from_dml_insert(
+        cls, statement: BaseSegment, context: AnalyzerContext
+    ) -> SubQueryLineageHolder:
+
+        handlers, conditional_handlers = cls._init_handlers()
+
+        holder = cls._init_holder(context)
+
+        subqueries = []
+        select_statements = [] 
+        segments = cls._retrieve_segments(statement)
+        for segment in segments:
+            for sq in cls.parse_subquery(segment):
+                # Collecting subquery on the way, hold on parsing until last
+                # so that each handler don't have to worry about what's inside subquery
+                subqueries.append(sq)
+
+            for current_handler in handlers:
+                current_handler.handle(segment, holder)
+            
+            if segment.type == "select_statement":
+                select_statements.append(segment)
+                continue
+
+            if segment.type == "set_expression":
+                sub_segments = cls._retrieve_segments(segment)
+                for sub_segment in  sub_segments:
+                    if sub_segment.type == "select_statement":
+                        select_statements.append(sub_segment)
+                continue
+
+
+            for conditional_handler in conditional_handlers:
+                if conditional_handler.indicate(segment):
+                    conditional_handler.handle(segment, holder)
+        else:
+            # call end of query hook here as loop is over
+            for conditional_handler in conditional_handlers:
+                conditional_handler.end_of_query_cleanup(holder)
+        # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
+        for sq in subqueries:
+            holder |= cls._extract_from_dml_select(
+                sq.segment, AnalyzerContext(sq, holder.cte)
+            )
+        for statement in select_statements:
+            holder |= cls._extract_from_dml_select(
+                statement, AnalyzerContext()
+            )
+        return holder
 
     @classmethod
     def parse_subquery(cls, segment: BaseSegment) -> List[SqlFluffSubQuery]:
@@ -181,19 +237,20 @@ class SqlFluffLineageAnalyzer:
 
         :param stmt: a SQL base segment parsed by `sqlfluff`
         """
-        return (
-            stmt.type == "delete_statement"
-            or stmt.type == "truncate_table"
-            or stmt.type == "refresh_statement"
-            or stmt.type == "cache_table"
-            or stmt.type == "uncache_table"
-            or stmt.type == "show_statement"
-            or stmt.type == "drop_table_statement"
-            or stmt.type == "alter_table_statement"
-            or stmt.type == "rename_statement"
-            or stmt.type == "rename_table_statement"
-            or stmt.type == "select_statement"
-        )
+        return stmt.type in {
+            "delete_statement",
+            "truncate_table",
+            "refresh_statement",
+            "cache_table",
+            "uncache_table",
+            "show_statement",
+            "drop_table_statement",
+            "alter_table_statement",
+            "rename_statement",
+            "rename_table_statement",
+            "select_statement",
+            "insert_statement"
+        }
 
     @staticmethod
     def _init_holder(context) -> SubQueryLineageHolder:
