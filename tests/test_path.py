@@ -13,6 +13,7 @@ def test_copy_from_path():
         "COPY tab1 FROM 's3://mybucket/mypath'",
         {Path("s3://mybucket/mypath")},
         {"tab1"},
+        "redshift"
     )
 
 
@@ -26,6 +27,7 @@ def test_copy_into_path():
         "COPY INTO tab1 FROM 's3://mybucket/mypath'",
         {Path("s3://mybucket/mypath")},
         {"tab1"},
+        "snowflake"
     )
 
 
@@ -53,4 +55,5 @@ def test_insert_overwrite_directory():
 SELECT * FROM tab1""",
         {"tab1"},
         {Path("hdfs://path/to/folder")},
+        "sparksql",
     )

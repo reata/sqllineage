@@ -14,6 +14,7 @@ union all
 select * from TAB_B""",
         {"tab_b"},
         {"tab_a"},
+        "sparksql"
     )
 
 
@@ -32,6 +33,7 @@ def test_create_bucket_table():
         "CREATE TABLE tab1 USING parquet CLUSTERED BY (col1) INTO 500 BUCKETS",
         None,
         {"tab1"},
+        "bigquery"
     )
 
 
@@ -65,7 +67,7 @@ def test_create_like():
 
 def test_create_select():
     assert_table_lineage_equal(
-        "CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}
+        "CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}, "sparksql"
     )
 
 
@@ -127,6 +129,7 @@ def test_update_with_join():
 
 
 def test_copy_from_table():
+    # not parseable by sqlfluff
     assert_table_lineage_equal(
         "COPY tab1 FROM tab2",
         {"tab2"},
@@ -159,7 +162,7 @@ def test_drop_tmp_tab_after_create():
     sql = """create table tab_a as select * from tab_b;
 insert overwrite table tab_c select * from tab_a;
 drop table tab_a;"""
-    assert_table_lineage_equal(sql, {"tab_b"}, {"tab_c"})
+    assert_table_lineage_equal(sql, {"tab_b"}, {"tab_c"},"sparksql")
 
 
 def test_new_create_tab_as_tmp_table():
@@ -215,6 +218,7 @@ def test_alter_target_table_name():
         "insert overwrite tab1 select * from tab2; alter table tab1 rename to tab3;",
         {"tab2"},
         {"tab3"},
+        "sparksql"
     )
 
 
@@ -249,7 +253,7 @@ def test_lateral_view_using_json_tuple():
 SELECT sc.id, q.item0, q.item1
 FROM bar sc
 LATERAL VIEW json_tuple(sc.json, 'key1', 'key2') q AS item0, item1"""
-    assert_table_lineage_equal(sql, {"bar"}, {"foo"})
+    assert_table_lineage_equal(sql, {"bar"}, {"foo"},"sparksql")
 
 
 def test_lateral_view_outer():
@@ -257,7 +261,7 @@ def test_lateral_view_outer():
 SELECT sc.id, q.col1
 FROM bar sc
 LATERAL VIEW OUTER explode(sc.json_array) q AS col1"""
-    assert_table_lineage_equal(sql, {"bar"}, {"foo"})
+    assert_table_lineage_equal(sql, {"bar"}, {"foo"},"sparksql")
 
 
 def test_show_create_table():

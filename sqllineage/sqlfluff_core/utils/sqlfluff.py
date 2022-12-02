@@ -178,3 +178,20 @@ def get_bracketed_from_case(segment: BaseSegment) -> List[BaseSegment]:
         for bracketed_sublist in bracketed_list
         for bracketed in bracketed_sublist
     ]
+
+def retrieve_segments(statement: BaseSegment) -> List[BaseSegment]:
+    if statement.type == "bracketed":
+        segments = [
+            segment
+            for segment in statement.iter_segments(
+                expanding=["expression"], pass_through=True
+            )
+        ]
+        return [
+            seg
+            for segment in segments
+            for seg in segment.segments
+            if not is_segment_negligible(seg)
+        ]
+    else:
+        return [seg for seg in statement.segments if not is_segment_negligible(seg)]
