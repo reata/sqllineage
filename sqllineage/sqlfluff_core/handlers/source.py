@@ -4,10 +4,10 @@ from typing import Dict, List, Union, Iterable
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Path, Table, SubQuery
+from sqllineage.core.models import Path, Table, SubQuery, Column
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
-from sqllineage.sqlfluff_core.models import SqlFluffSubQuery, SqlFluffTable
+from sqllineage.sqlfluff_core.models import SqlFluffSubQuery, SqlFluffTable, SqlFluffColumn
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     is_subquery,
     is_values_clause,
@@ -15,6 +15,7 @@ from sqllineage.sqlfluff_core.utils.sqlfluff import (
     get_subqueries,
     get_multiple_identifiers,
     get_inner_from_expression,
+    retrieve_segments
 )
 from sqllineage.utils.constant import EdgeType
 
@@ -29,13 +30,11 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         super().__init__()
 
     def indicate(self, segment: BaseSegment) -> bool:
-        if segment.type == "from_clause":
-            return True
-        else:
-            return False
+        return self.indicate_column(segment) or self.indicate_table(segment)
 
     def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
-        self._handle_table(segment, holder)
+        if self.indicate_table(segment):
+            self._handle_table(segment, holder)
         if self.indicate_column(segment):
             self._handle_column(segment)
 
@@ -63,7 +62,10 @@ class SourceHandler(ConditionalSegmentBaseHandler):
             self._handle_table(extra_segment, holder)
 
     def _handle_column(self, segment: BaseSegment) -> None:
-        pass
+        sub_segments = retrieve_segments(segment)
+        for sub_segment in sub_segments:
+            if sub_segment.type == "select_clause_element":
+                self.columns.append(SqlFluffColumn.of(sub_segment))
 
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         for i, tbl in enumerate(self.tables):
@@ -127,7 +129,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                     if cte is not None:
                         # could reference CTE with or without alias
                         read = SqlFluffSubQuery.of(
-                            cte.token,
+                            cte.segment,
                             # identifier.get_alias() or identifier.get_real_name(),
                             table_identifier.raw,
                         )
@@ -176,6 +178,10 @@ class SourceHandler(ConditionalSegmentBaseHandler):
     @staticmethod
     def indicate_column(segment: BaseSegment) -> bool:
         return bool(segment.type == "select_clause")
+    
+    @staticmethod
+    def indicate_table(segment: BaseSegment) -> bool:
+        return bool(segment.type == "from_clause")
 
     def _retrieve_extra_segment(self, segment: BaseSegment) -> Iterable[BaseSegment]:
         if segment.get_child("from_expression"):

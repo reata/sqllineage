@@ -12,7 +12,7 @@ def is_segment_negligible(segment: BaseSegment) -> bool:
         segment.is_whitespace
         or segment.is_comment
         or bool(segment.is_meta)
-        or segment.type == "symbol"
+        or (segment.type == "symbol" and segment.raw != "*")
     )
 
 
@@ -179,8 +179,8 @@ def get_bracketed_from_case(segment: BaseSegment) -> List[BaseSegment]:
         for bracketed in bracketed_sublist
     ]
 
-def retrieve_segments(statement: BaseSegment) -> List[BaseSegment]:
-    if statement.type == "bracketed":
+def retrieve_segments(statement: BaseSegment,check_bracketed: bool=True) -> List[BaseSegment]:
+    if statement.type == "bracketed" and check_bracketed:
         segments = [
             segment
             for segment in statement.iter_segments(
@@ -195,3 +195,6 @@ def retrieve_segments(statement: BaseSegment) -> List[BaseSegment]:
         ]
     else:
         return [seg for seg in statement.segments if not is_segment_negligible(seg)]
+
+def is_wildcard(symbol: BaseSegment):
+    return symbol.type == "wildcard_expression" or symbol.type == "symbol" and symbol.raw == "*"

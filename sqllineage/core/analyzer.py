@@ -10,6 +10,7 @@ from sqlparse.sql import (
     TokenList,
     Where,
 )
+from sqllineage.core.models import Table
 
 from sqllineage.core.handlers.base import (
     CurrentTokenBaseHandler,
@@ -27,6 +28,7 @@ from sqllineage.utils.sqlparse import (
 class AnalyzerContext(NamedTuple):
     subquery: Optional[SubQuery] = None
     prev_cte: Optional[Set[SubQuery]] = None
+    prev_write: Optional[Set[Table]] = None
 
 
 class LineageAnalyzer:

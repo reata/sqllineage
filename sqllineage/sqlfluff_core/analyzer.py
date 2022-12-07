@@ -143,7 +143,7 @@ class SqlFluffLineageAnalyzer:
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= cls._extract_from_dml_select(
-                sq.segment, AnalyzerContext(sq, holder.cte)
+                sq.segment, AnalyzerContext(sq, holder.cte, prev_write=holder.write)
             )
         return holder
     
@@ -202,13 +202,13 @@ class SqlFluffLineageAnalyzer:
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= cls._extract_from_dml_select(
-                sq.segment, AnalyzerContext(sq, holder.cte)
+                sq.segment, AnalyzerContext(sq, holder.cte, prev_write=holder.write)
             )
         for statement in select_statements:
-            holder |= cls._extract_from_dml_select(statement, AnalyzerContext(prev_cte=holder.cte))
+            holder |= cls._extract_from_dml_select(statement, AnalyzerContext(prev_cte=holder.cte,prev_write=holder.write))
         
         for statement in insert_statements:
-            holder |= cls._extract_from_dml_insert(statement, AnalyzerContext(prev_cte=holder.cte))
+            holder |= cls._extract_from_dml_insert(statement, AnalyzerContext(prev_cte=holder.cte,prev_write=holder.write))
         
         return holder
 
@@ -257,7 +257,7 @@ class SqlFluffLineageAnalyzer:
                 sq.segment, AnalyzerContext(sq, holder.cte)
             )
         for statement in select_statements:
-            holder |= cls._extract_from_dml_select(statement, AnalyzerContext(statement,holder.cte))
+            holder |= cls._extract_from_dml_select(statement, AnalyzerContext(statement,holder.cte,prev_write=holder.write))
         return holder
 
     @classmethod
@@ -340,9 +340,14 @@ class SqlFluffLineageAnalyzer:
             # CTE can be referenced by subsequent CTEs
             for cte in context.prev_cte:
                 holder.add_cte(cte)
-        if context.subquery is not None:
+        # if context.subquery is not None:
+        #     # If within subquery, then manually add subquery as target table
+        #     holder.add_write(context.subquery)
+        
+        if context.prev_write is not None:
             # If within subquery, then manually add subquery as target table
-            holder.add_write(context.subquery)
+            for write in context.prev_write:
+                holder.add_write(write)
         return holder
 
     @staticmethod
