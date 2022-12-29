@@ -133,7 +133,23 @@ export function DAG(props) {
         cy.remove(cy.elements().filter(n => n.data().temporary === true));
         cy.elements().filter(n => n.data().temporary === undefined).unlock();
       });
-
+      // click to lock
+      cy.removeListener("click", "node");
+      cy.on("click", "node", e => {
+        let sel = e.target;
+        let columnLevel = cy.elements().some(e => e.isNode() && e.data().type === "Column");
+        if (sel.data().type === "Column" || !columnLevel) {
+          let elements = sel.union(sel.successors()).union(sel.predecessors());
+          if (columnLevel) {
+            elements = elements.filter(e => e.isNode() && e.data().type === "Column");
+          }
+          if (elements.every(e => e.hasClass("highlight_locked"))) {
+            elements.removeClass("highlight_locked");
+          } else {
+            elements.addClass("highlight_locked");
+          }
+        }
+      })
       // unbundled-cubic-bezier curve style for edges, reference: https://github.com/cytoscape/cytoscape.js/issues/2579
       cy.edges().forEach(edge => {
         if (edge.source() !== edge.target()) {
@@ -240,6 +256,12 @@ export function DAG(props) {
         selector: '.highlight',
         style: {
           'background-color': '#076fa1',
+        }
+      },
+      {
+        selector: '.highlight_locked',
+        style: {
+          'background-color': '#e99708',
         }
       },
       {
