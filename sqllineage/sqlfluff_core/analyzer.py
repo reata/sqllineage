@@ -1,7 +1,6 @@
 from functools import reduce
 from operator import add
 from typing import List, Tuple
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.analyzer import AnalyzerContext
@@ -13,10 +12,10 @@ from sqllineage.sqlfluff_core.handlers.base import (
 from sqllineage.sqlfluff_core.models import SqlFluffTable, SqlFluffSubQuery
 from sqllineage.sqlfluff_core.utils.entities import SubSqlFluffQueryTuple
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
-    is_segment_negligible,
     is_subquery,
     get_subqueries,
     get_multiple_identifiers,
+    retrieve_segments
 )
 
 
@@ -41,6 +40,7 @@ class SqlFluffLineageAnalyzer:
             or stmt.type == "cache_table"
             or stmt.type == "uncache_table"
             or stmt.type == "show_statement"
+            or stmt.type == "use_statement"
         ):
             holder = StatementLineageHolder()
         elif stmt.type == "drop_table_statement":
@@ -55,6 +55,23 @@ class SqlFluffLineageAnalyzer:
             holder = StatementLineageHolder.of(
                 self._extract_from_dml_select(stmt, AnalyzerContext())
             )
+        elif (
+            stmt.type == "insert_statement"
+            or stmt.type == "create_table_statement"
+            or stmt.type == "update_statement"
+            or stmt.type == "copy_statement"
+            or stmt.type == "insert_overwrite_directory_hive_fmt_statement"
+            or stmt.type == "copy_into_statement"
+        ):
+            holder = StatementLineageHolder.of(
+                self._extract_from_dml_insert(stmt, AnalyzerContext())
+            )
+        elif stmt.type == "with_compound_statement":
+            holder = StatementLineageHolder.of(
+                self._extract_from_dml_cte(stmt, AnalyzerContext())
+            )
+
+
         else:
             raise NotImplementedError("Can not extract from DML queries")
         return holder
@@ -106,7 +123,7 @@ class SqlFluffLineageAnalyzer:
         holder = cls._init_holder(context)
 
         subqueries = []
-        segments = cls._retrieve_segments(statement)
+        segments = retrieve_segments(statement)
         for segment in segments:
             for sq in cls.parse_subquery(segment):
                 # Collecting subquery on the way, hold on parsing until last
@@ -126,8 +143,121 @@ class SqlFluffLineageAnalyzer:
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= cls._extract_from_dml_select(
+                sq.segment, AnalyzerContext(sq, holder.cte, prev_write=holder.write)
+            )
+        return holder
+    
+    @classmethod
+    def _extract_from_dml_cte(
+        cls, statement: BaseSegment, context: AnalyzerContext
+    ) -> SubQueryLineageHolder:
+
+        handlers, conditional_handlers = cls._init_handlers()
+
+        holder = cls._init_holder(context)
+
+        subqueries = []
+        select_statements = []
+        insert_statements = []
+        segments = retrieve_segments(statement)
+
+        for segment in segments:
+            for sq in cls.parse_subquery(segment):
+                # Collecting subquery on the way, hold on parsing until last
+                # so that each handler don't have to worry about what's inside subquery
+                subqueries.append(sq)
+
+            for current_handler in handlers:
+                current_handler.handle(segment, holder)
+
+            if segment.type == "select_statement":
+                select_statements.append(segment)
+                continue
+
+            if segment.type == "insert_statement":
+                insert_statements.append(segment)
+                continue
+
+            identifier =  None
+            if segment.type == "common_table_expression":
+                sub_segments = retrieve_segments(segment)
+                for sub_segment in sub_segments:
+                    if sub_segment.type == "identifier":
+                        identifier = sub_segment.raw
+
+                    if sub_segment.type == "bracketed":
+                        for sq in cls.parse_subquery(sub_segment):
+                            subqueries.append(sq)
+
+                        holder.add_cte(SqlFluffSubQuery.of(sub_segment,identifier))            
+                continue
+
+            for conditional_handler in conditional_handlers:
+                if conditional_handler.indicate(segment):
+                    conditional_handler.handle(segment, holder)
+        else:
+            # call end of query hook here as loop is over
+            for conditional_handler in conditional_handlers:
+                conditional_handler.end_of_query_cleanup(holder)
+        # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
+        for sq in subqueries:
+            holder |= cls._extract_from_dml_select(
+                sq.segment, AnalyzerContext(sq, holder.cte, prev_write=holder.write)
+            )
+        for statement in select_statements:
+            holder |= cls._extract_from_dml_select(statement, AnalyzerContext(prev_cte=holder.cte,prev_write=holder.write))
+        
+        for statement in insert_statements:
+            holder |= cls._extract_from_dml_insert(statement, AnalyzerContext(prev_cte=holder.cte,prev_write=holder.write))
+        
+        return holder
+
+    @classmethod
+    def _extract_from_dml_insert(
+        cls, statement: BaseSegment, context: AnalyzerContext
+    ) -> SubQueryLineageHolder:
+
+        handlers, conditional_handlers = cls._init_handlers()
+
+        holder = cls._init_holder(context)
+
+        subqueries = []
+        select_statements = []
+        segments = retrieve_segments(statement)
+        for segment in segments:
+            for sq in cls.parse_subquery(segment):
+                # Collecting subquery on the way, hold on parsing until last
+                # so that each handler don't have to worry about what's inside subquery
+                subqueries.append(sq)
+
+            for current_handler in handlers:
+                current_handler.handle(segment, holder)
+
+            if segment.type == "select_statement":
+                select_statements.append(segment)
+                continue
+
+            if segment.type == "set_expression":
+                sub_segments = retrieve_segments(segment)
+                for sub_segment in sub_segments:
+                    if sub_segment.type == "select_statement":
+                        select_statements.append(sub_segment)
+                continue
+
+            for conditional_handler in conditional_handlers:
+                if conditional_handler.indicate(segment):
+                    conditional_handler.handle(segment, holder)
+        else:
+            # call end of query hook here as loop is over
+            for conditional_handler in conditional_handlers:
+                conditional_handler.end_of_query_cleanup(holder)
+        # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
+        for sq in subqueries:
+            holder |= cls._extract_from_dml_select(
                 sq.segment, AnalyzerContext(sq, holder.cte)
             )
+        for statement in select_statements:
+            holder |= cls._extract_from_dml_select(statement, AnalyzerContext(statement,holder.cte,prev_write=holder.write))
         return holder
 
     @classmethod
@@ -181,19 +311,27 @@ class SqlFluffLineageAnalyzer:
 
         :param stmt: a SQL base segment parsed by `sqlfluff`
         """
-        return (
-            stmt.type == "delete_statement"
-            or stmt.type == "truncate_table"
-            or stmt.type == "refresh_statement"
-            or stmt.type == "cache_table"
-            or stmt.type == "uncache_table"
-            or stmt.type == "show_statement"
-            or stmt.type == "drop_table_statement"
-            or stmt.type == "alter_table_statement"
-            or stmt.type == "rename_statement"
-            or stmt.type == "rename_table_statement"
-            or stmt.type == "select_statement"
-        )
+        return stmt.type in {
+            "delete_statement",
+            "truncate_table",
+            "refresh_statement",
+            "cache_table",
+            "uncache_table",
+            "show_statement",
+            "drop_table_statement",
+            "alter_table_statement",
+            "rename_statement",
+            "rename_table_statement",
+            "select_statement",
+            "insert_statement",
+            "create_table_statement",
+            "use_statement",
+            "update_statement",
+            "with_compound_statement",
+            "copy_statement",
+            "insert_overwrite_directory_hive_fmt_statement",
+            "copy_into_statement"
+        }
 
     @staticmethod
     def _init_holder(context) -> SubQueryLineageHolder:
@@ -202,9 +340,14 @@ class SqlFluffLineageAnalyzer:
             # CTE can be referenced by subsequent CTEs
             for cte in context.prev_cte:
                 holder.add_cte(cte)
-        if context.subquery is not None:
+        # if context.subquery is not None:
+        #     # If within subquery, then manually add subquery as target table
+        #     holder.add_write(context.subquery)
+        
+        if context.prev_write is not None:
             # If within subquery, then manually add subquery as target table
-            holder.add_write(context.subquery)
+            for write in context.prev_write:
+                holder.add_write(write)
         return holder
 
     @staticmethod
@@ -219,21 +362,3 @@ class SqlFluffLineageAnalyzer:
             for handler_cls in ConditionalSegmentBaseHandler.__subclasses__()
         ]
         return handlers, conditional_handlers
-
-    @staticmethod
-    def _retrieve_segments(statement: BaseSegment) -> List[BaseSegment]:
-        if statement.type == "bracketed":
-            segments = [
-                segment
-                for segment in statement.iter_segments(
-                    expanding=["expression"], pass_through=True
-                )
-            ]
-            return [
-                seg
-                for segment in segments
-                for seg in segment.segments
-                if not is_segment_negligible(seg)
-            ]
-        else:
-            return [seg for seg in statement.segments if not is_segment_negligible(seg)]

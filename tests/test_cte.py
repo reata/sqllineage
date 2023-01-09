@@ -19,6 +19,7 @@ def test_with_select_one_without_as():
     assert_table_lineage_equal(
         "WITH wtab1 (SELECT * FROM schema1.tab1) SELECT * FROM wtab1",
         {"schema1.tab1"},
+        dialect="sparksql"
     )
 
 
@@ -71,6 +72,7 @@ def test_with_insert_overwrite():
         "WITH tab1 AS (SELECT * FROM tab2) INSERT OVERWRITE tab3 SELECT * FROM tab1",
         {"tab2"},
         {"tab3"},
+        dialect="sparksql",
     )
 
 
@@ -79,6 +81,7 @@ def test_with_insert_plus_keyword_table():
         "WITH tab1 AS (SELECT * FROM tab2) INSERT INTO TABLE tab3 SELECT * FROM tab1",
         {"tab2"},
         {"tab3"},
+        dialect="sparksql"
     )
 
 
@@ -87,4 +90,5 @@ def test_with_insert_overwrite_plus_keyword_table():
         "WITH tab1 AS (SELECT * FROM tab2) INSERT OVERWRITE TABLE tab3 SELECT * FROM tab1",
         {"tab2"},
         {"tab3"},
+        dialect="sparksql",
     )
