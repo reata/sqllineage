@@ -7,6 +7,7 @@ class ConditionalSegmentBaseHandler:
     """
     This is to address an extract pattern when a specified segment match the condition
     """
+
     def __init__(self) -> None:
         self.indicator = False
 

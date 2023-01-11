@@ -44,3 +44,13 @@ def clean_parentheses(stmt: str) -> str:
         stmt = re.sub(redundant_parentheses, r"(\1)", stmt)
         stmt = clean_parentheses(stmt)
     return stmt
+
+
+def is_subquery_statement(stmt: str) -> bool:
+    parentheses_regex = r"^\(.*\)"
+    return bool(re.match(parentheses_regex, stmt))
+
+
+def remove_statement_parentheses(stmt: str) -> str:
+    parentheses_regex = r"^\((.*)\)"
+    return re.sub(parentheses_regex, r"\1", stmt)

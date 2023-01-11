@@ -7,15 +7,19 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path, Table, SubQuery, Column
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
-from sqllineage.sqlfluff_core.models import SqlFluffSubQuery, SqlFluffTable, SqlFluffColumn
+from sqllineage.sqlfluff_core.models import (
+    SqlFluffSubQuery,
+    SqlFluffTable,
+    SqlFluffColumn,
+)
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     is_subquery,
     is_values_clause,
     is_segment_negligible,
-    get_subqueries,
+    get_sub_queries,
     get_multiple_identifiers,
     get_inner_from_expression,
-    retrieve_segments
+    retrieve_segments,
 )
 from sqllineage.utils.constant import EdgeType
 
@@ -30,6 +34,12 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         super().__init__()
 
     def indicate(self, segment: BaseSegment) -> bool:
+        if [
+            s
+            for s in segment.raw_segments
+            if s.type == "keyword" and s.raw.strip().lower() == "union"
+        ]:
+            self.union_barriers.append((len(self.columns), len(self.tables)))
         return self.indicate_column(segment) or self.indicate_table(segment)
 
     def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
@@ -115,7 +125,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
             dataset = Path(path_match.groups()[1])
         else:
             read: Union[Table, SqlFluffSubQuery, None] = None
-            subqueries = get_subqueries(identifier)
+            subqueries = get_sub_queries(identifier)
             if subqueries:
                 # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
                 # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
@@ -177,11 +187,11 @@ class SourceHandler(ConditionalSegmentBaseHandler):
 
     @staticmethod
     def indicate_column(segment: BaseSegment) -> bool:
-        return bool(segment.type == "select_clause")
-    
+        return segment.type == "select_clause"
+
     @staticmethod
     def indicate_table(segment: BaseSegment) -> bool:
-        return bool(segment.type == "from_clause")
+        return segment.type == "from_clause"
 
     def _retrieve_extra_segment(self, segment: BaseSegment) -> Iterable[BaseSegment]:
         if segment.get_child("from_expression"):

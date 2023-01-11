@@ -13,7 +13,7 @@ def test_copy_from_path():
         "COPY tab1 FROM 's3://mybucket/mypath'",
         {Path("s3://mybucket/mypath")},
         {"tab1"},
-        "redshift"
+        "redshift",
     )
 
 
@@ -27,11 +27,11 @@ def test_copy_into_path():
         "COPY INTO tab1 FROM 's3://mybucket/mypath'",
         {Path("s3://mybucket/mypath")},
         {"tab1"},
-        "snowflake"
+        "snowflake",
     )
 
 
-# This is an example of something that can be fixed in the parser instead of doing a workaround
+# deactivated since it can not be parsed properly by sqlfluff
 @pytest.mark.parametrize("data_source", ["parquet", "json", "csv"])
 def x_test_select_from_files(data_source):
     """

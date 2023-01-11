@@ -239,8 +239,7 @@ def test_select_from_unnest():
     )
 
 
-# deactivated since it can not be parsed properly by sqlfluff
-def x_test_select_from_unnest_with_ordinality():
+def test_select_from_unnest_with_ordinality():
     # an extra space after UNNEST changes the AST structure
     assert_table_lineage_equal(
         "SELECT student, score FROM tests CROSS JOIN UNNEST (scores) AS t (score)",
@@ -248,15 +247,18 @@ def x_test_select_from_unnest_with_ordinality():
     )
 
 
-def test_select_from_unnest_with_ordinality():
-    sql = """SELECT numbers, n, a
-FROM (
-  VALUES
-    (ARRAY[2, 5]),
-    (ARRAY[7, 8, 9])
-) AS x (numbers)
-CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);"""
-    assert_table_lineage_equal(sql)
+# deactivated since it can not be parsed properly by sqlfluff
+def x_test_select_from_unnest_with_ordinality():
+    sql = """
+    SELECT numbers, n, a
+    FROM (
+      VALUES
+        (ARRAY[2, 5]),
+        (ARRAY[7, 8, 9])
+    ) AS x (numbers)
+    CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);
+    """
+    assert_table_lineage_equal(sql, dialect="databricks")
 
 
 def test_select_from_generator():

@@ -27,18 +27,16 @@ class TargetHandler(ConditionalSegmentBaseHandler):
 
     FROM_KEYWORD = "FROM"
 
-    def _init_tokens(self,segment: BaseSegment) -> None:
+    def _init_tokens(self, segment: BaseSegment) -> None:
         if segment.raw_upper == self.LIKE_KEYWORD:
             self.prev_token_like = True
-        
+
         if segment.raw_upper == self.FROM_KEYWORD:
             self.prev_token_from = True
-        
-    
+
     def _reset_tokens(self) -> None:
         self.prev_token_like = False
         self.prev_token_from = False
-
 
     def indicate(self, segment: BaseSegment) -> bool:
         if (
@@ -58,7 +56,7 @@ class TargetHandler(ConditionalSegmentBaseHandler):
             else:
                 holder.add_write(Table(escape_identifier_name(segment.raw)))
             self._reset_tokens()
-            
+
         elif segment.type in {"literal", "storage_location"}:
             if self.prev_token_from:
                 holder.add_read(Path(escape_identifier_name(segment.raw)))

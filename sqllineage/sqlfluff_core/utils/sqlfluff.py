@@ -87,17 +87,13 @@ def get_bracketed_sub_queries_where(
     return []
 
 
-def get_bracketed_sub_queries_join(segment: BaseSegment) -> List[SubSqlFluffQueryTuple]:
-    return []
-
-
-def get_subqueries(segment: BaseSegment) -> List[SubSqlFluffQueryTuple]:
+def get_sub_queries(segment: BaseSegment) -> List[SubSqlFluffQueryTuple]:
     if segment.type in ["select_clause"]:
         return get_bracketed_sub_queries_select(segment)
     elif segment.type in ["from_clause", "from_expression", "from_expression_element"]:
         return get_bracketed_sub_queries_from(get_inner_from_expression(segment))
     elif segment.type in ["join_clause"]:
-        return get_bracketed_sub_queries_join(segment)
+        return []
     elif segment.type in ["where_clause"]:
         return get_bracketed_sub_queries_where(segment)
     else:
@@ -108,7 +104,10 @@ def is_subquery(segment: BaseSegment) -> bool:
     if segment.type == "bracketed":
         token = get_innermost_bracketed(segment)
         # check if innermost parenthesis contains SELECT
-        sub_token = token.get_child("select_statement")
+        sub_token = token.get_child("select_statement") or (
+            token.get_child("expression")
+            and token.get_child("expression").get_child("select_statement")
+        )
         if sub_token is not None:
             return True
     return False
@@ -163,7 +162,7 @@ def get_inner_from_expression(segment: BaseSegment) -> BaseSegment:
         return segment
 
 
-def get_bracketed_from_case(segment: BaseSegment) -> List[BaseSegment]:
+def get_bracketed_from_case(segment: BaseSegment) -> List[BracketedSegment]:
     expressions = [
         segment.get_children("expression")
         for segment in segment.get_children("when_clause", "else_clause")
@@ -179,7 +178,10 @@ def get_bracketed_from_case(segment: BaseSegment) -> List[BaseSegment]:
         for bracketed in bracketed_sublist
     ]
 
-def retrieve_segments(statement: BaseSegment,check_bracketed: bool=True) -> List[BaseSegment]:
+
+def retrieve_segments(
+    statement: BaseSegment, check_bracketed: bool = True
+) -> List[BaseSegment]:
     if statement.type == "bracketed" and check_bracketed:
         segments = [
             segment
@@ -196,5 +198,10 @@ def retrieve_segments(statement: BaseSegment,check_bracketed: bool=True) -> List
     else:
         return [seg for seg in statement.segments if not is_segment_negligible(seg)]
 
+
 def is_wildcard(symbol: BaseSegment):
-    return symbol.type == "wildcard_expression" or symbol.type == "symbol" and symbol.raw == "*"
+    return (
+        symbol.type == "wildcard_expression"
+        or symbol.type == "symbol"
+        and symbol.raw == "*"
+    )
