@@ -220,14 +220,14 @@ export function DAG(props) {
         }
       },
       {
-        selector: ':parent[type = "Table"], :parent[type = "Path"]',
+        selector: ':parent[type = "Table"], :parent[type = "Path"], :parent[type = "SqlFluffTable"]',
         style: {
           'background-color': '#f5f5f5',
           'border-color': '#00516c',
         }
       },
       {
-        selector: ':parent[type = "SubQuery"]',
+        selector: ':parent[type = "SubQuery"], :parent[type = "SqlFluffSubQuery"]',
         style: {
           'background-color': '#f5f5f5',
           'border-color': '#b46c4f',

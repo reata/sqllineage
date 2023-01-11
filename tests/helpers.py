@@ -1,7 +1,7 @@
-from sqllineage.core.models import Table
-from sqllineage.sqlfluff_core.models import SqlFluffColumn, SqlFluffTable
-from sqllineage.runner import LineageRunner
 import networkx as nx
+
+from sqllineage.runner import LineageRunner
+from sqllineage.sqlfluff_core.models import SqlFluffColumn, SqlFluffTable
 
 
 def assert_table_lineage_equal(
@@ -24,10 +24,10 @@ def assert_table_lineage_equal(
         lr_sql_parse = LineageRunner(sql, dialect=dialect, use_sqlparse=True)
         lr_sql_parse.get_column_lineage()
 
-        # ensure old and new implementation generates same graph
-        assert nx.is_isomorphic(
-            lr_sql_parse._sql_holder.graph, lr._sql_holder.graph
-        ), f"\n\tOld graph with sqlparse: {lr_sql_parse._sql_holder.graph}\n\tNew graph with sqlfluff: {lr._sql_holder.graph}"
+        assert nx.is_isomorphic(lr_sql_parse._sql_holder.graph, lr._sql_holder.graph), (
+            f"\n\tOld graph with sqlparse: {lr_sql_parse._sql_holder.graph}\n\t"
+            f"New graph with sqlfluff: {lr._sql_holder.graph}"
+        )
 
         assert (
             actual == expected
@@ -40,20 +40,20 @@ def assert_column_lineage_equal(sql, column_lineages=None, dialect: str = "ansi"
         for src, tgt in column_lineages:
             src_col = SqlFluffColumn(src.column)
             if src.qualifier is not None:
-                src_col.parent = Table(src.qualifier)
+                src_col.parent = SqlFluffTable(src.qualifier)
             tgt_col = SqlFluffColumn(tgt.column)
-            tgt_col.parent = Table(tgt.qualifier)
+            tgt_col.parent = SqlFluffTable(tgt.qualifier)
             expected.add((src_col, tgt_col))
     lr = LineageRunner(sql, dialect=dialect)
     actual = {(lineage[0], lineage[-1]) for lineage in set(lr.get_column_lineage())}
 
+    # ensure old and new implementation generates same graph
     lr_sql_parse = LineageRunner(sql, dialect=dialect, use_sqlparse=True)
     lr_sql_parse.get_column_lineage()
-
-    # ensure old and new implementation generates same graph
-    assert nx.is_isomorphic(
-        lr_sql_parse._sql_holder.graph, lr._sql_holder.graph
-    ), f"\n\tOld graph with sqlparse: {lr_sql_parse._sql_holder.graph}\n\tNew graph with sqlfluff: {lr._sql_holder.graph}"
+    assert nx.is_isomorphic(lr_sql_parse._sql_holder.graph, lr._sql_holder.graph), (
+        f"\n\tOld graph with sqlparse: {lr_sql_parse._sql_holder.graph}\n\t"
+        f"New graph with sqlfluff: {lr._sql_holder.graph}"
+    )
 
     assert (
         set(actual) == expected

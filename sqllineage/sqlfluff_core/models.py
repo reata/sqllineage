@@ -273,7 +273,7 @@ class SqlFluffColumn(Column):
 class SqlFluffAnalyzerContext(NamedTuple):
     subquery: Optional[SqlFluffSubQuery] = None
     prev_cte: Optional[Set[SqlFluffSubQuery]] = None
-    prev_write: Optional[Set[SqlFluffSubQuery]] = None
+    prev_write: Optional[Set[SqlFluffTable]] = None
 
 
 def _token_matching(

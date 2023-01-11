@@ -1,6 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.models import Path
 from sqllineage.sqlfluff_core.models import SqlFluffTable
+
 from sqllineage.utils.helpers import escape_identifier_name
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler

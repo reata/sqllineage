@@ -61,10 +61,12 @@ def get_bracketed_sub_queries_from(segment: BaseSegment) -> List[SubSqlFluffQuer
         # CTE: tbl AS (SELECT 1)
         target = sublist[0]
     else:
-        target = segment
+        target = sublist[0].segments[0]
     if is_subquery(target):
         subquery = [
-            SubSqlFluffQueryTuple(get_innermost_bracketed(target), as_segment.raw)
+            SubSqlFluffQueryTuple(
+                get_innermost_bracketed(target), as_segment.raw if as_segment else None
+            )
         ]
     return subquery
 
