@@ -1,6 +1,6 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.analyzer import AnalyzerContext
+from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 from sqllineage.core.holders import SubQueryLineageHolder, StatementLineageHolder
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
@@ -18,7 +18,7 @@ class DdlDropExtractor(LineageHolderExtractor):
     def extract(
         self,
         statement: BaseSegment,
-        context: AnalyzerContext,
+        context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
     ) -> SubQueryLineageHolder:
         holder = StatementLineageHolder()

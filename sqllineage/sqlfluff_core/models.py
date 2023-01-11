@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Tuple, Callable
+from typing import Optional, Tuple, Callable, NamedTuple
 
 from sqlfluff.core.parser import BaseSegment
 
@@ -268,6 +268,12 @@ class SqlFluffColumn(Column):
                 else:
                     source_columns.add(_to_src_col(src_col, Table(qualifier)))
         return source_columns
+
+
+class SqlFluffAnalyzerContext(NamedTuple):
+    subquery: Optional[SqlFluffSubQuery] = None
+    prev_cte: Optional[Set[SqlFluffSubQuery]] = None
+    prev_write: Optional[Set[SqlFluffSubQuery]] = None
 
 
 def _token_matching(

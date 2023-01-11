@@ -79,7 +79,7 @@ class Table:
         return "Table: " + str(self)
 
     def __eq__(self, other):
-        return isinstance(other, Table) and str(self) == str(other)
+        return type(self) is type(other) and str(self) == str(other)
 
     def __hash__(self):
         return hash(str(self))

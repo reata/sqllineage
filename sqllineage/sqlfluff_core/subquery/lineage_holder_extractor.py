@@ -5,7 +5,7 @@ from typing import Tuple, List, Optional
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.analyzer import AnalyzerContext
+from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.sqlfluff_core.handlers.base import (
@@ -30,7 +30,7 @@ class LineageHolderExtractor(ABC):
     def extract(
         self,
         statement: BaseSegment,
-        context: AnalyzerContext,
+        context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
     ) -> Optional[SubQueryLineageHolder]:
         pass

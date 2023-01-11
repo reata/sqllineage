@@ -1,11 +1,11 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.analyzer import AnalyzerContext
 from sqllineage.core.holders import SubQueryLineageHolder, StatementLineageHolder
+from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
+from sqllineage.sqlfluff_core.models import SqlFluffTable
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
-from sqllineage.sqlfluff_core.models import SqlFluffTable
 
 
 class DdlAlterExtractor(LineageHolderExtractor):
@@ -22,7 +22,7 @@ class DdlAlterExtractor(LineageHolderExtractor):
     def extract(
         self,
         statement: BaseSegment,
-        context: AnalyzerContext,
+        context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
     ) -> SubQueryLineageHolder:
         holder = StatementLineageHolder()

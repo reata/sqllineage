@@ -1,13 +1,12 @@
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.core.holders import StatementLineageHolder
+from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
+from sqllineage.sqlfluff_core.subquery.cte_extractor import DmlCteExtractor
 from sqllineage.sqlfluff_core.subquery.ddl_alter_extractor import DdlAlterExtractor
 from sqllineage.sqlfluff_core.subquery.ddl_drop_extractor import DdlDropExtractor
-from sqllineage.sqlfluff_core.subquery.cte_extractor import DmlCteExtractor
 from sqllineage.sqlfluff_core.subquery.dml_insert_extractor import DmlInsertExtractor
 from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtractor
-
-from sqllineage.core.analyzer import AnalyzerContext
-from sqllineage.core.holders import StatementLineageHolder
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
@@ -46,7 +45,7 @@ class SqlFluffLineageAnalyzer:
         for subquery_extractor in SUBQUERY_EXTRACTORS:
             if subquery_extractor.can_extract(statement.type):
                 lineage_holder = subquery_extractor.extract(
-                    statement, AnalyzerContext(), is_sub_query
+                    statement, SqlFluffAnalyzerContext(), is_sub_query
                 )
                 if lineage_holder:
                     return StatementLineageHolder.of(lineage_holder)

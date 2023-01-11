@@ -3,7 +3,7 @@ from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtr
 
 from sqllineage.core.holders import SubQueryLineageHolder
 
-from sqllineage.core.analyzer import AnalyzerContext
+from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
@@ -28,7 +28,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
     def extract(
         self,
         statement: BaseSegment,
-        context: AnalyzerContext,
+        context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
     ) -> SubQueryLineageHolder:
 
@@ -70,11 +70,12 @@ class DmlInsertExtractor(LineageHolderExtractor):
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= DmlSelectExtractor().extract(
-                sq.segment, AnalyzerContext(sq, holder.cte)
+                sq.segment, SqlFluffAnalyzerContext(sq, holder.cte)
             )
         for statement in select_statements:
             holder |= DmlSelectExtractor().extract(
-                statement, AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write)
+                statement,
+                SqlFluffAnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
             )
 
         return holder

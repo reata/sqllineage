@@ -1,5 +1,5 @@
 from sqllineage.core.models import Table
-from sqllineage.sqlfluff_core.models import SqlFluffColumn
+from sqllineage.sqlfluff_core.models import SqlFluffColumn, SqlFluffTable
 from sqllineage.runner import LineageRunner
 import networkx as nx
 
@@ -17,7 +17,7 @@ def assert_table_lineage_equal(
         expected = (
             set()
             if expected is None
-            else {Table(t) if isinstance(t, str) else t for t in expected}
+            else {SqlFluffTable(t) if isinstance(t, str) else t for t in expected}
         )
 
         # ensure old and new implementation generates same graph
@@ -25,8 +25,8 @@ def assert_table_lineage_equal(
         lr_sql_parse.get_column_lineage()
 
         # ensure old and new implementation generates same graph
-        assert (
-            nx.is_isomorphic(lr_sql_parse._sql_holder.graph, lr._sql_holder.graph)
+        assert nx.is_isomorphic(
+            lr_sql_parse._sql_holder.graph, lr._sql_holder.graph
         ), f"\n\tOld graph with sqlparse: {lr_sql_parse._sql_holder.graph}\n\tNew graph with sqlfluff: {lr._sql_holder.graph}"
 
         assert (
@@ -51,8 +51,8 @@ def assert_column_lineage_equal(sql, column_lineages=None, dialect: str = "ansi"
     lr_sql_parse.get_column_lineage()
 
     # ensure old and new implementation generates same graph
-    assert (
-        nx.is_isomorphic(lr_sql_parse._sql_holder.graph, lr._sql_holder.graph)
+    assert nx.is_isomorphic(
+        lr_sql_parse._sql_holder.graph, lr._sql_holder.graph
     ), f"\n\tOld graph with sqlparse: {lr_sql_parse._sql_holder.graph}\n\tNew graph with sqlfluff: {lr._sql_holder.graph}"
 
     assert (
