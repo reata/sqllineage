@@ -67,7 +67,7 @@ def test_create_like():
 
 def test_create_select():
     assert_table_lineage_equal(
-        "CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}, "oracle"
+        "CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}, "sparksql"
     )
 
 

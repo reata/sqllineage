@@ -1,6 +1,5 @@
 import re
-from typing import Dict, List, Union, Iterable
-
+from typing import Dict, List, Union, Iterable, Optional
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
@@ -100,15 +99,31 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                     ):
                         holder.add_column_lineage(src_col, tgt_col)
 
+    def _get_table_alias(self, table_tokes: List[BaseSegment]) -> Optional[str]:
+        alias = None
+        if len(table_tokes) > 1 and table_tokes[1].type == "alias_expression":
+            alias = retrieve_segments(table_tokes[1])
+            alias = alias[1].raw if len(alias) > 1 else alias[0].raw
+        elif len(table_tokes) == 1 and table_tokes[0].type == "from_expression_element":
+            table_and_alias = retrieve_segments(table_tokes[0])
+            if (
+                len(table_and_alias) > 1
+                and table_and_alias[1].type == "alias_expression"
+            ):
+                alias = retrieve_segments(table_and_alias[1])
+                alias = alias[1].raw if len(alias) > 1 else alias[0].raw
+        return alias
+
     def _add_dataset_from_identifier(
         self, identifier: BaseSegment, holder: SubQueryLineageHolder
     ) -> None:
         dataset: Union[Path, Table, SqlFluffSubQuery]
-        first_token = [
+        all_tokens = [
             seg
-            for seg in identifier.segments
+            for seg in retrieve_segments(identifier)
             if not is_segment_negligible(seg) and seg.type != "keyword"
-        ][0]
+        ]
+        first_token = all_tokens[0]
         function_as_table = (
             identifier.get_child("table_expression").get_child("function")
             if identifier.get_child("table_expression")
@@ -144,7 +159,9 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                             table_identifier.raw,
                         )
                 if read is None:
-                    read = SqlFluffTable.of(table_identifier)
+                    read = SqlFluffTable.of(
+                        table_identifier, alias=self._get_table_alias(all_tokens)
+                    )
             dataset = read
         self.tables.append(dataset)
 
