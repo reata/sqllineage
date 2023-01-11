@@ -47,6 +47,7 @@ class LineageRunner(object):
         verbose: bool = False,
         draw_options: Dict[str, str] = None,
         dialect: Optional[str] = "ansi",
+        use_sqlparse: bool = False,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -65,6 +66,7 @@ class LineageRunner(object):
         self._sqlfluff_linter = Linter(
             config=get_simple_config(dialect=dialect, config_path=None)
         )
+        self._use_sqlparse = use_sqlparse
 
     @lazy_method
     def __str__(self):
@@ -207,7 +209,7 @@ Target Tables:
             stmt_value = remove_statement_parentheses(stmt_value)
         parsed_string = self._sqlfluff_linter.parse_string(stmt_value)
         statement_segment = self._get_statement_segment(parsed_string)
-        if statement_segment and SqlFluffLineageAnalyzer.can_analyze(statement_segment):
+        if not self._use_sqlparse and statement_segment and SqlFluffLineageAnalyzer.can_analyze(statement_segment):
             if "unparsable" in statement_segment.descendant_type_set:
                 raise SQLLineageException(
                     f"The query [\n{statement_segment.raw}\n] contains an unparsable segment."
