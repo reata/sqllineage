@@ -133,6 +133,40 @@ export function DAG(props) {
         cy.remove(cy.elements().filter(n => n.data().temporary === true));
         cy.elements().filter(n => n.data().temporary === undefined).unlock();
       });
+      // click to lock
+      cy.removeListener("click", "node");
+      cy.on("click", "node", e => {
+        let sel = e.target;
+        let columnLevel = cy.elements().some(e => e.isNode() && e.data().type === "Column");
+        if (sel.data().type === "Column" || !columnLevel) {
+          let elements = sel.union(sel.successors()).union(sel.predecessors());
+          if (columnLevel) {
+            elements = elements.filter(e => e.isNode() && e.data().type === "Column");
+          }
+          if (elements.every(e => e.hasClass("highlight_locked"))) {
+            elements.removeClass("highlight_locked");
+          } else {
+            elements.addClass("highlight_locked");
+          }
+        }
+      })
+      // unbundled-cubic-bezier curve style for edges, reference: https://github.com/cytoscape/cytoscape.js/issues/2579
+      cy.edges().forEach(edge => {
+        if (edge.source() !== edge.target()) {
+          const x0 = edge.source().position("x");
+          const x1 = edge.target().position("x");
+          const y0 = edge.source().position("y");
+          const y1 = edge.target().position("y");
+          const x = x1 - x0;
+          const y = y1 - y0;
+          const z = Math.sqrt(x * x + y * y);
+          const costheta = x / z;
+          const alpha = 0.2;
+          const controlPointDistances = [-alpha * y * costheta, alpha * y * costheta];
+          edge.style("control-point-distances", controlPointDistances);
+          edge.style("control-point-weights", [alpha, 1 - alpha]);
+        }
+      });
     }
   })
 
@@ -215,13 +249,19 @@ export function DAG(props) {
           'target-arrow-color': '#9ab5c7',
           'target-arrow-shape': 'triangle',
           'arrow-scale': 0.8,
-          'curve-style': 'bezier'
+          'curve-style': 'unbundled-bezier',
         }
       },
       {
         selector: '.highlight',
         style: {
           'background-color': '#076fa1',
+        }
+      },
+      {
+        selector: '.highlight_locked',
+        style: {
+          'background-color': '#e99708',
         }
       },
       {
