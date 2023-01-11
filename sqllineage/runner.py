@@ -204,19 +204,22 @@ Target Tables:
 
     def run_lineage_analyzer(self, stmt: Statement) -> StatementLineageHolder:
         stmt_value = stmt.value.strip()
-        is_sub_query = is_subquery_statement(stmt_value)
-        if is_sub_query:
-            stmt_value = remove_statement_parentheses(stmt_value)
-        parsed_string = self._sqlfluff_linter.parse_string(stmt_value)
-        statement_segment = self._get_statement_segment(parsed_string)
-        if not self._use_sqlparse and statement_segment and SqlFluffLineageAnalyzer.can_analyze(statement_segment):
-            if "unparsable" in statement_segment.descendant_type_set:
-                raise SQLLineageException(
-                    f"The query [\n{statement_segment.raw}\n] contains an unparsable segment."
+        if not self._use_sqlparse:
+            is_sub_query = is_subquery_statement(stmt_value)
+            if is_sub_query:
+                stmt_value = remove_statement_parentheses(stmt_value)
+            parsed_string = self._sqlfluff_linter.parse_string(stmt_value)
+            statement_segment = self._get_statement_segment(parsed_string)
+            if statement_segment and SqlFluffLineageAnalyzer.can_analyze(
+                statement_segment
+            ):
+                if "unparsable" in statement_segment.descendant_type_set:
+                    raise SQLLineageException(
+                        f"The query [\n{statement_segment.raw}\n] contains an unparsable segment."
+                    )
+                return SqlFluffLineageAnalyzer().analyze(
+                    statement_segment, self._dialect, is_sub_query
                 )
-            return SqlFluffLineageAnalyzer().analyze(
-                statement_segment, self._dialect, is_sub_query
-            )
         return LineageAnalyzer().analyze(stmt)
 
     @staticmethod
