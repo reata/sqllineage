@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Optional
 
 from sqlfluff.core.parser import BaseSegment
 from sqlfluff.core.parser.segments import BracketedSegment
@@ -177,6 +177,19 @@ def get_bracketed_from_case(segment: BaseSegment) -> List[BracketedSegment]:
     ]
 
 
+def find_table_identifier(identifier: BaseSegment) -> BaseSegment:
+    table_identifier = None
+    if identifier.segments:
+        for segment in identifier.segments:
+            if segment.type == "table_reference":
+                return segment
+            else:
+                table_identifier = find_table_identifier(segment)
+                if table_identifier:
+                    return table_identifier
+    return table_identifier
+
+
 def retrieve_segments(
     statement: BaseSegment, check_bracketed: bool = True
 ) -> List[BaseSegment]:
@@ -203,3 +216,16 @@ def is_wildcard(symbol: BaseSegment):
         or symbol.type == "symbol"
         and symbol.raw == "*"
     )
+
+
+def get_table_alias(table_tokes: List[BaseSegment]) -> Optional[str]:
+    alias = None
+    if len(table_tokes) > 1 and table_tokes[1].type == "alias_expression":
+        alias = retrieve_segments(table_tokes[1])
+        alias = alias[1].raw if len(alias) > 1 else alias[0].raw
+    elif len(table_tokes) == 1 and table_tokes[0].type == "from_expression_element":
+        table_and_alias = retrieve_segments(table_tokes[0])
+        if len(table_and_alias) > 1 and table_and_alias[1].type == "alias_expression":
+            alias = retrieve_segments(table_and_alias[1])
+            alias = alias[1].raw if len(alias) > 1 else alias[0].raw
+    return alias

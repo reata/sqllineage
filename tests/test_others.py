@@ -1,3 +1,5 @@
+from sqllineage.core.models import Path
+
 from sqllineage.runner import LineageRunner
 from .helpers import assert_table_lineage_equal
 
@@ -125,15 +127,20 @@ def test_update_with_join():
         "UPDATE tab1 a INNER JOIN tab2 b ON a.col1=b.col1 SET a.col2=b.col2",
         {"tab2"},
         {"tab1"},
+        "mysql",
     )
 
 
+# the previous query "COPY tab1 FROM tab2" was wrong
+# Reference:
+# https://www.postgresql.org/docs/current/sql-copy.html (Postgres)
+# https://docs.aws.amazon.com/es_es/redshift/latest/dg/r_COPY.html (Redshift)
 def test_copy_from_table():
-    # not parseable by sqlfluff
     assert_table_lineage_equal(
-        "COPY tab1 FROM tab2",
-        {"tab2"},
+        "COPY tab1 FROM 's3://mybucket/mypath'",
+        {Path("s3://mybucket/mypath")},
         {"tab1"},
+        "redshift",
     )
 
 

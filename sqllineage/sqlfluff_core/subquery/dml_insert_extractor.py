@@ -20,6 +20,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
         "copy_statement",
         "insert_overwrite_directory_hive_fmt_statement",
         "copy_into_statement",
+        "copy_into_table_statement",
     ]
 
     def can_extract(self, statement_type: str):

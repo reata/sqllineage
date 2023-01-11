@@ -52,7 +52,7 @@ class LineageHolderExtractor(ABC):
         identifiers = get_multiple_identifiers(segment)
         if identifiers and len(identifiers) > 1:
             # for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
-            result = reduce(
+            return reduce(
                 add,
                 [
                     cls._parse_subquery(get_sub_queries(identifier))

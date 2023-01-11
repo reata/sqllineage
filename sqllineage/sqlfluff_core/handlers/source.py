@@ -1,24 +1,25 @@
 import re
-from typing import Dict, List, Union, Iterable, Optional
+from typing import Dict, List, Union, Iterable
+
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Path, Table, SubQuery, Column
+from sqllineage.core.models import Path, Table, SubQuery
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.sqlfluff_core.models import (
     SqlFluffSubQuery,
-    SqlFluffTable,
     SqlFluffColumn,
 )
+from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     is_subquery,
     is_values_clause,
-    is_segment_negligible,
     get_sub_queries,
     get_multiple_identifiers,
     get_inner_from_expression,
     retrieve_segments,
+    find_table_identifier,
 )
 from sqllineage.utils.constant import EdgeType
 
@@ -99,40 +100,23 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                     ):
                         holder.add_column_lineage(src_col, tgt_col)
 
-    def _get_table_alias(self, table_tokes: List[BaseSegment]) -> Optional[str]:
-        alias = None
-        if len(table_tokes) > 1 and table_tokes[1].type == "alias_expression":
-            alias = retrieve_segments(table_tokes[1])
-            alias = alias[1].raw if len(alias) > 1 else alias[0].raw
-        elif len(table_tokes) == 1 and table_tokes[0].type == "from_expression_element":
-            table_and_alias = retrieve_segments(table_tokes[0])
-            if (
-                len(table_and_alias) > 1
-                and table_and_alias[1].type == "alias_expression"
-            ):
-                alias = retrieve_segments(table_and_alias[1])
-                alias = alias[1].raw if len(alias) > 1 else alias[0].raw
-        return alias
-
     def _add_dataset_from_identifier(
         self, identifier: BaseSegment, holder: SubQueryLineageHolder
     ) -> None:
         dataset: Union[Path, Table, SqlFluffSubQuery]
-        all_tokens = [
-            seg
-            for seg in retrieve_segments(identifier)
-            if not is_segment_negligible(seg) and seg.type != "keyword"
+        all_segments = [
+            seg for seg in retrieve_segments(identifier) if seg.type != "keyword"
         ]
-        first_token = all_tokens[0]
+        first_segment = all_segments[0]
         function_as_table = (
             identifier.get_child("table_expression").get_child("function")
             if identifier.get_child("table_expression")
             else None
         )
-        if first_token.type == "function" or function_as_table:
+        if first_segment.type == "function" or function_as_table:
             # function() as alias, no dataset involved
             return
-        elif first_token.type == "bracketed" and is_values_clause(first_token):
+        elif first_segment.type == "bracketed" and is_values_clause(first_segment):
             # (VALUES ...) AS alias, no dataset involved
             return
         path_match = re.match(r"(parquet|csv|json)\.`(.*)`", identifier.raw_upper)
@@ -147,21 +131,8 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                 parenthesis, alias = subqueries[0]
                 read = SqlFluffSubQuery.of(parenthesis, alias)
             else:
-                cte_dict = {s.alias: s for s in holder.cte}
-                table_identifier = self._find_table_identifier(identifier)
-                if "." not in table_identifier.raw:
-                    cte = cte_dict.get(table_identifier.raw)
-                    if cte is not None:
-                        # could reference CTE with or without alias
-                        read = SqlFluffSubQuery.of(
-                            cte.segment,
-                            # identifier.get_alias() or identifier.get_real_name(),
-                            table_identifier.raw,
-                        )
-                if read is None:
-                    read = SqlFluffTable.of(
-                        table_identifier, alias=self._get_table_alias(all_tokens)
-                    )
+                table_identifier = find_table_identifier(identifier)
+                read = retrieve_holder_data_from(all_segments, holder, table_identifier)
             dataset = read
         self.tables.append(dataset)
 
@@ -188,19 +159,6 @@ class SourceHandler(ConditionalSegmentBaseHandler):
             },
             **{str(table): table for table in table_group if isinstance(table, Table)},
         }
-
-    @classmethod
-    def _find_table_identifier(cls, identifier: BaseSegment) -> BaseSegment:
-        table_identifier = None
-        if identifier.segments:
-            for segment in identifier.segments:
-                if segment.type == "table_reference":
-                    return segment
-                else:
-                    table_identifier = cls._find_table_identifier(segment)
-                    if table_identifier:
-                        return table_identifier
-        return table_identifier
 
     @staticmethod
     def indicate_column(segment: BaseSegment) -> bool:

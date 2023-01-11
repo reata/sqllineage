@@ -1,8 +1,8 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Table
 from sqllineage.sqlfluff_core.handlers.base import SegmentBaseHandler
+from sqllineage.sqlfluff_core.models import SqlFluffTable
 from sqllineage.utils.helpers import escape_identifier_name
 
 
@@ -25,8 +25,8 @@ class SwapPartitionHandler(SegmentBaseHandler):
                     "bracketed"
                 ).get_children("expression")
                 holder.add_read(
-                    Table(escape_identifier_name(function_parameters[0].raw))
+                    SqlFluffTable(escape_identifier_name(function_parameters[0].raw))
                 )
                 holder.add_write(
-                    Table(escape_identifier_name(function_parameters[3].raw))
+                    SqlFluffTable(escape_identifier_name(function_parameters[3].raw))
                 )
