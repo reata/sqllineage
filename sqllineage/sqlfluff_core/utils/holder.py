@@ -13,6 +13,7 @@ def retrieve_holder_data_from(
     table_identifier: BaseSegment,
 ) -> Union[SqlFluffTable, SqlFluffSubQuery]:
     data = None
+    alias = get_table_alias(segments)
     if "." not in table_identifier.raw:
         cte_dict = {s.alias: s for s in holder.cte}
         cte = cte_dict.get(table_identifier.raw)
@@ -20,8 +21,8 @@ def retrieve_holder_data_from(
             # could reference CTE with or without alias
             data = SqlFluffSubQuery.of(
                 cte.segment,
-                table_identifier.raw,
+                alias or table_identifier.raw,
             )
     if data is None:
-        data = SqlFluffTable.of(table_identifier, alias=get_table_alias(segments))
+        data = SqlFluffTable.of(table_identifier, alias=alias)
     return data
