@@ -44,8 +44,24 @@ def get_bracketed_sub_queries_select(
         ) and select_clause.get_child("expression").get_child("case_expression")
         target = case_expression or select_clause.get_child("column_reference")
     if target and target.type == "case_expression":
-        for bracketed_segment in get_bracketed_from_case(target):
-            subquery.append(SubSqlFluffQueryTuple(bracketed_segment, None))
+        for when_clause in target.get_children("when_clause"):
+            for bracketed_segment in get_bracketed_from(
+                when_clause, to_keyword="THEN", children_segments="expression"
+            ):
+                subquery.append(SubSqlFluffQueryTuple(bracketed_segment, None))
+            for bracketed_segment in get_bracketed_from(
+                when_clause, from_keyword="THEN", children_segments="expression"
+            ):
+                subquery.append(
+                    SubSqlFluffQueryTuple(bracketed_segment, get_identifier(as_segment))
+                )
+        for else_clause in target.get_children("else_clause"):
+            for bracketed_segment in get_bracketed_from(
+                else_clause, children_segments="expression"
+            ):
+                subquery.append(
+                    SubSqlFluffQueryTuple(bracketed_segment, get_identifier(as_segment))
+                )
     if target and is_subquery(target):
         subquery = [
             SubSqlFluffQueryTuple(get_innermost_bracketed(target), as_segment.raw)
@@ -164,20 +180,42 @@ def get_inner_from_expression(segment: BaseSegment) -> BaseSegment:
         return segment
 
 
-def get_bracketed_from_case(segment: BaseSegment) -> List[BracketedSegment]:
-    expressions = [
-        segment.get_children("expression")
-        for segment in segment.get_children("when_clause", "else_clause")
-    ]
-    bracketed_list = [
-        expr.get_children("bracketed")
-        for expression in expressions
-        for expr in expression
-    ]
+def filter_segments_by_keyword(
+    statement: BaseSegment,
+    from_keyword: str = None,
+    to_keyword: str = None,
+    children_segments: str = None,
+) -> List[BaseSegment]:
+    filtered_segments = []
+    can_append = False if from_keyword else True
+    for segment in statement.segments:
+        if not can_append and segment.type == "keyword" and from_keyword:
+            if segment.raw.lower() == from_keyword.lower():
+                can_append = True
+        if can_append:
+            filtered_segments.append(segment)
+        if segment.type == "keyword" and to_keyword:
+            if segment.raw.lower() == to_keyword.lower():
+                break
     return [
-        bracketed
-        for bracketed_sublist in bracketed_list
-        for bracketed in bracketed_sublist
+        segment
+        for segment in filtered_segments
+        if (children_segments is None or segment.type == children_segments)
+    ]
+
+
+def get_bracketed_from(
+    segment: BaseSegment,
+    from_keyword: str = None,
+    to_keyword: str = None,
+    children_segments: str = None,
+) -> List[BracketedSegment]:
+    return [
+        bracketed_segment
+        for filtered_segment in filter_segments_by_keyword(
+            segment, from_keyword, to_keyword, children_segments
+        )
+        for bracketed_segment in filtered_segment.get_children("bracketed")
     ]
 
 
@@ -212,6 +250,12 @@ def retrieve_segments(
         ]
     else:
         return [seg for seg in statement.segments if not is_segment_negligible(seg)]
+
+
+def get_identifier(col_segment: BaseSegment) -> str:
+    identifiers = retrieve_segments(col_segment)
+    col_identifier = identifiers[-1]
+    return col_identifier.raw
 
 
 def is_wildcard(symbol: BaseSegment):

@@ -21,10 +21,6 @@ SUPPORTED_STMT_TYPES = (
     + NoopExtractor.NOOP_STMT_TYPES
 )
 
-SUBQUERY_EXTRACTORS = [
-    extractor_cls() for extractor_cls in LineageHolderExtractor.__subclasses__()
-]
-
 
 class SqlFluffLineageAnalyzer:
     """SQL Statement Level Lineage Analyzer for `sqlfluff`"""
@@ -42,7 +38,11 @@ class SqlFluffLineageAnalyzer:
         Returns:
             `sqllineage.holders.StatementLineageHolder` object
         """
-        for subquery_extractor in SUBQUERY_EXTRACTORS:
+        subquery_extractors = [
+            extractor_cls(dialect)
+            for extractor_cls in LineageHolderExtractor.__subclasses__()
+        ]
+        for subquery_extractor in subquery_extractors:
             if subquery_extractor.can_extract(statement.type):
                 lineage_holder = subquery_extractor.extract(
                     statement, SqlFluffAnalyzerContext(), is_sub_query

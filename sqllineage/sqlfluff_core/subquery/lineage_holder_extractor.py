@@ -22,6 +22,9 @@ from sqllineage.sqlfluff_core.utils.sqlfluff import (
 
 
 class LineageHolderExtractor(ABC):
+    def __init__(self, dialect: str):
+        self.dialect = dialect
+
     @abstractmethod
     def can_extract(self, statement_type: str):
         pass
@@ -79,15 +82,14 @@ class LineageHolderExtractor(ABC):
             for bracketed_segment, alias in sub_queries
         ]
 
-    @staticmethod
-    def _init_handlers() -> Tuple[
-        List[SegmentBaseHandler], List[ConditionalSegmentBaseHandler]
-    ]:
+    def _init_handlers(
+        self,
+    ) -> Tuple[List[SegmentBaseHandler], List[ConditionalSegmentBaseHandler]]:
         handlers = [
             handler_cls() for handler_cls in SegmentBaseHandler.__subclasses__()
         ]
         conditional_handlers = [
-            handler_cls()
+            handler_cls(self.dialect)
             for handler_cls in ConditionalSegmentBaseHandler.__subclasses__()
         ]
         return handlers, conditional_handlers

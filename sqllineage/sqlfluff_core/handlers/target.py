@@ -15,8 +15,8 @@ from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 class TargetHandler(ConditionalSegmentBaseHandler):
     """Target Table Handler"""
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, dialect: str) -> None:
+        super().__init__(dialect)
         self.prev_token_like = False
         self.prev_token_from = False
 
@@ -59,9 +59,9 @@ class TargetHandler(ConditionalSegmentBaseHandler):
     def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         if segment.type == "table_reference":
             if self.prev_token_like:
-                holder.add_read(SqlFluffTable(escape_identifier_name(segment.raw)))
+                holder.add_read(SqlFluffTable.of(segment))
             else:
-                holder.add_write(SqlFluffTable(escape_identifier_name(segment.raw)))
+                holder.add_write(SqlFluffTable.of(segment))
             self._reset_tokens()
 
         elif segment.type in {"literal", "storage_location"}:

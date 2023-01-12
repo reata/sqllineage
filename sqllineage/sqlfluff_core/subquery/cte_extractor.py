@@ -71,19 +71,19 @@ class DmlCteExtractor(LineageHolderExtractor):
 
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for statement in insert_statements:
-            holder |= DmlInsertExtractor().extract(
+            holder |= DmlInsertExtractor(self.dialect).extract(
                 statement,
                 SqlFluffAnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
             )
 
         for statement in select_statements:
-            holder |= DmlSelectExtractor().extract(
+            holder |= DmlSelectExtractor(self.dialect).extract(
                 statement,
                 SqlFluffAnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
             )
 
         for sq in subqueries:
-            holder |= DmlSelectExtractor().extract(
+            holder |= DmlSelectExtractor(self.dialect).extract(
                 sq.segment,
                 SqlFluffAnalyzerContext(sq, holder.cte),
             )

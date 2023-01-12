@@ -27,11 +27,11 @@ from sqllineage.utils.constant import EdgeType
 class SourceHandler(ConditionalSegmentBaseHandler):
     """Source Table & Column Handler."""
 
-    def __init__(self):
+    def __init__(self, dialect: str):
+        super().__init__(dialect)
         self.columns = []
         self.tables = []
         self.union_barriers = []
-        super().__init__()
 
     def indicate(self, segment: BaseSegment) -> bool:
         if [
@@ -75,7 +75,9 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         sub_segments = retrieve_segments(segment)
         for sub_segment in sub_segments:
             if sub_segment.type == "select_clause_element":
-                self.columns.append(SqlFluffColumn.of(sub_segment))
+                self.columns.append(
+                    SqlFluffColumn.of(sub_segment, dialect=self.dialect)
+                )
 
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         for i, tbl in enumerate(self.tables):

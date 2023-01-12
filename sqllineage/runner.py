@@ -47,7 +47,7 @@ class LineageRunner(object):
         verbose: bool = False,
         draw_options: Dict[str, str] = None,
         dialect: Optional[str] = "ansi",
-        use_sqlparse: bool = False,
+        use_sqlparse: bool = True,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.

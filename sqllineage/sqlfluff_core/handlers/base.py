@@ -8,8 +8,9 @@ class ConditionalSegmentBaseHandler:
     This is to address an extract pattern when a specified segment match the condition
     """
 
-    def __init__(self) -> None:
+    def __init__(self, dialect: str) -> None:
         self.indicator = False
+        self.dialect = dialect
 
     def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """

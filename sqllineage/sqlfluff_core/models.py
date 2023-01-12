@@ -12,6 +12,7 @@ from sqllineage.sqlfluff_core.utils.sqlfluff import (
     retrieve_segments,
     is_wildcard,
     is_subquery,
+    get_identifier,
 )
 
 SOURCE_COLUMN_SEGMENT_TYPE = [
@@ -52,7 +53,7 @@ class SqlFluffTable(Table):
         self.alias = kwargs.pop("alias", self.raw_name)
 
     @staticmethod
-    def of(segment: BaseSegment, alias: str = None) -> "Table":
+    def of(segment: BaseSegment, alias: str = None) -> "SqlFluffTable":
         # rewrite identifier's get_real_name method, by matching the last dot instead of the first dot, so that the
         # real name for a.b.c will be c instead of b
         dot_idx, _ = _token_matching(
@@ -111,9 +112,11 @@ class SqlFluffColumn(Column):
         self.source_columns = kwargs.pop("source_columns", ((self.raw_name, None),))
 
     @staticmethod
-    def of(segment: BaseSegment):
+    def of(segment: BaseSegment, dialect: str):
         if segment.type == "select_clause_element":
-            source_columns, alias = SqlFluffColumn._get_column_and_alias(segment)
+            source_columns, alias = SqlFluffColumn._get_column_and_alias(
+                segment, dialect
+            )
             if alias:
                 return SqlFluffColumn(
                     alias,
@@ -124,7 +127,7 @@ class SqlFluffColumn(Column):
                 column_name = None
                 for sub_segment in sub_segments:
                     if sub_segment.type == "column_reference":
-                        column_name = SqlFluffColumn._get_identifier(sub_segment)
+                        column_name = get_identifier(sub_segment)
 
                 return SqlFluffColumn(
                     segment.raw if column_name is None else column_name,
@@ -132,14 +135,16 @@ class SqlFluffColumn(Column):
                 )
 
         # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
-        source_columns = SqlFluffColumn._extract_source_columns(segment)
+        source_columns = SqlFluffColumn._extract_source_columns(segment, dialect)
         return SqlFluffColumn(
             segment.raw,
             source_columns=source_columns,
         )
 
     @staticmethod
-    def _extract_source_columns(segment: BaseSegment) -> List[ColumnQualifierTuple]:
+    def _extract_source_columns(
+        segment: BaseSegment, dialect: str
+    ) -> List[ColumnQualifierTuple]:
         if segment.type == "identifier" or is_wildcard(segment):
             return [ColumnQualifierTuple(segment.raw, None)]
         if segment.type == "column_reference":
@@ -161,30 +166,32 @@ class SqlFluffColumn(Column):
             for sub_segment in sub_segments:
                 if sub_segment.type == "bracketed":
                     if is_subquery(sub_segment):
-                        col_list += SqlFluffColumn.get_column_from_subquery(sub_segment)
+                        col_list += SqlFluffColumn.get_column_from_subquery(
+                            sub_segment, dialect
+                        )
                     else:
                         col_list += SqlFluffColumn.get_column_from_parenthesis(
-                            sub_segment
+                            sub_segment, dialect
                         )
                 elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
                     sub_segment
                 ):
-                    res = SqlFluffColumn._extract_source_columns(sub_segment)
+                    res = SqlFluffColumn._extract_source_columns(sub_segment, dialect)
                     col_list.extend(res)
             return col_list
 
     @staticmethod
     def get_column_from_subquery(
-        sub_segment: BaseSegment,
+        sub_segment: BaseSegment, dialect: str
     ) -> List[ColumnQualifierTuple]:
         # This is to avoid circular import
         from sqllineage.runner import LineageRunner
 
         src_cols = [
             lineage[0]
-            for lineage in LineageRunner(sub_segment.raw).get_column_lineage(
-                exclude_subquery=False
-            )
+            for lineage in LineageRunner(
+                sub_segment.raw, dialect=dialect, use_sqlparse=False
+            ).get_column_lineage(exclude_subquery=False)
         ]
         source_columns = [
             ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
@@ -195,27 +202,28 @@ class SqlFluffColumn(Column):
     @staticmethod
     def get_column_from_parenthesis(
         sub_segment: BaseSegment,
+        dialect: str,
     ) -> List[ColumnQualifierTuple]:
-        col, _ = SqlFluffColumn._get_column_and_alias(sub_segment)
+        col, _ = SqlFluffColumn._get_column_and_alias(sub_segment, dialect)
         if col:
             return col
-        col, _ = SqlFluffColumn._get_column_and_alias(sub_segment, False)
+        col, _ = SqlFluffColumn._get_column_and_alias(sub_segment, dialect, False)
         return col if col else []
 
     @staticmethod
     def _get_column_and_alias(
-        segment: BaseSegment, check_bracketed: bool = True
+        segment: BaseSegment, dialect: str, check_bracketed: bool = True
     ) -> Tuple[List[ColumnQualifierTuple], str]:
         alias = None
         column = []
         sub_segments = retrieve_segments(segment, check_bracketed)
         for sub_segment in sub_segments:
             if sub_segment.type == "alias_expression":
-                alias = SqlFluffColumn._get_identifier(sub_segment)
+                alias = get_identifier(sub_segment)
             elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
                 sub_segment
             ):
-                res = SqlFluffColumn._extract_source_columns(sub_segment)
+                res = SqlFluffColumn._extract_source_columns(sub_segment, dialect)
                 column += res if res else []
 
         return column, alias
@@ -227,12 +235,6 @@ class SqlFluffColumn(Column):
                 column_list.extend(column)
             else:
                 column_list.append((column, None))
-
-    @staticmethod
-    def _get_identifier(col_segment: BaseSegment) -> str:
-        identifiers = retrieve_segments(col_segment)
-        col_identifier = identifiers[-1]
-        return col_identifier.raw
 
     @staticmethod
     def _get_column_and_parent(col_segment: BaseSegment) -> Tuple[Optional[str], str]:

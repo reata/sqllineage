@@ -7,9 +7,9 @@ from sqllineage.sqlfluff_core.models import SqlFluffColumn, SqlFluffTable
 def assert_table_lineage_equal(
     sql, source_tables=None, target_tables=None, dialect: str = "ansi"
 ):
-    lr = LineageRunner(sql, dialect=dialect)
+    lr = LineageRunner(sql, dialect=dialect, use_sqlparse=False)
 
-    assert_lr_graphs_match(dialect, lr, sql)
+    assert_lr_graphs_match(lr, sql)
 
     for (_type, actual, expected) in zip(
         ["Source", "Target"],
@@ -29,9 +29,9 @@ def assert_table_lineage_equal(
 
 
 def assert_column_lineage_equal(sql, column_lineages=None, dialect: str = "ansi"):
-    lr = LineageRunner(sql, dialect=dialect)
+    lr = LineageRunner(sql, dialect=dialect, use_sqlparse=False)
 
-    assert_lr_graphs_match(dialect, lr, sql)
+    assert_lr_graphs_match(lr, sql)
 
     expected = set()
     if column_lineages:
@@ -49,12 +49,14 @@ def assert_column_lineage_equal(sql, column_lineages=None, dialect: str = "ansi"
     ), f"\n\tExpected Lineage: {expected}\n\tActual Lineage: {actual}"
 
 
-def assert_lr_graphs_match(dialect: str, lr: LineageRunner, sql: str) -> None:
-    # ensure old and new implementation generates same graph
-    lr_sql_parse = LineageRunner(sql, dialect=dialect, use_sqlparse=True)
-    lr_sql_parse.get_column_lineage()
+def assert_lr_graphs_match(lr: LineageRunner, sql: str) -> None:
     # force run lineage
     lr.get_column_lineage()
+
+    # ensure old and new implementation generates same graph
+    lr_sql_parse = LineageRunner(sql)
+    lr_sql_parse.get_column_lineage()
+
     assert nx.is_isomorphic(lr_sql_parse._sql_holder.graph, lr._sql_holder.graph), (
         f"\n\tOld graph with sqlparse: {lr_sql_parse._sql_holder.graph}\n\t"
         f"New graph with sqlfluff: {lr._sql_holder.graph}"
