@@ -1,7 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.holders import SubQueryLineageHolder
 
-from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
+from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext, SqlFluffSubQuery
 
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
@@ -24,7 +24,7 @@ class DmlSelectExtractor(LineageHolderExtractor):
     ) -> SubQueryLineageHolder:
         handlers, conditional_handlers = self._init_handlers()
         holder = self._init_holder(context)
-        sub_queries = []
+        sub_queries = [SqlFluffSubQuery.of(statement, None)] if is_sub_query else []
         segments = retrieve_segments(statement)
         for segment in segments:
             for sq in self.parse_subquery(segment):

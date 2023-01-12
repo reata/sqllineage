@@ -19,7 +19,7 @@ def test_with_select_one_without_as():
     assert_table_lineage_equal(
         "WITH wtab1 (SELECT * FROM schema1.tab1) SELECT * FROM wtab1",
         {"schema1.tab1"},
-        dialect="sparksql",
+        dialect="mysql",
     )
 
 

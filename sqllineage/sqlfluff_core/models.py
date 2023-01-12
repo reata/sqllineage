@@ -1,19 +1,19 @@
 import warnings
+from typing import List, Union, Dict, Set
 from typing import Optional, Tuple, Callable, NamedTuple
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.models import SubQuery, Schema, Table, Column
+from sqllineage.core.models import SubQuery, Schema, Column, Table
 from sqllineage.exceptions import SQLLineageException
-from typing import List, Union, Dict, Set
-from sqllineage.utils.entities import ColumnQualifierTuple
-from sqllineage.utils.helpers import escape_identifier_name
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     retrieve_segments,
     is_wildcard,
     is_subquery,
     get_identifier,
 )
+from sqllineage.utils.entities import ColumnQualifierTuple
+from sqllineage.utils.helpers import escape_identifier_name
 
 SOURCE_COLUMN_SEGMENT_TYPE = [
     "identifier",
@@ -107,7 +107,7 @@ class SqlFluffColumn(Column):
         :param parent: :class:`Table` or :class:`SubQuery`
         :param kwargs:
         """
-        self._parent: Set[Union[Table, SubQuery]] = set()
+        self._parent: Set[Union[SqlFluffTable, SqlFluffSubQuery]] = set()
         self.raw_name = escape_identifier_name(name)
         self.source_columns = kwargs.pop("source_columns", ((self.raw_name, None),))
 
@@ -215,7 +215,7 @@ class SqlFluffColumn(Column):
         segment: BaseSegment, dialect: str, check_bracketed: bool = True
     ) -> Tuple[List[ColumnQualifierTuple], str]:
         alias = None
-        column = []
+        columns = []
         sub_segments = retrieve_segments(segment, check_bracketed)
         for sub_segment in sub_segments:
             if sub_segment.type == "alias_expression":
@@ -224,9 +224,9 @@ class SqlFluffColumn(Column):
                 sub_segment
             ):
                 res = SqlFluffColumn._extract_source_columns(sub_segment, dialect)
-                column += res if res else []
+                columns += res if res else []
 
-        return column, alias
+        return columns, alias
 
     @staticmethod
     def _add_to_col_list(column: Union[str, List[str]], column_list: List[str]) -> None:
@@ -243,12 +243,16 @@ class SqlFluffColumn(Column):
             return identifiers[-2].raw, identifiers[-1].raw
         return None, identifiers[-1].raw
 
-    def to_source_columns(self, alias_mapping: Dict[str, Union[Table, SubQuery]]):
+    def to_source_columns(
+        self, alias_mapping: Dict[str, Union[SqlFluffTable, SqlFluffSubQuery]]
+    ):
         """
         Best guess for source table given all the possible table/subquery and their alias.
         """
 
-        def _to_src_col(name: str, parent: Union[Table, SubQuery] = None):
+        def _to_src_col(
+            name: str, parent: Union[SqlFluffTable, SqlFluffSubQuery] = None
+        ):
             col = SqlFluffColumn(name)
             if parent:
                 col.parent = parent
@@ -275,7 +279,7 @@ class SqlFluffColumn(Column):
                         _to_src_col(src_col, alias_mapping.get(qualifier))
                     )
                 else:
-                    source_columns.add(_to_src_col(src_col, Table(qualifier)))
+                    source_columns.add(_to_src_col(src_col, SqlFluffTable(qualifier)))
         return source_columns
 
 
