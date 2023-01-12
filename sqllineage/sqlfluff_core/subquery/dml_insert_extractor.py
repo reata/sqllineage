@@ -69,14 +69,15 @@ class DmlInsertExtractor(LineageHolderExtractor):
             conditional_handler.end_of_query_cleanup(holder)
 
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
-        for sq in subqueries:
-            holder |= DmlSelectExtractor().extract(
-                sq.segment, SqlFluffAnalyzerContext(sq, holder.cte)
-            )
         for statement in select_statements:
             holder |= DmlSelectExtractor().extract(
                 statement,
                 SqlFluffAnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
+            )
+
+        for sq in subqueries:
+            holder |= DmlSelectExtractor().extract(
+                sq.segment, SqlFluffAnalyzerContext(sq, holder.cte)
             )
 
         return holder
