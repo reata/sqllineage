@@ -143,8 +143,8 @@ class SqlFluffColumn(Column):
         if segment.type == "identifier" or is_wildcard(segment):
             return [ColumnQualifierTuple(segment.raw, None)]
         if segment.type == "column_reference":
-            column = SqlFluffColumn._get_identifier(segment)
-            return [ColumnQualifierTuple(column, None)]
+            parent, column = SqlFluffColumn._get_column_and_parent(segment)
+            return [ColumnQualifierTuple(column, parent)]
         if segment.type in [
             "function",
             "over_clause",
@@ -233,6 +233,13 @@ class SqlFluffColumn(Column):
         identifiers = retrieve_segments(col_segment)
         col_identifier = identifiers[-1]
         return col_identifier.raw
+
+    @staticmethod
+    def _get_column_and_parent(col_segment: BaseSegment) -> Tuple[Optional[str], str]:
+        identifiers = retrieve_segments(col_segment)
+        if len(identifiers) > 1:
+            return identifiers[-2].raw, identifiers[-1].raw
+        return None, identifiers[-1].raw
 
     def to_source_columns(self, alias_mapping: Dict[str, Union[Table, SubQuery]]):
         """
