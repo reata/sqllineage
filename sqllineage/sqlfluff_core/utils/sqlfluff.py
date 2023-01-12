@@ -61,7 +61,7 @@ def get_bracketed_sub_queries_from(segment: BaseSegment) -> List[SubSqlFluffQuer
         # CTE: tbl AS (SELECT 1)
         target = sublist[0]
     else:
-        target = sublist[0].segments[0]
+        target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
     if is_subquery(target):
         subquery = [
             SubSqlFluffQueryTuple(
@@ -102,9 +102,13 @@ def is_subquery(segment: BaseSegment) -> bool:
             segment if segment.type == "bracketed" else segment.segments[0]
         )
         # check if innermost parenthesis contains SELECT
-        sub_token = token.get_child("select_statement") or (
-            token.get_child("expression")
-            and token.get_child("expression").get_child("select_statement")
+        sub_token = (
+            token.get_child("select_statement")
+            or token.get_child("set_expression")
+            or (
+                token.get_child("expression")
+                and token.get_child("expression").get_child("select_statement")
+            )
         )
         if sub_token is not None:
             return True
