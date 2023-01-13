@@ -132,6 +132,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                 # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
                 parenthesis, alias = subqueries[0]
                 read = SqlFluffSubQuery.of(parenthesis, alias)
+                holder.extra_sub_queries.add(read)
             else:
                 table_identifier = find_table_identifier(identifier)
                 read = retrieve_holder_data_from(all_segments, holder, table_identifier)

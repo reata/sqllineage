@@ -81,7 +81,7 @@ def get_bracketed_sub_queries_from(segment: BaseSegment) -> List[SubSqlFluffQuer
     if is_subquery(target):
         subquery = [
             SubSqlFluffQueryTuple(
-                get_innermost_bracketed(target), as_segment.raw if as_segment else None
+                get_innermost_bracketed(target), get_identifier(as_segment) if as_segment else None
             )
         ]
     return subquery
@@ -242,12 +242,15 @@ def retrieve_segments(
                 expanding=["expression"], pass_through=True
             )
         ]
-        return [
-            seg
-            for segment in segments
-            for seg in segment.segments
-            if not is_segment_negligible(seg)
-        ]
+        result = []
+        for segment in segments:
+            if segment.type == "column_reference":
+                result.append(segment)
+            else:
+                for seg in segment.segments:
+                    if not is_segment_negligible(seg):
+                        result.append(seg)
+        return result
     else:
         return [seg for seg in statement.segments if not is_segment_negligible(seg)]
 

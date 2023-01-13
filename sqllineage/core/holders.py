@@ -49,6 +49,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
+        self.extra_sub_queries = set()
 
     def __or__(self, other):
         self.graph = nx.compose(self.graph, other.graph)

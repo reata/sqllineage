@@ -46,5 +46,8 @@ class DmlSelectExtractor(LineageHolderExtractor):
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in sub_queries:
             holder |= self.extract(sq.segment, SqlFluffAnalyzerContext(sq, holder.cte))
+        
+        for sq in holder.extra_sub_queries:
+            holder |= self.extract(sq.segment, SqlFluffAnalyzerContext(sq, holder.cte))
 
         return holder
