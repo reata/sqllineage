@@ -81,7 +81,8 @@ def get_bracketed_sub_queries_from(segment: BaseSegment) -> List[SubSqlFluffQuer
     if is_subquery(target):
         subquery = [
             SubSqlFluffQueryTuple(
-                get_innermost_bracketed(target), get_identifier(as_segment) if as_segment else None
+                get_innermost_bracketed(target),
+                get_identifier(as_segment) if as_segment else None,
             )
         ]
     return subquery
@@ -258,7 +259,7 @@ def retrieve_segments(
 def get_identifier(col_segment: BaseSegment) -> str:
     identifiers = retrieve_segments(col_segment)
     col_identifier = identifiers[-1]
-    return col_identifier.raw
+    return str(col_identifier.raw)
 
 
 def is_wildcard(symbol: BaseSegment):
@@ -279,7 +280,7 @@ def get_table_alias(table_tokes: List[BaseSegment]) -> Optional[str]:
         if len(table_and_alias) > 1 and table_and_alias[1].type == "alias_expression":
             alias = retrieve_segments(table_and_alias[1])
             alias = alias[1].raw if len(alias) > 1 else alias[0].raw
-    return alias
+    return str(alias) if alias else None
 
 
 def has_alias(segment: BaseSegment):

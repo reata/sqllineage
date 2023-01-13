@@ -1,6 +1,9 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.holders import SubQueryLineageHolder, StatementLineageHolder
+from sqllineage.sqlfluff_core.holders import (
+    SqlFluffSubQueryLineageHolder,
+    SqlFluffStatementLineageHolder,
+)
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 from sqllineage.sqlfluff_core.models import SqlFluffTable
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
@@ -24,8 +27,8 @@ class DdlAlterExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SubQueryLineageHolder:
-        holder = StatementLineageHolder()
+    ) -> SqlFluffSubQueryLineageHolder:
+        holder = SqlFluffStatementLineageHolder()
         tables = []
         for t in statement.segments:
             if t.type == "table_reference":

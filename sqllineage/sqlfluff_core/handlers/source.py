@@ -3,7 +3,7 @@ from typing import Dict, List, Union, Iterable
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.core.models import Path, Table, SubQuery
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
@@ -42,14 +42,16 @@ class SourceHandler(ConditionalSegmentBaseHandler):
             self.union_barriers.append((len(self.columns), len(self.tables)))
         return self.indicate_column(segment) or self.indicate_table(segment)
 
-    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
+    def handle(
+        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
+    ) -> None:
         if self.indicate_table(segment):
             self._handle_table(segment, holder)
         if self.indicate_column(segment):
             self._handle_column(segment)
 
     def _handle_table(
-        self, initial_segment: BaseSegment, holder: SubQueryLineageHolder
+        self, initial_segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
     ) -> None:
         identifiers = get_multiple_identifiers(initial_segment)
         if identifiers and len(identifiers) > 1:
@@ -79,7 +81,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                     SqlFluffColumn.of(sub_segment, dialect=self.dialect)
                 )
 
-    def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
+    def end_of_query_cleanup(self, holder: SqlFluffSubQueryLineageHolder) -> None:
         for i, tbl in enumerate(self.tables):
             holder.add_read(tbl)
         self.union_barriers.append((len(self.columns), len(self.tables)))
@@ -103,7 +105,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                         holder.add_column_lineage(src_col, tgt_col)
 
     def _add_dataset_from_identifier(
-        self, identifier: BaseSegment, holder: SubQueryLineageHolder
+        self, identifier: BaseSegment, holder: SqlFluffSubQueryLineageHolder
     ) -> None:
         dataset: Union[Path, Table, SqlFluffSubQuery]
         all_segments = [
@@ -143,7 +145,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
     def _get_alias_mapping_from_table_group(
         cls,
         table_group: List[Union[Path, Table, SubQuery, SqlFluffSubQuery]],
-        holder: SubQueryLineageHolder,
+        holder: SqlFluffSubQueryLineageHolder,
     ) -> Dict[str, Union[Path, Table, SubQuery, SqlFluffSubQuery]]:
         """
         A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.

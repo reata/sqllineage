@@ -1,5 +1,5 @@
 from sqlfluff.core.parser import BaseSegment
-from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext, SqlFluffSubQuery
 
@@ -21,7 +21,7 @@ class DmlSelectExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SubQueryLineageHolder:
+    ) -> SqlFluffSubQueryLineageHolder:
         handlers, conditional_handlers = self._init_handlers()
         holder = self._init_holder(context)
         sub_queries = [SqlFluffSubQuery.of(statement, None)] if is_sub_query else []
@@ -46,7 +46,7 @@ class DmlSelectExtractor(LineageHolderExtractor):
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in sub_queries:
             holder |= self.extract(sq.segment, SqlFluffAnalyzerContext(sq, holder.cte))
-        
+
         for sq in holder.extra_sub_queries:
             holder |= self.extract(sq.segment, SqlFluffAnalyzerContext(sq, holder.cte))
 

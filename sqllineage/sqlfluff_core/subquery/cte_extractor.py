@@ -1,5 +1,5 @@
 from sqlfluff.core.parser import BaseSegment
-from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 from sqllineage.sqlfluff_core.subquery.dml_insert_extractor import DmlInsertExtractor
@@ -24,7 +24,7 @@ class DmlCteExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SubQueryLineageHolder:
+    ) -> SqlFluffSubQueryLineageHolder:
 
         handlers, conditional_handlers = self._init_handlers()
 

@@ -1,6 +1,6 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 
 
 class ConditionalSegmentBaseHandler:
@@ -12,7 +12,9 @@ class ConditionalSegmentBaseHandler:
         self.indicator = False
         self.dialect = dialect
 
-    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
+    def handle(
+        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
+    ) -> None:
         """
         Handle the indicated token, and update the lineage result accordingly
         """
@@ -24,7 +26,7 @@ class ConditionalSegmentBaseHandler:
         """
         return False
 
-    def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
+    def end_of_query_cleanup(self, holder: SqlFluffSubQueryLineageHolder) -> None:
         """
         Optional hook to be called at the end of statement or subquery
         """
@@ -36,5 +38,7 @@ class SegmentBaseHandler:
     This is to address an extract pattern when we should extract something from current token
     """
 
-    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
+    def handle(
+        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
+    ) -> None:
         raise NotImplementedError

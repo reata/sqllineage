@@ -1,7 +1,10 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
-from sqllineage.core.holders import SubQueryLineageHolder, StatementLineageHolder
+from sqllineage.sqlfluff_core.holders import (
+    SqlFluffSubQueryLineageHolder,
+    SqlFluffStatementLineageHolder,
+)
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
@@ -20,8 +23,8 @@ class DdlDropExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SubQueryLineageHolder:
-        holder = StatementLineageHolder()
+    ) -> SqlFluffSubQueryLineageHolder:
+        holder = SqlFluffStatementLineageHolder()
         for table in {
             SqlFluffTable.of(t)
             for t in statement.segments

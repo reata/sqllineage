@@ -7,7 +7,7 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 
-from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.handlers.base import (
     SegmentBaseHandler,
     ConditionalSegmentBaseHandler,
@@ -35,7 +35,7 @@ class LineageHolderExtractor(ABC):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> Optional[SubQueryLineageHolder]:
+    ) -> Optional[SqlFluffSubQueryLineageHolder]:
         pass
 
     @classmethod
@@ -95,8 +95,8 @@ class LineageHolderExtractor(ABC):
         return handlers, conditional_handlers
 
     @staticmethod
-    def _init_holder(context) -> SubQueryLineageHolder:
-        holder = SubQueryLineageHolder()
+    def _init_holder(context) -> SqlFluffSubQueryLineageHolder:
+        holder = SqlFluffSubQueryLineageHolder()
 
         if context.prev_cte is not None:
             # CTE can be referenced by subsequent CTEs

@@ -15,6 +15,7 @@ from sqllineage.core.models import Column, Table
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.sqlfluff_core.analyzer import SqlFluffLineageAnalyzer
+from sqllineage.sqlfluff_core.holders import SqlFluffSQLLineageHolder
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import (
     clean_parentheses,
@@ -199,8 +200,12 @@ Target Tables:
         ]
 
         self._stmt_holders = [self.run_lineage_analyzer(stmt) for stmt in self._stmt]
-        self._sql_holder = SQLLineageHolder.of(
-            *self._stmt_holders, use_sqlparser=self._use_sqlparse
+        self._sql_holder = (
+            SQLLineageHolder.of(*self._stmt_holders)
+            if self._use_sqlparse
+            else SqlFluffSQLLineageHolder.of(
+                *self._stmt_holders, use_sqlparser=self._use_sqlparse
+            )
         )
         self._evaluated = True
 

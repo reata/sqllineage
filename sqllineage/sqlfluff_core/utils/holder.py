@@ -1,7 +1,7 @@
 from typing import List, Union
 
 from sqlfluff.core.parser import BaseSegment
-from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 
 from sqllineage.sqlfluff_core.models import SqlFluffSubQuery, SqlFluffTable
 from sqllineage.sqlfluff_core.utils.sqlfluff import get_table_alias
@@ -9,7 +9,7 @@ from sqllineage.sqlfluff_core.utils.sqlfluff import get_table_alias
 
 def retrieve_holder_data_from(
     segments: List[BaseSegment],
-    holder: SubQueryLineageHolder,
+    holder: SqlFluffSubQueryLineageHolder,
     table_identifier: BaseSegment,
 ) -> Union[SqlFluffTable, SqlFluffSubQuery]:
     data = None

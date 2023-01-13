@@ -8,7 +8,7 @@ from sqllineage.sqlfluff_core.utils.sqlfluff import (
 )
 
 from sqllineage.utils.helpers import escape_identifier_name
-from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 
 
@@ -56,7 +56,9 @@ class TargetHandler(ConditionalSegmentBaseHandler):
             return self.indicator
         return False
 
-    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
+    def handle(
+        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
+    ) -> None:
         if segment.type == "table_reference":
             if self.prev_token_like:
                 holder.add_read(SqlFluffTable.of(segment))

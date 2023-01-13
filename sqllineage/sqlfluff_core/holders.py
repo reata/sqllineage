@@ -3,6 +3,7 @@ from typing import Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
+from sqllineage.sqlfluff_core.models import SqlFluffColumn
 
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.utils.constant import EdgeType, NodeTag
@@ -10,7 +11,7 @@ from sqllineage.utils.constant import EdgeType, NodeTag
 DATASET_CLASSES = (Path, Table)
 
 
-class ColumnLineageMixin:
+class SqlFluffColumnLineageMixin:
     def get_column_lineage(self, exclude_subquery=True) -> Set[Tuple[Column, ...]]:
         self.graph: DiGraph  # For mypy attribute checking
         # filter all the column node in the graph
@@ -35,7 +36,7 @@ class ColumnLineageMixin:
         return columns
 
 
-class SubQueryLineageHolder(ColumnLineageMixin):
+class SqlFluffSubQueryLineageHolder(SqlFluffColumnLineageMixin):
     """
     SubQuery/Query Level Lineage Result.
 
@@ -48,6 +49,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
+        self.extra_sub_queries = set()
 
     def __or__(self, other):
         self.graph = nx.compose(self.graph, other.graph)
@@ -78,7 +80,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     @property
     def cte(self) -> Set[SubQuery]:
-        return self._property_getter(NodeTag.CTE)  # type: ignore
+        return self._property_getter(NodeTag.CTE)
 
     def add_cte(self, value) -> None:
         self._property_setter(value, NodeTag.CTE)
@@ -91,7 +93,9 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
 
 
-class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
+class SqlFluffStatementLineageHolder(
+    SqlFluffSubQueryLineageHolder, SqlFluffColumnLineageMixin
+):
     """
     Statement Level Lineage Result.
 
@@ -113,16 +117,16 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
         return str(self)
 
     @property
-    def read(self) -> Set[Table]:  # type: ignore
+    def read(self) -> Set[Table]:
         return {t for t in super().read if isinstance(t, DATASET_CLASSES)}
 
     @property
-    def write(self) -> Set[Table]:  # type: ignore
+    def write(self) -> Set[Table]:
         return {t for t in super().write if isinstance(t, DATASET_CLASSES)}
 
     @property
     def drop(self) -> Set[Table]:
-        return self._property_getter(NodeTag.DROP)  # type: ignore
+        return self._property_getter(NodeTag.DROP)
 
     def add_drop(self, value) -> None:
         self._property_setter(value, NodeTag.DROP)
@@ -139,13 +143,13 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
         self.graph.add_edge(src, tgt, type=EdgeType.RENAME)
 
     @staticmethod
-    def of(holder: SubQueryLineageHolder):
-        stmt_holder = StatementLineageHolder()
+    def of(holder: SqlFluffSubQueryLineageHolder):
+        stmt_holder = SqlFluffStatementLineageHolder()
         stmt_holder.graph = holder.graph
         return stmt_holder
 
 
-class SQLLineageHolder(ColumnLineageMixin):
+class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
     def __init__(self, graph: DiGraph):
         """
         The combined lineage result in representation of Directed Acyclic Graph.
@@ -222,7 +226,20 @@ class SQLLineageHolder(ColumnLineageMixin):
         }
 
     @staticmethod
-    def _build_digraph(*args: StatementLineageHolder) -> DiGraph:
+    def _get_column_if_related_to_parent(
+        g: DiGraph, raw_name: str, parent: [Union[Table, SubQuery]], use_sqlparser: bool
+    ) -> Column:
+        if use_sqlparser:
+            src_col = Column(raw_name)
+        else:
+            src_col = SqlFluffColumn(raw_name)
+        src_col.parent = parent
+        return src_col if g.has_edge(parent, src_col) else None
+
+    @classmethod
+    def _build_digraph(
+        cls, use_sqlparser: bool, *args: SqlFluffStatementLineageHolder
+    ) -> DiGraph:
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
@@ -270,9 +287,10 @@ class SQLLineageHolder(ColumnLineageMixin):
             # check if there's only one parent candidate contains the column with same name
             src_cols = []
             for parent in unresolved_col.parent_candidates:
-                src_col = Column(unresolved_col.raw_name)
-                src_col.parent = parent
-                if g.has_edge(parent, src_col):
+                src_col = cls._get_column_if_related_to_parent(
+                    g, unresolved_col.raw_name, parent, use_sqlparser
+                )
+                if src_col:
                     src_cols.append(src_col)
             if len(src_cols) == 1:
                 g.add_edge(src_cols[0], tgt_col, type=EdgeType.LINEAGE)
@@ -284,10 +302,10 @@ class SQLLineageHolder(ColumnLineageMixin):
         return g
 
     @staticmethod
-    def of(*args: StatementLineageHolder):
+    def of(*args: SqlFluffStatementLineageHolder, use_sqlparser: bool = False):
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
         """
-        g = SQLLineageHolder._build_digraph(*args)
-        return SQLLineageHolder(g)
+        g = SqlFluffSQLLineageHolder._build_digraph(use_sqlparser, *args)
+        return SqlFluffSQLLineageHolder(g)
