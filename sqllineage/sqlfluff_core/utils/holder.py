@@ -24,5 +24,5 @@ def retrieve_holder_data_from(
                 alias or table_identifier.raw,
             )
     if data is None:
-        data = SqlFluffTable.of(table_identifier, alias=alias)
+        return SqlFluffTable.of(table_identifier, alias=alias)
     return data

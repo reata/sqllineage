@@ -4,7 +4,6 @@ from typing import Optional, Tuple, Callable, NamedTuple
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.models import SubQuery, Column, Table
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     retrieve_segments,
@@ -74,7 +73,7 @@ class SqlFluffPath:
         return hash(self.uri)
 
 
-class SqlFluffTable(Table):
+class SqlFluffTable:
     def __init__(self, name: str, schema: SqlFluffSchema = SqlFluffSchema(), **kwargs):
         """
         Data Class for Table
@@ -96,13 +95,25 @@ class SqlFluffTable(Table):
                 warnings.warn("Name is in schema.table format, schema param is ignored")
         self.alias = kwargs.pop("alias", self.raw_name)
 
+    def __str__(self):
+        return f"{self.schema}.{self.raw_name.lower()}"
+
+    def __repr__(self):
+        return "Table: " + str(self)
+
+    def __eq__(self, other):
+        return type(self) is type(other) and str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
     @staticmethod
     def of(segment: BaseSegment, alias: str = None) -> "SqlFluffTable":
         # rewrite identifier's get_real_name method, by matching the last dot instead of the first dot, so that the
         # real name for a.b.c will be c instead of b
         dot_idx, _ = _token_matching(
             segment,
-            lambda s: s.type == "symbol",
+            (lambda s: bool(s.type == "symbol"),),
             start=len(segment.segments),
             reverse=True,
         )
@@ -127,7 +138,7 @@ class SqlFluffTable(Table):
         return SqlFluffTable(real_name, schema, **kwargs)
 
 
-class SqlFluffSubQuery(SubQuery):
+class SqlFluffSubQuery:
     def __init__(self, bracketed_segment: BaseSegment, alias: Optional[str]):
         """
         Data Class for SqlFluffSubQuery
@@ -139,12 +150,24 @@ class SqlFluffSubQuery(SubQuery):
         self._query = bracketed_segment.raw
         self.alias = alias if alias is not None else f"subquery_{hash(self)}"
 
+    def __str__(self):
+        return self.alias
+
+    def __repr__(self):
+        return "SubQuery: " + str(self)
+
+    def __eq__(self, other):
+        return type(self) is type(other) and self._query == other._query
+
+    def __hash__(self):
+        return hash(self._query)
+
     @staticmethod
     def of(bracketed_segment: BaseSegment, alias: Optional[str]) -> "SqlFluffSubQuery":
         return SqlFluffSubQuery(bracketed_segment, alias)
 
 
-class SqlFluffColumn(Column):
+class SqlFluffColumn:
     def __init__(self, name: str, **kwargs):
         """
         Data Class for Column
@@ -156,6 +179,34 @@ class SqlFluffColumn(Column):
         self._parent: Set[Union[SqlFluffTable, SqlFluffSubQuery]] = set()
         self.raw_name = escape_identifier_name(name)
         self.source_columns = kwargs.pop("source_columns", ((self.raw_name, None),))
+
+    def __str__(self):
+        return (
+            f"{self.parent}.{self.raw_name.lower()}"
+            if self.parent is not None and not isinstance(self.parent, SqlFluffPath)
+            else f"{self.raw_name.lower()}"
+        )
+
+    def __repr__(self):
+        return "Column: " + str(self)
+
+    def __eq__(self, other):
+        return type(self) is type(other) and str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
+    @property
+    def parent(self) -> Optional[Union[SqlFluffTable, SqlFluffSubQuery]]:
+        return list(self._parent)[0] if len(self._parent) == 1 else None
+
+    @parent.setter
+    def parent(self, value: Union[SqlFluffTable, SqlFluffSubQuery]):
+        self._parent.add(value)
+
+    @property
+    def parent_candidates(self) -> List[Union[SqlFluffTable, SqlFluffSubQuery]]:
+        return sorted(self._parent, key=lambda p: str(p))
 
     @staticmethod
     def of(segment: BaseSegment, dialect: str):
@@ -225,6 +276,7 @@ class SqlFluffColumn(Column):
                     res = SqlFluffColumn._extract_source_columns(sub_segment, dialect)
                     col_list.extend(res)
             return col_list
+        return []
 
     @staticmethod
     def get_column_from_subquery(
@@ -259,7 +311,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_and_alias(
         segment: BaseSegment, dialect: str, check_bracketed: bool = True
-    ) -> Tuple[List[ColumnQualifierTuple], str]:
+    ) -> Tuple[List[ColumnQualifierTuple], Optional[str]]:
         alias = None
         columns = []
         sub_segments = retrieve_segments(segment, check_bracketed)
@@ -273,14 +325,6 @@ class SqlFluffColumn(Column):
                 columns += res if res else []
 
         return columns, alias
-
-    @staticmethod
-    def _add_to_col_list(column: Union[str, List[str]], column_list: List[str]) -> None:
-        if column:
-            if isinstance(column, list):
-                column_list.extend(column)
-            else:
-                column_list.append((column, None))
 
     @staticmethod
     def _get_column_and_parent(col_segment: BaseSegment) -> Tuple[Optional[str], str]:
@@ -297,7 +341,7 @@ class SqlFluffColumn(Column):
         """
 
         def _to_src_col(
-            name: str, parent: Union[SqlFluffTable, SqlFluffSubQuery] = None
+            name: str, parent: Optional[Union[SqlFluffTable, SqlFluffSubQuery]] = None
         ):
             col = SqlFluffColumn(name)
             if parent:
@@ -332,12 +376,12 @@ class SqlFluffColumn(Column):
 class SqlFluffAnalyzerContext(NamedTuple):
     subquery: Optional[SqlFluffSubQuery] = None
     prev_cte: Optional[Set[SqlFluffSubQuery]] = None
-    prev_write: Optional[Set[SqlFluffTable]] = None
+    prev_write: Optional[Set[Union[SqlFluffSubQuery, SqlFluffTable]]] = None
 
 
 def _token_matching(
     segment: BaseSegment,
-    funcs: Callable,
+    funcs: Tuple[Callable[[BaseSegment], bool]],
     start: int = 0,
     end: int = None,
     reverse: bool = False,

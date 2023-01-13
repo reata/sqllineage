@@ -26,7 +26,7 @@ class LineageHolderExtractor(ABC):
         self.dialect = dialect
 
     @abstractmethod
-    def can_extract(self, statement_type: str):
+    def can_extract(self, statement_type: str) -> bool:
         pass
 
     @abstractmethod

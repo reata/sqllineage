@@ -1,32 +1,40 @@
 import itertools
-from typing import Set, Tuple, Union
+from typing import Set, Tuple, Union, Optional
 
 import networkx as nx
 from networkx import DiGraph
-from sqllineage.sqlfluff_core.models import SqlFluffColumn, SqlFluffPath
 
-from sqllineage.core.models import Column, SubQuery, Table, Path
+from sqllineage.sqlfluff_core.models import (
+    SqlFluffColumn,
+    SqlFluffSubQuery,
+    SqlFluffTable,
+    SqlFluffPath,
+)
 from sqllineage.utils.constant import EdgeType, NodeTag
 
-DATASET_CLASSES = (Path, SqlFluffPath, Table)
+DATASET_CLASSES = (SqlFluffPath, SqlFluffTable)
 
 
 class SqlFluffColumnLineageMixin:
-    def get_column_lineage(self, exclude_subquery=True) -> Set[Tuple[Column, ...]]:
+    def get_column_lineage(
+        self, exclude_subquery=True
+    ) -> Set[Tuple[SqlFluffColumn, ...]]:
         self.graph: DiGraph  # For mypy attribute checking
         # filter all the column node in the graph
-        column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
+        column_nodes = [n for n in self.graph.nodes if isinstance(n, SqlFluffColumn)]
         column_graph = self.graph.subgraph(column_nodes)
         source_columns = {column for column, deg in column_graph.in_degree if deg == 0}
         # if a column lineage path ends at SubQuery, then it should be pruned
         target_columns = {
             node
             for node, deg in column_graph.out_degree
-            if isinstance(node, Column) and deg == 0
+            if isinstance(node, SqlFluffColumn) and deg == 0
         }
         if exclude_subquery:
             target_columns = {
-                node for node in target_columns if isinstance(node.parent, Table)
+                node
+                for node in target_columns
+                if isinstance(node.parent, SqlFluffTable)
             }
         columns = set()
         for (source, target) in itertools.product(source_columns, target_columns):
@@ -49,21 +57,23 @@ class SqlFluffSubQueryLineageHolder(SqlFluffColumnLineageMixin):
 
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
-        self.extra_sub_queries = set()
+        self.extra_sub_queries: Set[SqlFluffSubQuery] = set()
 
     def __or__(self, other):
         self.graph = nx.compose(self.graph, other.graph)
         return self
 
-    def _property_getter(self, prop) -> Set[Union[SubQuery, Table]]:
+    def _property_getter(
+        self, prop
+    ) -> Union[Set[SqlFluffSubQuery], Set[SqlFluffTable]]:
         return {t for t, attr in self.graph.nodes(data=True) if attr.get(prop) is True}
 
     def _property_setter(self, value, prop) -> None:
         self.graph.add_node(value, **{prop: True})
 
     @property
-    def read(self) -> Set[Union[SubQuery, Table]]:
-        return self._property_getter(NodeTag.READ)
+    def read(self) -> Set[Union[SqlFluffSubQuery, SqlFluffTable]]:
+        return self._property_getter(NodeTag.READ)  # type: ignore
 
     def add_read(self, value) -> None:
         self._property_setter(value, NodeTag.READ)
@@ -72,20 +82,20 @@ class SqlFluffSubQueryLineageHolder(SqlFluffColumnLineageMixin):
             self.graph.add_edge(value, value.alias, type=EdgeType.HAS_ALIAS)
 
     @property
-    def write(self) -> Set[Union[SubQuery, Table]]:
-        return self._property_getter(NodeTag.WRITE)
+    def write(self) -> Set[Union[SqlFluffSubQuery, SqlFluffTable]]:
+        return self._property_getter(NodeTag.WRITE)  # type: ignore
 
     def add_write(self, value) -> None:
         self._property_setter(value, NodeTag.WRITE)
 
     @property
-    def cte(self) -> Set[SubQuery]:
-        return self._property_getter(NodeTag.CTE)
+    def cte(self) -> Set[SqlFluffSubQuery]:
+        return self._property_getter(NodeTag.CTE)  # type: ignore
 
     def add_cte(self, value) -> None:
         self._property_setter(value, NodeTag.CTE)
 
-    def add_column_lineage(self, src: Column, tgt: Column) -> None:
+    def add_column_lineage(self, src: SqlFluffColumn, tgt: SqlFluffColumn) -> None:
         self.graph.add_edge(src, tgt, type=EdgeType.LINEAGE)
         self.graph.add_edge(tgt.parent, tgt, type=EdgeType.HAS_COLUMN)
         if src.parent is not None:
@@ -117,33 +127,33 @@ class SqlFluffStatementLineageHolder(
         return str(self)
 
     @property
-    def read(self) -> Set[Table]:
+    def read(self) -> Set[SqlFluffTable]:  # type: ignore
         return {t for t in super().read if isinstance(t, DATASET_CLASSES)}
 
     @property
-    def write(self) -> Set[Table]:
+    def write(self) -> Set[SqlFluffTable]:  # type: ignore
         return {t for t in super().write if isinstance(t, DATASET_CLASSES)}
 
     @property
-    def drop(self) -> Set[Table]:
-        return self._property_getter(NodeTag.DROP)
+    def drop(self) -> Set[SqlFluffTable]:
+        return self._property_getter(NodeTag.DROP)  # type: ignore
 
     def add_drop(self, value) -> None:
         self._property_setter(value, NodeTag.DROP)
 
     @property
-    def rename(self) -> Set[Tuple[Table, Table]]:
+    def rename(self) -> Set[Tuple[SqlFluffTable, SqlFluffTable]]:
         return {
             (src, tgt)
             for src, tgt, attr in self.graph.edges(data=True)
             if attr.get("type") == EdgeType.RENAME
         }
 
-    def add_rename(self, src: Table, tgt: Table) -> None:
+    def add_rename(self, src: SqlFluffTable, tgt: SqlFluffTable) -> None:
         self.graph.add_edge(src, tgt, type=EdgeType.RENAME)
 
     @staticmethod
-    def of(holder: SqlFluffSubQueryLineageHolder):
+    def of(holder: SqlFluffSubQueryLineageHolder) -> "SqlFluffStatementLineageHolder":
         stmt_holder = SqlFluffStatementLineageHolder()
         stmt_holder.graph = holder.graph
         return stmt_holder
@@ -174,11 +184,11 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
         """
         The column level DiGraph held by SQLLineageHolder
         """
-        column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
+        column_nodes = [n for n in self.graph.nodes if isinstance(n, SqlFluffColumn)]
         return self.graph.subgraph(column_nodes)
 
     @property
-    def source_tables(self) -> Set[Table]:
+    def source_tables(self) -> Set[SqlFluffTable]:
         """
         a list of source :class:`sqllineage.models.Table`
         """
@@ -192,7 +202,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
         return source_tables
 
     @property
-    def target_tables(self) -> Set[Table]:
+    def target_tables(self) -> Set[SqlFluffTable]:
         """
         a list of target :class:`sqllineage.models.Table`
         """
@@ -206,7 +216,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
         return target_tables
 
     @property
-    def intermediate_tables(self) -> Set[Table]:
+    def intermediate_tables(self) -> Set[SqlFluffTable]:
         """
         a list of intermediate :class:`sqllineage.models.Table`
         """
@@ -218,7 +228,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
         intermediate_tables -= self.__retrieve_tag_tables(NodeTag.SELFLOOP)
         return intermediate_tables
 
-    def __retrieve_tag_tables(self, tag) -> Set[Union[SqlFluffPath, Table]]:
+    def __retrieve_tag_tables(self, tag) -> Set[Union[SqlFluffPath, SqlFluffTable]]:
         return {
             table
             for table, attr in self.graph.nodes(data=True)
@@ -227,10 +237,13 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
 
     @staticmethod
     def _get_column_if_related_to_parent(
-        g: DiGraph, raw_name: str, parent: [Union[Table, SubQuery]], use_sqlparser: bool
-    ) -> Column:
+        g: DiGraph,
+        raw_name: str,
+        parent: Union[SqlFluffTable, SqlFluffSubQuery],
+        use_sqlparser: bool,
+    ) -> Optional[SqlFluffColumn]:
         if use_sqlparser:
-            src_col = Column(raw_name)
+            src_col = SqlFluffColumn(raw_name)
         else:
             src_col = SqlFluffColumn(raw_name)
         src_col.parent = parent
@@ -281,7 +294,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
         unresolved_cols = [
             (s, t)
             for s, t in g.edges
-            if isinstance(s, Column) and len(s.parent_candidates) > 1
+            if isinstance(s, SqlFluffColumn) and len(s.parent_candidates) > 1
         ]
         for unresolved_col, tgt_col in unresolved_cols:
             # check if there's only one parent candidate contains the column with same name
@@ -297,7 +310,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
                 g.remove_edge(unresolved_col, tgt_col)
         # when unresolved column got resolved, it will be orphan node, and we can remove it
         for node in [n for n, deg in g.degree if deg == 0]:
-            if isinstance(node, Column) and len(node.parent_candidates) > 1:
+            if isinstance(node, SqlFluffColumn) and len(node.parent_candidates) > 1:
                 g.remove_node(node)
         return g
 

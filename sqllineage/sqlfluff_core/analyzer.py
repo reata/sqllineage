@@ -1,15 +1,14 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.sqlfluff_core.holders import SqlFluffStatementLineageHolder
+from sqllineage.sqlfluff_core.holders import (
+    SqlFluffStatementLineageHolder,
+)
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 from sqllineage.sqlfluff_core.subquery.cte_extractor import DmlCteExtractor
 from sqllineage.sqlfluff_core.subquery.ddl_alter_extractor import DdlAlterExtractor
 from sqllineage.sqlfluff_core.subquery.ddl_drop_extractor import DdlDropExtractor
 from sqllineage.sqlfluff_core.subquery.dml_insert_extractor import DmlInsertExtractor
 from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtractor
-from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
-    LineageHolderExtractor,
-)
 from sqllineage.sqlfluff_core.subquery.noop_extractor import NoopExtractor
 
 SUPPORTED_STMT_TYPES = (
@@ -39,8 +38,12 @@ class SqlFluffLineageAnalyzer:
             `sqllineage.holders.StatementLineageHolder` object
         """
         subquery_extractors = [
-            extractor_cls(dialect)
-            for extractor_cls in LineageHolderExtractor.__subclasses__()
+            DmlSelectExtractor(dialect),
+            DmlInsertExtractor(dialect),
+            DmlCteExtractor(dialect),
+            DdlDropExtractor(dialect),
+            DdlAlterExtractor(dialect),
+            NoopExtractor(dialect),
         ]
         for subquery_extractor in subquery_extractors:
             if subquery_extractor.can_extract(statement.type):

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.holders import (
@@ -19,7 +21,10 @@ class DdlAlterExtractor(LineageHolderExtractor):
         "rename_table_statement",
     ]
 
-    def can_extract(self, statement_type: str):
+    def __init__(self, dialect: str):
+        super().__init__(dialect)
+
+    def can_extract(self, statement_type: str) -> bool:
         return statement_type in self.DDL_ALTER_STMT_TYPES
 
     def extract(
@@ -27,7 +32,7 @@ class DdlAlterExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SqlFluffSubQueryLineageHolder:
+    ) -> Optional[SqlFluffSubQueryLineageHolder]:
         holder = SqlFluffStatementLineageHolder()
         tables = []
         for t in statement.segments:

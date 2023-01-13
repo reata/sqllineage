@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 
 import sqlparse
 from sqlfluff.api.simple import get_simple_config
@@ -15,7 +15,10 @@ from sqllineage.core.models import Column, Table
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.sqlfluff_core.analyzer import SqlFluffLineageAnalyzer
-from sqllineage.sqlfluff_core.holders import SqlFluffSQLLineageHolder
+from sqllineage.sqlfluff_core.holders import (
+    SqlFluffSQLLineageHolder,
+    SqlFluffStatementLineageHolder,
+)
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import (
     clean_parentheses,
@@ -63,11 +66,12 @@ class LineageRunner(object):
         self._draw_options = draw_options if draw_options else {}
         self._evaluated = False
         self._stmt: List[Statement] = []
-        self._dialect: str = dialect
-        self._sqlfluff_linter = Linter(
-            config=get_simple_config(dialect=dialect, config_path=None)
-        )
         self._use_sqlparse = use_sqlparse
+        if not self._use_sqlparse:
+            self._sqlfluff_linter = Linter(
+                config=get_simple_config(dialect=dialect, config_path=None)
+            )
+            self._dialect = dialect
 
     @lazy_method
     def __str__(self):
@@ -209,7 +213,9 @@ Target Tables:
         )
         self._evaluated = True
 
-    def run_lineage_analyzer(self, stmt: Statement) -> StatementLineageHolder:
+    def run_lineage_analyzer(
+        self, stmt: Statement
+    ) -> Union[StatementLineageHolder, SqlFluffStatementLineageHolder]:
         stmt_value = stmt.value.strip()
         if not self._use_sqlparse:
             is_sub_query = is_subquery_statement(stmt_value)
@@ -225,7 +231,7 @@ Target Tables:
                         f"The query [\n{statement_segment.raw}\n] contains an unparsable segment."
                     )
                 return SqlFluffLineageAnalyzer().analyze(
-                    statement_segment, self._dialect, is_sub_query
+                    statement_segment, self._dialect or "", is_sub_query
                 )
         return LineageAnalyzer().analyze(stmt)
 

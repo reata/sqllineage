@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlfluff.core.parser import BaseSegment
 from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 
@@ -16,7 +18,10 @@ class DmlCteExtractor(LineageHolderExtractor):
 
     CTE_STMT_TYPES = ["with_compound_statement"]
 
-    def can_extract(self, statement_type: str):
+    def __init__(self, dialect: str):
+        super().__init__(dialect)
+
+    def can_extract(self, statement_type: str) -> bool:
         return statement_type in self.CTE_STMT_TYPES
 
     def extract(
@@ -24,7 +29,7 @@ class DmlCteExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SqlFluffSubQueryLineageHolder:
+    ) -> Optional[SqlFluffSubQueryLineageHolder]:
 
         handlers, conditional_handlers = self._init_handlers()
 

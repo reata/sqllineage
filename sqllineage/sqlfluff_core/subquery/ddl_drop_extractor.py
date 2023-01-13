@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
@@ -15,7 +17,10 @@ class DdlDropExtractor(LineageHolderExtractor):
 
     DDL_DROP_STMT_TYPES = ["drop_table_statement"]
 
-    def can_extract(self, statement_type: str):
+    def __init__(self, dialect: str):
+        super().__init__(dialect)
+
+    def can_extract(self, statement_type: str) -> bool:
         return statement_type in self.DDL_DROP_STMT_TYPES
 
     def extract(
@@ -23,7 +28,7 @@ class DdlDropExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SqlFluffSubQueryLineageHolder:
+    ) -> Optional[SqlFluffSubQueryLineageHolder]:
         holder = SqlFluffStatementLineageHolder()
         for table in {
             SqlFluffTable.of(t)

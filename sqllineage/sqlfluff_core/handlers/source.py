@@ -1,10 +1,13 @@
 import re
-from typing import Dict, List, Union, Iterable
+from typing import Dict, List, Union, Iterable, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
-from sqllineage.core.models import Path, Table, SubQuery
+from sqllineage.sqlfluff_core.models import (
+    SqlFluffPath,
+    SqlFluffTable,
+)
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.sqlfluff_core.models import (
@@ -29,9 +32,11 @@ class SourceHandler(ConditionalSegmentBaseHandler):
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
-        self.columns = []
-        self.tables = []
-        self.union_barriers = []
+        self.columns: List[SqlFluffColumn] = []
+        self.tables: List[
+            Union[SqlFluffPath, SqlFluffTable, SqlFluffSubQuery, SqlFluffSubQuery]
+        ] = []
+        self.union_barriers: List[Tuple[int, int]] = []
 
     def indicate(self, segment: BaseSegment) -> bool:
         if [
@@ -107,7 +112,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
     def _add_dataset_from_identifier(
         self, identifier: BaseSegment, holder: SqlFluffSubQueryLineageHolder
     ) -> None:
-        dataset: Union[Path, Table, SqlFluffSubQuery]
+        dataset: Union[SqlFluffPath, SqlFluffTable, SqlFluffSubQuery]
         all_segments = [
             seg for seg in retrieve_segments(identifier) if seg.type != "keyword"
         ]
@@ -125,9 +130,9 @@ class SourceHandler(ConditionalSegmentBaseHandler):
             return
         path_match = re.match(r"(parquet|csv|json)\.`(.*)`", identifier.raw_upper)
         if path_match is not None:
-            dataset = Path(path_match.groups()[1])
+            dataset = SqlFluffPath(path_match.groups()[1])
         else:
-            read: Union[Table, SqlFluffSubQuery, None] = None
+            read: Union[SqlFluffTable, SqlFluffSubQuery, None] = None
             subqueries = get_sub_queries(identifier)
             if subqueries:
                 # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
@@ -144,9 +149,11 @@ class SourceHandler(ConditionalSegmentBaseHandler):
     @classmethod
     def _get_alias_mapping_from_table_group(
         cls,
-        table_group: List[Union[Path, Table, SubQuery, SqlFluffSubQuery]],
+        table_group: List[
+            Union[SqlFluffPath, SqlFluffTable, SqlFluffSubQuery, SqlFluffSubQuery]
+        ],
         holder: SqlFluffSubQueryLineageHolder,
-    ) -> Dict[str, Union[Path, Table, SubQuery, SqlFluffSubQuery]]:
+    ) -> Dict[str, Union[SqlFluffTable, SqlFluffSubQuery]]:
         """
         A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
         For SubQuery, it's only alias then.
@@ -160,18 +167,22 @@ class SourceHandler(ConditionalSegmentBaseHandler):
             **{
                 table.raw_name: table
                 for table in table_group
-                if isinstance(table, Table)
+                if isinstance(table, SqlFluffTable)
             },
-            **{str(table): table for table in table_group if isinstance(table, Table)},
+            **{
+                str(table): table
+                for table in table_group
+                if isinstance(table, SqlFluffTable)
+            },
         }
 
     @staticmethod
     def indicate_column(segment: BaseSegment) -> bool:
-        return segment.type == "select_clause"
+        return bool(segment.type == "select_clause")
 
     @staticmethod
     def indicate_table(segment: BaseSegment) -> bool:
-        return segment.type == "from_clause"
+        return bool(segment.type == "from_clause")
 
     def _retrieve_extra_segment(self, segment: BaseSegment) -> Iterable[BaseSegment]:
         if segment.get_child("from_expression"):

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlfluff.core.parser import BaseSegment
 from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtractor
 
@@ -23,7 +25,10 @@ class DmlInsertExtractor(LineageHolderExtractor):
         "copy_into_table_statement",
     ]
 
-    def can_extract(self, statement_type: str):
+    def __init__(self, dialect: str):
+        super().__init__(dialect)
+
+    def can_extract(self, statement_type: str) -> bool:
         return statement_type in self.DML_INSERT_STMT_TYPES
 
     def extract(
@@ -31,7 +36,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SqlFluffSubQueryLineageHolder:
+    ) -> Optional[SqlFluffSubQueryLineageHolder]:
 
         handlers, conditional_handlers = self._init_handlers()
 

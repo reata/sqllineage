@@ -1,5 +1,8 @@
+from typing import Optional
+
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
@@ -18,7 +21,10 @@ class NoopExtractor(LineageHolderExtractor):
         "use_statement",
     ]
 
-    def can_extract(self, statement_type: str):
+    def __init__(self, dialect: str):
+        super().__init__(dialect)
+
+    def can_extract(self, statement_type: str) -> bool:
         return statement_type in self.NOOP_STMT_TYPES
 
     def extract(
@@ -26,5 +32,5 @@ class NoopExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> None:
+    ) -> Optional[SqlFluffSubQueryLineageHolder]:
         return None
