@@ -149,18 +149,19 @@ def test_select_left_join_with_extra_space_in_middle():
     assert_table_lineage_equal("SELECT * FROM tab1 LEFT  JOIN tab2", {"tab1", "tab2"})
 
 
-# deactivated since it can not be parsed properly by sqlfluff
-def x_test_select_left_semi_join():
+# deactivated for sqlfluff since it can not be parsed properly
+def test_select_left_semi_join():
     assert_table_lineage_equal(
-        "SELECT * FROM tab1 LEFT SEMI JOIN tab2", {"tab1", "tab2"}
+        "SELECT * FROM tab1 LEFT SEMI JOIN tab2", {"tab1", "tab2"}, test_sqlfluff=False
     )
 
 
-# deactivated since it can not be parsed properly by sqlfluff
-def x_test_select_left_semi_join_with_on():
+# deactivated for sqlfluff since it can not be parsed properly
+def test_select_left_semi_join_with_on():
     assert_table_lineage_equal(
         "SELECT * FROM tab1 LEFT SEMI JOIN tab2 ON (tab1.col1 = tab2.col2)",
         {"tab1", "tab2"},
+        test_sqlfluff=False,
     )
 
 
@@ -174,10 +175,12 @@ def test_select_full_outer_join():
     )
 
 
-# deactivated since it can not be parsed properly by sqlfluff
-def x_test_select_full_outer_join_with_full_as_alias():
+# deactivated for sqlfluff since it can not be parsed properly
+def test_select_full_outer_join_with_full_as_alias():
     assert_table_lineage_equal(
-        "SELECT * FROM tab1 AS FULL FULL OUTER JOIN tab2", {"tab1", "tab2"}
+        "SELECT * FROM tab1 AS FULL FULL OUTER JOIN tab2",
+        {"tab1", "tab2"},
+        test_sqlfluff=False,
     )
 
 
@@ -239,7 +242,7 @@ def test_select_from_unnest():
     )
 
 
-def test_select_from_unnest_with_ordinality():
+def test_select_from_unnest_parsed_as_keyword():
     # an extra space after UNNEST changes the AST structure
     assert_table_lineage_equal(
         "SELECT student, score FROM tests CROSS JOIN UNNEST (scores) AS t (score)",
@@ -247,8 +250,8 @@ def test_select_from_unnest_with_ordinality():
     )
 
 
-# deactivated since it can not be parsed properly by sqlfluff
-def x_test_select_from_unnest_with_ordinality():
+# deactivated for sqlfluff since it can not be parsed properly
+def test_select_from_unnest_with_ordinality():
     sql = """
     SELECT numbers, n, a
     FROM (
@@ -258,7 +261,7 @@ def x_test_select_from_unnest_with_ordinality():
     ) AS x (numbers)
     CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);
     """
-    assert_table_lineage_equal(sql, dialect="databricks")
+    assert_table_lineage_equal(sql, test_sqlfluff=False)
 
 
 def test_select_from_generator():

@@ -1,3 +1,5 @@
+from typing import Union
+
 import networkx as nx
 from sqllineage.core.models import Table, Column
 
@@ -38,7 +40,7 @@ def assert_column_lineage(
     expected = set()
     if column_lineages:
         for src, tgt in column_lineages:
-            src_col = (
+            src_col: Union[SqlFluffColumn, Column] = (
                 SqlFluffColumn(src.column) if test_sqlfluff else Column(src.column)
             )
             if src.qualifier is not None:
@@ -47,7 +49,7 @@ def assert_column_lineage(
                     if test_sqlfluff
                     else Table(src.qualifier)
                 )
-            tgt_col = (
+            tgt_col: Union[SqlFluffColumn, Column] = (
                 SqlFluffColumn(tgt.column) if test_sqlfluff else Column(tgt.column)
             )
             tgt_col.parent = (

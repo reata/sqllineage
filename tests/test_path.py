@@ -46,7 +46,7 @@ def test_copy_into_path():
     )
 
 
-# deactivated since it can not be parsed properly by sqlfluff
+# deactivated for sqlfluff since it can not be parsed properly
 @pytest.mark.parametrize("data_source", ["parquet", "json", "csv"])
 def test_select_from_files(data_source):
     """

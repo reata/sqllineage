@@ -82,8 +82,8 @@ def test_create_after_drop():
     )
 
 
-# deactivated since it can not be parsed properly by sqlfluff
-def x_test_create_using_serde():
+# deactivated for sqlfluff since it can not be parsed properly
+def test_create_using_serde():
     # Check https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormats&SerDe
     # here with is not an indicator for CTE
     assert_table_lineage_equal(
@@ -104,7 +104,7 @@ WITH SERDEPROPERTIES (
 STORED AS TEXTFILE""",  # noqa
         None,
         {"apachelog"},
-        "hive",
+        test_sqlfluff=False,
     )
 
 
