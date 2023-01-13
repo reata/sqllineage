@@ -1,6 +1,5 @@
 from sqlfluff.core.parser import BaseSegment
-from sqllineage.core.models import Path
-from sqllineage.sqlfluff_core.models import SqlFluffTable
+from sqllineage.sqlfluff_core.models import SqlFluffTable, SqlFluffPath
 from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     find_table_identifier,
@@ -68,9 +67,9 @@ class TargetHandler(ConditionalSegmentBaseHandler):
 
         elif segment.type in {"literal", "storage_location"}:
             if self.prev_token_from:
-                holder.add_read(Path(escape_identifier_name(segment.raw)))
+                holder.add_read(SqlFluffPath(escape_identifier_name(segment.raw)))
             else:
-                holder.add_write(Path(escape_identifier_name(segment.raw)))
+                holder.add_write(SqlFluffPath(escape_identifier_name(segment.raw)))
             self._reset_tokens()
 
         elif segment.type == "from_expression":

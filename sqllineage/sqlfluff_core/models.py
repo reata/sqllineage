@@ -4,7 +4,7 @@ from typing import Optional, Tuple, Callable, NamedTuple
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.models import SubQuery, Schema, Column, Table
+from sqllineage.core.models import SubQuery, Column, Table
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     retrieve_segments,
@@ -30,8 +30,52 @@ SOURCE_COLUMN_SEGMENT_TYPE = [
 ]
 
 
+class SqlFluffSchema:
+    unknown = "<default>"
+
+    def __init__(self, name: str = unknown):
+        """
+        Data Class for Schema
+
+        :param name: schema name
+        """
+        self.raw_name = escape_identifier_name(name)
+
+    def __str__(self):
+        return self.raw_name.lower()
+
+    def __repr__(self):
+        return "Schema: " + str(self)
+
+    def __eq__(self, other):
+        return type(self) is type(other) and str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __bool__(self):
+        return str(self) != self.unknown
+
+
+class SqlFluffPath:
+    def __init__(self, uri: str):
+        self.uri = escape_identifier_name(uri)
+
+    def __str__(self):
+        return self.uri
+
+    def __repr__(self):
+        return "Path: " + str(self)
+
+    def __eq__(self, other):
+        return type(self) is type(other) and self.uri == other.uri
+
+    def __hash__(self):
+        return hash(self.uri)
+
+
 class SqlFluffTable(Table):
-    def __init__(self, name: str, schema: Schema = Schema(), **kwargs):
+    def __init__(self, name: str, schema: SqlFluffSchema = SqlFluffSchema(), **kwargs):
         """
         Data Class for Table
 
@@ -46,7 +90,7 @@ class SqlFluffTable(Table):
             if len(schema_name.split(".")) > 2:
                 # allow db.schema as schema_name, but a.b.c as schema_name is forbidden
                 raise SQLLineageException("Invalid format for table name: %s.", name)
-            self.schema = Schema(schema_name)
+            self.schema = SqlFluffSchema(schema_name)
             self.raw_name = escape_identifier_name(table_name)
             if schema:
                 warnings.warn("Name is in schema.table format, schema param is ignored")
@@ -76,7 +120,9 @@ class SqlFluffTable(Table):
             if dot_idx
             else None
         )
-        schema = Schema(parent_name) if parent_name is not None else Schema()
+        schema = (
+            SqlFluffSchema(parent_name) if parent_name is not None else SqlFluffSchema()
+        )
         kwargs = {"alias": alias} if alias else {}
         return SqlFluffTable(real_name, schema, **kwargs)
 

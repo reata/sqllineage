@@ -67,9 +67,13 @@ def assert_table_lineage_equal(
     target_tables=None,
     dialect: str = "ansi",
     test_sqlfluff: bool = True,
+    test_sqlparse: bool = True,
 ):
     lr = LineageRunner(sql)
-    assert_table_lineage(lr, source_tables, target_tables)
+    if test_sqlparse:
+        assert_table_lineage(lr, source_tables, target_tables)
+    else:
+        lr.get_column_lineage()
 
     if test_sqlfluff:
         lr_sqlfluff = LineageRunner(sql, dialect=dialect, use_sqlparse=False)
@@ -78,10 +82,17 @@ def assert_table_lineage_equal(
 
 
 def assert_column_lineage_equal(
-    sql: str, column_lineages=None, dialect: str = "ansi", test_sqlfluff: bool = True
+    sql: str,
+    column_lineages=None,
+    dialect: str = "ansi",
+    test_sqlfluff: bool = True,
+    tesl_sqlparse: bool = True,
 ):
     lr = LineageRunner(sql)
-    assert_column_lineage(lr, column_lineages)
+    if tesl_sqlparse:
+        assert_column_lineage(lr, column_lineages)
+    else:
+        lr.get_column_lineage()
 
     if test_sqlfluff:
         lr_sqlfluff = LineageRunner(sql, dialect=dialect, use_sqlparse=False)

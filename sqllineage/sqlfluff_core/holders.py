@@ -3,12 +3,12 @@ from typing import Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
-from sqllineage.sqlfluff_core.models import SqlFluffColumn
+from sqllineage.sqlfluff_core.models import SqlFluffColumn, SqlFluffPath
 
-from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.core.models import Column, SubQuery, Table, Path
 from sqllineage.utils.constant import EdgeType, NodeTag
 
-DATASET_CLASSES = (Path, Table)
+DATASET_CLASSES = (Path, SqlFluffPath, Table)
 
 
 class SqlFluffColumnLineageMixin:
@@ -218,7 +218,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
         intermediate_tables -= self.__retrieve_tag_tables(NodeTag.SELFLOOP)
         return intermediate_tables
 
-    def __retrieve_tag_tables(self, tag) -> Set[Union[Path, Table]]:
+    def __retrieve_tag_tables(self, tag) -> Set[Union[SqlFluffPath, Table]]:
         return {
             table
             for table, attr in self.graph.nodes(data=True)
