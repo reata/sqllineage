@@ -277,3 +277,9 @@ def get_table_alias(table_tokes: List[BaseSegment]) -> Optional[str]:
             alias = retrieve_segments(table_and_alias[1])
             alias = alias[1].raw if len(alias) > 1 else alias[0].raw
     return alias
+
+
+def has_alias(segment: BaseSegment):
+    return (
+        len([s for s in segment.get_children("keyword") if s.raw.lower() == "as"]) > 0
+    )

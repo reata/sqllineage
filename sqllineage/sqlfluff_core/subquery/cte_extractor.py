@@ -9,7 +9,7 @@ from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
 from sqllineage.sqlfluff_core.models import SqlFluffSubQuery
-from sqllineage.sqlfluff_core.utils.sqlfluff import retrieve_segments
+from sqllineage.sqlfluff_core.utils.sqlfluff import retrieve_segments, has_alias
 
 
 class DmlCteExtractor(LineageHolderExtractor):
@@ -58,14 +58,20 @@ class DmlCteExtractor(LineageHolderExtractor):
 
             identifier = None
             if segment.type == "common_table_expression":
+                segment_has_alias = has_alias(segment)
                 sub_segments = retrieve_segments(segment)
                 for sub_segment in sub_segments:
                     if sub_segment.type == "identifier":
                         identifier = sub_segment.raw
+                        if not segment_has_alias:
+                            holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
                     if sub_segment.type == "bracketed":
                         for sq in self.parse_subquery(sub_segment):
+                            if identifier:
+                                sq.alias = identifier
                             subqueries.append(sq)
-                        holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
+                        if segment_has_alias:
+                            holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
 
             for conditional_handler in conditional_handlers:
                 if conditional_handler.indicate(segment):
