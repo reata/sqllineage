@@ -3,7 +3,7 @@ from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtr
 
 from sqllineage.core.holders import SubQueryLineageHolder
 
-from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
+from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext, SqlFluffSubQuery
 
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
@@ -50,7 +50,14 @@ class DmlInsertExtractor(LineageHolderExtractor):
                 current_handler.handle(segment, holder)
 
             if segment.type == "select_statement":
-                select_statements.append(segment)
+                holder |= DmlSelectExtractor(self.dialect).extract(
+                    segment,
+                    SqlFluffAnalyzerContext(
+                        SqlFluffSubQuery(segment, None),
+                        prev_cte=holder.cte,
+                        prev_write=holder.write,
+                    ),
+                )
                 continue
 
             if segment.type == "set_expression":
@@ -64,17 +71,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
                 if conditional_handler.indicate(segment):
                     conditional_handler.handle(segment, holder)
 
-        # call end of query hook here as loop is over
-        for conditional_handler in conditional_handlers:
-            conditional_handler.end_of_query_cleanup(holder)
-
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
-        for statement in select_statements:
-            holder |= DmlSelectExtractor(self.dialect).extract(
-                statement,
-                SqlFluffAnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
-            )
-
         for sq in subqueries:
             holder |= DmlSelectExtractor(self.dialect).extract(
                 sq.segment, SqlFluffAnalyzerContext(sq, holder.cte)

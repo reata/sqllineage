@@ -3,6 +3,7 @@ from typing import Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
+from sqllineage.sqlfluff_core.models import SqlFluffColumn
 
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.utils.constant import EdgeType, NodeTag
@@ -222,7 +223,20 @@ class SQLLineageHolder(ColumnLineageMixin):
         }
 
     @staticmethod
-    def _build_digraph(*args: StatementLineageHolder) -> DiGraph:
+    def _get_column_if_related_to_parent(
+        g: DiGraph, raw_name: str, parent: [Union[Table, SubQuery]], use_sqlparser: bool
+    ) -> Column:
+        if use_sqlparser:
+            src_col = Column(raw_name)
+        else:
+            src_col = SqlFluffColumn(raw_name)
+        src_col.parent = parent
+        return src_col if g.has_edge(parent, src_col) else None
+
+    @classmethod
+    def _build_digraph(
+        cls, use_sqlparser: bool, *args: StatementLineageHolder
+    ) -> DiGraph:
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
@@ -270,9 +284,10 @@ class SQLLineageHolder(ColumnLineageMixin):
             # check if there's only one parent candidate contains the column with same name
             src_cols = []
             for parent in unresolved_col.parent_candidates:
-                src_col = Column(unresolved_col.raw_name)
-                src_col.parent = parent
-                if g.has_edge(parent, src_col):
+                src_col = cls._get_column_if_related_to_parent(
+                    g, unresolved_col.raw_name, parent, use_sqlparser
+                )
+                if src_col:
                     src_cols.append(src_col)
             if len(src_cols) == 1:
                 g.add_edge(src_cols[0], tgt_col, type=EdgeType.LINEAGE)
@@ -284,10 +299,10 @@ class SQLLineageHolder(ColumnLineageMixin):
         return g
 
     @staticmethod
-    def of(*args: StatementLineageHolder):
+    def of(*args: StatementLineageHolder, use_sqlparser: bool = False):
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
         """
-        g = SQLLineageHolder._build_digraph(*args)
+        g = SQLLineageHolder._build_digraph(use_sqlparser, *args)
         return SQLLineageHolder(g)

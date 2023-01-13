@@ -199,7 +199,9 @@ Target Tables:
         ]
 
         self._stmt_holders = [self.run_lineage_analyzer(stmt) for stmt in self._stmt]
-        self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
+        self._sql_holder = SQLLineageHolder.of(
+            *self._stmt_holders, use_sqlparser=self._use_sqlparse
+        )
         self._evaluated = True
 
     def run_lineage_analyzer(self, stmt: Statement) -> StatementLineageHolder:

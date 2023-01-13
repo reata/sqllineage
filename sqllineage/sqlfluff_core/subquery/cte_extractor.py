@@ -31,8 +31,6 @@ class DmlCteExtractor(LineageHolderExtractor):
         holder = self._init_holder(context)
 
         subqueries = []
-        select_statements = []
-        insert_statements = []
         segments = retrieve_segments(statement)
 
         for segment in segments:
@@ -45,10 +43,18 @@ class DmlCteExtractor(LineageHolderExtractor):
                 current_handler.handle(segment, holder)
 
             if segment.type == "select_statement":
-                select_statements.append(segment)
+                holder |= DmlSelectExtractor(self.dialect).extract(
+                    segment,
+                    SqlFluffAnalyzerContext(
+                        prev_cte=holder.cte, prev_write=holder.write
+                    ),
+                )
 
             if segment.type == "insert_statement":
-                insert_statements.append(segment)
+                holder |= DmlInsertExtractor(self.dialect).extract(
+                    segment,
+                    SqlFluffAnalyzerContext(prev_cte=holder.cte),
+                )
 
             identifier = None
             if segment.type == "common_table_expression":
@@ -65,27 +71,11 @@ class DmlCteExtractor(LineageHolderExtractor):
                 if conditional_handler.indicate(segment):
                     conditional_handler.handle(segment, holder)
 
-        # call end of query hook here as loop is over
-        for conditional_handler in conditional_handlers:
-            conditional_handler.end_of_query_cleanup(holder)
-
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
-        for statement in insert_statements:
-            holder |= DmlInsertExtractor(self.dialect).extract(
-                statement,
-                SqlFluffAnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
-            )
-
-        for statement in select_statements:
-            holder |= DmlSelectExtractor(self.dialect).extract(
-                statement,
-                SqlFluffAnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
-            )
-
         for sq in subqueries:
             holder |= DmlSelectExtractor(self.dialect).extract(
                 sq.segment,
-                SqlFluffAnalyzerContext(sq, holder.cte),
+                SqlFluffAnalyzerContext(sq, prev_cte=holder.cte),
             )
 
         return holder
