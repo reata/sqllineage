@@ -29,13 +29,13 @@ class DmlSelectExtractor(LineageHolderExtractor):
     ) -> Optional[SqlFluffSubQueryLineageHolder]:
         handlers, conditional_handlers = self._init_handlers()
         holder = self._init_holder(context)
-        sub_queries = [SqlFluffSubQuery.of(statement, None)] if is_sub_query else []
+        subqueries = [SqlFluffSubQuery.of(statement, None)] if is_sub_query else []
         segments = retrieve_segments(statement)
         for segment in segments:
             for sq in self.parse_subquery(segment):
                 # Collecting subquery on the way, hold on parsing until last
                 # so that each handler don't have to worry about what's inside subquery
-                sub_queries.append(sq)
+                subqueries.append(sq)
 
             for current_handler in handlers:
                 current_handler.handle(segment, holder)
@@ -49,7 +49,7 @@ class DmlSelectExtractor(LineageHolderExtractor):
             conditional_handler.end_of_query_cleanup(holder)
 
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
-        for sq in sub_queries:
+        for sq in subqueries:
             holder |= self.extract(sq.segment, SqlFluffAnalyzerContext(sq, holder.cte))
 
         for sq in holder.extra_sub_queries:

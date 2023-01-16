@@ -43,7 +43,6 @@ class DmlInsertExtractor(LineageHolderExtractor):
         holder = self._init_holder(context)
 
         subqueries = []
-        select_statements = []
         segments = retrieve_segments(statement)
         for segment in segments:
             for sq in self.parse_subquery(segment):
@@ -69,7 +68,14 @@ class DmlInsertExtractor(LineageHolderExtractor):
                 sub_segments = retrieve_segments(segment)
                 for sub_segment in sub_segments:
                     if sub_segment.type == "select_statement":
-                        select_statements.append(sub_segment)
+                        holder |= DmlSelectExtractor(self.dialect).extract(
+                            sub_segment,
+                            SqlFluffAnalyzerContext(
+                                SqlFluffSubQuery(segment, None),
+                                prev_cte=holder.cte,
+                                prev_write=holder.write,
+                            ),
+                        )
                 continue
 
             for conditional_handler in conditional_handlers:

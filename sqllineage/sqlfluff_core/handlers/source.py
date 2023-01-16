@@ -3,13 +3,13 @@ from typing import Dict, List, Union, Iterable, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.exceptions import SQLLineageException
+from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.models import (
     SqlFluffPath,
     SqlFluffTable,
 )
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.sqlfluff_core.models import (
     SqlFluffSubQuery,
     SqlFluffColumn,
@@ -39,12 +39,6 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         self.union_barriers: List[Tuple[int, int]] = []
 
     def indicate(self, segment: BaseSegment) -> bool:
-        if [
-            s
-            for s in segment.raw_segments
-            if s.type == "keyword" and s.raw.strip().lower() == "union"
-        ]:
-            self.union_barriers.append((len(self.columns), len(self.tables)))
         return self.indicate_column(segment) or self.indicate_table(segment)
 
     def handle(
@@ -132,14 +126,14 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         if path_match is not None:
             dataset = SqlFluffPath(path_match.groups()[1])
         else:
-            read: Union[SqlFluffTable, SqlFluffSubQuery, None] = None
-            subqueries = get_sub_queries(identifier)
+            subqueries = get_sub_queries(identifier, skip_union=False)
             if subqueries:
-                # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
-                # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
-                parenthesis, alias = subqueries[0]
-                read = SqlFluffSubQuery.of(parenthesis, alias)
-                holder.extra_sub_queries.add(read)
+                for sq in subqueries:
+                    bracketed, alias = sq
+                    read_sq = SqlFluffSubQuery.of(bracketed, alias)
+                    holder.extra_sub_queries.add(read_sq)
+                    self.tables.append(read_sq)
+                return
             else:
                 table_identifier = find_table_identifier(identifier)
                 read = retrieve_holder_data_from(all_segments, holder, table_identifier)

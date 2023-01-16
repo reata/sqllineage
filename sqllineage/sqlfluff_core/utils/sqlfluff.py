@@ -1,4 +1,4 @@
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 from sqlfluff.core.parser.segments import BracketedSegment
@@ -69,16 +69,25 @@ def get_bracketed_sub_queries_select(
     return subquery
 
 
-def get_bracketed_sub_queries_from(segment: BaseSegment) -> List[SubSqlFluffQueryTuple]:
+def get_bracketed_sub_queries_from(
+    segment: BaseSegment, skip_union: bool = True
+) -> List[SubSqlFluffQueryTuple]:
     subquery = []
-    as_segment = segment.get_child("alias_expression")
-    sublist = list([seg for seg in segment.segments if not is_segment_negligible(seg)])
-    if as_segment is not None and len(sublist) == 1:
-        # CTE: tbl AS (SELECT 1)
-        target = sublist[0]
-    else:
-        target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
-    if is_subquery(target):
+    as_segment, target = extract_as_and_target_segment(
+        get_inner_from_expression(segment)
+    )
+    if not skip_union and is_union(target):
+        for sq in get_union_sub_queries(target):
+            subquery.append(
+                SubSqlFluffQueryTuple(
+                    sq,
+                    get_identifier(as_segment) if as_segment else None,
+                )
+            )
+    elif is_subquery(target):
+        as_segment, target = extract_as_and_target_segment(
+            get_inner_from_expression(segment)
+        )
         subquery = [
             SubSqlFluffQueryTuple(
                 get_innermost_bracketed(target),
@@ -86,6 +95,18 @@ def get_bracketed_sub_queries_from(segment: BaseSegment) -> List[SubSqlFluffQuer
             )
         ]
     return subquery
+
+
+def extract_as_and_target_segment(
+    segment: BaseSegment,
+) -> Tuple[BaseSegment, BaseSegment]:
+    as_segment = segment.get_child("alias_expression")
+    sublist = list([seg for seg in segment.segments if not is_segment_negligible(seg)])
+    if as_segment is not None and len(sublist) == 1:
+        target = sublist[0]
+    else:
+        target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
+    return as_segment, target
 
 
 def get_bracketed_sub_queries_where(
@@ -100,11 +121,13 @@ def get_bracketed_sub_queries_where(
     return []
 
 
-def get_sub_queries(segment: BaseSegment) -> List[SubSqlFluffQueryTuple]:
+def get_sub_queries(
+    segment: BaseSegment, skip_union: bool = True
+) -> List[SubSqlFluffQueryTuple]:
     if segment.type in ["select_clause"]:
         return get_bracketed_sub_queries_select(segment)
     elif segment.type in ["from_clause", "from_expression", "from_expression_element"]:
-        return get_bracketed_sub_queries_from(get_inner_from_expression(segment))
+        return get_bracketed_sub_queries_from(segment, skip_union)
     elif segment.type in ["join_clause"]:
         return []
     elif segment.type in ["where_clause"]:
@@ -283,7 +306,29 @@ def get_table_alias(table_tokes: List[BaseSegment]) -> Optional[str]:
     return str(alias) if alias else None
 
 
-def has_alias(segment: BaseSegment):
+def has_alias(segment: BaseSegment) -> bool:
     return (
         len([s for s in segment.get_children("keyword") if s.raw.lower() == "as"]) > 0
     )
+
+
+def is_union(segment: BaseSegment) -> bool:
+    sub_segments = retrieve_segments(segment, check_bracketed=True)
+    return (
+        len(
+            [
+                s
+                for s in sub_segments
+                if s.type == "set_operator"
+                and (s.raw.lower() == "union" or s.raw.lower() == "union all")
+            ]
+        )
+        > 0
+    )
+
+
+def get_union_sub_queries(segment: BaseSegment) -> List[BaseSegment]:
+    sub_segments = retrieve_segments(segment, check_bracketed=True)
+    return [
+        s for s in sub_segments if s.type == "bracketed" or s.type == "select_statement"
+    ]

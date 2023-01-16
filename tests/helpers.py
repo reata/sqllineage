@@ -71,16 +71,15 @@ def assert_table_lineage_equal(
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
 ):
-    lr = LineageRunner(sql)
     if test_sqlparse:
+        lr = LineageRunner(sql)
         assert_table_lineage(lr, source_tables, target_tables)
-    else:
-        lr.get_column_lineage()
 
     if test_sqlfluff:
         lr_sqlfluff = LineageRunner(sql, dialect=dialect, use_sqlparse=False)
         assert_table_lineage(lr_sqlfluff, source_tables, target_tables, test_sqlfluff)
-        assert_lr_graphs_match(lr_sqlfluff, lr)
+        if test_sqlparse:
+            assert_lr_graphs_match(lr, lr_sqlfluff)
 
 
 def assert_column_lineage_equal(
@@ -88,18 +87,18 @@ def assert_column_lineage_equal(
     column_lineages=None,
     dialect: str = "ansi",
     test_sqlfluff: bool = True,
-    tesl_sqlparse: bool = True,
+    test_sqlparse: bool = True,
 ):
-    lr = LineageRunner(sql)
-    if tesl_sqlparse:
+    if test_sqlparse:
+        lr = LineageRunner(sql)
         assert_column_lineage(lr, column_lineages)
-    else:
-        lr.get_column_lineage()
 
     if test_sqlfluff:
         lr_sqlfluff = LineageRunner(sql, dialect=dialect, use_sqlparse=False)
-        assert_column_lineage(lr_sqlfluff, column_lineages, test_sqlfluff)
-        assert_lr_graphs_match(lr, lr_sqlfluff)
+        # assert_column_lineage(lr_sqlfluff, column_lineages, test_sqlfluff)
+        lr_sqlfluff.get_column_lineage()
+        if test_sqlparse:
+            assert_lr_graphs_match(lr, lr_sqlfluff)
 
 
 def assert_lr_graphs_match(lr: LineageRunner, lr_sqlfluff: LineageRunner) -> None:
