@@ -1,5 +1,7 @@
 # SQLLineage
-SQL Lineage Analysis Tool powered by Python
+SQL Lineage Analysis Tool powered by Python.
+
+This is a fork authored by the OpenMetadata community, where we are adding `sqlfluff` as a parsing backend instead of `sqlparse`.
 
 [![image](https://img.shields.io/pypi/v/sqllineage.svg)](https://pypi.org/project/sqllineage/)
 [![image](https://img.shields.io/pypi/status/sqllineage.svg)](https://pypi.org/project/sqllineage/)
