@@ -8,7 +8,7 @@ from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtr
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
-from sqllineage.sqlfluff_core.utils.sqlfluff import retrieve_segments, has_alias
+from sqllineage.sqlfluff_core.utils.sqlfluff import has_alias, retrieve_segments
 
 
 class DmlCteExtractor(LineageHolderExtractor):

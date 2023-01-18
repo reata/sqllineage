@@ -1,8 +1,8 @@
 from typing import Union
 
 import networkx as nx
-from sqllineage.core.models import Table, Column
 
+from sqllineage.core.models import Column, Table
 from sqllineage.runner import LineageRunner
 from sqllineage.sqlfluff_core.models import SqlFluffColumn, SqlFluffTable
 

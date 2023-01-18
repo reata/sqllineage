@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Union, Dict, Set
+from typing import Dict, List, Set, Union
 from typing import Optional, Tuple
 
 from sqlfluff.core.parser import BaseSegment
@@ -7,10 +7,10 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.sqlfluff_core.utils.entities import SqlFluffColumnQualifierTuple
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
-    retrieve_segments,
-    is_wildcard,
-    is_subquery,
     get_identifier,
+    is_subquery,
+    is_wildcard,
+    retrieve_segments,
     token_matching,
 )
 from sqllineage.utils.helpers import escape_identifier_name

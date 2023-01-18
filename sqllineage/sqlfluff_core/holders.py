@@ -1,14 +1,14 @@
 import itertools
-from typing import Set, Tuple, Union, Optional, List
+from typing import List, Optional, Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
 
 from sqllineage.sqlfluff_core.models import (
     SqlFluffColumn,
+    SqlFluffPath,
     SqlFluffSubQuery,
     SqlFluffTable,
-    SqlFluffPath,
 )
 from sqllineage.utils.constant import EdgeType, NodeTag
 

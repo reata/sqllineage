@@ -2,7 +2,7 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
-from sqllineage.sqlfluff_core.models import SqlFluffTable, SqlFluffPath
+from sqllineage.sqlfluff_core.models import SqlFluffPath, SqlFluffTable
 from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     find_table_identifier,

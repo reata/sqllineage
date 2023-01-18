@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Union, Iterable, Tuple
+from typing import Dict, Iterable, List, Tuple, Union
 
 from sqlfluff.core.parser import BaseSegment
 
@@ -7,22 +7,22 @@ from sqllineage.exceptions import SQLLineageException
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.models import (
+    SqlFluffColumn,
+    SqlFluffSubQuery,
+)
+from sqllineage.sqlfluff_core.models import (
     SqlFluffPath,
     SqlFluffTable,
 )
-from sqllineage.sqlfluff_core.models import (
-    SqlFluffSubQuery,
-    SqlFluffColumn,
-)
 from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
+    find_table_identifier,
+    get_inner_from_expression,
+    get_multiple_identifiers,
+    get_subqueries,
     is_subquery,
     is_values_clause,
-    get_subqueries,
-    get_multiple_identifiers,
-    get_inner_from_expression,
     retrieve_segments,
-    find_table_identifier,
 )
 from sqllineage.utils.constant import EdgeType
 

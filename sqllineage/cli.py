@@ -3,7 +3,7 @@ import logging
 import logging.config
 
 
-from sqllineage import DEFAULT_HOST, DEFAULT_LOGGING, DEFAULT_PORT
+from sqllineage import DEFAULT_DIALECT, DEFAULT_HOST, DEFAULT_LOGGING, DEFAULT_PORT
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
@@ -62,6 +62,20 @@ def main(args=None) -> None:
         default=DEFAULT_PORT,
         metavar="<port_number>{0..65536}",
     )
+    parser.add_argument(
+        "-d",
+        "--dialect",
+        help="the dialect used to compute the lineage",
+        type=str,
+        default=DEFAULT_DIALECT,
+        metavar="ansi, mysql, snowflake, redshift, hive, etc. Chec supported dialects by sqlfluff.",
+    )
+    parser.add_argument(
+        "-s",
+        "--sqlfluff",
+        help="use sqlfluff as the parser",
+        action="store_false",
+    )
     args = parser.parse_args(args)
     if args.e and args.f:
         logging.warning(
@@ -77,9 +91,11 @@ def main(args=None) -> None:
                 "port": args.port,
                 "f": args.f if args.f else None,
             },
+            dialect=args.dialect,
+            use_sqlparse=args.sqlfluff,
         )
         if args.graph_visualization:
-            runner.draw()
+            runner.draw(args.dialect, args.sqlfluff)
         elif args.level == LineageLevel.COLUMN:
             runner.print_column_lineage()
         else:

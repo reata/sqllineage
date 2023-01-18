@@ -1,18 +1,18 @@
 import logging
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import sqlparse
 from sqlfluff.api.simple import get_simple_config
 from sqlfluff.core import Linter
 from sqlfluff.core.linter import ParsedString
 from sqlfluff.core.parser import BaseSegment
-from sqllineage.exceptions import SQLLineageException
 from sqlparse.sql import Statement
 
 from sqllineage.core import LineageAnalyzer
 from sqllineage.core.holders import SQLLineageHolder, StatementLineageHolder
 from sqllineage.core.models import Column, Table
 from sqllineage.drawing import draw_lineage_graph
+from sqllineage.exceptions import SQLLineageException
 from sqllineage.io import to_cytoscape
 from sqllineage.sqlfluff_core.analyzer import SqlFluffLineageAnalyzer
 from sqllineage.sqlfluff_core.holders import (
@@ -116,7 +116,7 @@ Target Tables:
         else:
             return to_cytoscape(self._sql_holder.table_lineage_graph)
 
-    def draw(self) -> None:
+    def draw(self, dialect: str, use_sqlfluff: bool) -> None:
         """
         to draw the lineage directed graph
         """
@@ -124,6 +124,8 @@ Target Tables:
         if draw_options.get("f") is None:
             draw_options.pop("f", None)
             draw_options["e"] = self._sql
+            draw_options["dialect"] = dialect
+            draw_options["use_sqlfluff"] = str(use_sqlfluff)
         return draw_lineage_graph(**draw_options)
 
     @lazy_method

@@ -75,3 +75,5 @@ DATA_FOLDER = os.environ.get(
 )
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 5001
+DEFAULT_DIALECT = "ansi"
+DEFAULT_USE_SQLFLUFF = False

@@ -1,6 +1,6 @@
 from typing import NamedTuple, Optional, Union
 
-from sqlfluff.core.parser.segments import BracketedSegment, BaseSegment
+from sqlfluff.core.parser.segments import BaseSegment, BracketedSegment
 
 
 class SubSqlFluffQueryTuple(NamedTuple):

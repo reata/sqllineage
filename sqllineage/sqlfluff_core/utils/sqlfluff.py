@@ -1,7 +1,7 @@
 """
 Utils class to deal with the sqlfluff segments manipulations
 """
-from typing import List, Optional, Tuple, Callable, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 from sqlfluff.core.parser import BaseSegment
 from sqlfluff.core.parser.segments import BracketedSegment

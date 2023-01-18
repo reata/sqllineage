@@ -1,5 +1,4 @@
 from sqllineage.core.models import Path
-
 from sqllineage.runner import LineageRunner
 from sqllineage.sqlfluff_core.models import SqlFluffPath
 from .helpers import assert_table_lineage_equal

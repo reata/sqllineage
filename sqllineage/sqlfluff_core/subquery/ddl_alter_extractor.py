@@ -1,8 +1,8 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.holders import (
-    SqlFluffSubQueryLineageHolder,
     SqlFluffStatementLineageHolder,
+    SqlFluffSubQueryLineageHolder,
 )
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 from sqllineage.sqlfluff_core.models import SqlFluffTable

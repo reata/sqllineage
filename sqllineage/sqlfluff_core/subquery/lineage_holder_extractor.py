@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from functools import reduce
 from operator import add
-from typing import Tuple, List
+from typing import List, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.handlers.base import (
-    SegmentBaseHandler,
     ConditionalSegmentBaseHandler,
+    SegmentBaseHandler,
 )
 from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
