@@ -337,7 +337,7 @@ class Column:
         Best guess for source table given all the possible table/subquery and their alias.
         """
 
-        def _to_src_col(name: str, parent: Union[Table, SubQuery] = None):
+        def _to_src_col(name: str, parent: Optional[Union[Table, SubQuery]] = None):
             col = Column(name)
             if parent:
                 col.parent = parent

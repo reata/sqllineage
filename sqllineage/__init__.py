@@ -74,4 +74,6 @@ DATA_FOLDER = os.environ.get(
     "SQLLINEAGE_DIRECTORY", os.path.join(os.path.dirname(__file__), "data")
 )
 DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 5000
+DEFAULT_PORT = 5001
+DEFAULT_DIALECT = "ansi"
+DEFAULT_USE_SQLFLUFF = False

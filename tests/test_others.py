@@ -1,4 +1,6 @@
+from sqllineage.core.models import Path
 from sqllineage.runner import LineageRunner
+from sqllineage.sqlfluff_core.models import SqlFluffPath
 from .helpers import assert_table_lineage_equal
 
 
@@ -14,6 +16,7 @@ union all
 select * from TAB_B""",
         {"tab_b"},
         {"tab_a"},
+        "sparksql",
     )
 
 
@@ -32,6 +35,7 @@ def test_create_bucket_table():
         "CREATE TABLE tab1 USING parquet CLUSTERED BY (col1) INTO 500 BUCKETS",
         None,
         {"tab1"},
+        "bigquery",
     )
 
 
@@ -42,9 +46,10 @@ def test_create_as():
 
 
 def test_create_as_with_parenthesis_around_select_statement():
-    assert_table_lineage_equal(
-        "CREATE TABLE tab1 AS (SELECT * FROM tab2)", {"tab2"}, {"tab1"}
-    )
+    sql = "CREATE TABLE tab1 AS (SELECT * FROM tab2)"
+    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlfluff=False)
+    # Graph generated differ but it is correct
+    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlparse=False)
 
 
 def test_create_as_with_parenthesis_around_table_name():
@@ -54,9 +59,10 @@ def test_create_as_with_parenthesis_around_table_name():
 
 
 def test_create_as_with_parenthesis_around_both():
-    assert_table_lineage_equal(
-        "CREATE TABLE tab1 AS (SELECT * FROM (tab2))", {"tab2"}, {"tab1"}
-    )
+    sql = "CREATE TABLE tab1 AS (SELECT * FROM (tab2))"
+    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlfluff=False)
+    # Graph generated differ but it is correct
+    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlparse=False)
 
 
 def test_create_like():
@@ -65,7 +71,7 @@ def test_create_like():
 
 def test_create_select():
     assert_table_lineage_equal(
-        "CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}
+        "CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}, "sparksql"
     )
 
 
@@ -77,6 +83,7 @@ def test_create_after_drop():
     )
 
 
+# deactivated for sqlfluff since it can not be parsed properly
 def test_create_using_serde():
     # Check https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormats&SerDe
     # here with is not an indicator for CTE
@@ -98,6 +105,7 @@ WITH SERDEPROPERTIES (
 STORED AS TEXTFILE""",  # noqa
         None,
         {"apachelog"},
+        test_sqlfluff=False,
     )
 
 
@@ -121,14 +129,27 @@ def test_update_with_join():
         "UPDATE tab1 a INNER JOIN tab2 b ON a.col1=b.col1 SET a.col2=b.col2",
         {"tab2"},
         {"tab1"},
+        "mysql",
     )
 
 
+# the previous query "COPY tab1 FROM tab2" was wrong
+# Reference:
+# https://www.postgresql.org/docs/current/sql-copy.html (Postgres)
+# https://docs.aws.amazon.com/es_es/redshift/latest/dg/r_COPY.html (Redshift)
 def test_copy_from_table():
     assert_table_lineage_equal(
-        "COPY tab1 FROM tab2",
-        {"tab2"},
+        "COPY tab1 FROM 's3://mybucket/mypath'",
+        {Path("s3://mybucket/mypath")},
         {"tab1"},
+        test_sqlfluff=False,
+    )
+    assert_table_lineage_equal(
+        "COPY tab1 FROM 's3://mybucket/mypath'",
+        {SqlFluffPath("s3://mybucket/mypath")},
+        {"tab1"},
+        "redshift",
+        test_sqlparse=False,
     )
 
 
@@ -157,7 +178,7 @@ def test_drop_tmp_tab_after_create():
     sql = """create table tab_a as select * from tab_b;
 insert overwrite table tab_c select * from tab_a;
 drop table tab_a;"""
-    assert_table_lineage_equal(sql, {"tab_b"}, {"tab_c"})
+    assert_table_lineage_equal(sql, {"tab_b"}, {"tab_c"}, "sparksql")
 
 
 def test_new_create_tab_as_tmp_table():
@@ -175,11 +196,13 @@ def test_rename_table():
     This syntax is MySQL specific:
      https://dev.mysql.com/doc/refman/8.0/en/rename-table.html
     """
-    assert_table_lineage_equal("rename table tab1 to tab2", None, None)
+    assert_table_lineage_equal("rename table tab1 to tab2", None, None, "teradata")
 
 
 def test_rename_tables():
-    assert_table_lineage_equal("rename table tab1 to tab2, tab3 to tab4", None, None)
+    assert_table_lineage_equal(
+        "rename table tab1 to tab2, tab3 to tab4", None, None, "mysql"
+    )
 
 
 def test_alter_table_exchange_partition():
@@ -190,6 +213,7 @@ def test_alter_table_exchange_partition():
         "alter table tab1 exchange partition(pt='part1') with table tab2",
         {"tab2"},
         {"tab1"},
+        "hive",
     )
 
 
@@ -210,23 +234,26 @@ def test_alter_target_table_name():
         "insert overwrite tab1 select * from tab2; alter table tab1 rename to tab3;",
         {"tab2"},
         {"tab3"},
+        "sparksql",
     )
 
 
 def test_refresh_table():
-    assert_table_lineage_equal("refresh table tab1", None, None)
+    assert_table_lineage_equal("refresh table tab1", None, None, "sparksql")
 
 
 def test_cache_table():
-    assert_table_lineage_equal("cache table tab1", None, None)
+    assert_table_lineage_equal(
+        "cache table tab1 select * from tab2", None, None, "sparksql"
+    )
 
 
 def test_uncache_table():
-    assert_table_lineage_equal("uncache table tab1", None, None)
+    assert_table_lineage_equal("uncache table tab1", None, None, "sparksql")
 
 
 def test_uncache_table_if_exists():
-    assert_table_lineage_equal("uncache table if exists tab1", None, None)
+    assert_table_lineage_equal("uncache table if exists tab1", None, None, "sparksql")
 
 
 def test_truncate_table():
@@ -242,7 +269,7 @@ def test_lateral_view_using_json_tuple():
 SELECT sc.id, q.item0, q.item1
 FROM bar sc
 LATERAL VIEW json_tuple(sc.json, 'key1', 'key2') q AS item0, item1"""
-    assert_table_lineage_equal(sql, {"bar"}, {"foo"})
+    assert_table_lineage_equal(sql, {"bar"}, {"foo"}, "sparksql")
 
 
 def test_lateral_view_outer():
@@ -250,11 +277,11 @@ def test_lateral_view_outer():
 SELECT sc.id, q.col1
 FROM bar sc
 LATERAL VIEW OUTER explode(sc.json_array) q AS col1"""
-    assert_table_lineage_equal(sql, {"bar"}, {"foo"})
+    assert_table_lineage_equal(sql, {"bar"}, {"foo"}, "sparksql")
 
 
 def test_show_create_table():
-    assert_table_lineage_equal("show create table tab1", None, None)
+    assert_table_lineage_equal("show create table tab1", None, None, "sparksql")
 
 
 def test_split_statements():

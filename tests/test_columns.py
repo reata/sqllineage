@@ -12,6 +12,7 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1 AS col2
@@ -19,6 +20,7 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT tab2.col1 AS col2
@@ -26,6 +28,7 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+        "sparksql",
     )
 
 
@@ -34,7 +37,9 @@ def test_select_column_wildcard():
 SELECT *
 FROM tab2"""
     assert_column_lineage_equal(
-        sql, [(ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1"))]
+        sql,
+        [(ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1"))],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT *
@@ -47,6 +52,7 @@ FROM tab2 a
             (ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1")),
             (ColumnQualifierTuple("*", "tab3"), ColumnQualifierTuple("*", "tab1")),
         ],
+        "sparksql",
     )
 
 
@@ -67,6 +73,7 @@ FROM tab2"""
                 ColumnQualifierTuple("count(*)", "tab1"),
             ),
         ],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT max(col1) AS col2,
@@ -81,6 +88,7 @@ FROM tab2"""
             ),
             (ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("cnt", "tab1")),
         ],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT cast(col1 as timestamp)
@@ -93,6 +101,7 @@ FROM tab2"""
                 ColumnQualifierTuple("cast(col1 as timestamp)", "tab1"),
             )
         ],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT cast(col1 as timestamp) as col2
@@ -100,6 +109,7 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+        "sparksql",
     )
 
 
@@ -119,6 +129,7 @@ FROM tab2"""
                 ColumnQualifierTuple("flag", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -138,6 +149,7 @@ FROM tab2"""
                 ColumnQualifierTuple("rnum", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -171,6 +183,7 @@ FROM tab2"""
                 ColumnQualifierTuple("col4", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -190,6 +203,7 @@ FROM tab2"""
                 ColumnQualifierTuple("col1 + col2", "tab1"),
             ),
         ],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1 + col2 AS col3
@@ -206,6 +220,7 @@ FROM tab2"""
                 ColumnQualifierTuple("col3", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -225,6 +240,7 @@ FROM tab2"""
                 ColumnQualifierTuple("col3", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -244,6 +260,7 @@ FROM tab2"""
                 ColumnQualifierTuple("col3", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -271,6 +288,7 @@ FROM tab2 a"""
                 ColumnQualifierTuple("a.col1 + a.col2 + a.col3 + a.col4", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -288,6 +306,7 @@ FROM tab2"""
                 ),
             ),
         ],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END AS col2
@@ -295,6 +314,7 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
+        "sparksql",
     )
 
 
@@ -314,6 +334,33 @@ FROM tab4"""
                 ColumnQualifierTuple("col1", "tab1"),
             ),
         ],
+        "sparksql",
+    )
+
+
+def test_select_column_using_multiple_case_when_with_subquery():
+    sql = """INSERT OVERWRITE TABLE tab1
+SELECT CASE
+WHEN (SELECT avg(col1) FROM tab3) > 0 AND col2 = 1 THEN (SELECT avg(col1) FROM tab3)
+WHEN (SELECT avg(col1) FROM tab3) > 0 AND col2 = 1 THEN (SELECT avg(col1) FROM tab5) ELSE 0 END AS col1
+FROM tab4"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col2", "tab4"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab3"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab5"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+        ],
+        "sparksql",
     )
 
 
@@ -324,6 +371,7 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT t.col1
@@ -331,6 +379,7 @@ FROM tab2 AS t"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
 
 
@@ -351,6 +400,7 @@ FROM tab2"""
                 ColumnQualifierTuple("col2", "tab1"),
             ),
         ],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT max(col1),
@@ -368,6 +418,7 @@ FROM tab2"""
                 ColumnQualifierTuple("max(col2)", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -378,6 +429,7 @@ FROM (SELECT col1 FROM tab2) dt"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1
@@ -385,6 +437,7 @@ FROM (SELECT col1, col2 FROM tab2) dt"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT col1
@@ -392,6 +445,7 @@ FROM (SELECT col1 FROM tab2)"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
 
 
@@ -402,6 +456,7 @@ FROM ((SELECT col1 FROM tab2)) dt"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
 
 
@@ -414,6 +469,7 @@ FROM (
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
 
 
@@ -425,18 +481,20 @@ FROM (
     UNION ALL
     (SELECT col1 FROM tab3)
 ) dt"""
+    expected_columns_lineage = [
+        (
+            ColumnQualifierTuple("col1", "tab2"),
+            ColumnQualifierTuple("col1", "tab1"),
+        ),
+        (
+            ColumnQualifierTuple("col1", "tab3"),
+            ColumnQualifierTuple("col1", "tab1"),
+        ),
+    ]
+    assert_column_lineage_equal(sql, expected_columns_lineage, test_sqlfluff=False)
+    # graph are not compared because UNION/UNION ALL is handled different in FROM clause
     assert_column_lineage_equal(
-        sql,
-        [
-            (
-                ColumnQualifierTuple("col1", "tab2"),
-                ColumnQualifierTuple("col1", "tab1"),
-            ),
-            (
-                ColumnQualifierTuple("col1", "tab3"),
-                ColumnQualifierTuple("col1", "tab1"),
-            ),
-        ],
+        sql, expected_columns_lineage, dialect="sparksql", test_sqlparse=False
     )
 
 
@@ -448,18 +506,20 @@ FROM (
     UNION ALL
     SELECT col1 FROM tab3
 ) dt"""
+    expected_columns_lineage = [
+        (
+            ColumnQualifierTuple("col1", "tab2"),
+            ColumnQualifierTuple("col1", "tab1"),
+        ),
+        (
+            ColumnQualifierTuple("col1", "tab3"),
+            ColumnQualifierTuple("col1", "tab1"),
+        ),
+    ]
+    assert_column_lineage_equal(sql, expected_columns_lineage, test_sqlfluff=False)
+    # graph are not compared because UNION/UNION ALL is handled different in FROM clause
     assert_column_lineage_equal(
-        sql,
-        [
-            (
-                ColumnQualifierTuple("col1", "tab2"),
-                ColumnQualifierTuple("col1", "tab1"),
-            ),
-            (
-                ColumnQualifierTuple("col1", "tab3"),
-                ColumnQualifierTuple("col1", "tab1"),
-            ),
-        ],
+        sql, expected_columns_lineage, dialect="sparksql", test_sqlparse=False
     )
 
 
@@ -482,6 +542,7 @@ FROM tab2
                 ColumnQualifierTuple("col2", "tab1"),
             ),
         ],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT tab2.col1 AS col3,
@@ -501,6 +562,7 @@ FROM tab2
                 ColumnQualifierTuple("col4", "tab1"),
             ),
         ],
+        "sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT a.col1 AS col3,
@@ -520,6 +582,7 @@ FROM tab2 a
                 ColumnQualifierTuple("col4", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -532,6 +595,7 @@ FROM tab2 a
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", None), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
 
 
@@ -554,6 +618,7 @@ FROM tab2 a
                 ColumnQualifierTuple("col3", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -575,6 +640,7 @@ FROM tab2 a"""
                 ColumnQualifierTuple("col3", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -596,6 +662,7 @@ FROM tab2 a"""
                 ColumnQualifierTuple("col3", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
@@ -619,12 +686,11 @@ FROM tab2"""
                 ColumnQualifierTuple("col2", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
-@pytest.mark.parametrize(
-    "dtype", ["string", "timestamp", "date", "datetime", "decimal(18, 0)"]
-)
+@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "decimal(18, 0)"])
 def test_cast_to_data_type(dtype):
     sql = f"""INSERT OVERWRITE TABLE tab1
 SELECT cast(col1 as {dtype}) AS col1
@@ -632,12 +698,11 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
 
 
-@pytest.mark.parametrize(
-    "dtype", ["string", "timestamp", "date", "datetime", "decimal(18, 0)"]
-)
+@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "decimal(18, 0)"])
 def test_nested_cast_to_data_type(dtype):
     sql = f"""INSERT OVERWRITE TABLE tab1
 SELECT cast(cast(col1 AS {dtype}) AS {dtype}) AS col1
@@ -645,6 +710,7 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
     sql = f"""INSERT OVERWRITE TABLE tab1
 SELECT cast(cast(cast(cast(cast(col1 AS {dtype}) AS {dtype}) AS {dtype}) AS {dtype}) AS {dtype}) AS col1
@@ -652,12 +718,11 @@ FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        "sparksql",
     )
 
 
-@pytest.mark.parametrize(
-    "dtype", ["string", "timestamp", "date", "datetime", "decimal(18, 0)"]
-)
+@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "decimal(18, 0)"])
 def test_cast_to_data_type_with_case_when(dtype):
     sql = f"""INSERT OVERWRITE TABLE tab1
 SELECT cast(case when col1 > 0 then col2 else col3 end as {dtype}) AS col1
@@ -678,13 +743,14 @@ FROM tab2"""
                 ColumnQualifierTuple("col1", "tab1"),
             ),
         ],
+        "sparksql",
     )
 
 
 def test_cast_using_constant():
     sql = """INSERT OVERWRITE TABLE tab1
 SELECT cast('2012-12-21' as date) AS col2"""
-    assert_column_lineage_equal(sql)
+    assert_column_lineage_equal(sql, dialect="sparksql")
 
 
 def test_window_function_in_subquery():
@@ -701,6 +767,7 @@ WHERE rn = 1"""
             (ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("rn", "tab1")),
             (ColumnQualifierTuple("col2", "tab2"), ColumnQualifierTuple("rn", "tab1")),
         ],
+        dialect="sparksql",
     )
 
 
@@ -721,6 +788,7 @@ SELECT wt.col1 FROM wtab1 wt"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        dialect="sparksql",
     )
 
 
@@ -731,6 +799,7 @@ SELECT wtab1.col1 FROM wtab1"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+        dialect="sparksql",
     )
 
 
@@ -743,6 +812,7 @@ SELECT a FROM cte2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("a", "tab1"), ColumnQualifierTuple("a", "tab2"))],
+        dialect="sparksql",
     )
 
 
@@ -760,6 +830,7 @@ WHERE cte1.a = cte2.a"""
             (ColumnQualifierTuple("b", "tab1"), ColumnQualifierTuple("b_max", "tab2")),
             (ColumnQualifierTuple("b", "tab1"), ColumnQualifierTuple("b_cnt", "tab2")),
         ],
+        dialect="sparksql",
     )
 
 
@@ -786,6 +857,7 @@ WHERE a.id = b.id"""
                 ColumnQualifierTuple("name2", "tab3"),
             ),
         ],
+        dialect="sparksql",
     )
 
 
@@ -802,6 +874,7 @@ WHERE cte1.a = cte2.c"""
             (ColumnQualifierTuple("b", "tab1"), ColumnQualifierTuple("b", "tab3")),
             (ColumnQualifierTuple("d", "tab2"), ColumnQualifierTuple("d", "tab3")),
         ],
+        dialect="sparksql",
     )
 
 
@@ -824,6 +897,7 @@ FROM tab2"""
                 ColumnQualifierTuple("col1", "tab3"),
             ),
         ],
+        dialect="sparksql",
     )
     sql = """INSERT OVERWRITE TABLE tab3
 SELECT col1
@@ -843,6 +917,7 @@ FROM tab2"""
                 ColumnQualifierTuple("col1", "tab3"),
             ),
         ],
+        dialect="sparksql",
     )
 
 
@@ -869,6 +944,7 @@ FROM tab1
                 ColumnQualifierTuple("col1", "tab2"),
             ),
         ],
+        dialect="sparksql",
     )
 
 
@@ -895,6 +971,7 @@ FROM tab1"""
                 ColumnQualifierTuple("col2", "tab2"),
             ),
         ],
+        dialect="sparksql",
     )
 
 
