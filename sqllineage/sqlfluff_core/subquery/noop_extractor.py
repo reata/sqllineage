@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
@@ -10,6 +8,9 @@ from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
 
 
 class NoopExtractor(LineageHolderExtractor):
+    """
+    Extractor for queries which do not provide any lineage
+    """
 
     NOOP_STMT_TYPES = [
         "delete_statement",
@@ -25,6 +26,10 @@ class NoopExtractor(LineageHolderExtractor):
         super().__init__(dialect)
 
     def can_extract(self, statement_type: str) -> bool:
+        """
+        Determine if the current lineage holder extractor can process the statement
+        :param statement_type: a sqlfluff segment type
+        """
         return statement_type in self.NOOP_STMT_TYPES
 
     def extract(
@@ -32,5 +37,12 @@ class NoopExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> Optional[SqlFluffSubQueryLineageHolder]:
-        return None
+    ) -> SqlFluffSubQueryLineageHolder:
+        """
+        Extract lineage for a given statement.
+        :param statement: a sqlfluff segment with a statement
+        :param context: 'SqlFluffAnalyzerContext'
+        :param is_sub_query: determine if the statement is bracketed or not
+        :return 'SqlFluffSubQueryLineageHolder' object
+        """
+        return SqlFluffSubQueryLineageHolder()

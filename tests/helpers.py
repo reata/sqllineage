@@ -95,8 +95,7 @@ def assert_column_lineage_equal(
 
     if test_sqlfluff:
         lr_sqlfluff = LineageRunner(sql, dialect=dialect, use_sqlparse=False)
-        # assert_column_lineage(lr_sqlfluff, column_lineages, test_sqlfluff)
-        lr_sqlfluff.get_column_lineage()
+        assert_column_lineage(lr_sqlfluff, column_lineages, test_sqlfluff)
         if test_sqlparse:
             assert_lr_graphs_match(lr, lr_sqlfluff)
 

@@ -1,19 +1,24 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.handlers.base import SegmentBaseHandler
+from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.models import SqlFluffTable
 from sqllineage.utils.helpers import escape_identifier_name
 
 
 class SwapPartitionHandler(SegmentBaseHandler):
     """
-    a special handling for swap_partitions_between_tables function of Vertica SQL dialect.
+    A handler for swap_partitions_between_tables function
     """
 
     def handle(
         self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
     ) -> None:
+        """
+        Handle the segment, and update the lineage result accordingly in the holder
+        :param segment: segment to be handled
+        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        """
         if segment.get_child("select_clause_element"):
             function_from_select = segment.get_child("select_clause_element").get_child(
                 "function"

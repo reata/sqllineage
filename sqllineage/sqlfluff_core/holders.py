@@ -1,5 +1,5 @@
 import itertools
-from typing import Set, Tuple, Union, Optional
+from typing import Set, Tuple, Union, Optional, List
 
 import networkx as nx
 from networkx import DiGraph
@@ -16,9 +16,18 @@ DATASET_CLASSES = (SqlFluffPath, SqlFluffTable)
 
 
 class SqlFluffColumnLineageMixin:
+    """
+    Mixin class with 'get_column_lineage' method
+    """
+
     def get_column_lineage(
         self, exclude_subquery=True
     ) -> Set[Tuple[SqlFluffColumn, ...]]:
+        """
+        Calculate the column lineage of a holder's graph
+        :param exclude_subquery: if only 'SqlFluffTable' are considered
+        :return: column lineage into a list of tuples
+        """
         self.graph: DiGraph  # For mypy attribute checking
         # filter all the column node in the graph
         column_nodes = [n for n in self.graph.nodes if isinstance(n, SqlFluffColumn)]
@@ -48,16 +57,16 @@ class SqlFluffSubQueryLineageHolder(SqlFluffColumnLineageMixin):
     """
     SubQuery/Query Level Lineage Result.
 
-    SubQueryLineageHolder will hold attributes like read, write, cte
+    SqlFluffSubQueryLineageHolder will hold attributes like read, write, cte
 
-    Each of them is a Set[:class:`sqllineage.models.Table`].
+    Each of them is a set of 'SqlFluffTable' or 'SqlFluffSubQuery'.
 
     This is the most atomic representation of lineage result.
     """
 
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
-        self.extra_sub_queries: Set[SqlFluffSubQuery] = set()
+        self.extra_subqueries: Set[SqlFluffSubQuery] = set()
 
     def __or__(self, other):
         self.graph = nx.compose(self.graph, other.graph)
@@ -96,10 +105,14 @@ class SqlFluffSubQueryLineageHolder(SqlFluffColumnLineageMixin):
         self._property_setter(value, NodeTag.CTE)
 
     def add_column_lineage(self, src: SqlFluffColumn, tgt: SqlFluffColumn) -> None:
+        """
+        Add column lineage between to given 'SqlFluffColumn'
+        :param src: source 'SqlFluffColumn'
+        :param tgt: target 'SqlFluffColumn'
+        """
         self.graph.add_edge(src, tgt, type=EdgeType.LINEAGE)
         self.graph.add_edge(tgt.parent, tgt, type=EdgeType.HAS_COLUMN)
         if src.parent is not None:
-            # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
             self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
 
 
@@ -109,12 +122,12 @@ class SqlFluffStatementLineageHolder(
     """
     Statement Level Lineage Result.
 
-    Based on SubQueryLineageHolder, StatementLineageHolder holds extra attributes like drop and rename
+    Based on 'SqlFluffSubQueryLineageHolder' and 'StatementLineageHolder' holds extra attributes like drop and rename
 
-    For drop, it is a Set[:class:`sqllineage.models.Table`].
+    For drop, it is a set of 'SqlFluffTable'.
 
-    For rename, it a Set[Tuple[:class:`sqllineage.models.Table`, :class:`sqllineage.models.Table`]], with the first
-    table being original table before renaming and the latter after renaming.
+    For rename, it is a set of tuples of 'SqlFluffTable', with the first table being original table before renaming and
+    the latter after renaming.
     """
 
     def __str__(self):
@@ -150,20 +163,33 @@ class SqlFluffStatementLineageHolder(
         }
 
     def add_rename(self, src: SqlFluffTable, tgt: SqlFluffTable) -> None:
+        """
+        Add rename of a source 'SqlFluffColumn' into a target 'SqlFluffColumn'
+        :param src: source 'SqlFluffTable'
+        :param tgt: target 'SqlFluffTable'
+        """
         self.graph.add_edge(src, tgt, type=EdgeType.RENAME)
 
     @staticmethod
     def of(holder: SqlFluffSubQueryLineageHolder) -> "SqlFluffStatementLineageHolder":
+        """
+        Build a 'SqlFluffStatementLineageHolder' object
+        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :return: 'SqlFluffStatementLineageHolder' object
+        """
         stmt_holder = SqlFluffStatementLineageHolder()
         stmt_holder.graph = holder.graph
         return stmt_holder
 
 
-class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
+class SqlFluffLineageHolder(SqlFluffColumnLineageMixin):
+    """
+    Lineage Result
+    """
+
     def __init__(self, graph: DiGraph):
         """
         The combined lineage result in representation of Directed Acyclic Graph.
-
         :param graph: the Directed Acyclic Graph holding all the combined lineage result.
         """
         self.graph = graph
@@ -174,7 +200,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
     @property
     def table_lineage_graph(self) -> DiGraph:
         """
-        The table level DiGraph held by SQLLineageHolder
+        :return the table level DiGraph held by 'SqlFluffLineageHolder'
         """
         table_nodes = [n for n in self.graph.nodes if isinstance(n, DATASET_CLASSES)]
         return self.graph.subgraph(table_nodes)
@@ -182,7 +208,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
     @property
     def column_lineage_graph(self) -> DiGraph:
         """
-        The column level DiGraph held by SQLLineageHolder
+        :return the column level DiGraph held by 'SqlFluffLineageHolder'
         """
         column_nodes = [n for n in self.graph.nodes if isinstance(n, SqlFluffColumn)]
         return self.graph.subgraph(column_nodes)
@@ -190,7 +216,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
     @property
     def source_tables(self) -> Set[SqlFluffTable]:
         """
-        a list of source :class:`sqllineage.models.Table`
+        :return a list of source 'SqlFluffTable'
         """
         source_tables = {
             table for table, deg in self.table_lineage_graph.in_degree if deg == 0
@@ -204,7 +230,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
     @property
     def target_tables(self) -> Set[SqlFluffTable]:
         """
-        a list of target :class:`sqllineage.models.Table`
+        :return a list of target 'SqlFluffTable'
         """
         target_tables = {
             table for table, deg in self.table_lineage_graph.out_degree if deg == 0
@@ -218,7 +244,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
     @property
     def intermediate_tables(self) -> Set[SqlFluffTable]:
         """
-        a list of intermediate :class:`sqllineage.models.Table`
+        :return a list of intermediate 'SqlFluffTable'
         """
         intermediate_tables = {
             table for table, deg in self.table_lineage_graph.in_degree if deg > 0
@@ -240,25 +266,20 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
         g: DiGraph,
         raw_name: str,
         parent: Union[SqlFluffTable, SqlFluffSubQuery],
-        use_sqlparser: bool,
     ) -> Optional[SqlFluffColumn]:
-        if use_sqlparser:
-            src_col = SqlFluffColumn(raw_name)
-        else:
-            src_col = SqlFluffColumn(raw_name)
+        src_col = SqlFluffColumn(raw_name)
         src_col.parent = parent
         return src_col if g.has_edge(parent, src_col) else None
 
     @classmethod
-    def _build_digraph(
-        cls, use_sqlparser: bool, *args: SqlFluffStatementLineageHolder
-    ) -> DiGraph:
+    def _build_digraph(cls, holders: List[SqlFluffStatementLineageHolder]) -> DiGraph:
         """
-        To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
-        :class:`sqllineage.holders.SQLLineageHolder`
+        To assemble multiple 'SqlFluffStatementLineageHolder' into 'SqlFluffLineageHolder'
+        :param holders: a list of 'SqlFluffStatementLineageHolder'
+        :return: the DiGraph held
         """
         g = DiGraph()
-        for holder in args:
+        for holder in holders:
             g = nx.compose(g, holder.graph)
             if holder.drop:
                 for table in holder.drop:
@@ -301,7 +322,7 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
             src_cols = []
             for parent in unresolved_col.parent_candidates:
                 src_col = cls._get_column_if_related_to_parent(
-                    g, unresolved_col.raw_name, parent, use_sqlparser
+                    g, unresolved_col.raw_name, parent
                 )
                 if src_col:
                     src_cols.append(src_col)
@@ -315,10 +336,11 @@ class SqlFluffSQLLineageHolder(SqlFluffColumnLineageMixin):
         return g
 
     @staticmethod
-    def of(*args: SqlFluffStatementLineageHolder, use_sqlparser: bool = False):
+    def of(holders: List[SqlFluffStatementLineageHolder]):
         """
-        To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
-        :class:`sqllineage.holders.SQLLineageHolder`
+        To assemble multiple 'SqlFluffStatementLineageHolder' into 'SqlFluffLineageHolder'
+        :param holders: a list of 'SqlFluffStatementLineageHolder'
+        :return: a 'SqlFluffLineageHolder' object
         """
-        g = SqlFluffSQLLineageHolder._build_digraph(use_sqlparser, *args)
-        return SqlFluffSQLLineageHolder(g)
+        g = SqlFluffLineageHolder._build_digraph(holders)
+        return SqlFluffLineageHolder(g)

@@ -27,15 +27,12 @@ class SqlFluffLineageAnalyzer:
     def analyze(
         self, statement: BaseSegment, dialect: str, is_sub_query: bool = False
     ) -> SqlFluffStatementLineageHolder:
-        """Analyze the base segment and store the result into `sqllineage.holders.StatementLineageHolder` class.
-
-        Args:
-            statement (BaseSegment): a SQL base segment parsed by `sqlfluff`
-            dialect (str): dialect used to parse the statement
-            is_sub_query (bool): the original query contained parentheses
-
-        Returns:
-            `sqllineage.holders.StatementLineageHolder` object
+        """
+        Analyze the base segment and store the result into `sqllineage.holders.StatementLineageHolder` class.
+        :param statement: a SQL base segment parsed by `sqlfluff`
+        :param dialect: dialect used to parse the statement
+        :param is_sub_query: the original query contained parentheses
+        :return: 'SqlFluffStatementLineageHolder' object
         """
         subquery_extractors = [
             DmlSelectExtractor(dialect),
@@ -50,18 +47,15 @@ class SqlFluffLineageAnalyzer:
                 lineage_holder = subquery_extractor.extract(
                     statement, SqlFluffAnalyzerContext(), is_sub_query
                 )
-                if lineage_holder:
-                    return SqlFluffStatementLineageHolder.of(lineage_holder)
-                return SqlFluffStatementLineageHolder()
+                return SqlFluffStatementLineageHolder.of(lineage_holder)
         raise NotImplementedError(
             f"Can not extract lineage for dialect [{dialect}] from query: [{statement.raw}]"
         )
 
     @staticmethod
-    def can_analyze(stmt: BaseSegment):
+    def can_analyze(statement: BaseSegment):
         """
         Check if the current lineage analyzer can analyze the statement
-
-        :param stmt: a SQL base segment parsed by `sqlfluff`
+        :param statement: a SQL base segment parsed by `sqlfluff`
         """
-        return stmt.type in SUPPORTED_STMT_TYPES
+        return statement.type in SUPPORTED_STMT_TYPES

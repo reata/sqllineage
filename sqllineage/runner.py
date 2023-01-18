@@ -16,7 +16,7 @@ from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.sqlfluff_core.analyzer import SqlFluffLineageAnalyzer
 from sqllineage.sqlfluff_core.holders import (
-    SqlFluffSQLLineageHolder,
+    SqlFluffLineageHolder,
     SqlFluffStatementLineageHolder,
 )
 from sqllineage.utils.constant import LineageLevel
@@ -207,9 +207,7 @@ Target Tables:
         self._sql_holder = (
             SQLLineageHolder.of(*self._stmt_holders)
             if self._use_sqlparse
-            else SqlFluffSQLLineageHolder.of(
-                *self._stmt_holders, use_sqlparser=self._use_sqlparse
-            )
+            else SqlFluffLineageHolder.of(self._stmt_holders)
         )
         self._evaluated = True
 
@@ -237,6 +235,11 @@ Target Tables:
 
     @staticmethod
     def _get_statement_segment(parsed_string: ParsedString) -> BaseSegment:
+        """
+
+        :param parsed_string:
+        :return:
+        """
         return next(
             (
                 x.segments[0]

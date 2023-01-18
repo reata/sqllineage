@@ -18,7 +18,7 @@ from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     is_subquery,
     is_values_clause,
-    get_sub_queries,
+    get_subqueries,
     get_multiple_identifiers,
     get_inner_from_expression,
     retrieve_segments,
@@ -28,7 +28,9 @@ from sqllineage.utils.constant import EdgeType
 
 
 class SourceHandler(ConditionalSegmentBaseHandler):
-    """Source Table & Column Handler."""
+    """
+    Source table and column handler
+    """
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
@@ -39,40 +41,57 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         self.union_barriers: List[Tuple[int, int]] = []
 
     def indicate(self, segment: BaseSegment) -> bool:
-        return self.indicate_column(segment) or self.indicate_table(segment)
+        """
+        Indicates if the handler can handle the segment
+        :param segment: segment to be processed
+        :return: True if it can be handled
+        """
+        return self._indicate_column(segment) or self._indicate_table(segment)
 
     def handle(
         self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
     ) -> None:
-        if self.indicate_table(segment):
+        """
+        Handle the segment, and update the lineage result accordingly in the holder
+        :param segment: segment to be handled
+        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        """
+        if self._indicate_table(segment):
             self._handle_table(segment, holder)
-        if self.indicate_column(segment):
+        if self._indicate_column(segment):
             self._handle_column(segment)
 
     def _handle_table(
-        self, initial_segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
+        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
     ) -> None:
-        identifiers = get_multiple_identifiers(initial_segment)
+        """
+        Table handler method
+        :param segment: segment to be handled
+        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        """
+        identifiers = get_multiple_identifiers(segment)
         if identifiers and len(identifiers) > 1:
             for identifier in identifiers:
-                self._add_dataset_from_identifier(identifier, holder)
-        segment = get_inner_from_expression(initial_segment)
-        if segment.type == "from_expression_element":
-            self._add_dataset_from_identifier(segment, holder)
-        elif segment.type == "bracketed":
-            if is_subquery(segment):
-                # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as bracketed
-                # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
-                self.tables.append(SqlFluffSubQuery.of(segment, None))
+                self._add_dataset_from_expression_element(identifier, holder)
+        from_segment = get_inner_from_expression(segment)
+        if from_segment.type == "from_expression_element":
+            self._add_dataset_from_expression_element(from_segment, holder)
+        elif from_segment.type == "bracketed":
+            if is_subquery(from_segment):
+                self.tables.append(SqlFluffSubQuery.of(from_segment, None))
         else:
             raise SQLLineageException(
-                "An Identifier is expected, got %s[value: %s] instead."
-                % (type(BaseSegment).__name__, BaseSegment)
+                "An 'from_expression_element' or 'bracketed' segment is expected, got %s instead."
+                % from_segment.type
             )
-        for extra_segment in self._retrieve_extra_segment(initial_segment):
+        for extra_segment in self._retrieve_extra_segment(segment):
             self._handle_table(extra_segment, holder)
 
     def _handle_column(self, segment: BaseSegment) -> None:
+        """
+        Column handler method
+        :param segment: segment to be handled
+        """
         sub_segments = retrieve_segments(segment)
         for sub_segment in sub_segments:
             if sub_segment.type == "select_clause_element":
@@ -81,6 +100,10 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                 )
 
     def end_of_query_cleanup(self, holder: SqlFluffSubQueryLineageHolder) -> None:
+        """
+        Optional method to be called at the end of statement or subquery
+        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        """
         for i, tbl in enumerate(self.tables):
             holder.add_read(tbl)
         self.union_barriers.append((len(self.columns), len(self.tables)))
@@ -103,17 +126,23 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                     ):
                         holder.add_column_lineage(src_col, tgt_col)
 
-    def _add_dataset_from_identifier(
-        self, identifier: BaseSegment, holder: SqlFluffSubQueryLineageHolder
+    def _add_dataset_from_expression_element(
+        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
     ) -> None:
+        """
+        Append tables and subqueries identified in the 'from_expression_element' type segment to the table and
+        holder extra subqueries sets
+        :param segment: 'from_expression_element' type segment
+        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        """
         dataset: Union[SqlFluffPath, SqlFluffTable, SqlFluffSubQuery]
         all_segments = [
-            seg for seg in retrieve_segments(identifier) if seg.type != "keyword"
+            seg for seg in retrieve_segments(segment) if seg.type != "keyword"
         ]
         first_segment = all_segments[0]
         function_as_table = (
-            identifier.get_child("table_expression").get_child("function")
-            if identifier.get_child("table_expression")
+            segment.get_child("table_expression").get_child("function")
+            if segment.get_child("table_expression")
             else None
         )
         if first_segment.type == "function" or function_as_table:
@@ -122,27 +151,26 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         elif first_segment.type == "bracketed" and is_values_clause(first_segment):
             # (VALUES ...) AS alias, no dataset involved
             return
-        path_match = re.match(r"(parquet|csv|json)\.`(.*)`", identifier.raw_upper)
+        path_match = re.match(r"(parquet|csv|json)\.`(.*)`", segment.raw_upper)
         if path_match is not None:
             dataset = SqlFluffPath(path_match.groups()[1])
         else:
-            subqueries = get_sub_queries(identifier, skip_union=False)
+            subqueries = get_subqueries(segment, skip_union=False)
             if subqueries:
                 for sq in subqueries:
                     bracketed, alias = sq
                     read_sq = SqlFluffSubQuery.of(bracketed, alias)
-                    holder.extra_sub_queries.add(read_sq)
+                    holder.extra_subqueries.add(read_sq)
                     self.tables.append(read_sq)
                 return
             else:
-                table_identifier = find_table_identifier(identifier)
+                table_identifier = find_table_identifier(segment)
                 read = retrieve_holder_data_from(all_segments, holder, table_identifier)
             dataset = read
         self.tables.append(dataset)
 
-    @classmethod
     def _get_alias_mapping_from_table_group(
-        cls,
+        self,
         table_group: List[
             Union[SqlFluffPath, SqlFluffTable, SqlFluffSubQuery, SqlFluffSubQuery]
         ],
@@ -151,6 +179,9 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         """
         A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
         For SubQuery, it's only alias then.
+        :param table_group: a list of objects from the table list
+        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :return: A map of tables and references
         """
         return {
             **{
@@ -171,14 +202,28 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         }
 
     @staticmethod
-    def indicate_column(segment: BaseSegment) -> bool:
+    def _indicate_column(segment: BaseSegment) -> bool:
+        """
+        Check if it is a column
+        :param segment: segment to be checked
+        :return: True if type is 'select_clause'
+        """
         return bool(segment.type == "select_clause")
 
     @staticmethod
-    def indicate_table(segment: BaseSegment) -> bool:
+    def _indicate_table(segment: BaseSegment) -> bool:
+        """
+        Check if it is a table
+        :param segment: segment to be checked
+        :return: True if type is 'from_clause'
+        """
         return bool(segment.type == "from_clause")
 
     def _retrieve_extra_segment(self, segment: BaseSegment) -> Iterable[BaseSegment]:
+        """
+        Yield all the extra segments of the segment if it is a 'from_expression' type.
+        :param segment: segment to be processed
+        """
         if segment.get_child("from_expression"):
             for sgmnt in segment.get_child("from_expression").segments:
                 if self._is_extra_segment(sgmnt):
@@ -186,4 +231,9 @@ class SourceHandler(ConditionalSegmentBaseHandler):
 
     @staticmethod
     def _is_extra_segment(segment: BaseSegment) -> bool:
+        """
+        Check if the segment type is part of a join
+        :param segment: segment to be checked
+        :return: True if type is 'join_clause'
+        """
         return bool(segment.type == "join_clause")

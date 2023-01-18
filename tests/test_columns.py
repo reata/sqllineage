@@ -491,7 +491,7 @@ FROM (
             ColumnQualifierTuple("col1", "tab1"),
         ),
     ]
-    assert_column_lineage_equal(sql, expected_columns_lineage, test_sqlparse=False)
+    assert_column_lineage_equal(sql, expected_columns_lineage, test_sqlfluff=False)
     # graph are not compared because UNION/UNION ALL is handled different in FROM clause
     assert_column_lineage_equal(
         sql, expected_columns_lineage, dialect="sparksql", test_sqlparse=False

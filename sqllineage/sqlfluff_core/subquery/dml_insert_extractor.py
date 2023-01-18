@@ -1,12 +1,8 @@
-from typing import Optional
-
 from sqlfluff.core.parser import BaseSegment
-from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtractor
 
 from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
-
 from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext, SqlFluffSubQuery
-
+from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtractor
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
@@ -14,6 +10,9 @@ from sqllineage.sqlfluff_core.utils.sqlfluff import retrieve_segments
 
 
 class DmlInsertExtractor(LineageHolderExtractor):
+    """
+    DML Insert queries lineage extractor
+    """
 
     DML_INSERT_STMT_TYPES = [
         "insert_statement",
@@ -29,6 +28,10 @@ class DmlInsertExtractor(LineageHolderExtractor):
         super().__init__(dialect)
 
     def can_extract(self, statement_type: str) -> bool:
+        """
+        Determine if the current lineage holder extractor can process the statement
+        :param statement_type: a sqlfluff segment type
+        """
         return statement_type in self.DML_INSERT_STMT_TYPES
 
     def extract(
@@ -36,8 +39,14 @@ class DmlInsertExtractor(LineageHolderExtractor):
         statement: BaseSegment,
         context: SqlFluffAnalyzerContext,
         is_sub_query: bool = False,
-    ) -> Optional[SqlFluffSubQueryLineageHolder]:
-
+    ) -> SqlFluffSubQueryLineageHolder:
+        """
+        Extract lineage for a given statement.
+        :param statement: a sqlfluff segment with a statement
+        :param context: 'SqlFluffAnalyzerContext'
+        :param is_sub_query: determine if the statement is bracketed or not
+        :return 'SqlFluffSubQueryLineageHolder' object
+        """
         handlers, conditional_handlers = self._init_handlers()
 
         holder = self._init_holder(context)
