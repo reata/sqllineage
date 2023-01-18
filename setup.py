@@ -24,7 +24,7 @@ class EggInfoWithJS(egg_info):
     """
 
     def run(self) -> None:
-        static_path = os.path.join(NAME, STATIC_FOLDER)
+        static_path = os.path.join("sqllineage", STATIC_FOLDER)
         if os.path.exists(static_path) or "READTHEDOCS" in os.environ:
             pass
         else:
@@ -43,12 +43,11 @@ class EggInfoWithJS(egg_info):
 setup(
     name=NAME,
     version=VERSION,
-    author="Reata",
-    author_email="reddevil.hjw@gmail.com",
-    description="SQL Lineage Analysis Tool powered by Python",
+    url="https://github.com/open-metadata/openmetadata-sqllineage",
+    author="OpenMetadata Committers",
+    description="OpenMetadata SQL Lineage for Analysis Tool powered by Python and sqlfluff based on sqllineage.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/reata/sqllineage",
     packages=find_packages(exclude=("tests",)),
     package_data={"": [f"{STATIC_FOLDER}/*", f"{STATIC_FOLDER}/**/**/*", "data/**/*"]},
     include_package_data=True,

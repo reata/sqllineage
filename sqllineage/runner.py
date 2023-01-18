@@ -228,10 +228,14 @@ Target Tables:
             ):
                 if "unparsable" in statement_segment.descendant_type_set:
                     raise SQLLineageException(
-                        f"The query [\n{statement_segment.raw}\n] contains an unparsable segment."
+                        f"The query [\n{stmt_value}\n] contains an unparsable segment."
                     )
                 return SqlFluffLineageAnalyzer().analyze(
                     statement_segment, self._dialect or "", is_sub_query
+                )
+            else:
+                raise SQLLineageException(
+                    f"The query [\n{stmt_value}\n] contains can not be analyzed."
                 )
         return LineageAnalyzer().analyze(stmt)
 
