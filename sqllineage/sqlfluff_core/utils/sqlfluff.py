@@ -453,7 +453,6 @@ def token_matching(
         funcs = (funcs,)
 
     if reverse:
-        assert end is None
         indexes = range(start - 2, -1, -1)
     else:
         if end is None:
