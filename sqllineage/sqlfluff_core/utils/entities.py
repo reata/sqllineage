@@ -1,6 +1,6 @@
 from typing import NamedTuple, Optional, Union
 
-from sqlfluff.core.parser.segments import BaseSegment, BracketedSegment
+from sqlfluff.core.parser.segments import BaseSegment
 
 
 class SubSqlFluffQueryTuple(NamedTuple):
@@ -8,7 +8,7 @@ class SubSqlFluffQueryTuple(NamedTuple):
     Tuple of segment and optional alias
     """
 
-    bracketed: Union[BracketedSegment, BaseSegment]
+    bracketed: Union[BaseSegment]
     alias: Optional[str]
 
 

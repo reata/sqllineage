@@ -47,9 +47,9 @@ class LineageRunner(object):
     def __init__(
         self,
         sql: str,
-        encoding: str = None,
+        encoding: Optional[str] = None,
         verbose: bool = False,
-        draw_options: Dict[str, str] = None,
+        draw_options: Optional[Dict[str, str]] = None,
         dialect: Optional[str] = "ansi",
         use_sqlparse: bool = True,
     ):
@@ -236,17 +236,18 @@ Target Tables:
         return LineageAnalyzer().analyze(stmt)
 
     @staticmethod
-    def _get_statement_segment(parsed_string: ParsedString) -> BaseSegment:
+    def _get_statement_segment(parsed_string: ParsedString) -> Optional[BaseSegment]:
         """
-
-        :param parsed_string:
+        :param parsed_string: parsed string
         :return:
         """
-        return next(
-            (
-                x.segments[0]
-                for x in parsed_string.tree.segments
-                if x.type == "statement"
-            ),
-            None,
-        )
+        if parsed_string.tree:
+            return next(
+                (
+                    x.segments[0]
+                    for x in parsed_string.tree.segments
+                    if x.type == "statement"
+                ),
+                None,
+            )
+        return None

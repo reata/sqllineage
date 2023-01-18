@@ -6,6 +6,7 @@ from sqllineage.sqlfluff_core.models import SqlFluffPath, SqlFluffTable
 from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     find_table_identifier,
+    get_child,
     retrieve_segments,
 )
 from sqllineage.utils.helpers import escape_identifier_name
@@ -92,7 +93,7 @@ class TargetHandler(ConditionalSegmentBaseHandler):
             self._reset_tokens()
 
         elif segment.type == "from_expression":
-            from_expression_element = segment.get_child("from_expression_element")
+            from_expression_element = get_child(segment, "from_expression_element")
             if from_expression_element:
                 table_identifier = find_table_identifier(from_expression_element)
                 all_segments = [
@@ -100,12 +101,13 @@ class TargetHandler(ConditionalSegmentBaseHandler):
                     for seg in retrieve_segments(from_expression_element)
                     if seg.type != "keyword"
                 ]
-                write = retrieve_holder_data_from(
-                    all_segments, holder, table_identifier
-                )
-                if write:
-                    holder.add_write(write)
-            join_clause = segment.get_child("join_clause")
+                if table_identifier:
+                    write = retrieve_holder_data_from(
+                        all_segments, holder, table_identifier
+                    )
+                    if write:
+                        holder.add_write(write)
+            join_clause = get_child(segment, "join_clause")
             if from_expression_element:
                 table_identifier = find_table_identifier(join_clause)
                 all_segments = [
@@ -113,6 +115,9 @@ class TargetHandler(ConditionalSegmentBaseHandler):
                     for seg in retrieve_segments(join_clause)
                     if seg.type != "keyword"
                 ]
-                read = retrieve_holder_data_from(all_segments, holder, table_identifier)
-                if read:
-                    holder.add_read(read)
+                if table_identifier:
+                    read = retrieve_holder_data_from(
+                        all_segments, holder, table_identifier
+                    )
+                    if read:
+                        holder.add_read(read)

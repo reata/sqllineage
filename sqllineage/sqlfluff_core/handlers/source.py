@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Iterable, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 from sqlfluff.core.parser import BaseSegment
 
@@ -17,11 +17,13 @@ from sqllineage.sqlfluff_core.models import (
 from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     find_table_identifier,
+    get_grandchild,
     get_inner_from_expression,
     get_multiple_identifiers,
     get_subqueries,
     is_subquery,
     is_values_clause,
+    retrieve_extra_segment,
     retrieve_segments,
 )
 from sqllineage.utils.constant import EdgeType
@@ -84,7 +86,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                 "An 'from_expression_element' or 'bracketed' segment is expected, got %s instead."
                 % from_segment.type
             )
-        for extra_segment in self._retrieve_extra_segment(segment):
+        for extra_segment in retrieve_extra_segment(segment):
             self._handle_table(extra_segment, holder)
 
     def _handle_column(self, segment: BaseSegment) -> None:
@@ -140,11 +142,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
             seg for seg in retrieve_segments(segment) if seg.type != "keyword"
         ]
         first_segment = all_segments[0]
-        function_as_table = (
-            segment.get_child("table_expression").get_child("function")
-            if segment.get_child("table_expression")
-            else None
-        )
+        function_as_table = get_grandchild(segment, "table_expression", "function")
         if first_segment.type == "function" or function_as_table:
             # function() as alias, no dataset involved
             return
@@ -165,8 +163,12 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                 return
             else:
                 table_identifier = find_table_identifier(segment)
-                read = retrieve_holder_data_from(all_segments, holder, table_identifier)
-            dataset = read
+                if table_identifier:
+                    dataset = retrieve_holder_data_from(
+                        all_segments, holder, table_identifier
+                    )
+                else:
+                    return
         self.tables.append(dataset)
 
     def _get_alias_mapping_from_table_group(
@@ -218,22 +220,3 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         :return: True if type is 'from_clause'
         """
         return bool(segment.type == "from_clause")
-
-    def _retrieve_extra_segment(self, segment: BaseSegment) -> Iterable[BaseSegment]:
-        """
-        Yield all the extra segments of the segment if it is a 'from_expression' type.
-        :param segment: segment to be processed
-        """
-        if segment.get_child("from_expression"):
-            for sgmnt in segment.get_child("from_expression").segments:
-                if self._is_extra_segment(sgmnt):
-                    yield sgmnt
-
-    @staticmethod
-    def _is_extra_segment(segment: BaseSegment) -> bool:
-        """
-        Check if the segment type is part of a join
-        :param segment: segment to be checked
-        :return: True if type is 'join_clause'
-        """
-        return bool(segment.type == "join_clause")

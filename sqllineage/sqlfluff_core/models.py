@@ -123,7 +123,7 @@ class SqlFluffTable:
         return hash(str(self))
 
     @staticmethod
-    def of(table_segment: BaseSegment, alias: str = None) -> "SqlFluffTable":
+    def of(table_segment: BaseSegment, alias: Optional[str] = None) -> "SqlFluffTable":
         """
         Build an object of type 'SqlFluffTable'
         :param table_segment: table segment to be processed

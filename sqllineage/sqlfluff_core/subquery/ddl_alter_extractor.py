@@ -52,7 +52,7 @@ class DdlAlterExtractor(LineageHolderExtractor):
                 tables.append(SqlFluffTable.of(t))
         keywords = [t for t in statement.segments if t.type == "keyword"]
         if any(k.raw_upper == "RENAME" for k in keywords):
-            if statement.get_type() == "alter_table_statement" and len(tables) == 2:
+            if statement.type == "alter_table_statement" and len(tables) == 2:
                 holder.add_rename(tables[0], tables[1])
         if any(k.raw_upper == "EXCHANGE" for k in keywords) and len(tables) == 2:
             holder.add_write(tables[0])

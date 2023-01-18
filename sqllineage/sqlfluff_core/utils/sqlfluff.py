@@ -1,10 +1,9 @@
 """
 Utils class to deal with the sqlfluff segments manipulations
 """
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 from sqlfluff.core.parser import BaseSegment
-from sqlfluff.core.parser.segments import BracketedSegment
 
 from sqllineage.sqlfluff_core.utils.entities import SubSqlFluffQueryTuple
 
@@ -187,7 +186,7 @@ def is_subquery(segment: BaseSegment) -> bool:
     return False
 
 
-def get_innermost_bracketed(bracketed_segment: BaseSegment) -> BracketedSegment:
+def get_innermost_bracketed(bracketed_segment: BaseSegment) -> BaseSegment:
     """
     :param bracketed_segment: segment to be processed
     :return:the innermost bracketed segment of a bracketed segment
@@ -254,9 +253,9 @@ def get_inner_from_expression(segment: BaseSegment) -> BaseSegment:
 
 def filter_segments_by_keyword(
     statement: BaseSegment,
-    from_keyword: str = None,
-    to_keyword: str = None,
-    children_segments: str = None,
+    from_keyword: Optional[str] = None,
+    to_keyword: Optional[str] = None,
+    children_segments: Optional[str] = None,
 ) -> List[BaseSegment]:
     """
     Filter from the segments' children of a segment by expected children segment
@@ -286,10 +285,10 @@ def filter_segments_by_keyword(
 
 def get_bracketed_from(
     segment: BaseSegment,
-    from_keyword: str = None,
-    to_keyword: str = None,
-    children_segments: str = None,
-) -> List[BracketedSegment]:
+    from_keyword: Optional[str] = None,
+    to_keyword: Optional[str] = None,
+    children_segments: Optional[str] = None,
+) -> List[BaseSegment]:
     """
     Filter from the segments' children of a segment by expected children segment
     :param segment: segment to be processed
@@ -307,7 +306,7 @@ def get_bracketed_from(
     ]
 
 
-def find_table_identifier(identifier: BaseSegment) -> BaseSegment:
+def find_table_identifier(identifier: BaseSegment) -> Optional[BaseSegment]:
     """
     :param identifier: segment to be processed
     :return: a "table_reference" type segment if it exists in the identifier's children list, otherwise the identifier
@@ -380,15 +379,15 @@ def get_table_alias(table_segments: List[BaseSegment]) -> Optional[str]:
     """
     alias = None
     if len(table_segments) > 1 and table_segments[1].type == "alias_expression":
-        alias = retrieve_segments(table_segments[1])
-        alias = alias[1].raw if len(alias) > 1 else alias[0].raw
+        segments = retrieve_segments(table_segments[1])
+        alias = segments[1].raw if len(segments) > 1 else segments[0].raw
     elif (
         len(table_segments) == 1 and table_segments[0].type == "from_expression_element"
     ):
         table_and_alias = retrieve_segments(table_segments[0])
         if len(table_and_alias) > 1 and table_and_alias[1].type == "alias_expression":
-            alias = retrieve_segments(table_and_alias[1])
-            alias = alias[1].raw if len(alias) > 1 else alias[0].raw
+            segments = retrieve_segments(table_and_alias[1])
+            alias = segments[1].raw if len(segments) > 1 else segments[0].raw
     return str(alias) if alias else None
 
 
@@ -434,7 +433,7 @@ def token_matching(
     segment: BaseSegment,
     funcs: Tuple[Callable[[BaseSegment], bool]],
     start: int = 0,
-    end: int = None,
+    end: Optional[int] = None,
     reverse: bool = False,
 ) -> Tuple[Union[int, None], Union[BaseSegment, None]]:
     """
@@ -464,3 +463,64 @@ def token_matching(
             if func(token):
                 return idx, token
     return None, None
+
+
+def is_extra_segment(segment: BaseSegment) -> bool:
+    """
+    Check if the segment type is part of a join
+    :param segment: segment to be checked
+    :return: True if type is 'join_clause'
+    """
+    return bool(segment.type == "join_clause")
+
+
+def retrieve_extra_segment(segment: BaseSegment) -> Iterable[BaseSegment]:
+    """
+    Yield all the extra segments of the segment if it is a 'from_expression' type.
+    :param segment: segment to be processed
+    """
+    if segment.get_child("from_expression"):
+        for sgmnt in segment.get_child("from_expression").segments:
+            if is_extra_segment(sgmnt):
+                yield sgmnt
+
+
+def get_grandchild(
+    segment: BaseSegment, child: str, grandchild: str
+) -> Optional[BaseSegment]:
+    """
+    :param segment: segment to be processed
+    :param child: child segment
+    :param grandchild: grand child
+    :return: the grandchild segment if found, otherwise, None
+    """
+    return (
+        segment.get_child(child).get_child(grandchild)
+        if segment.get_child(child)
+        else None
+    )
+
+
+def get_child(segment: BaseSegment, child: str) -> BaseSegment:
+    """
+    :param segment: segment to be processed
+    :param child: child segment
+    :return:
+    """
+    return segment.get_child(child)
+
+
+def get_grandchildren(
+    segment: BaseSegment, child: str, grandchildren: str
+) -> List[BaseSegment]:
+    """
+    :param segment: segment to be processed
+    :param child: child segment
+    :param grandchildren: grand children
+    :return: the grandchildren segment list if found, otherwise, empty list
+    """
+    return (
+        segment.get_child(child).get_children(grandchildren)
+        if segment.get_child(child)
+        else []
+    )
