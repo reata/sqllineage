@@ -1,8 +1,14 @@
+from typing import Optional, Union
+
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
-from sqllineage.sqlfluff_core.models import SqlFluffPath, SqlFluffTable
+from sqllineage.sqlfluff_core.models import (
+    SqlFluffPath,
+    SqlFluffSubQuery,
+    SqlFluffTable,
+)
 from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     find_table_identifier,
@@ -78,11 +84,13 @@ class TargetHandler(ConditionalSegmentBaseHandler):
         :param segment: segment to be handled
         :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
         """
-        if segment.type == "table_reference":
+        object_segment = self._extract_table_reference(segment, holder)
+        if segment.type == "table_reference" or object_segment:
+            write_obj = object_segment if object_segment else SqlFluffTable.of(segment)
             if self.prev_token_like:
-                holder.add_read(SqlFluffTable.of(segment))
+                holder.add_read(write_obj)
             else:
-                holder.add_write(SqlFluffTable.of(segment))
+                holder.add_write(write_obj)
             self._reset_tokens()
 
         elif segment.type in {"literal", "storage_location"}:
@@ -121,3 +129,20 @@ class TargetHandler(ConditionalSegmentBaseHandler):
                     )
                     if read:
                         holder.add_read(read)
+
+    @staticmethod
+    def _extract_table_reference(
+        object_reference: BaseSegment, holder: SqlFluffSubQueryLineageHolder
+    ) -> Optional[Union[SqlFluffTable, SqlFluffSubQuery]]:
+        """
+        :param object_reference: object reference segment
+        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :return: a 'SqlFluffTable' or 'SqlFluffSubQuery' from the object_reference
+        """
+        if object_reference and object_reference.type == "object_reference":
+            return retrieve_holder_data_from(
+                object_reference.segments,
+                holder,
+                get_child(object_reference, "identifier"),
+            )
+        return None

@@ -88,3 +88,19 @@ ON tab_1.col_a = tab_2.cola""",
         {"tab_1"},
         dialect="sparksql",
     )
+
+
+def test_create_view():
+    assert_table_lineage_equal(
+        """CREATE VIEW view1
+as
+SELECT
+    col1,
+    col2
+FROM tab1
+GROUP BY
+col1""",
+        {"tab1"},
+        {"view1"},
+        "tsql",
+    )

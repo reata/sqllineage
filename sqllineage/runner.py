@@ -4,8 +4,6 @@ from typing import Dict, List, Optional, Tuple, Union
 import sqlparse
 from sqlfluff.api.simple import get_simple_config
 from sqlfluff.core import Linter
-from sqlfluff.core.linter import ParsedString
-from sqlfluff.core.parser import BaseSegment
 from sqlparse.sql import Statement
 
 from sqllineage.core import LineageAnalyzer
@@ -19,6 +17,7 @@ from sqllineage.sqlfluff_core.holders import (
     SqlFluffLineageHolder,
     SqlFluffStatementLineageHolder,
 )
+from sqllineage.sqlfluff_core.utils.sqlfluff import get_statement_segment
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import (
     clean_parentheses,
@@ -222,7 +221,7 @@ Target Tables:
             if is_sub_query:
                 stmt_value = remove_statement_parentheses(stmt_value)
             parsed_string = self._sqlfluff_linter.parse_string(stmt_value)
-            statement_segment = self._get_statement_segment(parsed_string)
+            statement_segment = get_statement_segment(parsed_string)
             if statement_segment and SqlFluffLineageAnalyzer.can_analyze(
                 statement_segment
             ):
@@ -238,20 +237,3 @@ Target Tables:
                     f"The query [\n{stmt_value}\n] contains can not be analyzed."
                 )
         return LineageAnalyzer().analyze(stmt)
-
-    @staticmethod
-    def _get_statement_segment(parsed_string: ParsedString) -> Optional[BaseSegment]:
-        """
-        :param parsed_string: parsed string
-        :return:
-        """
-        if parsed_string.tree:
-            return next(
-                (
-                    x.segments[0]
-                    for x in parsed_string.tree.segments
-                    if x.type == "statement"
-                ),
-                None,
-            )
-        return None
