@@ -141,7 +141,11 @@ class SqlFluffTable:
         real_name = (
             table_segment.segments[dot_idx + 1].raw
             if dot_idx
-            else table_segment.segments[0].raw
+            else (
+                table_segment.raw
+                if table_segment.type == "identifier"
+                else table_segment.segments[0].raw
+            )
         )
         # rewrite identifier's get_parent_name accordingly
         parent_name = (

@@ -3,6 +3,7 @@ Utils class to deal with the sqlfluff segments manipulations
 """
 from typing import Callable, Iterable, List, Optional, Tuple, Union
 
+from sqlfluff.core.linter import ParsedString
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.sqlfluff_core.utils.entities import SubSqlFluffQueryTuple
@@ -524,3 +525,25 @@ def get_grandchildren(
         if segment.get_child(child)
         else []
     )
+
+
+def get_statement_segment(parsed_string: ParsedString) -> Optional[BaseSegment]:
+    """
+    :param parsed_string: parsed string
+    :return: first segment from the statement segment of the segments of parsed_string
+    """
+    try:
+        if parsed_string.tree:
+            return next(
+                (
+                    x.segments[0]
+                    if x.type == "statement"
+                    else x.get_child("statement").segments[0]
+                    for x in parsed_string.tree.segments
+                    if x.type == "statement" or x.type == "batch"
+                ),
+                None,
+            )
+    except AttributeError:
+        return None
+    return None

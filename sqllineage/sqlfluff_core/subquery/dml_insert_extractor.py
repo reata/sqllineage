@@ -17,6 +17,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
     DML_INSERT_STMT_TYPES = [
         "insert_statement",
         "create_table_statement",
+        "create_view_statement",
         "update_statement",
         "copy_statement",
         "insert_overwrite_directory_hive_fmt_statement",
