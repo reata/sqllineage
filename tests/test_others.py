@@ -47,9 +47,7 @@ def test_create_as():
 
 def test_create_as_with_parenthesis_around_select_statement():
     sql = "CREATE TABLE tab1 AS (SELECT * FROM tab2)"
-    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlfluff=False)
-    # Graph generated differ but it is correct
-    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlparse=False)
+    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"})
 
 
 def test_create_as_with_parenthesis_around_table_name():
@@ -60,9 +58,7 @@ def test_create_as_with_parenthesis_around_table_name():
 
 def test_create_as_with_parenthesis_around_both():
     sql = "CREATE TABLE tab1 AS (SELECT * FROM (tab2))"
-    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlfluff=False)
-    # Graph generated differ but it is correct
-    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlparse=False)
+    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"})
 
 
 def test_create_like():
@@ -196,7 +192,7 @@ def test_rename_table():
     This syntax is MySQL specific:
      https://dev.mysql.com/doc/refman/8.0/en/rename-table.html
     """
-    assert_table_lineage_equal("rename table tab1 to tab2", None, None, "teradata")
+    assert_table_lineage_equal("rename table tab1 to tab2", None, None, "mysql")
 
 
 def test_rename_tables():
