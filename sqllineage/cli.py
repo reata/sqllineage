@@ -68,7 +68,7 @@ def main(args=None) -> None:
         help="the dialect used to compute the lineage",
         type=str,
         default=DEFAULT_DIALECT,
-        metavar="ansi, mysql, snowflake, redshift, hive, etc. Chec supported dialects by sqlfluff.",
+        metavar="ansi, mysql, snowflake, redshift, hive, etc. Check supported dialects by sqlfluff.",
     )
     parser.add_argument(
         "-s",
