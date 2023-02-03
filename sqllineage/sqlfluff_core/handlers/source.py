@@ -1,4 +1,3 @@
-import re
 from typing import Dict, List, Tuple, Union
 
 from sqlfluff.core.parser import BaseSegment
@@ -21,7 +20,6 @@ from sqllineage.sqlfluff_core.utils.sqlfluff import (
     get_inner_from_expression,
     get_multiple_identifiers,
     get_subqueries,
-    is_subquery,
     is_values_clause,
     retrieve_extra_segment,
     retrieve_segments,
@@ -78,14 +76,6 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         from_segment = get_inner_from_expression(segment)
         if from_segment.type == "from_expression_element":
             self._add_dataset_from_expression_element(from_segment, holder)
-        elif from_segment.type == "bracketed":
-            if is_subquery(from_segment):
-                self.tables.append(SqlFluffSubQuery.of(from_segment, None))
-        else:
-            raise SQLLineageException(
-                "An 'from_expression_element' or 'bracketed' segment is expected, got %s instead."
-                % from_segment.type
-            )
         for extra_segment in retrieve_extra_segment(segment):
             self._handle_table(extra_segment, holder)
 
@@ -149,9 +139,6 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         elif first_segment.type == "bracketed" and is_values_clause(first_segment):
             # (VALUES ...) AS alias, no dataset involved
             return
-        path_match = re.match(r"(parquet|csv|json)\.`(.*)`", segment.raw_upper)
-        if path_match is not None:
-            dataset = SqlFluffPath(path_match.groups()[1])
         else:
             subqueries = get_subqueries(segment, skip_union=False)
             if subqueries:
@@ -160,16 +147,13 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                     read_sq = SqlFluffSubQuery.of(bracketed, alias)
                     holder.extra_subqueries.add(read_sq)
                     self.tables.append(read_sq)
-                return
             else:
                 table_identifier = find_table_identifier(segment)
                 if table_identifier:
                     dataset = retrieve_holder_data_from(
                         all_segments, holder, table_identifier
                     )
-                else:
-                    return
-        self.tables.append(dataset)
+                    self.tables.append(dataset)
 
     def _get_alias_mapping_from_table_group(
         self,

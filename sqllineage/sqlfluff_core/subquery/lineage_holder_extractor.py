@@ -34,7 +34,6 @@ class LineageHolderExtractor(ABC):
         Determine if the current lineage holder extractor can process the statement
         :param statement_type: a sqlfluff segment type
         """
-        pass
 
     @abstractmethod
     def extract(
@@ -100,11 +99,12 @@ class LineageHolderExtractor(ABC):
         Initialize handlers used during the extraction of lineage
         :return: A tuple with a list of SegmentBaseHandler and ConditionalSegmentBaseHandler
         """
-        handlers = [
-            handler_cls() for handler_cls in SegmentBaseHandler.__subclasses__()
+        handlers: List[SegmentBaseHandler] = [
+            handler_cls()  # type: ignore
+            for handler_cls in SegmentBaseHandler.__subclasses__()
         ]
         conditional_handlers = [
-            handler_cls(self.dialect)
+            handler_cls(self.dialect)  # type: ignore
             for handler_cls in ConditionalSegmentBaseHandler.__subclasses__()
         ]
         return handlers, conditional_handlers

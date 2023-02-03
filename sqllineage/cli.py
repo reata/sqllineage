@@ -74,7 +74,7 @@ def main(args=None) -> None:
         "-s",
         "--sqlfluff",
         help="use sqlfluff as the parser",
-        action="store_false",
+        action="store_true",
     )
     args = parser.parse_args(args)
     if args.e and args.f:
@@ -92,7 +92,7 @@ def main(args=None) -> None:
                 "f": args.f if args.f else None,
             },
             dialect=args.dialect,
-            use_sqlparse=args.sqlfluff,
+            use_sqlfluff=args.sqlfluff,
         )
         if args.graph_visualization:
             runner.draw(args.dialect, args.sqlfluff)

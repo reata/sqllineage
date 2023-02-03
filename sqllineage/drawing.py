@@ -160,7 +160,7 @@ def lineage(payload):
     sql = extract_sql_from_args(req_args)
     dialect = getattr(req_args, "dialect", DEFAULT_DIALECT)
     use_sql_parse = bool(getattr(req_args, "use_sqlfluff", DEFAULT_USE_SQLFLUFF))
-    lr = LineageRunner(sql, verbose=True, dialect=dialect, use_sqlparse=use_sql_parse)
+    lr = LineageRunner(sql, verbose=True, dialect=dialect, use_sqlfluff=use_sql_parse)
     data = {
         "verbose": str(lr),
         "dag": lr.to_cytoscape(),

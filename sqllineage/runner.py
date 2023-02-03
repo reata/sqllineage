@@ -50,7 +50,7 @@ class LineageRunner(object):
         verbose: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
         dialect: Optional[str] = "ansi",
-        use_sqlparse: bool = True,
+        use_sqlfluff: bool = False,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -65,8 +65,8 @@ class LineageRunner(object):
         self._draw_options = draw_options if draw_options else {}
         self._evaluated = False
         self._stmt: List[Statement] = []
-        self._use_sqlparse = use_sqlparse
-        if not self._use_sqlparse:
+        self._use_sqlfluff = use_sqlfluff
+        if self._use_sqlfluff:
             self._sqlfluff_linter = Linter(
                 config=get_simple_config(dialect=dialect, config_path=None)
             )
@@ -207,7 +207,7 @@ Target Tables:
         self._stmt_holders = [self.run_lineage_analyzer(stmt) for stmt in self._stmt]
         self._sql_holder = (
             SQLLineageHolder.of(*self._stmt_holders)
-            if self._use_sqlparse
+            if not self._use_sqlfluff
             else SqlFluffLineageHolder.of(self._stmt_holders)
         )
         self._evaluated = True
@@ -216,7 +216,7 @@ Target Tables:
         self, stmt: Statement
     ) -> Union[StatementLineageHolder, SqlFluffStatementLineageHolder]:
         stmt_value = stmt.value.strip()
-        if not self._use_sqlparse:
+        if self._use_sqlfluff:
             is_sub_query = is_subquery_statement(stmt_value)
             if is_sub_query:
                 stmt_value = remove_statement_parentheses(stmt_value)

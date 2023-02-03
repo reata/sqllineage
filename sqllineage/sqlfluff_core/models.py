@@ -339,7 +339,7 @@ class SqlFluffColumn:
         src_cols = [
             lineage[0]
             for lineage in LineageRunner(
-                sub_segment.raw, dialect=dialect, use_sqlparse=False
+                sub_segment.raw, dialect=dialect, use_sqlfluff=False
             ).get_column_lineage(exclude_subquery=False)
         ]
         source_columns = [

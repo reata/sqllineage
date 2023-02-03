@@ -37,7 +37,7 @@ def test_with_insert_overwrite_plus_keyword_table(dialect: str):
     )
 
 
-@pytest.mark.parametrize("dialect", ["mysql", "sparksql"])
+@pytest.mark.parametrize("dialect", ["hive", "mysql", "sparksql"])
 def test_with_select_one_without_as(dialect: str):
     # AS in CTE is negligible in SparkSQL, however it is required in MySQL. See below reference
     # https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-cte.html

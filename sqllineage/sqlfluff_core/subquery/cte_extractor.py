@@ -49,10 +49,6 @@ class DmlCteExtractor(LineageHolderExtractor):
         segments = retrieve_segments(statement)
 
         for segment in segments:
-            for sq in self.parse_subquery(segment):
-                # Collecting subquery on the way, hold on parsing until last
-                # so that each handler don't have to worry about what's inside subquery
-                subqueries.append(sq)
 
             for current_handler in handlers:
                 current_handler.handle(segment, holder)

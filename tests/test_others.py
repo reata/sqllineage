@@ -8,6 +8,10 @@ def test_use():
     assert_table_lineage_equal("USE db1")
 
 
+def test_parenthesis():
+    assert_table_lineage_equal("(SELECT * FROM tab1)", {"tab1"}, None)
+
+
 def test_create():
     assert_table_lineage_equal("CREATE TABLE tab1 (col1 STRING)", None, {"tab1"})
 
