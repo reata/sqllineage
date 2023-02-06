@@ -2,6 +2,7 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.holders import (
     StatementLineageHolder,
+    SubQueryLineageHolder,
 )
 from sqllineage.models import AnalyzerContext
 from sqllineage.sqlfluff_core.subquery.cte_extractor import DmlCteExtractor
@@ -42,15 +43,13 @@ class SqlFluffLineageAnalyzer:
             DdlAlterExtractor(dialect),
             NoopExtractor(dialect),
         ]
+        lineage_holder = SubQueryLineageHolder()
         for subquery_extractor in subquery_extractors:
             if subquery_extractor.can_extract(statement.type):
                 lineage_holder = subquery_extractor.extract(
                     statement, AnalyzerContext(), is_sub_query
                 )
-                return StatementLineageHolder.of(lineage_holder)
-        raise NotImplementedError(
-            f"Can not extract lineage for dialect [{dialect}] from query: [{statement.raw}]"
-        )
+        return StatementLineageHolder.of(lineage_holder)
 
     @staticmethod
     def can_analyze(statement: BaseSegment):

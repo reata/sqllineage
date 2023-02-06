@@ -35,21 +35,10 @@ def get_bracketed_subqueries_select(
         "alias_expression"
     )
     select_clause = segment.get_child("select_clause_element")
-    sublist = list(
-        [
-            seg
-            for seg in select_clause.segments
-            if not is_segment_negligible(seg) and seg.type != "table_expression"
-        ]
-    )
-    if as_segment is not None and len(sublist) == 1:
-        # CTE: tbl AS (SELECT 1)
-        target = sublist[0]
-    else:
-        case_expression = select_clause.get_child(
-            "expression"
-        ) and select_clause.get_child("expression").get_child("case_expression")
-        target = case_expression or select_clause.get_child("column_reference")
+    case_expression = select_clause.get_child("expression") and select_clause.get_child(
+        "expression"
+    ).get_child("case_expression")
+    target = case_expression or select_clause.get_child("column_reference")
     if target and target.type == "case_expression":
         for when_clause in target.get_children("when_clause"):
             for bracketed_segment in get_bracketed_from(
@@ -125,10 +114,7 @@ def extract_as_and_target_segment(
     """
     as_segment = segment.get_child("alias_expression")
     sublist = list([seg for seg in segment.segments if not is_segment_negligible(seg)])
-    if as_segment is not None and len(sublist) == 1:
-        target = sublist[0]
-    else:
-        target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
+    target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
     return as_segment, target
 
 
@@ -145,8 +131,6 @@ def get_subqueries(
         return get_bracketed_subqueries_select(segment)
     elif segment.type in ["from_clause", "from_expression", "from_expression_element"]:
         return get_bracketed_subqueries_from(segment, skip_union)
-    elif segment.type in ["join_clause"]:
-        return []
     elif segment.type in ["where_clause"]:
         return get_bracketed_subqueries_where(segment)
     else:
@@ -521,18 +505,15 @@ def get_statement_segment(parsed_string: ParsedString) -> Optional[BaseSegment]:
     :param parsed_string: parsed string
     :return: first segment from the statement segment of the segments of parsed_string
     """
-    try:
-        if parsed_string.tree:
-            return next(
-                (
-                    x.segments[0]
-                    if x.type == "statement"
-                    else x.get_child("statement").segments[0]
-                    for x in parsed_string.tree.segments
-                    if x.type == "statement" or x.type == "batch"
-                ),
-                None,
-            )
-    except AttributeError:
-        return None
+    if parsed_string.tree:
+        return next(
+            (
+                x.segments[0]
+                if x.type == "statement"
+                else x.get_child("statement").segments[0]
+                for x in parsed_string.tree.segments
+                if x.type == "statement" or x.type == "batch"
+            ),
+            None,
+        )
     return None
