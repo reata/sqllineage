@@ -1,9 +1,9 @@
 from typing import List, Union
 
 from sqlfluff.core.parser import BaseSegment
-from sqllineage.models import SubQuery, Table
 
 from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.models import SubQuery, Table
 from sqllineage.sqlfluff_core.models import SqlFluffSubQuery, SqlFluffTable
 from sqllineage.sqlfluff_core.utils.sqlfluff import get_table_alias
 

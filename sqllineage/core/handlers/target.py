@@ -2,9 +2,9 @@ from sqlparse.sql import Comparison, Function, Identifier, Token
 from sqlparse.tokens import Literal, Number
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
-from sqllineage.holders import SubQueryLineageHolder
 from sqllineage.core.models import SqlParseTable
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.holders import SubQueryLineageHolder
 from sqllineage.models import Path
 
 

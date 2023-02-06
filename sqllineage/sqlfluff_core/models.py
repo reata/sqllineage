@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.models import Column, Schema, Table, SubQuery
+from sqllineage.models import Column, Schema, SubQuery, Table
 from sqllineage.sqlfluff_core.utils.entities import SqlFluffColumnQualifierTuple
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
     get_identifier,

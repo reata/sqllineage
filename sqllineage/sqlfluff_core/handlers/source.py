@@ -4,7 +4,7 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import Path, Column, SubQuery, Table
+from sqllineage.models import Column, Path, SubQuery, Table
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.sqlfluff_core.models import (
     SqlFluffColumn,

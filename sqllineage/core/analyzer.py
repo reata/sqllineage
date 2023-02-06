@@ -15,8 +15,8 @@ from sqllineage.core.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
 )
-from sqllineage.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.models import SqlParseSubQuery, SqlParseTable
+from sqllineage.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.models import AnalyzerContext, SubQuery
 from sqllineage.utils.sqlparse import (
     get_subquery_parentheses,

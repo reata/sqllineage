@@ -3,7 +3,7 @@ from sqlparse.sql import Parenthesis
 
 from sqllineage.core.models import SqlParseColumn, SqlParseSubQuery, SqlParseTable
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.models import Schema, Path
+from sqllineage.models import Path, Schema
 
 
 def test_repr_dummy():

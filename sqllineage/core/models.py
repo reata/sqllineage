@@ -16,7 +16,7 @@ from sqlparse.sql import (
 )
 from sqlparse.utils import imt
 
-from sqllineage.models import Column, SubQuery, Schema, Table
+from sqllineage.models import Column, Schema, SubQuery, Table
 from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
 from sqllineage.utils.sqlparse import get_parameters, is_subquery
