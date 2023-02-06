@@ -1,7 +1,6 @@
 import pytest
 
-from sqllineage.core.models import Path
-from sqllineage.sqlfluff_core.models import SqlFluffPath
+from sqllineage.models import Path
 from .helpers import assert_table_lineage_equal
 
 
@@ -18,7 +17,7 @@ def test_copy_from_path():
     )
     assert_table_lineage_equal(
         "COPY tab1 FROM 's3://mybucket/mypath'",
-        {SqlFluffPath("s3://mybucket/mypath")},
+        {Path("s3://mybucket/mypath")},
         {"tab1"},
         "redshift",
         test_sqlparse=False,
@@ -39,7 +38,7 @@ def test_copy_into_path():
     )
     assert_table_lineage_equal(
         "COPY INTO tab1 FROM 's3://mybucket/mypath'",
-        {SqlFluffPath("s3://mybucket/mypath")},
+        {Path("s3://mybucket/mypath")},
         {"tab1"},
         "snowflake",
         test_sqlparse=False,
@@ -76,7 +75,7 @@ SELECT * FROM tab1""",
         """INSERT OVERWRITE DIRECTORY 'hdfs://path/to/folder'
 SELECT * FROM tab1""",
         {"tab1"},
-        {SqlFluffPath("hdfs://path/to/folder")},
+        {Path("hdfs://path/to/folder")},
         "sparksql",
         test_sqlparse=False,
     )

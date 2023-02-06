@@ -1,7 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
-from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
+from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.models import AnalyzerContext
 from sqllineage.sqlfluff_core.models import SqlFluffSubQuery
 from sqllineage.sqlfluff_core.subquery.dml_insert_extractor import DmlInsertExtractor
 from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtractor
@@ -31,17 +31,17 @@ class DmlCteExtractor(LineageHolderExtractor):
     def extract(
         self,
         statement: BaseSegment,
-        context: SqlFluffAnalyzerContext,
+        context: AnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SqlFluffSubQueryLineageHolder:
+    ) -> SubQueryLineageHolder:
         """
         Extract lineage for a given statement.
         :param statement: a sqlfluff segment with a statement
-        :param context: 'SqlFluffAnalyzerContext'
+        :param context: 'AnalyzerContext'
         :param is_sub_query: determine if the statement is bracketed or not
-        :return 'SqlFluffSubQueryLineageHolder' object
+        :return 'SubQueryLineageHolder' object
         """
-        handlers, conditional_handlers = self._init_handlers()
+        handlers, _ = self._init_handlers()
 
         holder = self._init_holder(context)
 
@@ -56,15 +56,13 @@ class DmlCteExtractor(LineageHolderExtractor):
             if segment.type == "select_statement":
                 holder |= DmlSelectExtractor(self.dialect).extract(
                     segment,
-                    SqlFluffAnalyzerContext(
-                        prev_cte=holder.cte, prev_write=holder.write
-                    ),
+                    AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
                 )
 
             if segment.type == "insert_statement":
                 holder |= DmlInsertExtractor(self.dialect).extract(
                     segment,
-                    SqlFluffAnalyzerContext(prev_cte=holder.cte),
+                    AnalyzerContext(prev_cte=holder.cte),
                 )
 
             identifier = None
@@ -84,15 +82,11 @@ class DmlCteExtractor(LineageHolderExtractor):
                         if segment_has_alias:
                             holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
 
-            for conditional_handler in conditional_handlers:
-                if conditional_handler.indicate(segment):
-                    conditional_handler.handle(segment, holder)
-
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= DmlSelectExtractor(self.dialect).extract(
-                sq.segment,
-                SqlFluffAnalyzerContext(sq, prev_cte=holder.cte),
+                sq.query,
+                AnalyzerContext(sq, prev_cte=holder.cte),
             )
 
         return holder

@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import sqlparse
 from sqlfluff.api.simple import get_simple_config
@@ -7,16 +7,12 @@ from sqlfluff.core import Linter
 from sqlparse.sql import Statement
 
 from sqllineage.core import LineageAnalyzer
-from sqllineage.core.holders import SQLLineageHolder, StatementLineageHolder
-from sqllineage.core.models import Column, Table
+from sqllineage.holders import SQLLineageHolder, StatementLineageHolder
+from sqllineage.core.models import SqlParseColumn, SqlParseTable
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.io import to_cytoscape
 from sqllineage.sqlfluff_core.analyzer import SqlFluffLineageAnalyzer
-from sqllineage.sqlfluff_core.holders import (
-    SqlFluffLineageHolder,
-    SqlFluffStatementLineageHolder,
-)
 from sqllineage.sqlfluff_core.utils.sqlfluff import get_statement_segment
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import (
@@ -144,28 +140,30 @@ Target Tables:
         return self._stmt
 
     @lazy_property
-    def source_tables(self) -> List[Table]:
+    def source_tables(self) -> List[SqlParseTable]:
         """
         a list of source :class:`sqllineage.models.Table`
         """
         return sorted(self._sql_holder.source_tables, key=lambda x: str(x))
 
     @lazy_property
-    def target_tables(self) -> List[Table]:
+    def target_tables(self) -> List[SqlParseTable]:
         """
         a list of target :class:`sqllineage.models.Table`
         """
         return sorted(self._sql_holder.target_tables, key=lambda x: str(x))
 
     @lazy_property
-    def intermediate_tables(self) -> List[Table]:
+    def intermediate_tables(self) -> List[SqlParseTable]:
         """
         a list of intermediate :class:`sqllineage.models.Table`
         """
         return sorted(self._sql_holder.intermediate_tables, key=lambda x: str(x))
 
     @lazy_method
-    def get_column_lineage(self, exclude_subquery=True) -> List[Tuple[Column, Column]]:
+    def get_column_lineage(
+        self, exclude_subquery=True
+    ) -> List[Tuple[SqlParseColumn, SqlParseColumn]]:
         """
         a list of column tuple :class:`sqllineage.models.Column`
         """
@@ -205,16 +203,10 @@ Target Tables:
         ]
 
         self._stmt_holders = [self.run_lineage_analyzer(stmt) for stmt in self._stmt]
-        self._sql_holder = (
-            SQLLineageHolder.of(*self._stmt_holders)
-            if not self._use_sqlfluff
-            else SqlFluffLineageHolder.of(self._stmt_holders)
-        )
+        self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
         self._evaluated = True
 
-    def run_lineage_analyzer(
-        self, stmt: Statement
-    ) -> Union[StatementLineageHolder, SqlFluffStatementLineageHolder]:
+    def run_lineage_analyzer(self, stmt: Statement) -> StatementLineageHolder:
         stmt_value = stmt.value.strip()
         if self._use_sqlfluff:
             is_sub_query = is_subquery_statement(stmt_value)

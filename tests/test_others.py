@@ -1,6 +1,5 @@
-from sqllineage.core.models import Path
+from sqllineage.models import Path
 from sqllineage.runner import LineageRunner
-from sqllineage.sqlfluff_core.models import SqlFluffPath
 from .helpers import assert_table_lineage_equal
 
 
@@ -110,7 +109,7 @@ def test_copy_from_table():
     )
     assert_table_lineage_equal(
         "COPY tab1 FROM 's3://mybucket/mypath'",
-        {SqlFluffPath("s3://mybucket/mypath")},
+        {Path("s3://mybucket/mypath")},
         {"tab1"},
         "redshift",
         test_sqlparse=False,

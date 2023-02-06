@@ -62,17 +62,6 @@ def get_bracketed_subqueries_select(
                 subquery.append(
                     SubSqlFluffQueryTuple(bracketed_segment, get_identifier(as_segment))
                 )
-        for else_clause in target.get_children("else_clause"):
-            for bracketed_segment in get_bracketed_from(
-                else_clause, children_segments="expression"
-            ):
-                subquery.append(
-                    SubSqlFluffQueryTuple(bracketed_segment, get_identifier(as_segment))
-                )
-    if target and is_subquery(target):
-        subquery = [
-            SubSqlFluffQueryTuple(get_innermost_bracketed(target), as_segment.raw)
-        ]
     return subquery
 
 

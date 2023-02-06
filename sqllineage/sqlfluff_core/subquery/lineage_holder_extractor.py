@@ -5,12 +5,12 @@ from typing import List, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.models import AnalyzerContext, SubQuery
 from sqllineage.sqlfluff_core.handlers.base import (
     ConditionalSegmentBaseHandler,
     SegmentBaseHandler,
 )
-from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
-from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
 from sqllineage.sqlfluff_core.models import SqlFluffSubQuery
 from sqllineage.sqlfluff_core.utils.entities import SubSqlFluffQueryTuple
 from sqllineage.sqlfluff_core.utils.sqlfluff import (
@@ -22,7 +22,7 @@ from sqllineage.sqlfluff_core.utils.sqlfluff import (
 
 class LineageHolderExtractor(ABC):
     """
-    Abstract class implementation for extract 'SqlFluffSubQueryLineageHolder' from different statement types
+    Abstract class implementation for extract 'SubQueryLineageHolder' from different statement types
     """
 
     def __init__(self, dialect: str):
@@ -39,27 +39,26 @@ class LineageHolderExtractor(ABC):
     def extract(
         self,
         statement: BaseSegment,
-        context: SqlFluffAnalyzerContext,
+        context: AnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SqlFluffSubQueryLineageHolder:
+    ) -> SubQueryLineageHolder:
         """
         Extract lineage for a given statement.
         :param statement: a sqlfluff segment with a statement
-        :param context: 'SqlFluffAnalyzerContext'
+        :param context: 'AnalyzerContext'
         :param is_sub_query: determine if the statement is bracketed or not
-        :return 'SqlFluffSubQueryLineageHolder' object
+        :return 'SubQueryLineageHolder' object
         """
-        pass
 
     @classmethod
-    def parse_subquery(cls, segment: BaseSegment) -> List[SqlFluffSubQuery]:
+    def parse_subquery(cls, segment: BaseSegment) -> List[SubQuery]:
         """
         The parse_subquery function takes a segment as an argument.
         :param segment: segment to determine if it is a subquery
         :return: A list of `SqlFluffSubQuery` objects, otherwise, if the segment is not matching any of the expected
         types it returns an empty list.
         """
-        result: List[SqlFluffSubQuery] = []
+        result: List[SubQuery] = []
         identifiers = get_multiple_identifiers(segment)
         if identifiers and len(identifiers) > 1:
             # for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
@@ -79,9 +78,7 @@ class LineageHolderExtractor(ABC):
         return result
 
     @classmethod
-    def _parse_subquery(
-        cls, subqueries: List[SubSqlFluffQueryTuple]
-    ) -> List[SqlFluffSubQuery]:
+    def _parse_subquery(cls, subqueries: List[SubSqlFluffQueryTuple]) -> List[SubQuery]:
         """
         Convert a list of 'SqlFluffSubQueryTuple' to 'SqlFluffSubQuery'
         :param subqueries:  a list of 'SqlFluffSubQueryTuple'
@@ -110,13 +107,13 @@ class LineageHolderExtractor(ABC):
         return handlers, conditional_handlers
 
     @staticmethod
-    def _init_holder(context: SqlFluffAnalyzerContext) -> SqlFluffSubQueryLineageHolder:
+    def _init_holder(context: AnalyzerContext) -> SubQueryLineageHolder:
         """
-        Initialize lineage holder for a given 'SqlFluffAnalyzerContext'
+        Initialize lineage holder for a given 'AnalyzerContext'
         :param context: a previous context that the lineage extractor must consider
-        :return: an initialized SqlFluffSubQueryLineageHolder
+        :return: an initialized SubQueryLineageHolder
         """
-        holder = SqlFluffSubQueryLineageHolder()
+        holder = SubQueryLineageHolder()
 
         if context.prev_cte is not None:
             # CTE can be referenced by subsequent CTEs

@@ -13,9 +13,10 @@ from sqlparse.sql import (
 from sqlparse.tokens import Literal, Wildcard
 
 from sqllineage.core.handlers.base import NextTokenBaseHandler
-from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.core.models import SqlParseColumn, SqlParseSubQuery, SqlParseTable
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.models import Path, Table, SubQuery
 from sqllineage.utils.constant import EdgeType
 from sqllineage.utils.sqlparse import (
     get_subquery_parentheses,
@@ -70,7 +71,7 @@ class SourceHandler(NextTokenBaseHandler):
             if is_subquery(token):
                 # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
                 # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
-                self.tables.append(SubQuery.of(token, None))
+                self.tables.append(SqlParseSubQuery.of(token, None))
             elif is_values_clause(token):
                 # SELECT * FROM (VALUES ...), no operation needed
                 pass
@@ -102,7 +103,7 @@ class SourceHandler(NextTokenBaseHandler):
             # SELECT constant value will end up here
             column_tokens = []
         for token in column_tokens:
-            self.columns.append(Column.of(token))
+            self.columns.append(SqlParseColumn.of(token))
 
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         for i, tbl in enumerate(self.tables):
@@ -148,28 +149,28 @@ class SourceHandler(NextTokenBaseHandler):
                 # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
                 # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
                 parenthesis, alias = subqueries[0]
-                read = SubQuery.of(parenthesis, alias)
+                read = SqlParseSubQuery.of(parenthesis, alias)
             else:
                 cte_dict = {s.alias: s for s in holder.cte}
                 if "." not in identifier.value:
                     cte = cte_dict.get(identifier.get_real_name())
                     if cte is not None:
                         # could reference CTE with or without alias
-                        read = SubQuery.of(
-                            cte.token,
+                        read = SqlParseSubQuery.of(
+                            cte.query,
                             identifier.get_alias() or identifier.get_real_name(),
                         )
                 if read is None:
-                    read = Table.of(identifier)
+                    read = SqlParseTable.of(identifier)
             dataset = read
         self.tables.append(dataset)
 
     @classmethod
     def _get_alias_mapping_from_table_group(
         cls,
-        table_group: List[Union[Path, Table, SubQuery]],
+        table_group: List[Union[Path, SqlParseTable, SqlParseSubQuery]],
         holder: SubQueryLineageHolder,
-    ) -> Dict[str, Union[Path, Table, SubQuery]]:
+    ) -> Dict[str, Union[Path, SqlParseTable, SqlParseSubQuery]]:
         """
         A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
         For SubQuery, it's only alias then.
@@ -183,7 +184,11 @@ class SourceHandler(NextTokenBaseHandler):
             **{
                 table.raw_name: table
                 for table in table_group
-                if isinstance(table, Table)
+                if isinstance(table, SqlParseTable)
             },
-            **{str(table): table for table in table_group if isinstance(table, Table)},
+            **{
+                str(table): table
+                for table in table_group
+                if isinstance(table, SqlParseTable)
+            },
         }

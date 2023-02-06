@@ -4,7 +4,7 @@ from typing import Set, Tuple, Union
 import networkx as nx
 from networkx import DiGraph
 
-from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.models import Column, Path, SubQuery, Table
 from sqllineage.utils.constant import EdgeType, NodeTag
 
 DATASET_CLASSES = (Path, Table)
@@ -48,6 +48,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
+        self.extra_subqueries: Set[SubQuery] = set()
 
     def __or__(self, other):
         self.graph = nx.compose(self.graph, other.graph)
@@ -139,7 +140,7 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
         self.graph.add_edge(src, tgt, type=EdgeType.RENAME)
 
     @staticmethod
-    def of(holder: SubQueryLineageHolder):
+    def of(holder: SubQueryLineageHolder) -> "StatementLineageHolder":
         stmt_holder = StatementLineageHolder()
         stmt_holder.graph = holder.graph
         return stmt_holder
@@ -284,7 +285,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return g
 
     @staticmethod
-    def of(*args: StatementLineageHolder):
+    def of(*args: StatementLineageHolder) -> "SQLLineageHolder":
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`

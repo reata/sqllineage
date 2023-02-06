@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
+from sqllineage.holders import SubQueryLineageHolder
 
 
 class ConditionalSegmentBaseHandler:
@@ -18,13 +18,11 @@ class ConditionalSegmentBaseHandler:
         self.dialect = dialect
 
     @abstractmethod
-    def handle(
-        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
-    ) -> None:
+    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
         Handle the segment, and update the lineage result accordingly in the holder
         :param segment: segment to be handled
-        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :param holder: 'SubQueryLineageHolder' to hold lineage
         """
 
     @abstractmethod
@@ -35,10 +33,10 @@ class ConditionalSegmentBaseHandler:
         :return: True if it can be handled, by default return False
         """
 
-    def end_of_query_cleanup(self, holder: SqlFluffSubQueryLineageHolder) -> None:
+    def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         """
         Optional method to be called at the end of statement or subquery
-        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :param holder: 'SubQueryLineageHolder' to hold lineage
         """
         pass
 
@@ -49,10 +47,8 @@ class SegmentBaseHandler:
     """
 
     @abstractmethod
-    def handle(
-        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
-    ) -> None:
+    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
         :param segment: segment to be handled
-        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :param holder: 'SubQueryLineageHolder' to hold lineage
         """

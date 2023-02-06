@@ -36,16 +36,14 @@ export function Editor(props) {
         dispatch(setDagLevel("table"));
         if (file === null) {
           dispatch(setEditable(true));
-          dispatch(fetchDAG({"e": editorState.contentComposed}))
+          dispatch(fetchDAG({"e": editorState.contentComposed, "use_sqlfluff": props.useSqlfluff, "dialect": props.dialect}))
         } else {
           dispatch(setEditable(false));
           dispatch(fetchContent({"f": file}));
-          dispatch(fetchDAG({"f": file}));
+          dispatch(fetchDAG({"f": file, "use_sqlfluff": props.useSqlfluff, "dialect": props.dialect}));
         }
       }
     }
-
-
   })
 
   const handleEditorDidMount = (editor, monaco) => {
@@ -53,7 +51,7 @@ export function Editor(props) {
     editor.onDidBlurEditorText(() => {
       if (!editor.getOption(readOnly)) {
         dispatch(setContentComposed(editor.getValue()));
-        dispatch(fetchDAG({"e": editor.getValue()}));
+        dispatch(fetchDAG({"e": editor.getValue(), "use_sqlfluff": props.useSqlfluff, "dialect": props.dialect}));
       }
     })
     editor.onKeyDown(() => {

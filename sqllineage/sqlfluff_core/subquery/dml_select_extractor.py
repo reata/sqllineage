@@ -1,7 +1,8 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
-from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext, SqlFluffSubQuery
+from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.models import AnalyzerContext
+from sqllineage.sqlfluff_core.models import SqlFluffSubQuery
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
@@ -28,15 +29,15 @@ class DmlSelectExtractor(LineageHolderExtractor):
     def extract(
         self,
         statement: BaseSegment,
-        context: SqlFluffAnalyzerContext,
+        context: AnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SqlFluffSubQueryLineageHolder:
+    ) -> SubQueryLineageHolder:
         """
         Extract lineage for a given statement.
         :param statement: a sqlfluff segment with a statement
-        :param context: 'SqlFluffAnalyzerContext'
+        :param context: 'AnalyzerContext'
         :param is_sub_query: determine if the statement is bracketed or not
-        :return 'SqlFluffSubQueryLineageHolder' object
+        :return 'SubQueryLineageHolder' object
         """
         handlers, conditional_handlers = self._init_handlers()
         holder = self._init_holder(context)
@@ -61,9 +62,9 @@ class DmlSelectExtractor(LineageHolderExtractor):
 
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
-            holder |= self.extract(sq.segment, SqlFluffAnalyzerContext(sq, holder.cte))
+            holder |= self.extract(sq.query, AnalyzerContext(sq, holder.cte))
 
         for sq in holder.extra_subqueries:
-            holder |= self.extract(sq.segment, SqlFluffAnalyzerContext(sq, holder.cte))
+            holder |= self.extract(sq.query, AnalyzerContext(sq, holder.cte))
 
         return holder

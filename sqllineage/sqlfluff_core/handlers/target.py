@@ -2,11 +2,10 @@ from typing import Optional, Union
 
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.models import Path, Table, SubQuery
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
-from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.models import (
-    SqlFluffPath,
-    SqlFluffSubQuery,
     SqlFluffTable,
 )
 from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
@@ -76,9 +75,7 @@ class TargetHandler(ConditionalSegmentBaseHandler):
             return self.indicator
         return False
 
-    def handle(
-        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
-    ) -> None:
+    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
         Handle the segment, and update the lineage result accordingly in the holder
         :param segment: segment to be handled
@@ -95,9 +92,9 @@ class TargetHandler(ConditionalSegmentBaseHandler):
 
         elif segment.type in {"literal", "storage_location"}:
             if self.prev_token_from:
-                holder.add_read(SqlFluffPath(escape_identifier_name(segment.raw)))
+                holder.add_read(Path(escape_identifier_name(segment.raw)))
             else:
-                holder.add_write(SqlFluffPath(escape_identifier_name(segment.raw)))
+                holder.add_write(Path(escape_identifier_name(segment.raw)))
             self._reset_tokens()
 
         elif segment.type == "from_expression":
@@ -132,11 +129,11 @@ class TargetHandler(ConditionalSegmentBaseHandler):
 
     @staticmethod
     def _extract_table_reference(
-        object_reference: BaseSegment, holder: SqlFluffSubQueryLineageHolder
-    ) -> Optional[Union[SqlFluffTable, SqlFluffSubQuery]]:
+        object_reference: BaseSegment, holder: SubQueryLineageHolder
+    ) -> Optional[Union[Table, SubQuery]]:
         """
         :param object_reference: object reference segment
-        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :param holder: 'SubQueryLineageHolder' to hold lineage
         :return: a 'SqlFluffTable' or 'SqlFluffSubQuery' from the object_reference
         """
         if object_reference and object_reference.type == "object_reference":

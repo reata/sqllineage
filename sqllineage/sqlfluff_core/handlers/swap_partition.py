@@ -1,7 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.holders import SubQueryLineageHolder
 from sqllineage.sqlfluff_core.handlers.base import SegmentBaseHandler
-from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.models import SqlFluffTable
 from sqllineage.sqlfluff_core.utils.sqlfluff import get_grandchild, get_grandchildren
 from sqllineage.utils.helpers import escape_identifier_name
@@ -12,9 +12,7 @@ class SwapPartitionHandler(SegmentBaseHandler):
     A handler for swap_partitions_between_tables function
     """
 
-    def handle(
-        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
-    ) -> None:
+    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
         Handle the segment, and update the lineage result accordingly in the holder
         :param segment: segment to be handled

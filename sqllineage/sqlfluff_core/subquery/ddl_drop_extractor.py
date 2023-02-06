@@ -1,10 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.sqlfluff_core.holders import (
-    SqlFluffStatementLineageHolder,
-    SqlFluffSubQueryLineageHolder,
-)
-from sqllineage.sqlfluff_core.models import SqlFluffAnalyzerContext
+from sqllineage.holders import SubQueryLineageHolder, StatementLineageHolder
+from sqllineage.models import AnalyzerContext
 from sqllineage.sqlfluff_core.models import SqlFluffTable
 from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
@@ -31,17 +28,17 @@ class DdlDropExtractor(LineageHolderExtractor):
     def extract(
         self,
         statement: BaseSegment,
-        context: SqlFluffAnalyzerContext,
+        context: AnalyzerContext,
         is_sub_query: bool = False,
-    ) -> SqlFluffSubQueryLineageHolder:
+    ) -> SubQueryLineageHolder:
         """
         Extract lineage for a given statement.
         :param statement: a sqlfluff segment with a statement
-        :param context: 'SqlFluffAnalyzerContext'
+        :param context: 'AnalyzerContext'
         :param is_sub_query: determine if the statement is bracketed or not
-        :return 'SqlFluffSubQueryLineageHolder' object
+        :return 'SubQueryLineageHolder' object
         """
-        holder = SqlFluffStatementLineageHolder()
+        holder = StatementLineageHolder()
         for table in {
             SqlFluffTable.of(t)
             for t in statement.segments

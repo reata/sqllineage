@@ -3,14 +3,14 @@ from typing import Dict, List, Tuple, Union
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.models import Path, Column, SubQuery, Table
 from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
-from sqllineage.sqlfluff_core.holders import SqlFluffSubQueryLineageHolder
 from sqllineage.sqlfluff_core.models import (
     SqlFluffColumn,
     SqlFluffSubQuery,
 )
 from sqllineage.sqlfluff_core.models import (
-    SqlFluffPath,
     SqlFluffTable,
 )
 from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
@@ -34,10 +34,8 @@ class SourceHandler(ConditionalSegmentBaseHandler):
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
-        self.columns: List[SqlFluffColumn] = []
-        self.tables: List[
-            Union[SqlFluffPath, SqlFluffTable, SqlFluffSubQuery, SqlFluffSubQuery]
-        ] = []
+        self.columns: List[Column] = []
+        self.tables: List[Union[Path, Table, SubQuery]] = []
         self.union_barriers: List[Tuple[int, int]] = []
 
     def indicate(self, segment: BaseSegment) -> bool:
@@ -48,13 +46,11 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         """
         return self._indicate_column(segment) or self._indicate_table(segment)
 
-    def handle(
-        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
-    ) -> None:
+    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
         Handle the segment, and update the lineage result accordingly in the holder
         :param segment: segment to be handled
-        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :param holder: 'SubQueryLineageHolder' to hold lineage
         """
         if self._indicate_table(segment):
             self._handle_table(segment, holder)
@@ -62,12 +58,12 @@ class SourceHandler(ConditionalSegmentBaseHandler):
             self._handle_column(segment)
 
     def _handle_table(
-        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
+        self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> None:
         """
         Table handler method
         :param segment: segment to be handled
-        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :param holder: 'SubQueryLineageHolder' to hold lineage
         """
         identifiers = get_multiple_identifiers(segment)
         if identifiers and len(identifiers) > 1:
@@ -91,10 +87,10 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                     SqlFluffColumn.of(sub_segment, dialect=self.dialect)
                 )
 
-    def end_of_query_cleanup(self, holder: SqlFluffSubQueryLineageHolder) -> None:
+    def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         """
         Optional method to be called at the end of statement or subquery
-        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :param holder: 'SubQueryLineageHolder' to hold lineage
         """
         for i, tbl in enumerate(self.tables):
             holder.add_read(tbl)
@@ -119,15 +115,15 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                         holder.add_column_lineage(src_col, tgt_col)
 
     def _add_dataset_from_expression_element(
-        self, segment: BaseSegment, holder: SqlFluffSubQueryLineageHolder
+        self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> None:
         """
         Append tables and subqueries identified in the 'from_expression_element' type segment to the table and
         holder extra subqueries sets
         :param segment: 'from_expression_element' type segment
-        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :param holder: 'SubQueryLineageHolder' to hold lineage
         """
-        dataset: Union[SqlFluffPath, SqlFluffTable, SqlFluffSubQuery]
+        dataset: Union[Path, Table, SubQuery]
         all_segments = [
             seg for seg in retrieve_segments(segment) if seg.type != "keyword"
         ]
@@ -155,18 +151,16 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                     )
                     self.tables.append(dataset)
 
+    @staticmethod
     def _get_alias_mapping_from_table_group(
-        self,
-        table_group: List[
-            Union[SqlFluffPath, SqlFluffTable, SqlFluffSubQuery, SqlFluffSubQuery]
-        ],
-        holder: SqlFluffSubQueryLineageHolder,
-    ) -> Dict[str, Union[SqlFluffTable, SqlFluffSubQuery]]:
+        table_group: List[Union[Path, Table, SubQuery]],
+        holder: SubQueryLineageHolder,
+    ) -> Dict[str, Union[Table, SubQuery]]:
         """
         A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
         For SubQuery, it's only alias then.
         :param table_group: a list of objects from the table list
-        :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
+        :param holder: 'SubQueryLineageHolder' to hold lineage
         :return: A map of tables and references
         """
         return {

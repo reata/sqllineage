@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import add
-from typing import List, NamedTuple, Optional, Set, Union
+from typing import List, Union
 
 from sqlparse.sql import (
     Function,
@@ -15,18 +15,14 @@ from sqllineage.core.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
 )
-from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.core.models import SubQuery, Table
+from sqllineage.holders import StatementLineageHolder, SubQueryLineageHolder
+from sqllineage.core.models import SqlParseSubQuery, SqlParseTable
+from sqllineage.models import AnalyzerContext, SubQuery
 from sqllineage.utils.sqlparse import (
     get_subquery_parentheses,
     is_subquery,
     is_token_negligible,
 )
-
-
-class AnalyzerContext(NamedTuple):
-    subquery: Optional[SubQuery] = None
-    prev_cte: Optional[Set[SubQuery]] = None
 
 
 class LineageAnalyzer:
@@ -64,7 +60,9 @@ class LineageAnalyzer:
     @classmethod
     def _extract_from_ddl_drop(cls, stmt: Statement) -> StatementLineageHolder:
         holder = StatementLineageHolder()
-        for table in {Table.of(t) for t in stmt.tokens if isinstance(t, Identifier)}:
+        for table in {
+            SqlParseTable.of(t) for t in stmt.tokens if isinstance(t, Identifier)
+        }:
             holder.add_drop(table)
         return holder
 
@@ -74,10 +72,10 @@ class LineageAnalyzer:
         tables = []
         for t in stmt.tokens:
             if isinstance(t, Identifier):
-                tables.append(Table.of(t))
+                tables.append(SqlParseTable.of(t))
             elif isinstance(t, IdentifierList):
                 for identifier in t.get_identifiers():
-                    tables.append(Table.of(identifier))
+                    tables.append(SqlParseTable.of(identifier))
         keywords = [t for t in stmt.tokens if t.is_keyword]
         if any(k.normalized == "RENAME" for k in keywords):
             if stmt.get_type() == "ALTER" and len(tables) == 2:
@@ -139,7 +137,7 @@ class LineageAnalyzer:
                 next_handler.end_of_query_cleanup(holder)
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
-            holder |= cls._extract_from_dml(sq.token, AnalyzerContext(sq, holder.cte))
+            holder |= cls._extract_from_dml(sq.query, AnalyzerContext(sq, holder.cte))
         return holder
 
     @classmethod
@@ -161,7 +159,7 @@ class LineageAnalyzer:
             )
         elif is_subquery(token):
             # Parenthesis for SubQuery without alias, this is valid syntax for certain SQL dialect
-            result = [SubQuery.of(token, None)]
+            result = [SqlParseSubQuery.of(token, None)]
         return result
 
     @classmethod
@@ -172,6 +170,6 @@ class LineageAnalyzer:
         convert SubQueryTuple to sqllineage.core.models.SubQuery
         """
         return [
-            SubQuery.of(parenthesis, alias)
+            SqlParseSubQuery.of(parenthesis, alias)
             for parenthesis, alias in get_subquery_parentheses(token)
         ]

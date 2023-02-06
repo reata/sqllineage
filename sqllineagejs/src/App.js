@@ -1,5 +1,16 @@
 import React, {useMemo} from 'react';
-import {Box, Drawer, FormControl, FormControlLabel, Grid, Paper, Radio, RadioGroup, Tooltip} from "@material-ui/core";
+import {
+  Box,
+  Checkbox,
+  Drawer,
+  FormControl,
+  FormControlLabel,
+  Grid, InputLabel, MenuItem,
+  Paper,
+  Radio,
+  RadioGroup, Select,
+  Tooltip
+} from "@material-ui/core";
 import {DAG} from "./features/editor/DAG";
 import {Editor} from "./features/editor/Editor";
 import {makeStyles} from "@material-ui/core/styles";
@@ -67,9 +78,11 @@ export default function App() {
   const [selectedValue, setSelectedValue] = React.useState('dag');
   const [open, setOpen] = React.useState(true);
   const [drawerWidth, setDrawerWidth] = React.useState(18);
+  const [useSqlfluff, setUseSqlfluff] = React.useState(false);
+  const [dialect, setDialect] = React.useState("ansi");
   const classes = useStyles({drawerWidth: drawerWidth});
 
-  const height = "90vh";
+  const height = "80vh";
   const width = useMemo(() => {
     let full_width = 100;
     return (open ? full_width - drawerWidth : full_width) + "vw"
@@ -171,7 +184,7 @@ export default function App() {
               <DAGDesc height={height} width={width}/>
             </Box>
             <Box className={selectedValue === "script" ? "" : classes.hide}>
-              <Editor height={height} width={width}/>
+              <Editor height={height} width={width} dialect={dialect} useSqlfluff={useSqlfluff}/>
             </Box>
           </Paper>
           <Grid container justify="center">
@@ -195,6 +208,22 @@ export default function App() {
                   label="Script View"
                 />
               </RadioGroup>
+              <FormControlLabel control={<Checkbox onChange={(event) => setUseSqlfluff(event.target.checked)} checked={useSqlfluff}/>} label="Use sqlfluff" />
+              <FormControl>
+                <InputLabel id="demo-simple-select-label">Dialect</InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  value={dialect}
+                  label="Dialect"
+                  onChange={(event) => setDialect(event.target.value)}
+                >
+                  <MenuItem value="ansi">ANSI</MenuItem>
+                  <MenuItem value="mysql">MySQL</MenuItem>
+                  <MenuItem value="sparksql">SparkSQL</MenuItem>
+                  <MenuItem value="hive">Hive</MenuItem>
+                </Select>
+              </FormControl>
             </FormControl>
           </Grid>
         </main>
