@@ -194,7 +194,7 @@ class Column:
             return col
 
         source_columns = set()
-        for (src_col, qualifier) in self.source_columns:
+        for src_col, qualifier in self.source_columns:
             if qualifier is None:
                 if src_col == "*":
                     # select *

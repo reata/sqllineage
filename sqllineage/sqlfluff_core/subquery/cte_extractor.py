@@ -49,7 +49,6 @@ class DmlCteExtractor(LineageHolderExtractor):
         segments = retrieve_segments(statement)
 
         for segment in segments:
-
             for current_handler in handlers:
                 current_handler.handle(segment, holder)
 

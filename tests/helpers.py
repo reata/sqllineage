@@ -5,7 +5,7 @@ from sqllineage.runner import LineageRunner
 
 
 def assert_table_lineage(lr: LineageRunner, source_tables=None, target_tables=None):
-    for (_type, actual, expected) in zip(
+    for _type, actual, expected in zip(
         ["Source", "Target"],
         [lr.source_tables, lr.target_tables],
         [source_tables, target_tables],
