@@ -8,8 +8,8 @@ This test class will contain all the tests for testing 'Insert Queries' where th
 """
 
 
-@pytest.mark.parametrize("dialect", ["hive", "sparksql"])
-def test_insert_overwrite_with_keyword_table(dialect: str):
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_insert_overwrite(dialect: str):
     assert_table_lineage_equal(
         "INSERT OVERWRITE TABLE tab1 SELECT col1 FROM tab2",
         {"tab2"},
@@ -18,7 +18,7 @@ def test_insert_overwrite_with_keyword_table(dialect: str):
     )
 
 
-@pytest.mark.parametrize("dialect", ["hive", "sparksql"])
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_insert_overwrite_from_self(dialect: str):
     assert_table_lineage_equal(
         """INSERT OVERWRITE TABLE foo
@@ -30,7 +30,7 @@ WHERE flag IS NOT NULL""",
     )
 
 
-@pytest.mark.parametrize("dialect", ["hive", "sparksql"])
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_insert_overwrite_from_self_with_join(dialect: str):
     assert_table_lineage_equal(
         """INSERT OVERWRITE TABLE tab_1
@@ -43,14 +43,24 @@ ON tab_1.col_a = tab_2.cola""",
     )
 
 
-@pytest.mark.parametrize("dialect", ["hive", "sparksql"])
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_insert_overwrite_values(dialect: str):
+    assert_table_lineage_equal(
+        "INSERT OVERWRITE TABLE tab1 VALUES ('val1', 'val2'), ('val3', 'val4')",
+        {},
+        {"tab1"},
+        dialect=dialect,
+    )
+
+
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_insert_into_with_keyword_table(dialect: str):
     assert_table_lineage_equal(
         "INSERT INTO TABLE tab1 VALUES (1, 2)", set(), {"tab1"}, dialect=dialect
     )
 
 
-@pytest.mark.parametrize("dialect", ["hive", "sparksql"])
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_insert_into_partitions(dialect: str):
     assert_table_lineage_equal(
         "INSERT INTO TABLE tab1 PARTITION (par1=1) SELECT * FROM tab2",
@@ -60,19 +70,11 @@ def test_insert_into_partitions(dialect: str):
     )
 
 
-def test_insert_overwrite():
+@pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
+def test_insert_overwrite_without_table_keyword(dialect: str):
     assert_table_lineage_equal(
         "INSERT OVERWRITE tab1 SELECT * FROM tab2",
         {"tab2"},
         {"tab1"},
-        dialect="sparksql",
-    )
-
-
-def test_insert_overwrite_values():
-    assert_table_lineage_equal(
-        "INSERT OVERWRITE tab1 VALUES ('val1', 'val2'), ('val3', 'val4')",
-        {},
-        {"tab1"},
-        dialect="sparksql",
+        dialect=dialect,
     )

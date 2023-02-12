@@ -7,6 +7,17 @@ def test_use():
     assert_table_lineage_equal("USE db1")
 
 
+def test_table_name_case():
+    assert_table_lineage_equal(
+        """insert into tab_a
+select * from tab_b
+union all
+select * from TAB_B""",
+        {"tab_b"},
+        {"tab_a"},
+    )
+
+
 def test_parenthesis():
     assert_table_lineage_equal("(SELECT * FROM tab1)", {"tab1"}, None)
 
@@ -45,6 +56,21 @@ def test_create_as_with_parenthesis_around_both():
 
 def test_create_like():
     assert_table_lineage_equal("CREATE TABLE tab1 LIKE tab2", {"tab2"}, {"tab1"})
+
+
+def test_create_view():
+    assert_table_lineage_equal(
+        """CREATE VIEW view1
+as
+SELECT
+    col1,
+    col2
+FROM tab1
+GROUP BY
+col1""",
+        {"tab1"},
+        {"view1"},
+    )
 
 
 def test_create_after_drop():
@@ -137,6 +163,13 @@ def test_drop_after_create():
     )
 
 
+def test_drop_tmp_tab_after_create():
+    sql = """create table tab_a as select * from tab_b;
+insert into tab_c select * from tab_a;
+drop table tab_a;"""
+    assert_table_lineage_equal(sql, {"tab_b"}, {"tab_c"})
+
+
 def test_new_create_tab_as_tmp_table():
     sql = """create table tab_a as select * from tab_b;
 create table tab_c as select * from tab_a;"""
@@ -156,6 +189,14 @@ def test_swapping_partitions():
         "select swap_partitions_between_tables('staging', 'min-range-value', 'max-range-value', 'target')",
         {"staging"},
         {"target"},
+    )
+
+
+def test_alter_target_table_name():
+    assert_table_lineage_equal(
+        "insert into tab1 select * from tab2; alter table tab1 rename to tab3;",
+        {"tab2"},
+        {"tab3"},
     )
 
 

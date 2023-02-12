@@ -8,31 +8,36 @@ This test class will contain all the tests for testing 'Select Queries' where th
 """
 
 
-@pytest.mark.parametrize("dialect", ["bigquery", "mysql"])
+@pytest.mark.parametrize(
+    "dialect", ["athena", "bigquery", "databricks", "hive", "mysql", "sparksql"]
+)
 def test_select_with_table_name_in_backtick(dialect: str):
     assert_table_lineage_equal("SELECT * FROM `tab1`", {"tab1"}, dialect=dialect)
 
 
-def test_select_left_semi_join():
+@pytest.mark.parametrize(
+    "dialect", ["athena", "bigquery", "databricks", "hive", "mysql", "sparksql"]
+)
+def test_select_with_schema_in_backtick(dialect: str):
     assert_table_lineage_equal(
-        "SELECT * FROM tab1 LEFT SEMI JOIN tab2", {"tab1", "tab2"}, dialect="hive"
+        "SELECT col1 FROM `schema1`.`tab1`", {"schema1.tab1"}, dialect=dialect
     )
 
 
-def test_select_left_semi_join_with_on():
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_select_left_semi_join(dialect: str):
+    assert_table_lineage_equal(
+        "SELECT * FROM tab1 LEFT SEMI JOIN tab2", {"tab1", "tab2"}, dialect=dialect
+    )
+
+
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_select_left_semi_join_with_on(dialect: str):
     assert_table_lineage_equal(
         "SELECT * FROM tab1 LEFT SEMI JOIN tab2 ON (tab1.col1 = tab2.col2)",
         {"tab1", "tab2"},
-        dialect="hive",
+        dialect=dialect,
     )
-
-
-@pytest.mark.parametrize("dialect", ["hive", "mysql", "sparksql"])
-def test_select_keyword_as_column_alias(dialect: str):
-    # here `as` is the column alias
-    assert_table_lineage_equal("SELECT 1 `as` FROM tab1", {"tab1"}, dialect=dialect)
-    # the following is hive specific, MySQL doesn't allow this syntax. As of now, we don't test against it
-    # helper("SELECT 1 as FROM tab1", {"tab1"})
 
 
 def test_select_from_generator():

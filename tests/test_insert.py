@@ -23,18 +23,3 @@ def test_insert_into_with_columns_and_select_union():
         {"tab2", "tab3"},
         {"tab1"},
     )
-
-
-def test_create_view():
-    assert_table_lineage_equal(
-        """CREATE VIEW view1
-as
-SELECT
-    col1,
-    col2
-FROM tab1
-GROUP BY
-col1""",
-        {"tab1"},
-        {"view1"},
-    )
