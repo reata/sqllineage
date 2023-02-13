@@ -22,7 +22,6 @@ from sqllineage import (
     DEFAULT_DIALECT,
     DEFAULT_HOST,
     DEFAULT_PORT,
-    DEFAULT_USE_SQLFLUFF,
 )
 from sqllineage import STATIC_FOLDER
 from sqllineage.exceptions import SQLLineageException
@@ -159,8 +158,8 @@ def lineage(payload):
     req_args = Namespace(**payload)
     sql = extract_sql_from_args(req_args)
     dialect = getattr(req_args, "dialect", DEFAULT_DIALECT)
-    use_sql_parse = bool(getattr(req_args, "use_sqlfluff", DEFAULT_USE_SQLFLUFF))
-    lr = LineageRunner(sql, verbose=True, dialect=dialect, use_sqlfluff=use_sql_parse)
+    use_sqlfluff = bool(getattr(req_args, "use_sqlfluff", True))
+    lr = LineageRunner(sql, verbose=True, dialect=dialect, use_sqlfluff=use_sqlfluff)
     data = {
         "verbose": str(lr),
         "dag": lr.to_cytoscape(),
