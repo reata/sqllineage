@@ -451,19 +451,20 @@ FROM (
     UNION ALL
     (SELECT col1 FROM tab3)
 ) dt"""
-    expected_columns_lineage = [
-        (
-            ColumnQualifierTuple("col1", "tab2"),
-            ColumnQualifierTuple("col1", "tab1"),
-        ),
-        (
-            ColumnQualifierTuple("col1", "tab3"),
-            ColumnQualifierTuple("col1", "tab1"),
-        ),
-    ]
-    assert_column_lineage_equal(sql, expected_columns_lineage, test_sqlfluff=False)
-    # graph are not compared because UNION/UNION ALL is handled different in FROM clause
-    assert_column_lineage_equal(sql, expected_columns_lineage, test_sqlparse=False)
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab3"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+        ],
+        test_sqlfluff=False,
+    )
 
 
 def test_select_column_in_subquery_with_two_parenthesis_and_union_v2():
@@ -474,19 +475,20 @@ FROM (
     UNION ALL
     SELECT col1 FROM tab3
 ) dt"""
-    expected_columns_lineage = [
-        (
-            ColumnQualifierTuple("col1", "tab2"),
-            ColumnQualifierTuple("col1", "tab1"),
-        ),
-        (
-            ColumnQualifierTuple("col1", "tab3"),
-            ColumnQualifierTuple("col1", "tab1"),
-        ),
-    ]
-    assert_column_lineage_equal(sql, expected_columns_lineage, test_sqlfluff=False)
-    # graph are not compared because UNION/UNION ALL is handled different in FROM clause
-    assert_column_lineage_equal(sql, expected_columns_lineage, test_sqlparse=False)
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab3"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+        ],
+        test_sqlfluff=False,
+    )
 
 
 def test_select_column_from_table_join():
