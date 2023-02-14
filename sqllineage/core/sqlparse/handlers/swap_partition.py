@@ -1,8 +1,8 @@
 from sqlparse.sql import Function, Token
 
-from sqllineage.core.handlers.base import CurrentTokenBaseHandler
-from sqllineage.core.models import SqlParseTable
-from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.sqlparse.handlers.base import CurrentTokenBaseHandler
+from sqllineage.core.sqlparse.models import SqlParseTable
 from sqllineage.utils.helpers import escape_identifier_name
 
 

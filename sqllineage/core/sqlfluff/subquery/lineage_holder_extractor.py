@@ -5,15 +5,15 @@ from typing import List, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import AnalyzerContext, SubQuery
-from sqllineage.sqlfluff_core.handlers.base import (
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import AnalyzerContext, SubQuery
+from sqllineage.core.sqlfluff.handlers.base import (
     ConditionalSegmentBaseHandler,
     SegmentBaseHandler,
 )
-from sqllineage.sqlfluff_core.models import SqlFluffSubQuery
-from sqllineage.sqlfluff_core.utils.entities import SubSqlFluffQueryTuple
-from sqllineage.sqlfluff_core.utils.sqlfluff import (
+from sqllineage.core.sqlfluff.models import SqlFluffSubQuery
+from sqllineage.core.sqlfluff.utils.entities import SubSqlFluffQueryTuple
+from sqllineage.core.sqlfluff.utils.sqlfluff import (
     get_multiple_identifiers,
     get_subqueries,
     is_subquery,

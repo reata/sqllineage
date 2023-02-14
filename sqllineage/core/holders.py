@@ -4,7 +4,7 @@ from typing import Set, Tuple, Union
 import networkx as nx
 from networkx import DiGraph
 
-from sqllineage.models import Column, Path, SubQuery, Table
+from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.utils.constant import EdgeType, NodeTag
 
 DATASET_CLASSES = (Path, Table)

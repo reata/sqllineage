@@ -11,13 +11,13 @@ from sqlparse.sql import (
     Where,
 )
 
-from sqllineage.core.handlers.base import (
+from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
+from sqllineage.core.models import AnalyzerContext, SubQuery
+from sqllineage.core.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
 )
-from sqllineage.core.models import SqlParseSubQuery, SqlParseTable
-from sqllineage.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.models import AnalyzerContext, SubQuery
+from sqllineage.core.sqlparse.models import SqlParseSubQuery, SqlParseTable
 from sqllineage.utils.sqlparse import (
     get_subquery_parentheses,
     is_subquery,

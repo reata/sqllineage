@@ -2,19 +2,19 @@ from typing import Dict, List, Tuple, Union
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import Column, Path, SubQuery, Table
-from sqllineage.sqlfluff_core.handlers.base import ConditionalSegmentBaseHandler
-from sqllineage.sqlfluff_core.models import (
+from sqllineage.core.exceptions import SQLLineageException
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.core.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
+from sqllineage.core.sqlfluff.models import (
     SqlFluffColumn,
     SqlFluffSubQuery,
 )
-from sqllineage.sqlfluff_core.models import (
+from sqllineage.core.sqlfluff.models import (
     SqlFluffTable,
 )
-from sqllineage.sqlfluff_core.utils.holder import retrieve_holder_data_from
-from sqllineage.sqlfluff_core.utils.sqlfluff import (
+from sqllineage.core.sqlfluff.utils.holder import retrieve_holder_data_from
+from sqllineage.core.sqlfluff.utils.sqlfluff import (
     find_table_identifier,
     get_grandchild,
     get_inner_from_expression,
@@ -136,7 +136,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
             # (VALUES ...) AS alias, no dataset involved
             return
         else:
-            subqueries = get_subqueries(segment, skip_union=False)
+            subqueries = get_subqueries(segment)
             if subqueries:
                 for sq in subqueries:
                     bracketed, alias = sq

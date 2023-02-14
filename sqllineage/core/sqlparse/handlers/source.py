@@ -12,11 +12,15 @@ from sqlparse.sql import (
 )
 from sqlparse.tokens import Literal, Wildcard
 
-from sqllineage.core.handlers.base import NextTokenBaseHandler
-from sqllineage.core.models import SqlParseColumn, SqlParseSubQuery, SqlParseTable
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import Path, SubQuery, Table
+from sqllineage.core.exceptions import SQLLineageException
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import Path, SubQuery, Table
+from sqllineage.core.sqlparse.handlers.base import NextTokenBaseHandler
+from sqllineage.core.sqlparse.models import (
+    SqlParseColumn,
+    SqlParseSubQuery,
+    SqlParseTable,
+)
 from sqllineage.utils.constant import EdgeType
 from sqllineage.utils.sqlparse import (
     get_subquery_parentheses,

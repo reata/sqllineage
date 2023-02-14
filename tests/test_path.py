@@ -1,6 +1,6 @@
 import pytest
 
-from sqllineage.models import Path
+from sqllineage.core.models import Path
 from .helpers import assert_table_lineage_equal
 
 

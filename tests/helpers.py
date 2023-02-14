@@ -1,6 +1,6 @@
 import networkx as nx
 
-from sqllineage.models import Column, Table
+from sqllineage.core.models import Column, Table
 from sqllineage.runner import LineageRunner
 
 

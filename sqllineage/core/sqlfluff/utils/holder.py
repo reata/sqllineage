@@ -2,10 +2,10 @@ from typing import List, Union
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import SubQuery, Table
-from sqllineage.sqlfluff_core.models import SqlFluffSubQuery, SqlFluffTable
-from sqllineage.sqlfluff_core.utils.sqlfluff import get_table_alias
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import SubQuery, Table
+from sqllineage.core.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
+from sqllineage.core.sqlfluff.utils.sqlfluff import get_table_alias
 
 
 def retrieve_holder_data_from(

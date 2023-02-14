@@ -1,8 +1,8 @@
 from sqlparse.sql import Function, Identifier, IdentifierList, Token
 
-from sqllineage.core.handlers.base import NextTokenBaseHandler
-from sqllineage.core.models import SqlParseSubQuery
-from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.sqlparse.handlers.base import NextTokenBaseHandler
+from sqllineage.core.sqlparse.models import SqlParseSubQuery
 
 
 class CTEHandler(NextTokenBaseHandler):

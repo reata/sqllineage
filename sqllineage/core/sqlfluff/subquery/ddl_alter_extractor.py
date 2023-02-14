@@ -1,9 +1,9 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.models import AnalyzerContext
-from sqllineage.sqlfluff_core.models import SqlFluffTable
-from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
+from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
+from sqllineage.core.models import AnalyzerContext
+from sqllineage.core.sqlfluff.models import SqlFluffTable
+from sqllineage.core.sqlfluff.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
 

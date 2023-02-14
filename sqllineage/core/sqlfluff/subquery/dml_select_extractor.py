@@ -1,12 +1,12 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.models import AnalyzerContext
-from sqllineage.sqlfluff_core.models import SqlFluffSubQuery
-from sqllineage.sqlfluff_core.subquery.lineage_holder_extractor import (
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import AnalyzerContext
+from sqllineage.core.sqlfluff.models import SqlFluffSubQuery
+from sqllineage.core.sqlfluff.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
-from sqllineage.sqlfluff_core.utils.sqlfluff import retrieve_segments
+from sqllineage.core.sqlfluff.utils.sqlfluff import retrieve_segments
 
 
 class DmlSelectExtractor(LineageHolderExtractor):

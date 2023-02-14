@@ -1,16 +1,16 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.holders import (
+from sqllineage.core.holders import (
     StatementLineageHolder,
     SubQueryLineageHolder,
 )
-from sqllineage.models import AnalyzerContext
-from sqllineage.sqlfluff_core.subquery.cte_extractor import DmlCteExtractor
-from sqllineage.sqlfluff_core.subquery.ddl_alter_extractor import DdlAlterExtractor
-from sqllineage.sqlfluff_core.subquery.ddl_drop_extractor import DdlDropExtractor
-from sqllineage.sqlfluff_core.subquery.dml_insert_extractor import DmlInsertExtractor
-from sqllineage.sqlfluff_core.subquery.dml_select_extractor import DmlSelectExtractor
-from sqllineage.sqlfluff_core.subquery.noop_extractor import NoopExtractor
+from sqllineage.core.models import AnalyzerContext
+from sqllineage.core.sqlfluff.subquery.cte_extractor import DmlCteExtractor
+from sqllineage.core.sqlfluff.subquery.ddl_alter_extractor import DdlAlterExtractor
+from sqllineage.core.sqlfluff.subquery.ddl_drop_extractor import DdlDropExtractor
+from sqllineage.core.sqlfluff.subquery.dml_insert_extractor import DmlInsertExtractor
+from sqllineage.core.sqlfluff.subquery.dml_select_extractor import DmlSelectExtractor
+from sqllineage.core.sqlfluff.subquery.noop_extractor import NoopExtractor
 
 SUPPORTED_STMT_TYPES = (
     DmlSelectExtractor.DML_SELECT_STMT_TYPES

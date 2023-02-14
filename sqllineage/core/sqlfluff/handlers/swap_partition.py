@@ -1,9 +1,9 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.holders import SubQueryLineageHolder
-from sqllineage.sqlfluff_core.handlers.base import SegmentBaseHandler
-from sqllineage.sqlfluff_core.models import SqlFluffTable
-from sqllineage.sqlfluff_core.utils.sqlfluff import get_grandchild, get_grandchildren
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.sqlfluff.handlers.base import SegmentBaseHandler
+from sqllineage.core.sqlfluff.models import SqlFluffTable
+from sqllineage.core.sqlfluff.utils.sqlfluff import get_grandchild, get_grandchildren
 from sqllineage.utils.helpers import escape_identifier_name
 
 

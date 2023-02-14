@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.holders import SubQueryLineageHolder
+from sqllineage.core.holders import SubQueryLineageHolder
 
 
 class ConditionalSegmentBaseHandler:

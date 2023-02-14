@@ -1,9 +1,13 @@
 import pytest
 from sqlparse.sql import Parenthesis
 
-from sqllineage.core.models import SqlParseColumn, SqlParseSubQuery, SqlParseTable
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.models import Path, Schema
+from sqllineage.core.exceptions import SQLLineageException
+from sqllineage.core.models import Path, Schema
+from sqllineage.core.sqlparse.models import (
+    SqlParseColumn,
+    SqlParseSubQuery,
+    SqlParseTable,
+)
 
 
 def test_repr_dummy():

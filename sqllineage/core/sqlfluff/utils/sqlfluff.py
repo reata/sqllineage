@@ -1,12 +1,12 @@
 """
 Utils class to deal with the sqlfluff segments manipulations
 """
-from typing import Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 
 from sqlfluff.core.linter import ParsedString
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.sqlfluff_core.utils.entities import SubSqlFluffQueryTuple
+from sqllineage.core.sqlfluff.utils.entities import SubSqlFluffQueryTuple
 
 
 def is_segment_negligible(segment: BaseSegment) -> bool:
@@ -54,28 +54,17 @@ def get_bracketed_subqueries_select(
     return subquery
 
 
-def get_bracketed_subqueries_from(
-    segment: BaseSegment, skip_union: bool = True
-) -> List[SubSqlFluffQueryTuple]:
+def get_bracketed_subqueries_from(segment: BaseSegment) -> List[SubSqlFluffQueryTuple]:
     """
     Retrieve a list of 'SubSqlFluffQueryTuple' for a given segment of type "from_"
     :param segment: segment to be processed
-    :param skip_union: do not search for subqueries if the segment is part or contains a UNION query
     :return: a list of 'SubSqlFluffQueryTuple'
     """
     subquery = []
     as_segment, target = extract_as_and_target_segment(
         get_inner_from_expression(segment)
     )
-    if not skip_union and is_union(target):
-        for sq in get_union_subqueries(target):
-            subquery.append(
-                SubSqlFluffQueryTuple(
-                    sq,
-                    get_identifier(as_segment) if as_segment else None,
-                )
-            )
-    elif is_subquery(target):
+    if is_subquery(target):
         as_segment, target = extract_as_and_target_segment(
             get_inner_from_expression(segment)
         )
@@ -118,9 +107,7 @@ def extract_as_and_target_segment(
     return as_segment, target
 
 
-def get_subqueries(
-    segment: BaseSegment, skip_union: bool = True
-) -> List[SubSqlFluffQueryTuple]:
+def get_subqueries(segment: BaseSegment) -> List[SubSqlFluffQueryTuple]:
     """
     Retrieve a list of 'SubSqlFluffQueryTuple' based on the type of the segment.
     :param segment: segment to be processed
@@ -130,7 +117,7 @@ def get_subqueries(
     if segment.type in ["select_clause"]:
         return get_bracketed_subqueries_select(segment)
     elif segment.type in ["from_clause", "from_expression", "from_expression_element"]:
-        return get_bracketed_subqueries_from(segment, skip_union)
+        return get_bracketed_subqueries_from(segment)
     elif segment.type in ["where_clause"]:
         return get_bracketed_subqueries_where(segment)
     else:
@@ -192,11 +179,6 @@ def is_values_clause(segment: BaseSegment) -> bool:
         "table_expression"
     ).get_child("values_clause"):
         return True
-    for s in segment.segments:
-        if is_segment_negligible(s):
-            continue
-        if s.type == "values_clause":
-            return True
     return False
 
 
@@ -373,36 +355,6 @@ def has_alias(segment: BaseSegment) -> bool:
     return len([s for s in segment.get_children("keyword") if s.raw_upper == "AS"]) > 0
 
 
-def is_union(segment: BaseSegment) -> bool:
-    """
-    :param segment: segment to be processed
-    :return: True if the segment contains 'UNION' or 'UNION ALL' keyword
-    """
-    sub_segments = retrieve_segments(segment, check_bracketed=True)
-    return (
-        len(
-            [
-                s
-                for s in sub_segments
-                if s.type == "set_operator"
-                and (s.raw_upper == "UNION" or s.raw_upper == "UNION ALL")
-            ]
-        )
-        > 0
-    )
-
-
-def get_union_subqueries(segment: BaseSegment) -> List[BaseSegment]:
-    """
-    :param segment: segment to be processed
-    :return: a list of subqueries or select statements from a UNION segment
-    """
-    sub_segments = retrieve_segments(segment, check_bracketed=True)
-    return [
-        s for s in sub_segments if s.type == "bracketed" or s.type == "select_statement"
-    ]
-
-
 def token_matching(
     segment: BaseSegment,
     funcs: Tuple[Callable[[BaseSegment], bool]],
@@ -484,9 +436,7 @@ def get_child(segment: BaseSegment, child: str) -> BaseSegment:
     return segment.get_child(child)
 
 
-def get_grandchildren(
-    segment: BaseSegment, child: str, grandchildren: str
-) -> List[BaseSegment]:
+def get_grandchildren(segment: BaseSegment, child: str, grandchildren: str) -> Any:
     """
     :param segment: segment to be processed
     :param child: child segment

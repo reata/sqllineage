@@ -7,13 +7,13 @@ from sqlfluff.core import Linter
 from sqlparse.sql import Statement
 
 from sqllineage.core import LineageAnalyzer
-from sqllineage.core.models import SqlParseColumn, SqlParseTable
+from sqllineage.core.exceptions import SQLLineageException
+from sqllineage.core.holders import SQLLineageHolder, StatementLineageHolder
+from sqllineage.core.sqlfluff.analyzer import SqlFluffLineageAnalyzer
+from sqllineage.core.sqlfluff.utils.sqlfluff import get_statement_segment
+from sqllineage.core.sqlparse.models import SqlParseColumn, SqlParseTable
 from sqllineage.drawing import draw_lineage_graph
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.holders import SQLLineageHolder, StatementLineageHolder
 from sqllineage.io import to_cytoscape
-from sqllineage.sqlfluff_core.analyzer import SqlFluffLineageAnalyzer
-from sqllineage.sqlfluff_core.utils.sqlfluff import get_statement_segment
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import (
     clean_parentheses,

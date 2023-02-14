@@ -3,9 +3,9 @@ from typing import Optional, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.models import Column, Schema, SubQuery, Table
-from sqllineage.sqlfluff_core.utils.entities import SqlFluffColumnQualifierTuple
-from sqllineage.sqlfluff_core.utils.sqlfluff import (
+from sqllineage.core.models import Column, Schema, SubQuery, Table
+from sqllineage.core.sqlfluff.utils.entities import SqlFluffColumnQualifierTuple
+from sqllineage.core.sqlfluff.utils.sqlfluff import (
     get_identifier,
     is_subquery,
     is_wildcard,

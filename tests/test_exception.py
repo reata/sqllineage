@@ -1,6 +1,6 @@
 import pytest
 
-from sqllineage.exceptions import SQLLineageException
+from sqllineage.core.exceptions import SQLLineageException
 from sqllineage.runner import LineageRunner
 
 
