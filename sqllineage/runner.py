@@ -6,12 +6,12 @@ from sqlfluff.api.simple import get_simple_config
 from sqlfluff.core import Linter
 from sqlparse.sql import Statement
 
-from sqllineage.core import LineageAnalyzer
 from sqllineage.core.exceptions import SQLLineageException
 from sqllineage.core.holders import SQLLineageHolder, StatementLineageHolder
-from sqllineage.core.sqlfluff.analyzer import SqlFluffLineageAnalyzer
-from sqllineage.core.sqlfluff.utils.sqlfluff import get_statement_segment
-from sqllineage.core.sqlparse.models import SqlParseColumn, SqlParseTable
+from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
+from sqllineage.core.parser.sqlfluff.utils.sqlfluff import get_statement_segment
+from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
+from sqllineage.core.parser.sqlparse.models import SqlParseColumn, SqlParseTable
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.utils.constant import LineageLevel
@@ -228,4 +228,4 @@ Target Tables:
                 raise SQLLineageException(
                     f"The query [\n{stmt_value}\n] contains can not be analyzed."
                 )
-        return LineageAnalyzer().analyze(stmt)
+        return SqlParseLineageAnalyzer().analyze(stmt)

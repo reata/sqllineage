@@ -6,7 +6,7 @@ from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 from sqlfluff.core.linter import ParsedString
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.sqlfluff.utils.entities import SubSqlFluffQueryTuple
+from sqllineage.core.parser.sqlfluff.utils.entities import SubSqlFluffQueryTuple
 
 
 def is_segment_negligible(segment: BaseSegment) -> bool:

@@ -3,7 +3,7 @@ from sqlparse.sql import Parenthesis
 
 from sqllineage.core.exceptions import SQLLineageException
 from sqllineage.core.models import Path, Schema
-from sqllineage.core.sqlparse.models import (
+from sqllineage.core.parser.sqlparse.models import (
     SqlParseColumn,
     SqlParseSubQuery,
     SqlParseTable,

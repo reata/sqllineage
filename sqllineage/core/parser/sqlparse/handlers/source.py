@@ -15,8 +15,8 @@ from sqlparse.tokens import Literal, Wildcard
 from sqllineage.core.exceptions import SQLLineageException
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path, SubQuery, Table
-from sqllineage.core.sqlparse.handlers.base import NextTokenBaseHandler
-from sqllineage.core.sqlparse.models import (
+from sqllineage.core.parser.sqlparse.handlers.base import NextTokenBaseHandler
+from sqllineage.core.parser.sqlparse.models import (
     SqlParseColumn,
     SqlParseSubQuery,
     SqlParseTable,

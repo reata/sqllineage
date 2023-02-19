@@ -13,11 +13,11 @@ from sqlparse.sql import (
 
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.models import AnalyzerContext, SubQuery
-from sqllineage.core.sqlparse.handlers.base import (
+from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
 )
-from sqllineage.core.sqlparse.models import SqlParseSubQuery, SqlParseTable
+from sqllineage.core.parser.sqlparse.models import SqlParseSubQuery, SqlParseTable
 from sqllineage.utils.sqlparse import (
     get_subquery_parentheses,
     is_subquery,
@@ -25,7 +25,7 @@ from sqllineage.utils.sqlparse import (
 )
 
 
-class LineageAnalyzer:
+class SqlParseLineageAnalyzer:
     """SQL Statement Level Lineage Analyzer."""
 
     def analyze(self, stmt: Statement) -> StatementLineageHolder:

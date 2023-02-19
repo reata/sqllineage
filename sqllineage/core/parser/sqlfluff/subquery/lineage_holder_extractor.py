@@ -7,13 +7,13 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import AnalyzerContext, SubQuery
-from sqllineage.core.sqlfluff.handlers.base import (
+from sqllineage.core.parser.sqlfluff.handlers.base import (
     ConditionalSegmentBaseHandler,
     SegmentBaseHandler,
 )
-from sqllineage.core.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.sqlfluff.utils.entities import SubSqlFluffQueryTuple
-from sqllineage.core.sqlfluff.utils.sqlfluff import (
+from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
+from sqllineage.core.parser.sqlfluff.utils.entities import SubSqlFluffQueryTuple
+from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     get_multiple_identifiers,
     get_subqueries,
     is_subquery,

@@ -4,8 +4,8 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import SubQuery, Table
-from sqllineage.core.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
-from sqllineage.core.sqlfluff.utils.sqlfluff import get_table_alias
+from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
+from sqllineage.core.parser.sqlfluff.utils.sqlfluff import get_table_alias
 
 
 def retrieve_holder_data_from(
