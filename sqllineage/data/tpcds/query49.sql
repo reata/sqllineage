@@ -1,4 +1,4 @@
-insert overwrite table query49
+insert into query49
 select 'web' as channel
      , web.item
      , web.return_ratio

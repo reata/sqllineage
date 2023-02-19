@@ -46,7 +46,7 @@ with sr_items as
                         where d_date in ('2000-06-30', '2000-09-27', '2000-11-17')))
             and wr_returned_date_sk = d_date_sk
           group by i_item_id)
-insert overwrite table query83
+insert into query83
 select sr_items.item_id
      , sr_item_qty
      , sr_item_qty / (sr_item_qty + cr_item_qty + wr_item_qty) / 3.0 * 100 sr_dev

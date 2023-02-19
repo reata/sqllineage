@@ -37,7 +37,7 @@ with ws as
           where sr_ticket_number is null
           group by d_year, ss_item_sk, ss_customer_sk
          )
-insert overwrite table query78
+insert into query78
 select ss_sold_year,
        ss_item_sk,
        ss_customer_sk,

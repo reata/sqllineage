@@ -1,4 +1,4 @@
-insert overwrite table query32
+insert into query32
 select sum(cs_ext_discount_amt) as excess_discount_amount
 from catalog_sales
    , item

@@ -1,4 +1,4 @@
-insert overwrite table query65
+insert into query65
 select s_store_name,
        i_item_desc,
        sc.revenue,

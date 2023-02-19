@@ -1,4 +1,4 @@
-insert overwrite table query53
+insert into query53
 select *
 from (select i_manufact_id,
              sum(ss_sales_price)                                        sum_sales,

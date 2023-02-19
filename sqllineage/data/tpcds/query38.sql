@@ -1,4 +1,4 @@
-insert overwrite table query38
+insert into query38
 select count(*)
 from (
          select distinct c_last_name, c_first_name, d_date

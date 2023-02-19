@@ -1,4 +1,4 @@
-insert overwrite table query29
+insert into query29
 select i_item_id
      , i_item_desc
      , s_store_id

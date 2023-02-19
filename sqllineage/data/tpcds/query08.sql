@@ -1,4 +1,4 @@
-insert overwrite table query08
+insert into query08
 select s_store_name
      , sum(ss_net_profit)
 from store_sales

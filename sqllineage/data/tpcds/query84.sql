@@ -1,4 +1,4 @@
-insert overwrite table query84
+insert into query84
 select c_customer_id                                         as customer_id
      , concat(c_last_name, ', ', coalesce(c_first_name, '')) as customername
 from customer

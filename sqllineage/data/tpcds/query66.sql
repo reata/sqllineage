@@ -1,4 +1,4 @@
-insert overwrite table query66
+insert into query66
 select w_warehouse_name
      , w_warehouse_sq_ft
      , w_city

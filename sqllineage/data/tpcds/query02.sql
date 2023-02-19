@@ -21,7 +21,7 @@ with wscs as
              , date_dim
           where d_date_sk = sold_date_sk
           group by d_week_seq)
-insert overwrite table query02
+insert into query02
 select d_week_seq1
      , round(sun_sales1 / sun_sales2, 2)
      , round(mon_sales1 / mon_sales2, 2)

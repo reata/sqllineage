@@ -1,4 +1,4 @@
-insert overwrite table query88
+insert into query88
 select *
 from (select count(*) h8_30_to_9
       from store_sales,

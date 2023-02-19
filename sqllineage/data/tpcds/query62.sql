@@ -1,4 +1,4 @@
-insert overwrite table query62
+insert into query62
 select substr(w_warehouse_name, 1, 20)
      , sm_type
      , web_name

@@ -1,4 +1,4 @@
-insert overwrite table query35
+insert into query35
 select ca_state,
        cd_gender,
        cd_marital_status,

@@ -90,7 +90,7 @@ with ssr as
               and date_add(cast('2000-08-23' as date), 14)
             and wsr_web_site_sk = web_site_sk
           group by web_site_id)
-insert overwrite table query05
+insert into query05
 select channel
      , id
      , sum(sales)   as sales

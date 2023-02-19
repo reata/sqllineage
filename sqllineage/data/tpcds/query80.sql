@@ -63,7 +63,7 @@ with ssr as
             and ws_promo_sk = p_promo_sk
             and p_channel_tv = 'N'
           group by web_site_id)
-insert overwrite table query80
+insert into query80
 select channel
      , id
      , sum(sales)   as sales

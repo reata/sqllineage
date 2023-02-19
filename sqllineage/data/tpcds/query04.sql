@@ -73,7 +73,7 @@ with year_total as (
            , c_email_address
            , d_year
 )
-insert overwrite table query04
+insert into query04
 select t_s_secyear.customer_id
      , t_s_secyear.customer_first_name
      , t_s_secyear.customer_last_name

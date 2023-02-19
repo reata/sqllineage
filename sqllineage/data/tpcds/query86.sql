@@ -1,4 +1,4 @@
-insert overwrite table query86
+insert into query86
 select sum(ws_net_paid) as total_sum
      , i_category
      , i_class

@@ -8,7 +8,7 @@ with customer_total_return as
             and d_year = 2000
           group by sr_customer_sk
                  , sr_store_sk)
-insert overwrite table query01
+insert into query01
 select c_customer_id
 from customer_total_return ctr1
    , store

@@ -1,4 +1,4 @@
-insert overwrite table query71
+insert into query71
 select i_brand_id     brand_id,
        i_brand        brand,
        t_hour,

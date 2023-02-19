@@ -1,4 +1,4 @@
-insert overwrite table query43
+insert into query43
 select s_store_name,
        s_store_id,
        sum(case when (d_day_name = 'Sunday') then ss_sales_price else null end)    sun_sales,

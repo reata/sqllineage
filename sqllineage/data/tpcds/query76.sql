@@ -1,4 +1,4 @@
-insert overwrite table query76
+insert into query76
 select channel, col_name, d_year, d_qoy, i_category, COUNT(*) sales_cnt, SUM(ext_sales_price) sales_amt
 FROM (
          SELECT 'store' as         channel,

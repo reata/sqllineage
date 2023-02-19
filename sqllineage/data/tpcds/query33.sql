@@ -49,7 +49,7 @@ with ss as (
            and ws_bill_addr_sk = ca_address_sk
            and ca_gmt_offset = -5
          group by i_manufact_id)
-insert overwrite table query33
+insert into query33
 select i_manufact_id, sum(total_sales) total_sales
 from (select *
       from ss

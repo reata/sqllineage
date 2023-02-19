@@ -22,7 +22,7 @@ with inv as
                   and d_year = 2001
                 group by w_warehouse_name, w_warehouse_sk, i_item_sk, d_moy) foo
           where case mean when 0 then 0 else stdev / mean end > 1)
-insert overwrite table query39_1
+insert into query39_1
 select inv1.w_warehouse_sk
      , inv1.i_item_sk
      , inv1.d_moy
@@ -66,7 +66,7 @@ with inv as
                   and d_year = 2001
                 group by w_warehouse_name, w_warehouse_sk, i_item_sk, d_moy) foo
           where case mean when 0 then 0 else stdev / mean end > 1)
-insert overwrite table query39_2
+insert into query39_2
 select inv1.w_warehouse_sk
      , inv1.i_item_sk
      , inv1.d_moy
