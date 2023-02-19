@@ -18,7 +18,7 @@ from sqllineage.core.parser.sqlparse.handlers.base import (
     NextTokenBaseHandler,
 )
 from sqllineage.core.parser.sqlparse.models import SqlParseSubQuery, SqlParseTable
-from sqllineage.utils.sqlparse import (
+from sqllineage.core.parser.sqlparse.utils.sqlparse import (
     get_subquery_parentheses,
     is_subquery,
     is_token_negligible,

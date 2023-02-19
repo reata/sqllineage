@@ -17,9 +17,9 @@ from sqlparse.sql import (
 from sqlparse.utils import imt
 
 from sqllineage.core.models import Column, Schema, SubQuery, Table
+from sqllineage.core.parser.sqlparse.utils.sqlparse import get_parameters, is_subquery
 from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
-from sqllineage.utils.sqlparse import get_parameters, is_subquery
 
 
 class SqlParseTable(Table):

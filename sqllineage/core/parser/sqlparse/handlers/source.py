@@ -21,12 +21,12 @@ from sqllineage.core.parser.sqlparse.models import (
     SqlParseSubQuery,
     SqlParseTable,
 )
-from sqllineage.utils.constant import EdgeType
-from sqllineage.utils.sqlparse import (
+from sqllineage.core.parser.sqlparse.utils.sqlparse import (
     get_subquery_parentheses,
     is_subquery,
     is_values_clause,
 )
+from sqllineage.utils.constant import EdgeType
 
 
 class SourceHandler(NextTokenBaseHandler):
