@@ -4,7 +4,6 @@ from typing import Optional, Tuple
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.models import Column, Schema, SubQuery, Table
-from sqllineage.core.parser.sqlfluff.utils.entities import SqlFluffColumnQualifierTuple
 from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     get_identifier,
     is_subquery,
@@ -12,6 +11,7 @@ from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     retrieve_segments,
     token_matching,
 )
+from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
 
 NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
@@ -134,17 +134,17 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _extract_source_columns(
         segment: BaseSegment, dialect: str
-    ) -> List[SqlFluffColumnQualifierTuple]:
+    ) -> List[ColumnQualifierTuple]:
         """
         :param segment: segment to be processed
         :param dialect: dialect used to parse the segment
         :return: list of extracted source columns
         """
         if segment.type == "identifier" or is_wildcard(segment):
-            return [SqlFluffColumnQualifierTuple(segment.raw, None)]
+            return [ColumnQualifierTuple(segment.raw, None)]
         if segment.type == "column_reference":
             parent, column = SqlFluffColumn._get_column_and_parent(segment)
-            return [SqlFluffColumnQualifierTuple(column, parent)]
+            return [ColumnQualifierTuple(column, parent)]
         if segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
             sub_segments = retrieve_segments(segment)
             col_list = []
@@ -169,7 +169,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_from_subquery(
         sub_segment: BaseSegment, dialect: str
-    ) -> List[SqlFluffColumnQualifierTuple]:
+    ) -> List[ColumnQualifierTuple]:
         """
         :param sub_segment: segment to be processed
         :param dialect: dialect used to parse the segment
@@ -185,7 +185,7 @@ class SqlFluffColumn(Column):
             ).get_column_lineage(exclude_subquery=False)
         ]
         source_columns = [
-            SqlFluffColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
+            ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
             for src_col in src_cols
         ]
         return source_columns
@@ -194,7 +194,7 @@ class SqlFluffColumn(Column):
     def _get_column_from_parenthesis(
         sub_segment: BaseSegment,
         dialect: str,
-    ) -> List[SqlFluffColumnQualifierTuple]:
+    ) -> List[ColumnQualifierTuple]:
         """
         :param sub_segment: segment to be processed
         :param dialect: dialect used to parse the segment
@@ -209,7 +209,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_and_alias(
         segment: BaseSegment, dialect: str, check_bracketed: bool = True
-    ) -> Tuple[List[SqlFluffColumnQualifierTuple], Optional[str]]:
+    ) -> Tuple[List[ColumnQualifierTuple], Optional[str]]:
         alias = None
         columns = []
         sub_segments = retrieve_segments(segment, check_bracketed)

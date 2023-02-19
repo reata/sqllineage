@@ -12,12 +12,12 @@ from sqllineage.core.parser.sqlfluff.handlers.base import (
     SegmentBaseHandler,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils.entities import SubSqlFluffQueryTuple
 from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     get_multiple_identifiers,
     get_subqueries,
     is_subquery,
 )
+from sqllineage.utils.entities import SubQueryTuple
 
 
 class LineageHolderExtractor(ABC):
@@ -78,7 +78,7 @@ class LineageHolderExtractor(ABC):
         return result
 
     @classmethod
-    def _parse_subquery(cls, subqueries: List[SubSqlFluffQueryTuple]) -> List[SubQuery]:
+    def _parse_subquery(cls, subqueries: List[SubQueryTuple]) -> List[SubQuery]:
         """
         Convert a list of 'SqlFluffSubQueryTuple' to 'SqlFluffSubQuery'
         :param subqueries:  a list of 'SqlFluffSubQueryTuple'

@@ -6,7 +6,7 @@ from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 from sqlfluff.core.linter import ParsedString
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.parser.sqlfluff.utils.entities import SubSqlFluffQueryTuple
+from sqllineage.utils.entities import SubQueryTuple
 
 
 def is_segment_negligible(segment: BaseSegment) -> bool:
@@ -24,11 +24,11 @@ def is_segment_negligible(segment: BaseSegment) -> bool:
 
 def get_bracketed_subqueries_select(
     segment: BaseSegment,
-) -> List[SubSqlFluffQueryTuple]:
+) -> List[SubQueryTuple]:
     """
-    Retrieve a list of 'SubSqlFluffQueryTuple' for a given segment of type "select_clause"
+    Retrieve a list of 'SubQueryTuple' for a given segment of type "select_clause"
     :param segment: segment to be processed segment to be processed
-    :return: list is either empty when no subquery parsed or list of 'SubSqlFluffQueryTuple'
+    :return: list is either empty when no subquery parsed or list of 'SubQueryTuple'
     """
     subquery = []
     as_segment = segment.get_child("select_clause_element").get_child(
@@ -44,21 +44,21 @@ def get_bracketed_subqueries_select(
             for bracketed_segment in get_bracketed_from(
                 when_clause, to_keyword="THEN", children_segments="expression"
             ):
-                subquery.append(SubSqlFluffQueryTuple(bracketed_segment, None))
+                subquery.append(SubQueryTuple(bracketed_segment, None))
             for bracketed_segment in get_bracketed_from(
                 when_clause, from_keyword="THEN", children_segments="expression"
             ):
                 subquery.append(
-                    SubSqlFluffQueryTuple(bracketed_segment, get_identifier(as_segment))
+                    SubQueryTuple(bracketed_segment, get_identifier(as_segment))
                 )
     return subquery
 
 
-def get_bracketed_subqueries_from(segment: BaseSegment) -> List[SubSqlFluffQueryTuple]:
+def get_bracketed_subqueries_from(segment: BaseSegment) -> List[SubQueryTuple]:
     """
-    Retrieve a list of 'SubSqlFluffQueryTuple' for a given segment of type "from_"
+    Retrieve a list of 'SubQueryTuple' for a given segment of type "from_"
     :param segment: segment to be processed
-    :return: a list of 'SubSqlFluffQueryTuple'
+    :return: a list of 'SubQueryTuple'
     """
     subquery = []
     as_segment, target = extract_as_and_target_segment(
@@ -69,7 +69,7 @@ def get_bracketed_subqueries_from(segment: BaseSegment) -> List[SubSqlFluffQuery
             get_inner_from_expression(segment)
         )
         subquery = [
-            SubSqlFluffQueryTuple(
+            SubQueryTuple(
                 get_innermost_bracketed(target),
                 get_identifier(as_segment) if as_segment else None,
             )
@@ -79,18 +79,16 @@ def get_bracketed_subqueries_from(segment: BaseSegment) -> List[SubSqlFluffQuery
 
 def get_bracketed_subqueries_where(
     segment: BaseSegment,
-) -> List[SubSqlFluffQueryTuple]:
+) -> List[SubQueryTuple]:
     """
-    Retrieve a list of 'SubSqlFluffQueryTuple' for a given segment of type "where_clause"
+    Retrieve a list of 'SubQueryTuple' for a given segment of type "where_clause"
     :param segment: segment to be processed
-    :return: a list of 'SubSqlFluffQueryTuple'
+    :return: a list of 'SubQueryTuple'
     """
     expression_segments = segment.get_child("expression").segments or []
     bracketed_segments = [seg for seg in expression_segments if seg.type == "bracketed"]
     if bracketed_segments and is_subquery(bracketed_segments[0]):
-        return [
-            SubSqlFluffQueryTuple(get_innermost_bracketed(bracketed_segments[0]), None)
-        ]
+        return [SubQueryTuple(get_innermost_bracketed(bracketed_segments[0]), None)]
     return []
 
 
@@ -107,12 +105,12 @@ def extract_as_and_target_segment(
     return as_segment, target
 
 
-def get_subqueries(segment: BaseSegment) -> List[SubSqlFluffQueryTuple]:
+def get_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
     """
-    Retrieve a list of 'SubSqlFluffQueryTuple' based on the type of the segment.
+    Retrieve a list of 'SubQueryTuple' based on the type of the segment.
     :param segment: segment to be processed
     :param skip_union: do not search for subqueries if the segment is part or contains a UNION query
-    :return: a list of 'SubSqlFluffQueryTuple'
+    :return: a list of 'SubQueryTuple'
     """
     if segment.type in ["select_clause"]:
         return get_bracketed_subqueries_select(segment)

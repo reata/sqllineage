@@ -1,11 +1,9 @@
-from typing import NamedTuple, Optional
-
-from sqlparse.sql import Parenthesis
+from typing import Any, NamedTuple, Optional
 
 
 class SubQueryTuple(NamedTuple):
-    parenthesis: Parenthesis
-    alias: str
+    parenthesis: Any
+    alias: Optional[str]
 
 
 class ColumnQualifierTuple(NamedTuple):
