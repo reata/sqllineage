@@ -158,7 +158,7 @@ def lineage(payload):
     req_args = Namespace(**payload)
     sql = extract_sql_from_args(req_args)
     dialect = getattr(req_args, "dialect", DEFAULT_DIALECT)
-    use_sqlfluff = bool(getattr(req_args, "use_sqlfluff", True))
+    use_sqlfluff = False if dialect == "non-validating" else True
     lr = LineageRunner(sql, verbose=True, dialect=dialect, use_sqlfluff=use_sqlfluff)
     data = {
         "verbose": str(lr),
