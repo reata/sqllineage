@@ -20,6 +20,7 @@ from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     get_inner_from_expression,
     get_multiple_identifiers,
     get_subqueries,
+    is_union,
     is_values_clause,
     retrieve_extra_segment,
     retrieve_segments,
@@ -44,7 +45,11 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         :param segment: segment to be processed
         :return: True if it can be handled
         """
-        return self._indicate_column(segment) or self._indicate_table(segment)
+        return (
+            self._indicate_column(segment)
+            or self._indicate_table(segment)
+            or is_union(segment)
+        )
 
     def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
@@ -54,6 +59,8 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         """
         if self._indicate_table(segment):
             self._handle_table(segment, holder)
+        elif is_union(segment):
+            self._handle_union(segment)
         if self._indicate_column(segment):
             self._handle_column(segment)
 
@@ -86,6 +93,26 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                 self.columns.append(
                     SqlFluffColumn.of(sub_segment, dialect=self.dialect)
                 )
+
+    def _handle_union(self, segment: BaseSegment) -> None:
+        """
+        Union handler method
+        :param segment: segment to be handled
+        """
+        subqueries = get_subqueries(segment)
+        if subqueries:
+            for idx, sq in enumerate(subqueries):
+                if idx != 0:
+                    self.union_barriers.append((len(self.columns), len(self.tables)))
+                subquery, alias = sq
+                table_identifier = find_table_identifier(subquery)
+                if table_identifier:
+                    read_sq = SqlFluffTable.of(table_identifier, alias)
+                    segments = retrieve_segments(subquery)
+                    for seg in segments:
+                        if seg.type == "select_clause":
+                            self._handle_column(seg)
+                    self.tables.append(read_sq)
 
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         """
@@ -135,6 +162,10 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         elif first_segment.type == "bracketed" and is_values_clause(first_segment):
             # (VALUES ...) AS alias, no dataset involved
             return
+        elif is_union(segment):
+            subqueries = get_subqueries(segment)
+            subquery, alias = subqueries[0]
+            self.tables.append(SqlFluffSubQuery.of(subquery, alias))
         else:
             subqueries = get_subqueries(segment)
             if subqueries:

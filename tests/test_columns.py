@@ -463,7 +463,6 @@ FROM (
                 ColumnQualifierTuple("col1", "tab1"),
             ),
         ],
-        test_sqlfluff=False,
     )
 
 
@@ -487,7 +486,6 @@ FROM (
                 ColumnQualifierTuple("col1", "tab1"),
             ),
         ],
-        test_sqlfluff=False,
     )
 
 

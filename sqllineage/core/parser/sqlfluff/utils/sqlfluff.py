@@ -70,10 +70,31 @@ def get_bracketed_subqueries_from(segment: BaseSegment) -> List[SubQueryTuple]:
         )
         subquery = [
             SubQueryTuple(
-                get_innermost_bracketed(target),
+                get_innermost_bracketed(target) if not is_union(target) else target,
                 get_identifier(as_segment) if as_segment else None,
             )
         ]
+    return subquery
+
+
+def get_subqueries_union(segment: BaseSegment) -> List[SubQueryTuple]:
+    """
+    Retrieve a list of 'SubQueryTuple' for a given segment of type "union"
+    :param segment: segment to be processed
+    :return: a list of 'SubQueryTuple'
+    """
+    subquery = []
+    for sq in get_union_subqueries(
+        segment
+        if segment.type == "set_expression"
+        else segment.get_child("set_expression")
+    ):
+        subquery.append(
+            SubQueryTuple(
+                sq,
+                None,
+            )
+        )
     return subquery
 
 
@@ -109,7 +130,6 @@ def get_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
     """
     Retrieve a list of 'SubQueryTuple' based on the type of the segment.
     :param segment: segment to be processed
-    :param skip_union: do not search for subqueries if the segment is part or contains a UNION query
     :return: a list of 'SubQueryTuple'
     """
     if segment.type in ["select_clause"]:
@@ -118,6 +138,8 @@ def get_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
         return get_bracketed_subqueries_from(segment)
     elif segment.type in ["where_clause"]:
         return get_bracketed_subqueries_where(segment)
+    elif is_union(segment):
+        return get_subqueries_union(segment)
     else:
         raise NotImplementedError()
 
@@ -286,7 +308,9 @@ def retrieve_segments(
     :param check_bracketed: process segment if it is of type "bracketed"
     :return: a list of segments
     """
-    if segment.type == "bracketed" and check_bracketed:
+    if segment.type == "bracketed" and is_union(segment):
+        return [segment]
+    elif segment.type == "bracketed" and check_bracketed:
         segments = [
             sg
             for sg in segment.iter_segments(expanding=["expression"], pass_through=True)
@@ -465,3 +489,31 @@ def get_statement_segment(parsed_string: ParsedString) -> Optional[BaseSegment]:
             None,
         )
     return None
+
+
+def is_union(segment: BaseSegment) -> bool:
+    """
+    :param segment: segment to be processed
+    :return: True if the segment contains 'UNION' or 'UNION ALL' keyword
+    """
+    return (
+        len(
+            [
+                s
+                for s in segment.raw_segments
+                if (s.raw_upper == "UNION" or s.raw_upper == "UNION ALL")
+            ]
+        )
+        > 0
+    )
+
+
+def get_union_subqueries(segment: BaseSegment) -> List[BaseSegment]:
+    """
+    :param segment: segment to be processed
+    :return: a list of subqueries or select statements from a UNION segment
+    """
+    sub_segments = retrieve_segments(segment, check_bracketed=True)
+    return [
+        s for s in sub_segments if s.type == "bracketed" or s.type == "select_statement"
+    ]

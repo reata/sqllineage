@@ -6,7 +6,9 @@ from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.subquery.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import retrieve_segments
+from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
+    retrieve_segments,
+)
 
 
 class DmlSelectExtractor(LineageHolderExtractor):
@@ -14,7 +16,7 @@ class DmlSelectExtractor(LineageHolderExtractor):
     DML Select queries lineage extractor
     """
 
-    DML_SELECT_STMT_TYPES = ["select_statement"]
+    DML_SELECT_STMT_TYPES = ["select_statement", "set_expression"]
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
@@ -42,7 +44,11 @@ class DmlSelectExtractor(LineageHolderExtractor):
         handlers, conditional_handlers = self._init_handlers()
         holder = self._init_holder(context)
         subqueries = [SqlFluffSubQuery.of(statement, None)] if is_sub_query else []
-        segments = retrieve_segments(statement)
+        segments = (
+            [statement]
+            if statement.type == "set_expression"
+            else retrieve_segments(statement)
+        )
         for segment in segments:
             for sq in self.parse_subquery(segment):
                 # Collecting subquery on the way, hold on parsing until last

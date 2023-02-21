@@ -236,3 +236,19 @@ def test_select_from_unnest_with_ordinality():
     CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);
     """
     assert_table_lineage_equal(sql, test_sqlfluff=False)
+
+
+def test_select_union_all():
+    sql = """SELECT col1
+FROM tab1
+UNION ALL
+SELECT col1
+FROM tab2
+UNION ALL
+SELECT col1
+FROM tab3
+ORDER BY col1"""
+    assert_table_lineage_equal(
+        sql,
+        {"tab1", "tab2", "tab3"},
+    )
