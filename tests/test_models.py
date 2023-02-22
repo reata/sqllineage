@@ -2,7 +2,7 @@ import pytest
 from sqlparse.sql import Parenthesis
 
 from sqllineage.core.exceptions import SQLLineageException
-from sqllineage.core.models import Path, Schema
+from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
 from sqllineage.core.parser.sqlparse.models import (
     SqlParseColumn,
     SqlParseSubQuery,
@@ -28,3 +28,12 @@ def test_hash_eq():
     assert len({Schema("a"), Schema("a")}) == 1
     assert SqlParseTable("a") == SqlParseTable("a")
     assert len({SqlParseTable("a"), SqlParseTable("a")}) == 1
+
+
+def test_of_dummy():
+    with pytest.raises(NotImplementedError):
+        Column.of("")
+    with pytest.raises(NotImplementedError):
+        Table.of("")
+    with pytest.raises(NotImplementedError):
+        SubQuery.of("", None)
