@@ -105,3 +105,19 @@ LATERAL VIEW OUTER explode(sc.json_array) q AS col1"""
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_show_create_table(dialect: str):
     assert_table_lineage_equal("show create table tab1", None, None, dialect)
+
+
+def test_create_view_tsql():
+    assert_table_lineage_equal(
+        """CREATE VIEW view1
+as
+SELECT
+    col1,
+    col2
+FROM tab1
+GROUP BY
+col1""",
+        {"tab1"},
+        {"view1"},
+        "tsql",
+    )

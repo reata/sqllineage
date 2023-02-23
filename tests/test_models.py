@@ -1,8 +1,11 @@
+from unittest.mock import Mock
+
 import pytest
 from sqlparse.sql import Parenthesis
 
 from sqllineage.core.exceptions import SQLLineageException
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
+from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn
 from sqllineage.core.parser.sqlparse.models import (
     SqlParseColumn,
     SqlParseSubQuery,
@@ -37,3 +40,9 @@ def test_of_dummy():
         Table.of("")
     with pytest.raises(NotImplementedError):
         SubQuery.of("", None)
+
+
+def test_column_extract_source_columns():
+    segment_mock = Mock()
+    segment_mock.type = ""
+    assert [] == SqlFluffColumn._extract_source_columns(segment_mock, "ansi")
