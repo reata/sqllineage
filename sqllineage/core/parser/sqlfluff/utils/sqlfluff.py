@@ -1,6 +1,7 @@
 """
 Utils class to deal with the sqlfluff segments manipulations
 """
+import re
 from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 
 from sqlfluff.core.linter import ParsedString
@@ -517,3 +518,29 @@ def get_union_subqueries(segment: BaseSegment) -> List[BaseSegment]:
     return [
         s for s in sub_segments if s.type == "bracketed" or s.type == "select_statement"
     ]
+
+
+def is_subquery_statement(stmt: str) -> bool:
+    parentheses_regex = r"^\(.*\)"
+    return bool(re.match(parentheses_regex, stmt))
+
+
+def remove_statement_parentheses(stmt: str) -> str:
+    parentheses_regex = r"^\((.*)\)"
+    return re.sub(parentheses_regex, r"\1", stmt)
+
+
+def clean_parentheses(stmt: str) -> str:
+    """
+      Clean redundant parentheses from a SQL statement e.g:
+        `SELECT col1 FROM (((((((SELECT col1 FROM tab1))))))) dt`
+      will be:
+        `SELECT col1 FROM (SELECT col1 FROM tab1) dt`
+
+    :param stmt: a SQL str to be cleaned
+    """
+    redundant_parentheses = r"\(\(([^()]+)\)\)"
+    if re.findall(redundant_parentheses, stmt):
+        stmt = re.sub(redundant_parentheses, r"(\1)", stmt)
+        stmt = clean_parentheses(stmt)
+    return stmt

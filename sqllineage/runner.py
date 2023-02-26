@@ -8,7 +8,7 @@ from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.utils.constant import LineageLevel
-from sqllineage.utils.helpers import split
+from sqllineage.utils.helpers import split, trim_comment
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ Target Tables:
         """
         a list of SQL statements.
         """
-        return self._stmt
+        return [trim_comment(s) for s in self._stmt]
 
     @lazy_property
     def source_tables(self) -> List[Table]:

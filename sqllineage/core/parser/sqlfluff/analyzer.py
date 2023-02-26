@@ -20,8 +20,12 @@ from sqllineage.core.parser.sqlfluff.subquery.dml_select_extractor import (
     DmlSelectExtractor,
 )
 from sqllineage.core.parser.sqlfluff.subquery.noop_extractor import NoopExtractor
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import get_statement_segment
-from sqllineage.utils.helpers import is_subquery_statement, remove_statement_parentheses
+from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
+    clean_parentheses,
+    get_statement_segment,
+    is_subquery_statement,
+    remove_statement_parentheses,
+)
 
 SUPPORTED_STMT_TYPES = (
     DmlSelectExtractor.DML_SELECT_STMT_TYPES
@@ -40,6 +44,8 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         self._dialect = dialect
 
     def analyze(self, sql: str) -> StatementLineageHolder:
+        # remove nested parentheses that sqlfluff cannot parse
+        sql = clean_parentheses(sql)
         is_sub_query = is_subquery_statement(sql)
         if is_sub_query:
             sql = remove_statement_parentheses(sql)

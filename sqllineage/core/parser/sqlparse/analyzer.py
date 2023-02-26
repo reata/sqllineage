@@ -25,14 +25,15 @@ from sqllineage.core.parser.sqlparse.utils.sqlparse import (
     is_subquery,
     is_token_negligible,
 )
+from sqllineage.utils.helpers import trim_comment
 
 
 class SqlParseLineageAnalyzer(LineageAnalyzer):
     """SQL Statement Level Lineage Analyzer."""
 
     def analyze(self, sql: str) -> StatementLineageHolder:
-        # first apply sqlparser formatting just to get rid of comments, which cause inconsistencies in parsing output
-        stmt = sqlparse.parse(sql)[0]
+        # get rid of comments, which cause inconsistencies in sqlparse output
+        stmt = sqlparse.parse(trim_comment(sql))[0]
         if (
             stmt.get_type() == "DELETE"
             or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"
