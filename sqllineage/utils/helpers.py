@@ -1,6 +1,7 @@
 import logging
 import re
 from argparse import Namespace
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -54,3 +55,18 @@ def is_subquery_statement(stmt: str) -> bool:
 def remove_statement_parentheses(stmt: str) -> str:
     parentheses_regex = r"^\((.*)\)"
     return re.sub(parentheses_regex, r"\1", stmt)
+
+
+def split(sql: str) -> List[str]:
+    # TODO: we need a parser independent split function
+    import sqlparse
+
+    return [
+        s.value
+        for s in sqlparse.parse(
+            # first apply sqlparser formatting just to get rid of comments, which cause
+            # inconsistencies in parsing output
+            clean_parentheses(sqlparse.format(sql.strip(), strip_comments=True))
+        )
+        if s.token_first(skip_cm=True)
+    ]

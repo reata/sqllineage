@@ -228,7 +228,7 @@ def test_split_statements_with_comment():
 def test_statements_trim_comment():
     comment = "------------------\n"
     sql = "select * from dual;"
-    assert LineageRunner(comment + sql).statements(strip_comments=True)[0] == sql
+    assert LineageRunner(comment + sql).statements()[0] == sql
 
 
 def test_split_statements_with_show_create_table():

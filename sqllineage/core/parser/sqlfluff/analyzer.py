@@ -1,5 +1,8 @@
+from sqlfluff.core import Linter
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.core.analyzer import LineageAnalyzer
+from sqllineage.core.exceptions import SQLLineageException
 from sqllineage.core.holders import (
     StatementLineageHolder,
     SubQueryLineageHolder,
@@ -17,6 +20,8 @@ from sqllineage.core.parser.sqlfluff.subquery.dml_select_extractor import (
     DmlSelectExtractor,
 )
 from sqllineage.core.parser.sqlfluff.subquery.noop_extractor import NoopExtractor
+from sqllineage.core.parser.sqlfluff.utils.sqlfluff import get_statement_segment
+from sqllineage.utils.helpers import is_subquery_statement, remove_statement_parentheses
 
 SUPPORTED_STMT_TYPES = (
     DmlSelectExtractor.DML_SELECT_STMT_TYPES
@@ -28,32 +33,42 @@ SUPPORTED_STMT_TYPES = (
 )
 
 
-class SqlFluffLineageAnalyzer:
+class SqlFluffLineageAnalyzer(LineageAnalyzer):
     """SQL Statement Level Lineage Analyzer for `sqlfluff`"""
 
-    def analyze(
-        self, statement: BaseSegment, dialect: str, is_sub_query: bool = False
-    ) -> StatementLineageHolder:
-        """
-        Analyze the base segment and store the result into `sqllineage.holders.StatementLineageHolder` class.
-        :param statement: a SQL base segment parsed by `sqlfluff`
-        :param dialect: dialect used to parse the statement
-        :param is_sub_query: the original query contained parentheses
-        :return: 'SqlFluffStatementLineageHolder' object
-        """
+    def __init__(self, dialect: str):
+        self._dialect = dialect
+
+    def analyze(self, sql: str) -> StatementLineageHolder:
+        is_sub_query = is_subquery_statement(sql)
+        if is_sub_query:
+            sql = remove_statement_parentheses(sql)
+        linter = Linter(dialect=self._dialect)
+        parsed_string = linter.parse_string(sql)
+        statement_segment = get_statement_segment(parsed_string)
+        if statement_segment and SqlFluffLineageAnalyzer.can_analyze(statement_segment):
+            if "unparsable" in statement_segment.descendant_type_set:
+                raise SQLLineageException(
+                    f"The query [\n{sql}\n] contains an unparsable segment."
+                )
+        else:
+            raise SQLLineageException(
+                f"The query [\n{sql}\n] contains can not be analyzed."
+            )
+
         subquery_extractors = [
-            DmlSelectExtractor(dialect),
-            DmlInsertExtractor(dialect),
-            DmlCteExtractor(dialect),
-            DdlDropExtractor(dialect),
-            DdlAlterExtractor(dialect),
-            NoopExtractor(dialect),
+            DmlSelectExtractor(self._dialect),
+            DmlInsertExtractor(self._dialect),
+            DmlCteExtractor(self._dialect),
+            DdlDropExtractor(self._dialect),
+            DdlAlterExtractor(self._dialect),
+            NoopExtractor(self._dialect),
         ]
         lineage_holder = SubQueryLineageHolder()
         for subquery_extractor in subquery_extractors:
-            if subquery_extractor.can_extract(statement.type):
+            if subquery_extractor.can_extract(statement_segment.type):
                 lineage_holder = subquery_extractor.extract(
-                    statement, AnalyzerContext(), is_sub_query
+                    statement_segment, AnalyzerContext(), is_sub_query
                 )
         return StatementLineageHolder.of(lineage_holder)
 

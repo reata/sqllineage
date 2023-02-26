@@ -2,6 +2,7 @@ from functools import reduce
 from operator import add
 from typing import List, Union
 
+import sqlparse
 from sqlparse.sql import (
     Function,
     Identifier,
@@ -11,6 +12,7 @@ from sqlparse.sql import (
     Where,
 )
 
+from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.models import AnalyzerContext, SubQuery
 from sqllineage.core.parser.sqlparse.handlers.base import (
@@ -25,15 +27,12 @@ from sqllineage.core.parser.sqlparse.utils.sqlparse import (
 )
 
 
-class SqlParseLineageAnalyzer:
+class SqlParseLineageAnalyzer(LineageAnalyzer):
     """SQL Statement Level Lineage Analyzer."""
 
-    def analyze(self, stmt: Statement) -> StatementLineageHolder:
-        """
-        to analyze the Statement and store the result into :class:`sqllineage.holders.StatementLineageHolder`.
-
-        :param stmt: a SQL statement parsed by `sqlparse`
-        """
+    def analyze(self, sql: str) -> StatementLineageHolder:
+        # first apply sqlparser formatting just to get rid of comments, which cause inconsistencies in parsing output
+        stmt = sqlparse.parse(sql)[0]
         if (
             stmt.get_type() == "DELETE"
             or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"

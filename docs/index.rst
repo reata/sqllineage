@@ -74,7 +74,7 @@ Basic concepts
     LineageAnalyzer: The core functionality of analyze one SQL statement
 
 :doc:`basic_concepts/lineage_holder`
-    LineageCombiner: To hold lineage result at different level
+    LineageHolder: To hold lineage result at different level
 
 :doc:`basic_concepts/lineage_model`
     The data classes for SQLLineage
