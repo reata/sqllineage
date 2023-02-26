@@ -8,18 +8,20 @@ from sqllineage.core.holders import (
     SubQueryLineageHolder,
 )
 from sqllineage.core.models import AnalyzerContext
-from sqllineage.core.parser.sqlfluff.subquery.cte_extractor import DmlCteExtractor
-from sqllineage.core.parser.sqlfluff.subquery.ddl_alter_extractor import (
+from sqllineage.core.parser.sqlfluff.extractors.cte_extractor import DmlCteExtractor
+from sqllineage.core.parser.sqlfluff.extractors.ddl_alter_extractor import (
     DdlAlterExtractor,
 )
-from sqllineage.core.parser.sqlfluff.subquery.ddl_drop_extractor import DdlDropExtractor
-from sqllineage.core.parser.sqlfluff.subquery.dml_insert_extractor import (
+from sqllineage.core.parser.sqlfluff.extractors.ddl_drop_extractor import (
+    DdlDropExtractor,
+)
+from sqllineage.core.parser.sqlfluff.extractors.dml_insert_extractor import (
     DmlInsertExtractor,
 )
-from sqllineage.core.parser.sqlfluff.subquery.dml_select_extractor import (
+from sqllineage.core.parser.sqlfluff.extractors.dml_select_extractor import (
     DmlSelectExtractor,
 )
-from sqllineage.core.parser.sqlfluff.subquery.noop_extractor import NoopExtractor
+from sqllineage.core.parser.sqlfluff.extractors.noop_extractor import NoopExtractor
 from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     clean_parentheses,
     get_statement_segment,
@@ -62,7 +64,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                 f"The query [\n{sql}\n] contains can not be analyzed."
             )
 
-        subquery_extractors = [
+        extractors = [
             DmlSelectExtractor(self._dialect),
             DmlInsertExtractor(self._dialect),
             DmlCteExtractor(self._dialect),
@@ -71,9 +73,9 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             NoopExtractor(self._dialect),
         ]
         lineage_holder = SubQueryLineageHolder()
-        for subquery_extractor in subquery_extractors:
-            if subquery_extractor.can_extract(statement_segment.type):
-                lineage_holder = subquery_extractor.extract(
+        for extractor in extractors:
+            if extractor.can_extract(statement_segment.type):
+                lineage_holder = extractor.extract(
                     statement_segment, AnalyzerContext(), is_sub_query
                 )
         return StatementLineageHolder.of(lineage_holder)

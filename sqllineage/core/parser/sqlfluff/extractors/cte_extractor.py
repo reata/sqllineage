@@ -2,16 +2,16 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import AnalyzerContext
-from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.subquery.dml_insert_extractor import (
+from sqllineage.core.parser.sqlfluff.extractors.dml_insert_extractor import (
     DmlInsertExtractor,
 )
-from sqllineage.core.parser.sqlfluff.subquery.dml_select_extractor import (
+from sqllineage.core.parser.sqlfluff.extractors.dml_select_extractor import (
     DmlSelectExtractor,
 )
-from sqllineage.core.parser.sqlfluff.subquery.lineage_holder_extractor import (
+from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
+from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils.sqlfluff import has_alias, retrieve_segments
 
 
@@ -85,7 +85,7 @@ class DmlCteExtractor(LineageHolderExtractor):
                         if segment_has_alias:
                             holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
 
-        # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
+        # By recursively extracting each extractors of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= DmlSelectExtractor(self.dialect).extract(
                 sq.query,

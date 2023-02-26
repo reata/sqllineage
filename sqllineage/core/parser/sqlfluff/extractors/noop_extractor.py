@@ -1,19 +1,26 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
+from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import AnalyzerContext
-from sqllineage.core.parser.sqlfluff.models import SqlFluffTable
-from sqllineage.core.parser.sqlfluff.subquery.lineage_holder_extractor import (
+from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
 
 
-class DdlDropExtractor(LineageHolderExtractor):
+class NoopExtractor(LineageHolderExtractor):
     """
-    DDL Drop queries lineage extractor
+    Extractor for queries which do not provide any lineage
     """
 
-    DDL_DROP_STMT_TYPES = ["drop_table_statement"]
+    NOOP_STMT_TYPES = [
+        "delete_statement",
+        "truncate_table",
+        "refresh_statement",
+        "cache_table",
+        "uncache_table",
+        "show_statement",
+        "use_statement",
+    ]
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
@@ -23,7 +30,7 @@ class DdlDropExtractor(LineageHolderExtractor):
         Determine if the current lineage holder extractor can process the statement
         :param statement_type: a sqlfluff segment type
         """
-        return statement_type in self.DDL_DROP_STMT_TYPES
+        return statement_type in self.NOOP_STMT_TYPES
 
     def extract(
         self,
@@ -38,11 +45,4 @@ class DdlDropExtractor(LineageHolderExtractor):
         :param is_sub_query: determine if the statement is bracketed or not
         :return 'SubQueryLineageHolder' object
         """
-        holder = StatementLineageHolder()
-        for table in {
-            SqlFluffTable.of(t)
-            for t in statement.segments
-            if t.type == "table_reference"
-        }:
-            holder.add_drop(table)
-        return holder
+        return SubQueryLineageHolder()
