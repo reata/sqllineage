@@ -11,11 +11,9 @@ def test_select_without_table():
 
 def test_unparseable_query_in_sqlfluff():
     with pytest.raises(SQLLineageException):
-        LineageRunner("WRONG SELECT FROM tab1", use_sqlfluff=True)._eval()
+        LineageRunner("WRONG SELECT FROM tab1")._eval()
 
 
 def test_partial_unparseable_query_in_sqlfluff():
     with pytest.raises(SQLLineageException):
-        LineageRunner(
-            "SELECT * FROM tab1 AS FULL FULL OUTER JOIN tab2", use_sqlfluff=True
-        )._eval()
+        LineageRunner("SELECT * FROM tab1 AS FULL FULL OUTER JOIN tab2")._eval()

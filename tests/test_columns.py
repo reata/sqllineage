@@ -1,5 +1,6 @@
 import pytest
 
+from sqllineage import SQLPARSE_DIALECT
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.entities import ColumnQualifierTuple
 from .helpers import assert_column_lineage_equal
@@ -731,7 +732,7 @@ SELECT col1,
        col3
 FROM tab2"""
     # just assure no exception, don't guarantee the result
-    LineageRunner(sql).print_column_lineage()
+    LineageRunner(sql, dialect=SQLPARSE_DIALECT).print_column_lineage()
 
 
 def test_column_with_ctas_and_func():

@@ -3,6 +3,7 @@ from typing import Optional, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.models import Column, Schema, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     get_identifier,
@@ -152,7 +153,7 @@ class SqlFluffColumn(Column):
                 if sub_segment.type == "bracketed":
                     if is_subquery(sub_segment):
                         col_list += SqlFluffColumn._get_column_from_subquery(
-                            sub_segment, dialect
+                            sub_segment
                         )
                     else:
                         col_list += SqlFluffColumn._get_column_from_parenthesis(
@@ -168,11 +169,10 @@ class SqlFluffColumn(Column):
 
     @staticmethod
     def _get_column_from_subquery(
-        sub_segment: BaseSegment, dialect: str
+        sub_segment: BaseSegment,
     ) -> List[ColumnQualifierTuple]:
         """
         :param sub_segment: segment to be processed
-        :param dialect: dialect used to parse the segment
         :return: A list of source columns from a segment
         """
         # This is to avoid circular import
@@ -181,7 +181,8 @@ class SqlFluffColumn(Column):
         src_cols = [
             lineage[0]
             for lineage in LineageRunner(
-                sub_segment.raw, dialect=dialect, use_sqlfluff=False
+                sub_segment.raw,
+                dialect=SQLPARSE_DIALECT,
             ).get_column_lineage(exclude_subquery=False)
         ]
         source_columns = [

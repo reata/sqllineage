@@ -1,6 +1,8 @@
 import logging
+import os
 from typing import Dict, List, Optional, Tuple
 
+from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.holders import SQLLineageHolder
 from sqllineage.core.models import Column, Table
 from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
@@ -31,11 +33,10 @@ class LineageRunner(object):
     def __init__(
         self,
         sql: str,
+        dialect: str = "ansi",
         encoding: Optional[str] = None,
         verbose: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
-        dialect: Optional[str] = "ansi",
-        use_sqlfluff: bool = False,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -50,7 +51,6 @@ class LineageRunner(object):
         self._draw_options = draw_options if draw_options else {}
         self._evaluated = False
         self._stmt: List[str] = []
-        self._use_sqlfluff = use_sqlfluff
         self._dialect = dialect
 
     @lazy_method
@@ -96,7 +96,7 @@ Target Tables:
         else:
             return to_cytoscape(self._sql_holder.table_lineage_graph)
 
-    def draw(self, dialect: str, use_sqlfluff: bool) -> None:
+    def draw(self, dialect: str) -> None:
         """
         to draw the lineage directed graph
         """
@@ -105,7 +105,6 @@ Target Tables:
             draw_options.pop("f", None)
             draw_options["e"] = self._sql
             draw_options["dialect"] = dialect
-            draw_options["use_sqlfluff"] = str(use_sqlfluff)
         return draw_lineage_graph(**draw_options)
 
     @lazy_method
@@ -163,9 +162,10 @@ Target Tables:
     def _eval(self):
         self._stmt = split(self._sql.strip())
         analyzer = (
-            SqlFluffLineageAnalyzer(self._dialect)
-            if self._use_sqlfluff
-            else SqlParseLineageAnalyzer()
+            SqlParseLineageAnalyzer()
+            if self._dialect == SQLPARSE_DIALECT
+            or os.environ.get("SQLLINEAGE_USESQLPARSE", "")
+            else SqlFluffLineageAnalyzer(self._dialect)
         )
         self._stmt_holders = [analyzer.analyze(stmt) for stmt in self._stmt]
         self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
