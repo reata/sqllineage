@@ -16,17 +16,10 @@ class DmlSelectExtractor(LineageHolderExtractor):
     DML Select queries lineage extractor
     """
 
-    DML_SELECT_STMT_TYPES = ["select_statement", "set_expression"]
+    SUPPORTED_STMT_TYPES = ["select_statement", "set_expression"]
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
-
-    def can_extract(self, statement_type: str) -> bool:
-        """
-        Determine if the current lineage holder extractor can process the statement
-        :param statement_type: a sqlfluff segment type
-        """
-        return statement_type in self.DML_SELECT_STMT_TYPES
 
     def extract(
         self,

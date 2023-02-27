@@ -13,7 +13,7 @@ class DdlAlterExtractor(LineageHolderExtractor):
     DDL Alter queries lineage extractor
     """
 
-    DDL_ALTER_STMT_TYPES = [
+    SUPPORTED_STMT_TYPES = [
         "alter_table_statement",
         "rename_statement",
         "rename_table_statement",
@@ -21,13 +21,6 @@ class DdlAlterExtractor(LineageHolderExtractor):
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
-
-    def can_extract(self, statement_type: str) -> bool:
-        """
-        Determine if the current lineage holder extractor can process the statement
-        :param statement_type: a sqlfluff segment type
-        """
-        return statement_type in self.DDL_ALTER_STMT_TYPES
 
     def extract(
         self,

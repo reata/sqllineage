@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from functools import reduce
 from operator import add
 from typing import List, Tuple
@@ -21,22 +20,23 @@ from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
 from sqllineage.utils.entities import SubQueryTuple
 
 
-class LineageHolderExtractor(ABC):
+class LineageHolderExtractor:
     """
     Abstract class implementation for extract 'SubQueryLineageHolder' from different statement types
     """
 
+    SUPPORTED_STMT_TYPES: List[str] = []
+
     def __init__(self, dialect: str):
         self.dialect = dialect
 
-    @abstractmethod
     def can_extract(self, statement_type: str) -> bool:
         """
         Determine if the current lineage holder extractor can process the statement
         :param statement_type: a sqlfluff segment type
         """
+        return statement_type in self.SUPPORTED_STMT_TYPES
 
-    @abstractmethod
     def extract(
         self,
         statement: BaseSegment,
@@ -50,6 +50,7 @@ class LineageHolderExtractor(ABC):
         :param is_sub_query: determine if the statement is bracketed or not
         :return 'SubQueryLineageHolder' object
         """
+        raise NotImplementedError
 
     @classmethod
     def parse_subquery(cls, segment: BaseSegment) -> List[SubQuery]:

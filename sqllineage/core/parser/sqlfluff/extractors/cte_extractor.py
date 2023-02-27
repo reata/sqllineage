@@ -20,17 +20,10 @@ class DmlCteExtractor(LineageHolderExtractor):
     DML CTE queries lineage extractor
     """
 
-    CTE_STMT_TYPES = ["with_compound_statement"]
+    SUPPORTED_STMT_TYPES = ["with_compound_statement"]
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
-
-    def can_extract(self, statement_type: str) -> bool:
-        """
-        Determine if the current lineage holder extractor can process the statement
-        :param statement_type: a sqlfluff segment type
-        """
-        return statement_type in self.CTE_STMT_TYPES
 
     def extract(
         self,
@@ -85,7 +78,7 @@ class DmlCteExtractor(LineageHolderExtractor):
                         if segment_has_alias:
                             holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
 
-        # By recursively extracting each extractors of the parent and merge, we're doing Depth-first search
+        # By recursively extracting each extractor of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= DmlSelectExtractor(self.dialect).extract(
                 sq.query,

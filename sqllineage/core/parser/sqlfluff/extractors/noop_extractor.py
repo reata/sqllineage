@@ -12,7 +12,7 @@ class NoopExtractor(LineageHolderExtractor):
     Extractor for queries which do not provide any lineage
     """
 
-    NOOP_STMT_TYPES = [
+    SUPPORTED_STMT_TYPES = [
         "delete_statement",
         "truncate_table",
         "refresh_statement",
@@ -24,13 +24,6 @@ class NoopExtractor(LineageHolderExtractor):
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
-
-    def can_extract(self, statement_type: str) -> bool:
-        """
-        Determine if the current lineage holder extractor can process the statement
-        :param statement_type: a sqlfluff segment type
-        """
-        return statement_type in self.NOOP_STMT_TYPES
 
     def extract(
         self,

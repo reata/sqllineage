@@ -17,7 +17,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
     DML Insert queries lineage extractor
     """
 
-    DML_INSERT_STMT_TYPES = [
+    SUPPORTED_STMT_TYPES = [
         "insert_statement",
         "create_table_statement",
         "create_view_statement",
@@ -30,13 +30,6 @@ class DmlInsertExtractor(LineageHolderExtractor):
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
-
-    def can_extract(self, statement_type: str) -> bool:
-        """
-        Determine if the current lineage holder extractor can process the statement
-        :param statement_type: a sqlfluff segment type
-        """
-        return statement_type in self.DML_INSERT_STMT_TYPES
 
     def extract(
         self,
