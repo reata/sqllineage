@@ -24,7 +24,7 @@ from sqllineage import (
     DEFAULT_PORT,
 )
 from sqllineage import STATIC_FOLDER
-from sqllineage.core.exceptions import SQLLineageException
+from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import extract_sql_from_args
 

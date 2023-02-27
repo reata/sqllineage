@@ -1,11 +1,11 @@
 from sqlparse.sql import Comparison, Function, Identifier, Token
 from sqlparse.tokens import Literal, Number
 
-from sqllineage.core.exceptions import SQLLineageException
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path
 from sqllineage.core.parser.sqlparse.handlers.base import NextTokenBaseHandler
 from sqllineage.core.parser.sqlparse.models import SqlParseTable
+from sqllineage.exceptions import SQLLineageException
 
 
 class TargetHandler(NextTokenBaseHandler):

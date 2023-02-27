@@ -1,7 +1,7 @@
 import warnings
 from typing import Any, Dict, List, Optional, Set, Union
 
-from sqllineage.core.exceptions import SQLLineageException
+from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.helpers import escape_identifier_name
 
 

@@ -1,10 +1,6 @@
 from sqlfluff.core import Linter
 
 from sqllineage.core.analyzer import LineageAnalyzer
-from sqllineage.core.exceptions import (
-    InvalidSyntaxException,
-    UnsupportedStatementException,
-)
 from sqllineage.core.holders import (
     StatementLineageHolder,
     SubQueryLineageHolder,
@@ -18,6 +14,10 @@ from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     get_statement_segment,
     is_subquery_statement,
     remove_statement_parentheses,
+)
+from sqllineage.exceptions import (
+    InvalidSyntaxException,
+    UnsupportedStatementException,
 )
 
 

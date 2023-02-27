@@ -2,7 +2,6 @@ from typing import Dict, List, Tuple, Union
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.exceptions import SQLLineageException
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
@@ -25,6 +24,7 @@ from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     retrieve_extra_segment,
     retrieve_segments,
 )
+from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.constant import EdgeType
 
 
