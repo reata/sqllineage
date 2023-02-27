@@ -1,7 +1,10 @@
 from sqlfluff.core import Linter
 
 from sqllineage.core.analyzer import LineageAnalyzer
-from sqllineage.core.exceptions import SQLLineageException
+from sqllineage.core.exceptions import (
+    InvalidSyntaxException,
+    UnsupportedStatementException,
+)
 from sqllineage.core.holders import (
     StatementLineageHolder,
     SubQueryLineageHolder,
@@ -41,12 +44,14 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             extractor.can_extract(statement_segment.type) for extractor in extractors
         ):
             if "unparsable" in statement_segment.descendant_type_set:
-                raise SQLLineageException(
-                    f"The query [\n{sql}\n] contains an unparsable segment."
+                raise InvalidSyntaxException(
+                    f"SQLLineage cannot parse the statement properly, please check potential syntax error for SQL:"
+                    f"{sql}"
                 )
         else:
-            raise SQLLineageException(
-                f"The query [\n{sql}\n] contains can not be analyzed."
+            raise UnsupportedStatementException(
+                f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:"
+                f"{sql}"
             )
         lineage_holder = SubQueryLineageHolder()
         for extractor in extractors:

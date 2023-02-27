@@ -473,23 +473,20 @@ def get_grandchildren(segment: BaseSegment, child: str, grandchildren: str) -> A
     )
 
 
-def get_statement_segment(parsed_string: ParsedString) -> Optional[BaseSegment]:
+def get_statement_segment(parsed_string: ParsedString) -> BaseSegment:
     """
     :param parsed_string: parsed string
     :return: first segment from the statement segment of the segments of parsed_string
     """
-    if parsed_string.tree:
-        return next(
-            (
-                x.segments[0]
-                if x.type == "statement"
-                else x.get_child("statement").segments[0]
-                for x in parsed_string.tree.segments
-                if x.type == "statement" or x.type == "batch"
-            ),
-            None,
+    return next(
+        (
+            x.segments[0]
+            if x.type == "statement"
+            else x.get_child("statement").segments[0]
+            for x in getattr(parsed_string.tree, "segments")
+            if x.type == "statement" or x.type == "batch"
         )
-    return None
+    )
 
 
 def is_union(segment: BaseSegment) -> bool:

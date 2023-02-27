@@ -9,11 +9,11 @@ def test_select_without_table():
         LineageRunner("select * from where foo='bar'")._eval()
 
 
-def test_unparseable_query_in_sqlfluff():
+def test_unparsable_query_in_sqlfluff():
     with pytest.raises(SQLLineageException):
         LineageRunner("WRONG SELECT FROM tab1")._eval()
 
 
-def test_partial_unparseable_query_in_sqlfluff():
+def test_partial_unparsable_query_in_sqlfluff():
     with pytest.raises(SQLLineageException):
         LineageRunner("SELECT * FROM tab1 AS FULL FULL OUTER JOIN tab2")._eval()
