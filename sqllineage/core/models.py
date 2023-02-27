@@ -141,7 +141,7 @@ class Column:
         :param parent: :class:`Table` or :class:`SubQuery`
         :param kwargs:
         """
-        self._parent: Set[Union[Table, SubQuery]] = set()
+        self._parent: Set[Union[Path, Table, SubQuery]] = set()
         self.raw_name = escape_identifier_name(name)
         self.source_columns = kwargs.pop("source_columns", ((self.raw_name, None),))
 
@@ -162,15 +162,15 @@ class Column:
         return hash(str(self))
 
     @property
-    def parent(self) -> Optional[Union[Table, SubQuery]]:
+    def parent(self) -> Optional[Union[Path, Table, SubQuery]]:
         return list(self._parent)[0] if len(self._parent) == 1 else None
 
     @parent.setter
-    def parent(self, value: Union[Table, SubQuery]):
+    def parent(self, value: Union[Path, Table, SubQuery]):
         self._parent.add(value)
 
     @property
-    def parent_candidates(self) -> List[Union[Table, SubQuery]]:
+    def parent_candidates(self) -> List[Union[Path, Table, SubQuery]]:
         return sorted(self._parent, key=lambda p: str(p))
 
     @staticmethod
@@ -182,12 +182,14 @@ class Column:
         """
         raise NotImplementedError
 
-    def to_source_columns(self, alias_mapping: Dict[str, Union[Table, SubQuery]]):
+    def to_source_columns(self, alias_mapping: Dict[str, Union[Path, Table, SubQuery]]):
         """
         Best guess for source table given all the possible table/subquery and their alias.
         """
 
-        def _to_src_col(name: str, parent: Optional[Union[Table, SubQuery]] = None):
+        def _to_src_col(
+            name: str, parent: Optional[Union[Path, Table, SubQuery]] = None
+        ):
             col = Column(name)
             if parent:
                 col.parent = parent

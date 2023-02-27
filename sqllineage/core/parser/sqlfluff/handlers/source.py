@@ -1,9 +1,10 @@
-from typing import Dict, List, Tuple, Union
+from typing import Union
 
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.core.models import Path, SubQuery, Table
+from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffColumn,
@@ -24,19 +25,17 @@ from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     retrieve_extra_segment,
     retrieve_segments,
 )
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.utils.constant import EdgeType
 
 
-class SourceHandler(ConditionalSegmentBaseHandler):
+class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
     """
     Source table and column handler
     """
 
     def __init__(self):
-        self.columns: List[Column] = []
-        self.tables: List[Union[Path, Table, SubQuery]] = []
-        self.union_barriers: List[Tuple[int, int]] = []
+        self.columns = []
+        self.tables = []
+        self.union_barriers = []
 
     def indicate(self, segment: BaseSegment) -> bool:
         """
@@ -111,33 +110,6 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                             self._handle_column(seg)
                     self.tables.append(read_sq)
 
-    def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
-        """
-        Optional method to be called at the end of statement or subquery
-        :param holder: 'SubQueryLineageHolder' to hold lineage
-        """
-        for i, tbl in enumerate(self.tables):
-            holder.add_read(tbl)
-        self.union_barriers.append((len(self.columns), len(self.tables)))
-        for i, (col_barrier, tbl_barrier) in enumerate(self.union_barriers):
-            prev_col_barrier, prev_tbl_barrier = (
-                (0, 0) if i == 0 else self.union_barriers[i - 1]
-            )
-            col_grp = self.columns[prev_col_barrier:col_barrier]
-            tbl_grp = self.tables[prev_tbl_barrier:tbl_barrier]
-            tgt_tbl = None
-            if holder.write:
-                if len(holder.write) > 1:
-                    raise SQLLineageException
-                tgt_tbl = list(holder.write)[0]
-            if tgt_tbl:
-                for tgt_col in col_grp:
-                    tgt_col.parent = tgt_tbl
-                    for src_col in tgt_col.to_source_columns(
-                        self._get_alias_mapping_from_table_group(tbl_grp, holder)
-                    ):
-                        holder.add_column_lineage(src_col, tgt_col)
-
     def _add_dataset_from_expression_element(
         self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> None:
@@ -178,36 +150,6 @@ class SourceHandler(ConditionalSegmentBaseHandler):
                         all_segments, holder, table_identifier
                     )
                     self.tables.append(dataset)
-
-    @staticmethod
-    def _get_alias_mapping_from_table_group(
-        table_group: List[Union[Path, Table, SubQuery]],
-        holder: SubQueryLineageHolder,
-    ) -> Dict[str, Union[Table, SubQuery]]:
-        """
-        A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
-        For SubQuery, it's only alias then.
-        :param table_group: a list of objects from the table list
-        :param holder: 'SubQueryLineageHolder' to hold lineage
-        :return: A map of tables and references
-        """
-        return {
-            **{
-                tgt: src
-                for src, tgt, attr in holder.graph.edges(data=True)
-                if attr.get("type") == EdgeType.HAS_ALIAS and src in table_group
-            },
-            **{
-                table.raw_name: table
-                for table in table_group
-                if isinstance(table, SqlFluffTable)
-            },
-            **{
-                str(table): table
-                for table in table_group
-                if isinstance(table, SqlFluffTable)
-            },
-        }
 
     @staticmethod
     def _indicate_column(segment: BaseSegment) -> bool:
