@@ -33,8 +33,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
     Source table and column handler
     """
 
-    def __init__(self, dialect: str):
-        super().__init__(dialect)
+    def __init__(self):
         self.columns: List[Column] = []
         self.tables: List[Union[Path, Table, SubQuery]] = []
         self.union_barriers: List[Tuple[int, int]] = []
@@ -90,9 +89,7 @@ class SourceHandler(ConditionalSegmentBaseHandler):
         sub_segments = retrieve_segments(segment)
         for sub_segment in sub_segments:
             if sub_segment.type == "select_clause_element":
-                self.columns.append(
-                    SqlFluffColumn.of(sub_segment, dialect=self.dialect)
-                )
+                self.columns.append(SqlFluffColumn.of(sub_segment))
 
     def _handle_union(self, segment: BaseSegment) -> None:
         """

@@ -103,7 +103,7 @@ class LineageHolderExtractor:
             for handler_cls in SegmentBaseHandler.__subclasses__()
         ]
         conditional_handlers = [
-            handler_cls(self.dialect)  # type: ignore
+            handler_cls()  # type: ignore
             for handler_cls in ConditionalSegmentBaseHandler.__subclasses__()
         ]
         return handlers, conditional_handlers

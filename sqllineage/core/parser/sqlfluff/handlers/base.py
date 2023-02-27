@@ -10,13 +10,6 @@ class ConditionalSegmentBaseHandler:
     Extract lineage from a segment when the segment match the condition
     """
 
-    def __init__(self, dialect: str) -> None:
-        """
-        :param dialect: dialect of the handler
-        """
-        self.indicator = False
-        self.dialect = dialect
-
     @abstractmethod
     def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """

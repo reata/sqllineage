@@ -103,11 +103,8 @@ class SqlFluffColumn(Column):
         :param column: column segment
         :return:
         """
-        dialect = kwargs.get("dialect", "ansi")
         if column.type == "select_clause_element":
-            source_columns, alias = SqlFluffColumn._get_column_and_alias(
-                column, dialect
-            )
+            source_columns, alias = SqlFluffColumn._get_column_and_alias(column)
             if alias:
                 return Column(
                     alias,
@@ -126,19 +123,16 @@ class SqlFluffColumn(Column):
                 )
 
         # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
-        source_columns = SqlFluffColumn._extract_source_columns(column, dialect)
+        source_columns = SqlFluffColumn._extract_source_columns(column)
         return Column(
             column.raw,
             source_columns=source_columns,
         )
 
     @staticmethod
-    def _extract_source_columns(
-        segment: BaseSegment, dialect: str
-    ) -> List[ColumnQualifierTuple]:
+    def _extract_source_columns(segment: BaseSegment) -> List[ColumnQualifierTuple]:
         """
         :param segment: segment to be processed
-        :param dialect: dialect used to parse the segment
         :return: list of extracted source columns
         """
         if segment.type == "identifier" or is_wildcard(segment):
@@ -157,12 +151,12 @@ class SqlFluffColumn(Column):
                         )
                     else:
                         col_list += SqlFluffColumn._get_column_from_parenthesis(
-                            sub_segment, dialect
+                            sub_segment
                         )
                 elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
                     sub_segment
                 ):
-                    res = SqlFluffColumn._extract_source_columns(sub_segment, dialect)
+                    res = SqlFluffColumn._extract_source_columns(sub_segment)
                     col_list.extend(res)
             return col_list
         return []
@@ -194,22 +188,20 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_from_parenthesis(
         sub_segment: BaseSegment,
-        dialect: str,
     ) -> List[ColumnQualifierTuple]:
         """
         :param sub_segment: segment to be processed
-        :param dialect: dialect used to parse the segment
         :return: list of columns and alias from the segment
         """
-        col, _ = SqlFluffColumn._get_column_and_alias(sub_segment, dialect)
+        col, _ = SqlFluffColumn._get_column_and_alias(sub_segment)
         if col:
             return col
-        col, _ = SqlFluffColumn._get_column_and_alias(sub_segment, dialect, False)
+        col, _ = SqlFluffColumn._get_column_and_alias(sub_segment, False)
         return col if col else []
 
     @staticmethod
     def _get_column_and_alias(
-        segment: BaseSegment, dialect: str, check_bracketed: bool = True
+        segment: BaseSegment, check_bracketed: bool = True
     ) -> Tuple[List[ColumnQualifierTuple], Optional[str]]:
         alias = None
         columns = []
@@ -220,7 +212,7 @@ class SqlFluffColumn(Column):
             elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
                 sub_segment
             ):
-                res = SqlFluffColumn._extract_source_columns(sub_segment, dialect)
+                res = SqlFluffColumn._extract_source_columns(sub_segment)
                 columns += res if res else []
 
         return columns, alias

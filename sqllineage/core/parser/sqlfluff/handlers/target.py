@@ -22,8 +22,8 @@ class TargetHandler(ConditionalSegmentBaseHandler):
     Target table handler
     """
 
-    def __init__(self, dialect: str) -> None:
-        super().__init__(dialect)
+    def __init__(self) -> None:
+        self.indicator = False
         self.prev_token_like = False
         self.prev_token_from = False
 
@@ -65,10 +65,8 @@ class TargetHandler(ConditionalSegmentBaseHandler):
         :param segment: segment to be processed
         :return: True if it can be handled
         """
-        if (
-            self.indicator is True
-            or segment.type == "keyword"
-            and segment.raw_upper in self.TARGET_KEYWORDS
+        if self.indicator is True or (
+            segment.type == "keyword" and segment.raw_upper in self.TARGET_KEYWORDS
         ):
             self.indicator = True
             self._init_tokens(segment)

@@ -40,4 +40,4 @@ def test_of_dummy():
 def test_column_extract_source_columns():
     segment_mock = Mock()
     segment_mock.type = ""
-    assert [] == SqlFluffColumn._extract_source_columns(segment_mock, "ansi")
+    assert [] == SqlFluffColumn._extract_source_columns(segment_mock)
