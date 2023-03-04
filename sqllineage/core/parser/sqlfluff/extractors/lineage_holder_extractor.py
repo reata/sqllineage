@@ -99,11 +99,10 @@ class LineageHolderExtractor:
         :return: A tuple with a list of SegmentBaseHandler and ConditionalSegmentBaseHandler
         """
         handlers: List[SegmentBaseHandler] = [
-            handler_cls()  # type: ignore
-            for handler_cls in SegmentBaseHandler.__subclasses__()
+            handler_cls() for handler_cls in SegmentBaseHandler.__subclasses__()
         ]
         conditional_handlers = [
-            handler_cls()  # type: ignore
+            handler_cls()
             for handler_cls in ConditionalSegmentBaseHandler.__subclasses__()
         ]
         return handlers, conditional_handlers

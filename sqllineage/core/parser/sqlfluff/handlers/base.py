@@ -1,5 +1,3 @@
-from abc import abstractmethod
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
@@ -10,21 +8,21 @@ class ConditionalSegmentBaseHandler:
     Extract lineage from a segment when the segment match the condition
     """
 
-    @abstractmethod
     def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
         Handle the segment, and update the lineage result accordingly in the holder
         :param segment: segment to be handled
         :param holder: 'SubQueryLineageHolder' to hold lineage
         """
+        raise NotImplementedError
 
-    @abstractmethod
     def indicate(self, segment: BaseSegment) -> bool:
         """
         Indicates if the handler can handle the segment
         :param segment: segment to be handled
         :return: True if it can be handled, by default return False
         """
+        raise NotImplementedError
 
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         """
@@ -39,9 +37,9 @@ class SegmentBaseHandler:
     Extract lineage from a specific segment
     """
 
-    @abstractmethod
     def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
         :param segment: segment to be handled
         :param holder: 'SubQueryLineageHolder' to hold lineage
         """
+        raise NotImplementedError
