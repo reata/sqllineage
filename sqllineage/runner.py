@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Dict, List, Optional, Tuple
 
 from sqllineage import SQLPARSE_DIALECT
@@ -164,7 +163,6 @@ Target Tables:
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT
-            or os.environ.get("SQLLINEAGE_USESQLPARSE", "")
             else SqlFluffLineageAnalyzer(self._dialect)
         )
         self._stmt_holders = [analyzer.analyze(stmt) for stmt in self._stmt]
