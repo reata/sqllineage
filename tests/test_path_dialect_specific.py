@@ -4,53 +4,42 @@ from sqllineage.core.models import Path
 from .helpers import assert_table_lineage_equal
 
 
-def test_copy_from_path():
+@pytest.mark.parametrize("dialect", ["postgres", "redshift"])
+def test_copy_from_path(dialect: str):
     """
-    check following link for syntax specs:
-        Redshift: https://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html
+    https://www.postgresql.org/docs/current/sql-copy.html (Postgres)
+    https://docs.aws.amazon.com/es_es/redshift/latest/dg/r_COPY.html (Redshift)
     """
     assert_table_lineage_equal(
         "COPY tab1 FROM 's3://mybucket/mypath'",
         {Path("s3://mybucket/mypath")},
         {"tab1"},
-        test_sqlfluff=False,
-    )
-    assert_table_lineage_equal(
-        "COPY tab1 FROM 's3://mybucket/mypath'",
-        {Path("s3://mybucket/mypath")},
-        {"tab1"},
-        "redshift",
-        test_sqlparse=False,
+        dialect=dialect,
     )
 
 
-def test_copy_into_path():
+@pytest.mark.parametrize("dialect", ["snowflake"])
+def test_copy_into_path(dialect: str):
     """
     check following link for syntax reference:
         Snowflake: https://docs.snowflake.com/en/sql-reference/sql/copy-into-table.html
-        Microsoft T-SQL: https://docs.microsoft.com/en-us/sql/t-sql/statements/copy-into-transact-sql?view=azure-sqldw-latest  # noqa
+        Microsoft T-SQL: https://docs.microsoft.com/en-us/sql/t-sql/statements/copy-into-transact-sql?view=azure-sqldw-latest   # noqa
+    FIXME: sqlfluff tsql dialect doesn't support parsing this yet
     """
     assert_table_lineage_equal(
         "COPY INTO tab1 FROM 's3://mybucket/mypath'",
         {Path("s3://mybucket/mypath")},
         {"tab1"},
-        test_sqlfluff=False,
-    )
-    assert_table_lineage_equal(
-        "COPY INTO tab1 FROM 's3://mybucket/mypath'",
-        {Path("s3://mybucket/mypath")},
-        {"tab1"},
-        "snowflake",
-        test_sqlparse=False,
+        dialect=dialect,
     )
 
 
-# deactivated for sqlfluff since it can not be parsed properly
 @pytest.mark.parametrize("data_source", ["parquet", "json", "csv"])
-def test_select_from_files(data_source):
+def test_select_from_files(data_source: str):
     """
     check following link for syntax reference:
         https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html#run-sql-on-files-directly
+    FIXME: sqlfluff sparksql dialect support parsing this, we're not implementing the analyzer to handle this
     """
     assert_table_lineage_equal(
         f"SELECT * FROM {data_source}.`examples/src/main/resources/`",
@@ -59,7 +48,8 @@ def test_select_from_files(data_source):
     )
 
 
-def test_insert_overwrite_directory():
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_insert_overwrite_directory(dialect: str):
     """
     check following link for syntax reference:
         https://spark.apache.org/docs/latest/sql-ref-syntax-dml-insert-overwrite-directory.html
@@ -69,13 +59,5 @@ def test_insert_overwrite_directory():
 SELECT * FROM tab1""",
         {"tab1"},
         {Path("hdfs://path/to/folder")},
-        test_sqlfluff=False,
-    )
-    assert_table_lineage_equal(
-        """INSERT OVERWRITE DIRECTORY 'hdfs://path/to/folder'
-SELECT * FROM tab1""",
-        {"tab1"},
-        {Path("hdfs://path/to/folder")},
-        "sparksql",
-        test_sqlparse=False,
+        dialect=dialect,
     )

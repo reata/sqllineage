@@ -47,15 +47,14 @@ def assert_table_lineage_equal(
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
 ):
+    lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
+    lr_sqlfluff = LineageRunner(sql, dialect=dialect)
     if test_sqlparse:
-        lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
         assert_table_lineage(lr, source_tables, target_tables)
-
     if test_sqlfluff:
-        lr_sqlfluff = LineageRunner(sql, dialect=dialect)
         assert_table_lineage(lr_sqlfluff, source_tables, target_tables)
-        if test_sqlparse:
-            assert_lr_graphs_match(lr, lr_sqlfluff)
+    if test_sqlparse and test_sqlfluff:
+        assert_lr_graphs_match(lr, lr_sqlfluff)
 
 
 def assert_column_lineage_equal(
@@ -66,13 +65,11 @@ def assert_column_lineage_equal(
     test_sqlparse: bool = True,
 ):
     lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
+    lr_sqlfluff = LineageRunner(sql, dialect=dialect)
     if test_sqlparse:
         assert_column_lineage(lr, column_lineages)
-
-    lr_sqlfluff = LineageRunner(sql, dialect=dialect)
     if test_sqlfluff:
         assert_column_lineage(lr_sqlfluff, column_lineages)
-
     if test_sqlparse and test_sqlfluff:
         assert_lr_graphs_match(lr, lr_sqlfluff)
 

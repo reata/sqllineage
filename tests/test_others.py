@@ -81,32 +81,6 @@ def test_create_after_drop():
     )
 
 
-# deactivated for sqlfluff since it can not be parsed properly
-def test_create_using_serde():
-    # Check https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormats&SerDe
-    # here with is not an indicator for CTE
-    assert_table_lineage_equal(
-        """CREATE TABLE apachelog (
-  host STRING,
-  identity STRING,
-  user STRING,
-  time STRING,
-  request STRING,
-  status STRING,
-  size STRING,
-  referer STRING,
-  agent STRING)
-ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'
-WITH SERDEPROPERTIES (
-  "input.regex" = "([^]*) ([^]*) ([^]*) (-|\\[^\\]*\\]) ([^ \"]*|\"[^\"]*\") (-|[0-9]*) (-|[0-9]*)(?: ([^ \"]*|\".*\") ([^ \"]*|\".*\"))?"
-)
-STORED AS TEXTFILE""",  # noqa
-        None,
-        {"apachelog"},
-        test_sqlfluff=False,
-    )
-
-
 def test_bucket_with_using_parenthesis():
     assert_table_lineage_equal(
         """CREATE TABLE tbl1 (col1 VARCHAR)

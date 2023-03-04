@@ -40,9 +40,10 @@ def test_select_left_semi_join_with_on(dialect: str):
     )
 
 
-def test_select_from_generator():
+@pytest.mark.parametrize("dialect", ["snowflake"])
+def test_select_from_generator(dialect: str):
     # generator is Snowflake specific
     sql = """SELECT seq4(), uniform(1, 10, random(12))
 FROM table(generator()) v
 ORDER BY 1;"""
-    assert_table_lineage_equal(sql, dialect="snowflake")
+    assert_table_lineage_equal(sql, dialect=dialect)

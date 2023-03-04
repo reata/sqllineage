@@ -215,8 +215,11 @@ def test_select_from_unnest_parsed_as_keyword():
     )
 
 
-# deactivated for sqlfluff since it can not be parsed properly
 def test_select_from_unnest_with_ordinality():
+    """
+    https://prestodb.io/docs/current/sql/select.html#unnest
+    FIXME: sqlfluff athena dialect doesn't support parsing this yet
+    """
     sql = """
     SELECT numbers, n, a
     FROM (

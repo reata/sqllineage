@@ -24,12 +24,43 @@ def test_create_select_without_as(dialect: str):
     )
 
 
-def test_update_with_join():
+def test_create_using_serde():
+    """
+    https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormats&SerDe
+    here with is not an indicator for CTE
+    FIXME: sqlfluff hive dialect doesn't support parsing this yet
+    """
+    # Check
+    #
+    assert_table_lineage_equal(
+        """CREATE TABLE apachelog (
+  host STRING,
+  identity STRING,
+  user STRING,
+  time STRING,
+  request STRING,
+  status STRING,
+  size STRING,
+  referer STRING,
+  agent STRING)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'
+WITH SERDEPROPERTIES (
+  "input.regex" = "([^]*) ([^]*) ([^]*) (-|\\[^\\]*\\]) ([^ \"]*|\"[^\"]*\") (-|[0-9]*) (-|[0-9]*)(?: ([^ \"]*|\".*\") ([^ \"]*|\".*\"))?"
+)
+STORED AS TEXTFILE""",  # noqa
+        None,
+        {"apachelog"},
+        test_sqlfluff=False,
+    )
+
+
+@pytest.mark.parametrize("dialect", ["mysql"])
+def test_update_with_join(dialect: str):
     assert_table_lineage_equal(
         "UPDATE tab1 a INNER JOIN tab2 b ON a.col1=b.col1 SET a.col2=b.col2",
         {"tab2"},
         {"tab1"},
-        "mysql",
+        dialect=dialect,
     )
 
 
@@ -50,7 +81,8 @@ def test_rename_tables(dialect: str):
     )
 
 
-def test_alter_table_exchange_partition():
+@pytest.mark.parametrize("dialect", ["hive"])
+def test_alter_table_exchange_partition(dialect: str):
     """
     See https://cwiki.apache.org/confluence/display/Hive/Exchange+Partition for language manual
     """
@@ -58,7 +90,7 @@ def test_alter_table_exchange_partition():
         "alter table tab1 exchange partition(pt='part1') with table tab2",
         {"tab2"},
         {"tab1"},
-        "hive",
+        dialect=dialect,
     )
 
 
@@ -105,19 +137,3 @@ LATERAL VIEW OUTER explode(sc.json_array) q AS col1"""
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_show_create_table(dialect: str):
     assert_table_lineage_equal("show create table tab1", None, None, dialect)
-
-
-def test_create_view_tsql():
-    assert_table_lineage_equal(
-        """CREATE VIEW view1
-as
-SELECT
-    col1,
-    col2
-FROM tab1
-GROUP BY
-col1""",
-        {"tab1"},
-        {"view1"},
-        "tsql",
-    )
