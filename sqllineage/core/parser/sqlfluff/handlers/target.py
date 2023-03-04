@@ -128,11 +128,11 @@ class TargetHandler(ConditionalSegmentBaseHandler):
     @staticmethod
     def _extract_table_reference(
         object_reference: BaseSegment, holder: SubQueryLineageHolder
-    ) -> Optional[Union[Table, SubQuery]]:
+    ) -> Optional[Union[Path, SubQuery, Table]]:
         """
         :param object_reference: object reference segment
         :param holder: 'SubQueryLineageHolder' to hold lineage
-        :return: a 'SqlFluffTable' or 'SqlFluffSubQuery' from the object_reference
+        :return: a 'Path' or 'SqlFluffTable' or 'SqlFluffSubQuery' from the object_reference
         """
         if object_reference and object_reference.type == "object_reference":
             return retrieve_holder_data_from(

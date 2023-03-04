@@ -286,12 +286,12 @@ def get_bracketed_from(
 def find_table_identifier(identifier: BaseSegment) -> Optional[BaseSegment]:
     """
     :param identifier: segment to be processed
-    :return: a "table_reference" type segment if it exists in the identifier's children list, otherwise the identifier
+    :return: a table_reference or file_reference type segment if it exists in children list, otherwise the identifier
     """
     table_identifier = None
     if identifier.segments:
         for segment in identifier.segments:
-            if segment.type == "table_reference":
+            if segment.type in ("table_reference", "file_reference"):
                 return segment
             else:
                 table_identifier = find_table_identifier(segment)

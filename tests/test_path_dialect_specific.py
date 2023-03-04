@@ -35,16 +35,16 @@ def test_copy_into_path(dialect: str):
 
 
 @pytest.mark.parametrize("data_source", ["parquet", "json", "csv"])
-def test_select_from_files(data_source: str):
+@pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
+def test_select_from_files(data_source: str, dialect: str):
     """
     check following link for syntax reference:
         https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html#run-sql-on-files-directly
-    FIXME: sqlfluff sparksql dialect support parsing this, we're not implementing the analyzer to handle this
     """
     assert_table_lineage_equal(
         f"SELECT * FROM {data_source}.`examples/src/main/resources/`",
         {Path("examples/src/main/resources/")},
-        test_sqlfluff=False,
+        dialect=dialect,
     )
 
 
