@@ -1,9 +1,7 @@
-from typing import Optional, Union
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Path, SubQuery, Table
+from sqllineage.core.models import Path
 from sqllineage.core.parser.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffTable,
@@ -79,9 +77,8 @@ class TargetHandler(ConditionalSegmentBaseHandler):
         :param segment: segment to be handled
         :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
         """
-        object_segment = self._extract_table_reference(segment, holder)
-        if segment.type == "table_reference" or object_segment:
-            write_obj = object_segment if object_segment else SqlFluffTable.of(segment)
+        if segment.type == "table_reference":
+            write_obj = SqlFluffTable.of(segment)
             if self.prev_token_like:
                 holder.add_read(write_obj)
             else:
@@ -124,20 +121,3 @@ class TargetHandler(ConditionalSegmentBaseHandler):
                     )
                     if read:
                         holder.add_read(read)
-
-    @staticmethod
-    def _extract_table_reference(
-        object_reference: BaseSegment, holder: SubQueryLineageHolder
-    ) -> Optional[Union[Path, SubQuery, Table]]:
-        """
-        :param object_reference: object reference segment
-        :param holder: 'SubQueryLineageHolder' to hold lineage
-        :return: a 'Path' or 'SqlFluffTable' or 'SqlFluffSubQuery' from the object_reference
-        """
-        if object_reference and object_reference.type == "object_reference":
-            return retrieve_holder_data_from(
-                object_reference.segments,
-                holder,
-                get_child(object_reference, "identifier"),
-            )
-        return None
