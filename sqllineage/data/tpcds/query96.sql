@@ -1,4 +1,4 @@
-insert overwrite table query96
+insert into query96
 select count(*)
 from store_sales
    , household_demographics

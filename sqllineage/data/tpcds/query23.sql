@@ -1,4 +1,4 @@
-insert overwrite table query23
+insert into query23
 with frequent_ss_items as
          (select substr(i_item_desc, 1, 30) itemdesc, i_item_sk item_sk, d_date solddate, count(*) cnt
           from store_sales

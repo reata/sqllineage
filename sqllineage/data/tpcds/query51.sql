@@ -20,10 +20,7 @@ WITH web_v1 as (
            and d_month_seq between 1200 and 1200 + 11
            and ss_item_sk is not NULL
          group by ss_item_sk, d_date)
-insert
-overwrite
-table
-query51
+insert into query51
 select *
 from (select item_sk
            , d_date

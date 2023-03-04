@@ -14,7 +14,7 @@ with ss as
           where ws_sold_date_sk = d_date_sk
             and ws_bill_addr_sk = ca_address_sk
           group by ca_county, d_qoy, d_year)
-insert overwrite table query31
+insert into query31
 select ss1.ca_county
      , ss1.d_year
      , ws2.web_sales / ws1.web_sales     web_q1_q2_increase

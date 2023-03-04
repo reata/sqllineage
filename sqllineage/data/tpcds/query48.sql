@@ -1,4 +1,4 @@
-insert overwrite table query48
+insert into query48
 select sum(ss_quantity)
 from store_sales,
      store,

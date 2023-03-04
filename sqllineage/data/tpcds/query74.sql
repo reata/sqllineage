@@ -33,7 +33,7 @@ with year_total as (
            , c_last_name
            , d_year
 )
-insert overwrite table query74
+insert into query74
 select t_s_secyear.customer_id,
        t_s_secyear.customer_first_name,
        t_s_secyear.customer_last_name

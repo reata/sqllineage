@@ -28,7 +28,7 @@ class ColumnLineageMixin:
                 node for node in target_columns if isinstance(node.parent, Table)
             }
         columns = set()
-        for (source, target) in itertools.product(source_columns, target_columns):
+        for source, target in itertools.product(source_columns, target_columns):
             simple_paths = list(nx.all_simple_paths(self.graph, source, target))
             for path in simple_paths:
                 columns.add(tuple(path))
@@ -48,6 +48,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
+        self.extra_subqueries: Set[SubQuery] = set()
 
     def __or__(self, other):
         self.graph = nx.compose(self.graph, other.graph)
@@ -139,7 +140,7 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
         self.graph.add_edge(src, tgt, type=EdgeType.RENAME)
 
     @staticmethod
-    def of(holder: SubQueryLineageHolder):
+    def of(holder: SubQueryLineageHolder) -> "StatementLineageHolder":
         stmt_holder = StatementLineageHolder()
         stmt_holder.graph = holder.graph
         return stmt_holder
@@ -235,7 +236,7 @@ class SQLLineageHolder(ColumnLineageMixin):
                     if g.has_node(table) and g.degree[table] == 0:
                         g.remove_node(table)
             elif holder.rename:
-                for (table_old, table_new) in holder.rename:
+                for table_old, table_new in holder.rename:
                     g = nx.relabel_nodes(g, {table_old: table_new})
                     g.remove_edge(table_new, table_new)
                     if g.degree[table_new] == 0:
@@ -284,7 +285,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return g
 
     @staticmethod
-    def of(*args: StatementLineageHolder):
+    def of(*args: StatementLineageHolder) -> "SQLLineageHolder":
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`

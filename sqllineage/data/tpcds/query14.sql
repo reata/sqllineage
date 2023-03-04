@@ -56,7 +56,7 @@ with cross_items as
                    , date_dim
                 where ws_sold_date_sk = d_date_sk
                   and d_year between 1999 and 1999 + 2) x)
-insert overwrite table query14
+insert into query14
 select channel, i_brand_id, i_class_id, i_category_id, sum(sales), sum(number_sales)
 from (
          select 'store'                          channel

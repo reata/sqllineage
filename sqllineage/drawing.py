@@ -17,7 +17,12 @@ from typing import Any, Callable, Dict, List
 from urllib.parse import urlencode
 from wsgiref.simple_server import make_server
 
-from sqllineage import DATA_FOLDER, DEFAULT_HOST, DEFAULT_PORT
+from sqllineage import (
+    DATA_FOLDER,
+    DEFAULT_DIALECT,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+)
 from sqllineage import STATIC_FOLDER
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.constant import LineageLevel
@@ -152,7 +157,8 @@ def lineage(payload):
 
     req_args = Namespace(**payload)
     sql = extract_sql_from_args(req_args)
-    lr = LineageRunner(sql, verbose=True)
+    dialect = getattr(req_args, "dialect", DEFAULT_DIALECT)
+    lr = LineageRunner(sql, verbose=True, dialect=dialect)
     data = {
         "verbose": str(lr),
         "dag": lr.to_cytoscape(),

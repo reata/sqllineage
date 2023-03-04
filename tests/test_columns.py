@@ -1,26 +1,27 @@
 import pytest
 
+from sqllineage import SQLPARSE_DIALECT
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.entities import ColumnQualifierTuple
 from .helpers import assert_column_lineage_equal
 
 
 def test_select_column():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1 AS col2
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col2", "tab1"))],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT tab2.col1 AS col2
 FROM tab2"""
     assert_column_lineage_equal(
@@ -30,13 +31,14 @@ FROM tab2"""
 
 
 def test_select_column_wildcard():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT *
 FROM tab2"""
     assert_column_lineage_equal(
-        sql, [(ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1"))]
+        sql,
+        [(ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1"))],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT *
 FROM tab2 a
          INNER JOIN tab3 b
@@ -51,7 +53,7 @@ FROM tab2 a
 
 
 def test_select_column_using_function():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT max(col1),
        count(*)
 FROM tab2"""
@@ -68,7 +70,7 @@ FROM tab2"""
             ),
         ],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT max(col1) AS col2,
        count(*)  AS cnt
 FROM tab2"""
@@ -82,7 +84,7 @@ FROM tab2"""
             (ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("cnt", "tab1")),
         ],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT cast(col1 as timestamp)
 FROM tab2"""
     assert_column_lineage_equal(
@@ -94,7 +96,7 @@ FROM tab2"""
             )
         ],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT cast(col1 as timestamp) as col2
 FROM tab2"""
     assert_column_lineage_equal(
@@ -104,7 +106,7 @@ FROM tab2"""
 
 
 def test_select_column_using_function_with_complex_parameter():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT if(col1 = 'foo' AND col2 = 'bar', 1, 0) AS flag
 FROM tab2"""
     assert_column_lineage_equal(
@@ -123,7 +125,7 @@ FROM tab2"""
 
 
 def test_select_column_using_window_function():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT row_number() OVER (PARTITION BY col1 ORDER BY col2 DESC) AS rnum
 FROM tab2"""
     assert_column_lineage_equal(
@@ -142,7 +144,7 @@ FROM tab2"""
 
 
 def test_select_column_using_window_function_with_parameters():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col0,
        max(col3) OVER (PARTITION BY col1 ORDER BY col2 DESC) AS rnum,
        col4
@@ -175,7 +177,7 @@ FROM tab2"""
 
 
 def test_select_column_using_expression():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1 + col2
 FROM tab2"""
     assert_column_lineage_equal(
@@ -191,7 +193,7 @@ FROM tab2"""
             ),
         ],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1 + col2 AS col3
 FROM tab2"""
     assert_column_lineage_equal(
@@ -210,7 +212,7 @@ FROM tab2"""
 
 
 def test_select_column_using_expression_in_parenthesis():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT (col1 + col2) AS col3
 FROM tab2"""
     assert_column_lineage_equal(
@@ -229,7 +231,7 @@ FROM tab2"""
 
 
 def test_select_column_using_boolean_expression_in_parenthesis():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT (col1 > 0 AND col2 > 0) AS col3
 FROM tab2"""
     assert_column_lineage_equal(
@@ -248,7 +250,7 @@ FROM tab2"""
 
 
 def test_select_column_using_expression_with_table_qualifier_without_column_alias():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT a.col1 + a.col2 + a.col3 + a.col4
 FROM tab2 a"""
     assert_column_lineage_equal(
@@ -275,7 +277,7 @@ FROM tab2 a"""
 
 
 def test_select_column_using_case_when():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END
 FROM tab2"""
     assert_column_lineage_equal(
@@ -289,7 +291,7 @@ FROM tab2"""
             ),
         ],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END AS col2
 FROM tab2"""
     assert_column_lineage_equal(
@@ -299,7 +301,7 @@ FROM tab2"""
 
 
 def test_select_column_using_case_when_with_subquery():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT CASE WHEN (SELECT avg(col1) FROM tab3) > 0 AND col2 = 1 THEN (SELECT avg(col1) FROM tab3) ELSE 0 END AS col1
 FROM tab4"""
     assert_column_lineage_equal(
@@ -317,15 +319,40 @@ FROM tab4"""
     )
 
 
+def test_select_column_using_multiple_case_when_with_subquery():
+    sql = """INSERT INTO tab1
+SELECT CASE
+WHEN (SELECT avg(col1) FROM tab3) > 0 AND col2 = 1 THEN (SELECT avg(col1) FROM tab3)
+WHEN (SELECT avg(col1) FROM tab3) > 0 AND col2 = 1 THEN (SELECT avg(col1) FROM tab5) ELSE 0 END AS col1
+FROM tab4"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col2", "tab4"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab3"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab5"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+        ],
+    )
+
+
 def test_select_column_with_table_qualifier():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT tab2.col1
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT t.col1
 FROM tab2 AS t"""
     assert_column_lineage_equal(
@@ -335,7 +362,7 @@ FROM tab2 AS t"""
 
 
 def test_select_columns():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1,
 col2
 FROM tab2"""
@@ -352,7 +379,7 @@ FROM tab2"""
             ),
         ],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT max(col1),
 max(col2)
 FROM tab2"""
@@ -372,21 +399,21 @@ FROM tab2"""
 
 
 def test_select_column_in_subquery():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1
 FROM (SELECT col1 FROM tab2) dt"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1
 FROM (SELECT col1, col2 FROM tab2) dt"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1
 FROM (SELECT col1 FROM tab2)"""
     assert_column_lineage_equal(
@@ -396,7 +423,7 @@ FROM (SELECT col1 FROM tab2)"""
 
 
 def test_select_column_in_subquery_with_two_parenthesis():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1
 FROM ((SELECT col1 FROM tab2)) dt"""
     assert_column_lineage_equal(
@@ -406,7 +433,7 @@ FROM ((SELECT col1 FROM tab2)) dt"""
 
 
 def test_select_column_in_subquery_with_two_parenthesis_and_blank_in_between():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1
 FROM (
 (SELECT col1 FROM tab2)
@@ -418,7 +445,7 @@ FROM (
 
 
 def test_select_column_in_subquery_with_two_parenthesis_and_union():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1
 FROM (
     (SELECT col1 FROM tab2)
@@ -441,7 +468,7 @@ FROM (
 
 
 def test_select_column_in_subquery_with_two_parenthesis_and_union_v2():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1
 FROM (
     SELECT col1 FROM tab2
@@ -464,7 +491,7 @@ FROM (
 
 
 def test_select_column_from_table_join():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT tab2.col1,
        tab3.col2
 FROM tab2
@@ -483,7 +510,7 @@ FROM tab2
             ),
         ],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT tab2.col1 AS col3,
        tab3.col2 AS col4
 FROM tab2
@@ -502,7 +529,7 @@ FROM tab2
             ),
         ],
     )
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT a.col1 AS col3,
        b.col2 AS col4
 FROM tab2 a
@@ -524,7 +551,7 @@ FROM tab2 a
 
 
 def test_select_column_without_table_qualifier_from_table_join():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1
 FROM tab2 a
          INNER JOIN tab3 b
@@ -536,7 +563,7 @@ FROM tab2 a
 
 
 def test_select_column_from_same_table_multiple_time_using_different_alias():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT a.col1 AS col2,
        b.col1 AS col3
 FROM tab2 a
@@ -558,7 +585,7 @@ FROM tab2 a
 
 
 def test_comment_after_column_comma_first():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT a.col1
        --, a.col2
        , a.col3
@@ -579,7 +606,7 @@ FROM tab2 a"""
 
 
 def test_comment_after_column_comma_last():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT a.col1,
        -- a.col2,
        a.col3
@@ -600,7 +627,7 @@ FROM tab2 a"""
 
 
 def test_cast_with_comparison():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT cast(col1 = 1 AS int) col1, col2 = col3 col2
 FROM tab2"""
     assert_column_lineage_equal(
@@ -622,11 +649,9 @@ FROM tab2"""
     )
 
 
-@pytest.mark.parametrize(
-    "dtype", ["string", "timestamp", "date", "datetime", "decimal(18, 0)"]
-)
-def test_cast_to_data_type(dtype):
-    sql = f"""INSERT OVERWRITE TABLE tab1
+@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "decimal(18, 0)"])
+def test_cast_to_data_type(dtype: str):
+    sql = f"""INSERT INTO tab1
 SELECT cast(col1 as {dtype}) AS col1
 FROM tab2"""
     assert_column_lineage_equal(
@@ -635,18 +660,16 @@ FROM tab2"""
     )
 
 
-@pytest.mark.parametrize(
-    "dtype", ["string", "timestamp", "date", "datetime", "decimal(18, 0)"]
-)
-def test_nested_cast_to_data_type(dtype):
-    sql = f"""INSERT OVERWRITE TABLE tab1
+@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "decimal(18, 0)"])
+def test_nested_cast_to_data_type(dtype: str):
+    sql = f"""INSERT INTO tab1
 SELECT cast(cast(col1 AS {dtype}) AS {dtype}) AS col1
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
-    sql = f"""INSERT OVERWRITE TABLE tab1
+    sql = f"""INSERT INTO tab1
 SELECT cast(cast(cast(cast(cast(col1 AS {dtype}) AS {dtype}) AS {dtype}) AS {dtype}) AS {dtype}) AS col1
 FROM tab2"""
     assert_column_lineage_equal(
@@ -655,11 +678,9 @@ FROM tab2"""
     )
 
 
-@pytest.mark.parametrize(
-    "dtype", ["string", "timestamp", "date", "datetime", "decimal(18, 0)"]
-)
-def test_cast_to_data_type_with_case_when(dtype):
-    sql = f"""INSERT OVERWRITE TABLE tab1
+@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "decimal(18, 0)"])
+def test_cast_to_data_type_with_case_when(dtype: str):
+    sql = f"""INSERT INTO tab1
 SELECT cast(case when col1 > 0 then col2 else col3 end as {dtype}) AS col1
 FROM tab2"""
     assert_column_lineage_equal(
@@ -682,7 +703,7 @@ FROM tab2"""
 
 
 def test_cast_using_constant():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT cast('2012-12-21' as date) AS col2"""
     assert_column_lineage_equal(sql)
 
@@ -705,29 +726,55 @@ WHERE rn = 1"""
 
 
 def test_invalid_syntax_as_without_alias():
-    sql = """INSERT OVERWRITE TABLE tab1
+    sql = """INSERT INTO tab1
 SELECT col1,
        col2 as,
        col3
 FROM tab2"""
     # just assure no exception, don't guarantee the result
-    LineageRunner(sql).print_column_lineage()
+    LineageRunner(sql, dialect=SQLPARSE_DIALECT).print_column_lineage()
 
 
-def test_column_reference_from_cte_using_alias():
+def test_column_with_ctas_and_func():
+    sql = """CREATE TABLE tab2 AS
+SELECT
+  coalesce(col1, 0) AS col1,
+  IF(
+    col1 IS NOT NULL,
+    1,
+    NULL
+  ) AS col2
+FROM
+  tab1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col1", "tab2"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col2", "tab2"),
+            ),
+        ],
+    )
+
+
+def test_column_reference_from_cte_using_qualifier():
     sql = """WITH wtab1 AS (SELECT col1 FROM tab2)
-INSERT OVERWRITE TABLE tab1
-SELECT wt.col1 FROM wtab1 wt"""
+INSERT INTO tab1
+SELECT wtab1.col1 FROM wtab1"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
 
 
-def test_column_reference_from_cte_using_qualifier():
+def test_column_reference_from_cte_using_alias():
     sql = """WITH wtab1 AS (SELECT col1 FROM tab2)
-INSERT OVERWRITE TABLE tab1
-SELECT wtab1.col1 FROM wtab1"""
+INSERT INTO tab1
+SELECT wt.col1 FROM wtab1 wt"""
     assert_column_lineage_equal(
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
@@ -738,7 +785,7 @@ def test_column_reference_from_previous_defined_cte():
     sql = """WITH
 cte1 AS (SELECT a FROM tab1),
 cte2 AS (SELECT a FROM cte1)
-INSERT OVERWRITE TABLE tab2
+INSERT INTO tab2
 SELECT a FROM cte2"""
     assert_column_lineage_equal(
         sql,
@@ -750,7 +797,7 @@ def test_multiple_column_references_from_previous_defined_cte():
     sql = """WITH
 cte1 AS (SELECT a, b FROM tab1),
 cte2 AS (SELECT a, max(b) AS b_max, count(b) AS b_cnt FROM cte1 GROUP BY a)
-INSERT OVERWRITE TABLE tab2
+INSERT INTO tab2
 SELECT cte1.a, cte2.b_max, cte2.b_cnt FROM cte1 JOIN cte2
 WHERE cte1.a = cte2.a"""
     assert_column_lineage_equal(
@@ -764,7 +811,7 @@ WHERE cte1.a = cte2.a"""
 
 
 def test_column_reference_with_ansi89_join():
-    sql = """INSERT OVERWRITE TABLE tab3
+    sql = """INSERT INTO tab3
 SELECT a.id,
        a.name AS name1,
        b.name AS name2
@@ -793,7 +840,7 @@ def test_smarter_column_resolution_using_query_context():
     sql = """WITH
 cte1 AS (SELECT a, b FROM tab1),
 cte2 AS (SELECT c, d FROM tab2)
-INSERT OVERWRITE TABLE tab3
+INSERT INTO tab3
 SELECT b, d FROM cte1 JOIN cte2
 WHERE cte1.a = cte2.c"""
     assert_column_lineage_equal(
@@ -806,7 +853,7 @@ WHERE cte1.a = cte2.c"""
 
 
 def test_column_reference_using_union():
-    sql = """INSERT OVERWRITE TABLE tab3
+    sql = """INSERT INTO tab3
 SELECT col1
 FROM tab1
 UNION ALL
@@ -825,7 +872,7 @@ FROM tab2"""
             ),
         ],
     )
-    sql = """INSERT OVERWRITE TABLE tab3
+    sql = """INSERT INTO tab3
 SELECT col1
 FROM tab1
 UNION
@@ -847,7 +894,7 @@ FROM tab2"""
 
 
 def test_column_lineage_multiple_paths_for_same_column():
-    sql = """INSERT OVERWRITE TABLE tab2
+    sql = """INSERT INTO tab2
 SELECT tab1.id,
        coalesce(join_table_1.col1, join_table_2.col1, join_table_3.col1) AS col1
 FROM tab1
@@ -883,39 +930,13 @@ FROM tab1
         "coalesce(col1, 0) as decimal(10, 6)",
     ],
 )
-def test_column_try_cast_with_func(func):
-    sql = f"""INSERT OVERWRITE TABLE tab2
+def test_column_try_cast_with_func(func: str):
+    sql = f"""INSERT INTO tab2
 SELECT try_cast({func}) AS col2
 FROM tab1"""
     assert_column_lineage_equal(
         sql,
         [
-            (
-                ColumnQualifierTuple("col1", "tab1"),
-                ColumnQualifierTuple("col2", "tab2"),
-            ),
-        ],
-    )
-
-
-def test_column_with_ctas_and_func():
-    sql = """CREATE TABLE tab2 AS
-SELECT
-  coalesce(col1, 0) AS col1,
-  IF(
-    col1 IS NOT NULL,
-    1,
-    NULL
-  ) AS col2
-FROM
-  tab1"""
-    assert_column_lineage_equal(
-        sql,
-        [
-            (
-                ColumnQualifierTuple("col1", "tab1"),
-                ColumnQualifierTuple("col1", "tab2"),
-            ),
             (
                 ColumnQualifierTuple("col1", "tab1"),
                 ColumnQualifierTuple("col2", "tab2"),

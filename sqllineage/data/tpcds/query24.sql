@@ -35,7 +35,7 @@ with ssales as
                  , i_manager_id
                  , i_units
                  , i_size)
-insert overwrite table query24
+insert into query24
 select c_last_name
      , c_first_name
      , s_store_name

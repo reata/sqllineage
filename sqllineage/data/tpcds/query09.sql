@@ -1,4 +1,4 @@
-insert overwrite table query09
+insert into query09
 select case
            when (select count(*)
                  from store_sales

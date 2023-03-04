@@ -1,4 +1,4 @@
-insert overwrite table query45
+insert into query45
 select ca_zip, ca_city, sum(ws_sales_price)
 from web_sales,
      customer,

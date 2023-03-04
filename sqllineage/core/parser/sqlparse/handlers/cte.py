@@ -1,8 +1,8 @@
 from sqlparse.sql import Function, Identifier, IdentifierList, Token
 
-from sqllineage.core.handlers.base import NextTokenBaseHandler
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import SubQuery
+from sqllineage.core.parser.sqlparse.handlers.base import NextTokenBaseHandler
+from sqllineage.core.parser.sqlparse.models import SqlParseSubQuery
 
 
 class CTEHandler(NextTokenBaseHandler):
@@ -30,4 +30,4 @@ class CTEHandler(NextTokenBaseHandler):
             sublist = list(token.get_sublists())
             if sublist:
                 # CTE: tbl AS (SELECT 1), tbl is alias and (SELECT 1) is subquery Parenthesis
-                holder.add_cte(SubQuery.of(sublist[0], token.get_real_name()))
+                holder.add_cte(SqlParseSubQuery.of(sublist[0], token.get_real_name()))

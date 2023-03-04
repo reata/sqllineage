@@ -1,4 +1,4 @@
-insert overwrite table query70
+insert into query70
 select sum(ss_net_profit) as total_sum
      , s_state
      , s_county

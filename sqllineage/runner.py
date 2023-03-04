@@ -1,16 +1,15 @@
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
-import sqlparse
-from sqlparse.sql import Statement
-
-from sqllineage.core import LineageAnalyzer
+from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.holders import SQLLineageHolder
 from sqllineage.core.models import Column, Table
+from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
+from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.utils.constant import LineageLevel
-
+from sqllineage.utils.helpers import split, trim_comment
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +32,10 @@ class LineageRunner(object):
     def __init__(
         self,
         sql: str,
-        encoding: str = None,
+        dialect: str = "ansi",
+        encoding: Optional[str] = None,
         verbose: bool = False,
-        draw_options: Dict[str, str] = None,
+        draw_options: Optional[Dict[str, str]] = None,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -49,14 +49,15 @@ class LineageRunner(object):
         self._verbose = verbose
         self._draw_options = draw_options if draw_options else {}
         self._evaluated = False
-        self._stmt: List[Statement] = []
+        self._stmt: List[str] = []
+        self._dialect = dialect
 
     @lazy_method
     def __str__(self):
         """
         print out the Lineage Summary.
         """
-        statements = self.statements(strip_comments=True)
+        statements = self.statements()
         source_tables = "\n    ".join(str(t) for t in self.source_tables)
         target_tables = "\n    ".join(str(t) for t in self.target_tables)
         combined = f"""Statements(#): {len(statements)}
@@ -94,7 +95,7 @@ Target Tables:
         else:
             return to_cytoscape(self._sql_holder.table_lineage_graph)
 
-    def draw(self) -> None:
+    def draw(self, dialect: str) -> None:
         """
         to draw the lineage directed graph
         """
@@ -102,23 +103,15 @@ Target Tables:
         if draw_options.get("f") is None:
             draw_options.pop("f", None)
             draw_options["e"] = self._sql
+            draw_options["dialect"] = dialect
         return draw_lineage_graph(**draw_options)
 
     @lazy_method
-    def statements(self, **kwargs) -> List[str]:
+    def statements(self) -> List[str]:
         """
-        a list of statements.
-
-        :param kwargs: the key arguments that will be passed to `sqlparse.format`
+        a list of SQL statements.
         """
-        return [sqlparse.format(s.value, **kwargs) for s in self.statements_parsed]
-
-    @lazy_property
-    def statements_parsed(self) -> List[Statement]:
-        """
-        a list of :class:`sqlparse.sql.Statement`
-        """
-        return self._stmt
+        return [trim_comment(s) for s in self._stmt]
 
     @lazy_property
     def source_tables(self) -> List[Table]:
@@ -166,16 +159,12 @@ Target Tables:
         print(str(self))
 
     def _eval(self):
-        self._stmt = [
-            s
-            for s in sqlparse.parse(
-                # first apply sqlparser formatting just to get rid of comments, which cause
-                # inconsistencies in parsing output
-                sqlparse.format(self._sql.strip(), self._encoding, strip_comments=True),
-                self._encoding,
-            )
-            if s.token_first(skip_cm=True)
-        ]
-        self._stmt_holders = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
+        self._stmt = split(self._sql.strip())
+        analyzer = (
+            SqlParseLineageAnalyzer()
+            if self._dialect == SQLPARSE_DIALECT
+            else SqlFluffLineageAnalyzer(self._dialect)
+        )
+        self._stmt_holders = [analyzer.analyze(stmt) for stmt in self._stmt]
         self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
         self._evaluated = True

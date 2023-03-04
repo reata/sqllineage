@@ -1,4 +1,4 @@
-insert overwrite table query28
+insert into query28
 select *
 from (select avg(ss_list_price)            B1_LP
            , count(ss_list_price)          B1_CNT

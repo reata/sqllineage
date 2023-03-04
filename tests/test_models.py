@@ -9,7 +9,7 @@ def test_repr_dummy():
     assert repr(Schema())
     assert repr(Table(""))
     assert repr(Table("a.b.c"))
-    assert repr(SubQuery(Parenthesis(), ""))
+    assert repr(SubQuery(Parenthesis(), Parenthesis().value, ""))
     assert repr(Column("a.b"))
     assert repr(Path(""))
     with pytest.raises(SQLLineageException):
@@ -23,3 +23,12 @@ def test_hash_eq():
     assert len({Schema("a"), Schema("a")}) == 1
     assert Table("a") == Table("a")
     assert len({Table("a"), Table("a")}) == 1
+
+
+def test_of_dummy():
+    with pytest.raises(NotImplementedError):
+        Column.of("")
+    with pytest.raises(NotImplementedError):
+        Table.of("")
+    with pytest.raises(NotImplementedError):
+        SubQuery.of("", None)

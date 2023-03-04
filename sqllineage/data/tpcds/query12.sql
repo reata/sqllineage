@@ -1,4 +1,4 @@
-insert overwrite table query12
+insert into query12
 select i_item_id
      , i_item_desc
      , i_category

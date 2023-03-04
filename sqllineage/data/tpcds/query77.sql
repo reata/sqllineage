@@ -69,7 +69,7 @@ with ss as
               and date_add(cast('2000-08-23' as date), 30)
             and wr_web_page_sk = wp_web_page_sk
           group by wp_web_page_sk)
-insert overwrite table query77
+insert into query77
 select channel
      , id
      , sum(sales)   as sales
