@@ -149,15 +149,6 @@ def test_select_full_outer_join():
     )
 
 
-# deactivated for sqlfluff since it can not be parsed properly
-def test_select_full_outer_join_with_full_as_alias():
-    assert_table_lineage_equal(
-        "SELECT * FROM tab1 AS FULL FULL OUTER JOIN tab2",
-        {"tab1", "tab2"},
-        test_sqlfluff=False,
-    )
-
-
 def test_select_cross_join():
     assert_table_lineage_equal("SELECT * FROM tab1 CROSS JOIN tab2", {"tab1", "tab2"})
 

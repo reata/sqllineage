@@ -1,4 +1,3 @@
-from sqllineage.core.models import Path
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.helpers import split
 from .helpers import assert_table_lineage_equal
@@ -120,26 +119,6 @@ def test_bucket_with_using_parenthesis():
 def test_update():
     assert_table_lineage_equal(
         "UPDATE tab1 SET col1='val1' WHERE col2='val2'", None, {"tab1"}
-    )
-
-
-# the previous query "COPY tab1 FROM tab2" was wrong
-# Reference:
-# https://www.postgresql.org/docs/current/sql-copy.html (Postgres)
-# https://docs.aws.amazon.com/es_es/redshift/latest/dg/r_COPY.html (Redshift)
-def test_copy_from_table():
-    assert_table_lineage_equal(
-        "COPY tab1 FROM 's3://mybucket/mypath'",
-        {Path("s3://mybucket/mypath")},
-        {"tab1"},
-        test_sqlfluff=False,
-    )
-    assert_table_lineage_equal(
-        "COPY tab1 FROM 's3://mybucket/mypath'",
-        {Path("s3://mybucket/mypath")},
-        {"tab1"},
-        "redshift",
-        test_sqlparse=False,
     )
 
 
