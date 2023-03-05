@@ -72,14 +72,14 @@ setup(
     entry_points={"console_scripts": ["sqllineage = sqllineage.cli:main"]},
     extras_require={
         "ci": [
-            "bandit==1.7.1",
+            "bandit",
             "black",
             "flake8",
             "flake8-blind-except",
             "flake8-builtins",
             "flake8-import-order",
             "flake8-logging-format",
-            "mypy==0.971",
+            "mypy",
             "pytest",
             "pytest-cov",
             "tox",
