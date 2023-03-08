@@ -32,7 +32,7 @@ class LineageRunner(object):
     def __init__(
         self,
         sql: str,
-        dialect: str = "ansi",
+        dialect: str = SQLPARSE_DIALECT,
         encoding: Optional[str] = None,
         verbose: bool = False,
         draw_options: Optional[Dict[str, str]] = None,

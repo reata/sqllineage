@@ -1,8 +1,8 @@
 import os
 
 
-NAME = "sqllineage"
-VERSION = "1.3.7"
+NAME = "openmetadata-sqllineage"
+VERSION = "1.0.2"
 DEFAULT_LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
