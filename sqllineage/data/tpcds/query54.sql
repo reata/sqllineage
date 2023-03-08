@@ -49,7 +49,7 @@ with my_customers as (
     (select cast((revenue / 50) as int) as segment
      from my_revenue
     )
-insert overwrite table query54
+insert into query54
 select segment, count(*) as num_customers, segment * 50 as segment_base
 from segments
 group by segment

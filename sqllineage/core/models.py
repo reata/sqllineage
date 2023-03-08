@@ -1,35 +1,19 @@
 import warnings
-from typing import Dict, List, Optional, Set, Union
-
-from sqlparse import tokens as T
-from sqlparse.engine import grouping
-from sqlparse.keywords import is_keyword
-from sqlparse.sql import (
-    Case,
-    Comparison,
-    Function,
-    Identifier,
-    IdentifierList,
-    Operation,
-    Parenthesis,
-    Token,
-    TokenList,
-)
-from sqlparse.utils import imt
+from typing import Any, Dict, List, Optional, Set, Union
 
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.utils.entities import ColumnExpression, ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
-from sqllineage.utils.sqlparse import get_parameters, is_subquery
 
 
 class Schema:
+    """
+    Data Class for Schema
+    """
+
     unknown = "<default>"
 
     def __init__(self, name: str = unknown):
         """
-        Data Class for Schema
-
         :param name: schema name
         """
         self.raw_name = escape_identifier_name(name)
@@ -41,7 +25,7 @@ class Schema:
         return "Schema: " + str(self)
 
     def __eq__(self, other):
-        return type(self) is type(other) and str(self) == str(other)
+        return isinstance(other, Schema) and str(self) == str(other)
 
     def __hash__(self):
         return hash(str(self))
@@ -51,10 +35,12 @@ class Schema:
 
 
 class Table:
+    """
+    Data Class for Table
+    """
+
     def __init__(self, name: str, schema: Schema = Schema(), **kwargs):
         """
-        Data Class for Table
-
         :param name: table name
         :param schema: schema as defined by :class:`Schema`
         """
@@ -79,40 +65,25 @@ class Table:
         return "Table: " + str(self)
 
     def __eq__(self, other):
-        return type(self) is type(other) and str(self) == str(other)
+        return isinstance(other, Table) and str(self) == str(other)
 
     def __hash__(self):
         return hash(str(self))
 
     @staticmethod
-    def of(identifier: Identifier) -> "Table":
-        # rewrite identifier's get_real_name method, by matching the last dot instead of the first dot, so that the
-        # real name for a.b.c will be c instead of b
-        dot_idx, _ = identifier._token_matching(
-            lambda token: imt(token, m=(T.Punctuation, ".")),
-            start=len(identifier.tokens),
-            reverse=True,
-        )
-        real_name = identifier._get_first_name(dot_idx, real_name=True)
-        # rewrite identifier's get_parent_name accordingly
-        parent_name = (
-            "".join(
-                [
-                    escape_identifier_name(token.value)
-                    for token in identifier.tokens[:dot_idx]
-                ]
-            )
-            if dot_idx
-            else None
-        )
-        schema = Schema(parent_name) if parent_name is not None else Schema()
-        alias = identifier.get_alias()
-        kwargs = {"alias": alias} if alias else {}
-        return Table(real_name, schema, **kwargs)
+    def of(table: Any) -> "Table":
+        raise NotImplementedError
 
 
 class Path:
+    """
+    Data Class for Path
+    """
+
     def __init__(self, uri: str):
+        """
+        :param uri: uri of the path
+        """
         self.uri = escape_identifier_name(uri)
 
     def __str__(self):
@@ -122,26 +93,24 @@ class Path:
         return "Path: " + str(self)
 
     def __eq__(self, other):
-        return type(self) is type(other) and self.uri == other.uri
+        return isinstance(other, Path) and self.uri == other.uri
 
     def __hash__(self):
         return hash(self.uri)
 
 
-class Partition:
-    pass
-
-
 class SubQuery:
-    def __init__(self, token: Parenthesis, alias: Optional[str]):
-        """
-        Data Class for SubQuery
+    """
+    Data Class for SubQuery
+    """
 
-        :param token: subquery token
-        :param alias: subquery name
+    def __init__(self, subquery: Any, subquery_raw: str, alias: Optional[str]):
         """
-        self.token = token
-        self._query = token.value
+        :param subquery: subquery
+        :param alias: subquery alias name
+        """
+        self.query = subquery
+        self.query_raw = subquery_raw
         self.alias = alias if alias is not None else f"subquery_{hash(self)}"
 
     def __str__(self):
@@ -151,29 +120,30 @@ class SubQuery:
         return "SubQuery: " + str(self)
 
     def __eq__(self, other):
-        return type(self) is type(other) and self._query == other._query
+        return isinstance(other, SubQuery) and self.query_raw == other.query_raw
 
     def __hash__(self):
-        return hash(self._query)
+        return hash(self.query_raw)
 
     @staticmethod
-    def of(parenthesis: Parenthesis, alias: Optional[str]) -> "SubQuery":
-        return SubQuery(parenthesis, alias)
+    def of(subquery: Any, alias: Optional[str]) -> "SubQuery":
+        raise NotImplementedError
 
 
 class Column:
+    """
+    Data Class for Column
+    """
+
     def __init__(self, name: str, **kwargs):
         """
-        Data Class for Column
-
         :param name: column name
         :param parent: :class:`Table` or :class:`SubQuery`
         :param kwargs:
         """
-        self._parent: Set[Union[Table, SubQuery]] = set()
+        self._parent: Set[Union[Path, Table, SubQuery]] = set()
         self.raw_name = escape_identifier_name(name)
         self.source_columns = kwargs.pop("source_columns", ((self.raw_name, None),))
-        self.expression = kwargs.pop("expression", ColumnExpression(True, None))
 
     def __str__(self):
         return (
@@ -186,165 +156,47 @@ class Column:
         return "Column: " + str(self)
 
     def __eq__(self, other):
-        return type(self) is type(other) and str(self) == str(other)
+        return isinstance(other, Column) and str(self) == str(other)
 
     def __hash__(self):
         return hash(str(self))
 
     @property
-    def parent(self) -> Optional[Union[Table, SubQuery]]:
+    def parent(self) -> Optional[Union[Path, Table, SubQuery]]:
         return list(self._parent)[0] if len(self._parent) == 1 else None
 
     @parent.setter
-    def parent(self, value: Union[Table, SubQuery]):
+    def parent(self, value: Union[Path, Table, SubQuery]):
         self._parent.add(value)
 
     @property
-    def parent_candidates(self) -> List[Union[Table, SubQuery]]:
+    def parent_candidates(self) -> List[Union[Path, Table, SubQuery]]:
         return sorted(self._parent, key=lambda p: str(p))
 
     @staticmethod
-    def of(token: Token):
-        if isinstance(token, Identifier):
-            alias = token.get_alias()
-            if alias:
-                # handle column alias, including alias for column name or Case, Function
-                kw_idx, kw = token.token_next_by(m=(T.Keyword, "AS"))
-                if kw_idx is None:
-                    # alias without AS
-                    kw_idx, _ = token.token_next_by(i=Identifier)
-                if kw_idx is None:
-                    # invalid syntax: col AS, without alias
-                    return Column(alias)
-                else:
-                    idx, _ = token.token_prev(kw_idx, skip_cm=True)
-                    expr = grouping.group(TokenList(token.tokens[: idx + 1]))[0]
-                    source_columns = Column._extract_source_columns(expr)
-                    return Column(
-                        alias,
-                        source_columns=source_columns,
-                        expression=ColumnExpression(False, expr),
-                    )
-            else:
-                # select column name directly without alias
-                return Column(
-                    token.get_real_name(),
-                    source_columns=((token.get_real_name(), token.get_parent_name()),),
-                    expression=ColumnExpression(True, None),
-                )
-        else:
-            # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
-            source_columns = Column._extract_source_columns(token)
-            return Column(
-                token.value,
-                source_columns=source_columns,
-                expression=ColumnExpression(False, token),
-            )
+    def of(column: Any, **kwargs) -> "Column":
+        """
+        Build a 'Column' object
+        :param column: column segment or token
+        :return:
+        """
+        raise NotImplementedError
 
-    @staticmethod
-    def _extract_source_columns(token: Token) -> List[ColumnQualifierTuple]:
-        if isinstance(token, Function):
-            # max(col1) AS col2
-            source_columns = [
-                cqt
-                for tk in get_parameters(token)
-                for cqt in Column._extract_source_columns(tk)
-            ]
-        elif isinstance(token, Parenthesis):
-            if is_subquery(token):
-                # This is to avoid circular import
-                from sqllineage.runner import LineageRunner
-
-                # (SELECT avg(col1) AS col1 FROM tab3), used after WHEN or THEN in CASE clause
-                src_cols = [
-                    lineage[0]
-                    for lineage in LineageRunner(token.value).get_column_lineage(
-                        exclude_subquery=False
-                    )
-                ]
-                source_columns = [
-                    ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
-                    for src_col in src_cols
-                ]
-            else:
-                # (col1 + col2) AS col3
-                source_columns = [
-                    cqt
-                    for tk in token.tokens[1:-1]
-                    for cqt in Column._extract_source_columns(tk)
-                ]
-        elif isinstance(token, Operation):
-            # col1 + col2 AS col3
-            source_columns = [
-                cqt
-                for tk in token.get_sublists()
-                for cqt in Column._extract_source_columns(tk)
-            ]
-        elif isinstance(token, Case):
-            # CASE WHEN col1 = 2 THEN "V1" WHEN col1 = "2" THEN "V2" END AS col2
-            source_columns = [
-                cqt
-                for tk in token.get_sublists()
-                for cqt in Column._extract_source_columns(tk)
-            ]
-        elif isinstance(token, Comparison):
-            source_columns = Column._extract_source_columns(
-                token.left
-            ) + Column._extract_source_columns(token.right)
-        elif isinstance(token, IdentifierList):
-            source_columns = [
-                cqt
-                for tk in token.get_sublists()
-                for cqt in Column._extract_source_columns(tk)
-            ]
-        elif isinstance(token, Identifier):
-            real_name = token.get_real_name()
-            # ignore function dtypes that don't need to check for extract column
-            FUNC_DTYPE = ["decimal", "numeric"]
-            has_function = any(
-                isinstance(t, Function) and t.get_real_name() not in FUNC_DTYPE
-                for t in token.tokens
-            )
-            is_kw = is_keyword(real_name) if real_name is not None else False
-            if (
-                # real name is None: col1=1 AS int
-                real_name is None
-                # real_name is decimal: case when col1 > 0 then col2 else col3 end as decimal(18, 0)
-                or (real_name in FUNC_DTYPE and isinstance(token.tokens[-1], Function))
-                or (is_kw and has_function)
-            ):
-                source_columns = [
-                    cqt
-                    for tk in token.get_sublists()
-                    for cqt in Column._extract_source_columns(tk)
-                ]
-            else:
-                # col1 AS col2
-                source_columns = [
-                    ColumnQualifierTuple(token.get_real_name(), token.get_parent_name())
-                ]
-        else:
-            if token.ttype == T.Wildcard:
-                # select *
-                source_columns = [ColumnQualifierTuple(token.value, None)]
-            else:
-                # typically, T.Literal here
-                source_columns = []
-        return source_columns
-
-    def to_source_columns(self, alias_mapping: Dict[str, Union[Table, SubQuery]]):
+    def to_source_columns(self, alias_mapping: Dict[str, Union[Path, Table, SubQuery]]):
         """
         Best guess for source table given all the possible table/subquery and their alias.
         """
 
-        def _to_src_col(name: str, parent: Optional[Union[Table, SubQuery]] = None):
+        def _to_src_col(
+            name: str, parent: Optional[Union[Path, Table, SubQuery]] = None
+        ):
             col = Column(name)
             if parent:
                 col.parent = parent
             return col
 
         source_columns = set()
-        for (src_col, qualifier) in self.source_columns:
+        for src_col, qualifier in self.source_columns:
             if qualifier is None:
                 if src_col == "*":
                     # select *
@@ -366,3 +218,28 @@ class Column:
                 else:
                     source_columns.add(_to_src_col(src_col, Table(qualifier)))
         return source_columns
+
+
+class AnalyzerContext:
+    """
+    Data class to hold the analyzer context
+    """
+
+    subquery: Optional[SubQuery]
+    prev_cte: Optional[Set[SubQuery]]
+    prev_write: Optional[Set[Union[SubQuery, Table]]]
+
+    def __init__(
+        self,
+        subquery: Optional[SubQuery] = None,
+        prev_cte: Optional[Set[SubQuery]] = None,
+        prev_write: Optional[Set[Union[SubQuery, Table]]] = None,
+    ):
+        """
+        :param subquery: subquery
+        :param prev_cte: previous CTE queries
+        :param prev_write: previous written tables
+        """
+        self.subquery = subquery
+        self.prev_cte = prev_cte
+        self.prev_write = prev_write

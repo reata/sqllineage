@@ -1,4 +1,4 @@
-insert overwrite table query72
+insert into query72
 select i_item_desc
      , w_warehouse_name
      , d1.d_week_seq

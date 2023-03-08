@@ -84,7 +84,7 @@ with cs_ui as
                  , d2.d_year
                  , d3.d_year
          )
-insert overwrite table query64
+insert into query64
 select cs1.product_name
      , cs1.store_name
      , cs1.store_zip

@@ -1,4 +1,4 @@
-insert overwrite table query15
+insert into query15
 select ca_zip
      , sum(cs_sales_price)
 from catalog_sales

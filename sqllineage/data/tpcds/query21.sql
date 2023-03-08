@@ -1,4 +1,4 @@
-insert overwrite table query21
+insert into query21
 select *
 from (select w_warehouse_name
            , i_item_id

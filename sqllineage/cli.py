@@ -68,13 +68,7 @@ def main(args=None) -> None:
         help="the dialect used to compute the lineage",
         type=str,
         default=DEFAULT_DIALECT,
-        metavar="ansi, mysql, snowflake, redshift, hive, etc. Chec supported dialects by sqlfluff.",
-    )
-    parser.add_argument(
-        "-s",
-        "--sqlfluff",
-        help="use sqlfluff as the parser",
-        action="store_false",
+        metavar="ansi, mysql, snowflake, redshift, hive, etc. Check supported dialects by sqlfluff.",
     )
     args = parser.parse_args(args)
     if args.e and args.f:
@@ -92,10 +86,9 @@ def main(args=None) -> None:
                 "f": args.f if args.f else None,
             },
             dialect=args.dialect,
-            use_sqlparse=args.sqlfluff,
         )
         if args.graph_visualization:
-            runner.draw(args.dialect, args.sqlfluff)
+            runner.draw(args.dialect)
         elif args.level == LineageLevel.COLUMN:
             runner.print_column_lineage()
         else:

@@ -1,4 +1,4 @@
-insert overwrite table query61
+insert into query61
 select promotions, total, cast(promotions as decimal(15, 4)) / cast(total as decimal(15, 4)) * 100
 from (select sum(ss_ext_sales_price) promotions
       from store_sales

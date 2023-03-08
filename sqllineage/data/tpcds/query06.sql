@@ -1,4 +1,4 @@
-insert overwrite table query06
+insert into query06
 select a.ca_state state, count(*) cnt
 from customer_address a
    , customer c

@@ -1,4 +1,4 @@
-insert overwrite table query93
+insert into query93
 select ss_customer_sk
      , sum(act_sales) sumsales
 from (select ss_item_sk

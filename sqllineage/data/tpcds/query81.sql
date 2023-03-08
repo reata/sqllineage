@@ -11,7 +11,7 @@ with customer_total_return as
             and cr_returning_addr_sk = ca_address_sk
           group by cr_returning_customer_sk
                  , ca_state)
-insert overwrite table query81
+insert into query81
 select c_customer_id
      , c_salutation
      , c_first_name

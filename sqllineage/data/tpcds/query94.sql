@@ -1,4 +1,4 @@
-insert overwrite table query94
+insert into query94
 select count(distinct ws_order_number) as order_count
      , sum(ws_ext_ship_cost)           as total_shipping_cost
      , sum(ws_net_profit)              as total_net_profit

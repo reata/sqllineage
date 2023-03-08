@@ -1,4 +1,4 @@
-insert overwrite table query46
+insert into query46
 select c_last_name
      , c_first_name
      , ca_city

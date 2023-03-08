@@ -7,7 +7,8 @@ import {
   setContentComposed,
   setDagLevel,
   setEditable,
-  setFile
+  setFile,
+  setDialect
 } from "./editorSlice";
 import MonacoEditor from "react-monaco-editor";
 import {Loading} from "../widget/Loading";
@@ -19,6 +20,7 @@ const useQueryParam = () => {
 };
 
 export function Editor(props) {
+  const { height, width, dialect } = props;
   const dispatch = useDispatch();
   const editorState = useSelector(selectEditor);
   const queryParam = useQueryParam();
@@ -31,21 +33,20 @@ export function Editor(props) {
       history.push("/");
     } else {
       let file = queryParam.get("f");
-      if (editorState.file !== file) {
+      if (editorState.file !== file || editorState.dialect !== dialect) {
         dispatch(setFile(file));
+        dispatch(setDialect(dialect));
         dispatch(setDagLevel("table"));
         if (file === null) {
           dispatch(setEditable(true));
-          dispatch(fetchDAG({"e": editorState.contentComposed}))
+          dispatch(fetchDAG({"e": editorState.contentComposed, "dialect": dialect}))
         } else {
           dispatch(setEditable(false));
           dispatch(fetchContent({"f": file}));
-          dispatch(fetchDAG({"f": file}));
+          dispatch(fetchDAG({"f": file, "dialect": dialect}));
         }
       }
     }
-
-
   })
 
   const handleEditorDidMount = (editor, monaco) => {
@@ -53,7 +54,7 @@ export function Editor(props) {
     editor.onDidBlurEditorText(() => {
       if (!editor.getOption(readOnly)) {
         dispatch(setContentComposed(editor.getValue()));
-        dispatch(fetchDAG({"e": editor.getValue()}));
+        dispatch(fetchDAG({"e": editor.getValue(), "dialect": dialect}));
       }
     })
     editor.onKeyDown(() => {
@@ -66,9 +67,9 @@ export function Editor(props) {
   }
 
   if (editorState.editorStatus === "loading") {
-    return <Loading minHeight={props.height}/>
+    return <Loading minHeight={height}/>
   } else if (editorState.editorStatus === "failed") {
-    return <LoadError minHeight={props.height} message={editorState.editorError}/>
+    return <LoadError minHeight={height} message={editorState.editorError}/>
   } else {
     const options = {
       minimap: {enabled: false},
@@ -77,8 +78,8 @@ export function Editor(props) {
       automaticLayout: true
     }
     return <MonacoEditor
-      width={props.width}
-      height={props.height}
+      width={width}
+      height={height}
       language="sql"
       value={editorState.editable ? editorState.contentComposed : editorState.content}
       options={options}

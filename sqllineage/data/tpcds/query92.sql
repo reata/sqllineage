@@ -1,4 +1,4 @@
-insert overwrite table query92
+insert into query92
 select sum(ws_ext_discount_amt) as Excess_Discount_Amount
 from web_sales
    , item

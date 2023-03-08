@@ -1,15 +1,32 @@
 import React, {useMemo} from 'react';
-import {Box, Drawer, FormControl, FormControlLabel, Grid, Paper, Radio, RadioGroup, Tooltip} from "@material-ui/core";
+import {
+  AppBar,
+  Box,
+  Button,
+  Drawer,
+  Fade,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  ListSubheader,
+  Menu,
+  MenuItem,
+  Paper,
+  Radio,
+  RadioGroup,
+  Toolbar,
+  Tooltip,
+  Typography
+} from "@material-ui/core";
 import {DAG} from "./features/editor/DAG";
 import {Editor} from "./features/editor/Editor";
 import {makeStyles} from "@material-ui/core/styles";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
-import IconButton from "@material-ui/core/IconButton";
-import MenuIcon from "@material-ui/icons/Menu";
-import CreateIcon from "@material-ui/icons/Create";
-import Typography from "@material-ui/core/Typography";
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
+import CreateIcon from "@material-ui/icons/Create";
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import IconButton from "@material-ui/core/IconButton";
+import LanguageIcon from '@material-ui/icons/Language';
+import MenuIcon from "@material-ui/icons/Menu";
 import clsx from "clsx";
 import {Directory} from "./features/directory/Directory";
 import {BrowserRouter as Router, Link} from "react-router-dom";
@@ -55,25 +72,60 @@ const useStyles = makeStyles((theme) => ({
     left: ({drawerWidth}) => drawerWidth + "vw",
     backgroundColor: "transparent",
     zIndex: 999
+  },
+  dialect: {
+    margin: theme.spacing(0, 0.5, 0, 1),
+    display: 'none',
+    [theme.breakpoints.up('md')]: {
+      display: 'block',
+    },
   }
 }));
 
 
 let isResizing = null;
 
+const dialects = {
+  "sqlparse": [
+    "non-validating"
+  ],
+  "sqlfluff": [
+    "ansi",
+    "athena",
+    "bigquery",
+    "clickhouse",
+    "db2",
+    "exasol",
+    "hive",
+    "materialize",
+    "mysql",
+    "oracle",
+    "postgres",
+    "redshift",
+    "snowflake",
+    "soql",
+    "sparksql",
+    "sqlite",
+    "teradata",
+    "tsql"
+  ]
+}
+
 
 export default function App() {
   const editorState = useSelector(selectEditor);
-  const [selectedValue, setSelectedValue] = React.useState('dag');
-  const [open, setOpen] = React.useState(true);
+  const [viewSelected, setViewSelected] = React.useState('dag');
+  const [drawerOpen, setDrawerOpen] = React.useState(true);
   const [drawerWidth, setDrawerWidth] = React.useState(18);
+  const [dialectMenuAnchor, setDialectMenuAnchor] = React.useState(null);
+  const [dialectSelected, setDialectSelected] = React.useState("ansi");
   const classes = useStyles({drawerWidth: drawerWidth});
 
   const height = "90vh";
   const width = useMemo(() => {
     let full_width = 100;
-    return (open ? full_width - drawerWidth : full_width) + "vw"
-  }, [open, drawerWidth])
+    return (drawerOpen ? full_width - drawerWidth : full_width) + "vw"
+  }, [drawerOpen, drawerWidth])
 
   const handleMouseDown = e => {
     e.stopPropagation();
@@ -103,6 +155,14 @@ export default function App() {
     document.removeEventListener("mouseup", handleMouseUp);
   }
 
+  const handleDialectMenuClose = (e) => {
+    let dialect = e.currentTarget.outerText;
+    if (dialect !== "") {
+      setDialectSelected(dialect)
+    }
+    setDialectMenuAnchor(null);
+  }
+
   return (
     <Router basename={process.env.PUBLIC_URL}>
       <div>
@@ -115,14 +175,51 @@ export default function App() {
                 color="inherit"
                 aria-label="menu"
                 onClick={() => {
-                  setOpen(!open)
+                  setDrawerOpen(!drawerOpen)
                 }}
               >
-                {open ? <ChevronLeftIcon/> : <MenuIcon/>}
+                {drawerOpen ? <ChevronLeftIcon/> : <MenuIcon/>}
               </IconButton>
               <Typography variant="h6" className={classes.title}>
                 SQLLineage
               </Typography>
+
+              <Tooltip title="Change SQL dialect" arrow>
+                <Button
+                  color="inherit"
+                  onClick={(event) => {
+                    setDialectMenuAnchor(event.currentTarget)
+                  }}
+                >
+                  <LanguageIcon/>
+                  <span className={classes.dialect}>{dialectSelected}</span>
+                  <ExpandMoreIcon fontSize="small"/>
+                </Button>
+              </Tooltip>
+              <Menu
+                id="dialect-menu"
+                anchorEl={dialectMenuAnchor}
+                open={Boolean(dialectMenuAnchor)}
+                onClose={handleDialectMenuClose}
+                TransitionComponent={Fade}
+              >
+                {Object.entries(dialects).map((entry) => (
+                  <div>
+                    <ListSubheader>{entry[0]}</ListSubheader>
+                    {entry[1].map((dialect) => (
+                        <MenuItem
+                          selected={dialect === dialectSelected}
+                          value={dialect}
+                          onClick={handleDialectMenuClose}
+                        >
+                          {dialect}
+                        </MenuItem>
+                      )
+                    )}
+                  </div>
+                ))}
+              </Menu>
+
               {editorState.editable ?
                 <Tooltip title="Visualize Lineage By Filling In Your Own SQL" arrow>
                   <div>Composing Mode</div>
@@ -132,8 +229,8 @@ export default function App() {
                     <IconButton
                       color="inherit"
                       onClick={() => {
-                        setSelectedValue("script");
-                        setOpen(false);
+                        setViewSelected("script");
+                        setDrawerOpen(false);
                       }}
                     >
                       <CreateIcon/>
@@ -145,7 +242,7 @@ export default function App() {
           </AppBar>
           <Drawer
             variant="persistent"
-            open={open}
+            open={drawerOpen}
             classes={{
               paper: classes.drawerPaper,
             }}
@@ -158,27 +255,27 @@ export default function App() {
         <div
           id="dragger"
           onMouseDown={handleMouseDown}
-          className={clsx(classes.dragger, {[classes.hide]: !open})}
+          className={clsx(classes.dragger, {[classes.hide]: !drawerOpen})}
         />
         <main
-          className={clsx(classes.content, {[classes.contentShift]: open})}
+          className={clsx(classes.content, {[classes.contentShift]: drawerOpen})}
         >
           <Paper elevation="24" style={{height: height, width: width}}>
-            <Box className={selectedValue === "dag" ? "" : classes.hide}>
+            <Box className={viewSelected === "dag" ? "" : classes.hide}>
               <DAG height={height} width={width}/>
             </Box>
-            <Box className={selectedValue === "text" ? "" : classes.hide}>
+            <Box className={viewSelected === "text" ? "" : classes.hide}>
               <DAGDesc height={height} width={width}/>
             </Box>
-            <Box className={selectedValue === "script" ? "" : classes.hide}>
-              <Editor height={height} width={width}/>
+            <Box className={viewSelected === "script" ? "" : classes.hide}>
+              <Editor height={height} width={width} dialect={dialectSelected}/>
             </Box>
           </Paper>
           <Grid container justify="center">
             <FormControl component="fieldset">
               <RadioGroup row aria-label="position" name="position" defaultValue="dag"
-                          value={selectedValue}
-                          onChange={(event) => setSelectedValue(event.target.value)}>
+                          value={viewSelected}
+                          onChange={(event) => setViewSelected(event.target.value)}>
                 <FormControlLabel
                   value="dag"
                   control={<Radio color="primary"/>}

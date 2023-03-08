@@ -4,7 +4,7 @@ with ws_wh as
                web_sales ws2
           where ws1.ws_order_number = ws2.ws_order_number
             and ws1.ws_warehouse_sk <> ws2.ws_warehouse_sk)
-insert overwrite table query95
+insert into query95
 select count(distinct ws_order_number) as order_count
      , sum(ws_ext_ship_cost)           as total_shipping_cost
      , sum(ws_net_profit)              as total_net_profit

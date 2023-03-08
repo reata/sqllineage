@@ -1,4 +1,4 @@
-insert overwrite table query50
+insert into query50
 select s_store_name
      , s_company_id
      , s_street_number

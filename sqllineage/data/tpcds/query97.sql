@@ -16,7 +16,7 @@ with ssci as (
            and d_month_seq between 1200 and 1200 + 11
          group by cs_bill_customer_sk
                 , cs_item_sk)
-insert overwrite table query97
+insert into query97
 select sum(case when ssci.customer_sk is not null and csci.customer_sk is null then 1 else 0 end)     store_only
      , sum(case when ssci.customer_sk is null and csci.customer_sk is not null then 1 else 0 end)     catalog_only
      , sum(case when ssci.customer_sk is not null and csci.customer_sk is not null then 1 else 0 end) store_and_catalog

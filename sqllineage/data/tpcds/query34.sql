@@ -1,4 +1,4 @@
-insert overwrite table query34
+insert into query34
 select c_last_name
      , c_first_name
      , c_salutation

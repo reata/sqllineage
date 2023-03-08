@@ -1,6 +1,6 @@
 import logging
-import re
 from argparse import Namespace
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -30,27 +30,16 @@ def extract_sql_from_args(args: Namespace) -> str:
     return sql
 
 
-def clean_parentheses(stmt: str) -> str:
-    """
-      Clean redundant parentheses from a SQL statement e.g:
-        `SELECT col1 FROM (((((((SELECT col1 FROM tab1))))))) dt`
-      will be:
-        `SELECT col1 FROM (SELECT col1 FROM tab1) dt`
+def split(sql: str) -> List[str]:
+    # TODO: we need a parser independent split function
+    import sqlparse
 
-    :param stmt: a SQL str to be cleaned
-    """
-    redundant_parentheses = r"\(\(([^()]+)\)\)"
-    if re.findall(redundant_parentheses, stmt):
-        stmt = re.sub(redundant_parentheses, r"(\1)", stmt)
-        stmt = clean_parentheses(stmt)
-    return stmt
+    # sometimes sqlparse split out a statement that is comment only, we want to exclude that
+    return [s.value for s in sqlparse.parse(sql) if s.token_first(skip_cm=True)]
 
 
-def is_subquery_statement(stmt: str) -> bool:
-    parentheses_regex = r"^\(.*\)"
-    return bool(re.match(parentheses_regex, stmt))
+def trim_comment(sql: str) -> str:
+    # TODO: we need a parser independent trim_comment function
+    import sqlparse
 
-
-def remove_statement_parentheses(stmt: str) -> str:
-    parentheses_regex = r"^\((.*)\)"
-    return re.sub(parentheses_regex, r"\1", stmt)
+    return str(sqlparse.format(sql, strip_comments=True))

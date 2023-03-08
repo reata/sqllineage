@@ -1,4 +1,4 @@
-insert overwrite table query22
+insert into query22
 select i_product_name
      , i_brand
      , i_class

@@ -1,4 +1,4 @@
-insert overwrite table query40
+insert into query40
 select w_state
      , i_item_id
      , sum(case

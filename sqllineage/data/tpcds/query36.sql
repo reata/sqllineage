@@ -1,4 +1,4 @@
-insert overwrite table query36
+insert into query36
 select sum(ss_net_profit) / sum(ss_ext_sales_price)            as gross_margin
      , i_category
      , i_class

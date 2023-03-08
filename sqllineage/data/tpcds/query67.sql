@@ -1,4 +1,4 @@
-insert overwrite table query67
+insert into query67
 select *
 from (select i_category
            , i_class

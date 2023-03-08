@@ -1,4 +1,4 @@
-insert overwrite table query16
+insert into query16
 select count(distinct cs_order_number) as order_count
      , sum(cs_ext_ship_cost)           as total_shipping_cost
      , sum(cs_net_profit)              as total_net_profit

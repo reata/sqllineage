@@ -1,4 +1,4 @@
-insert overwrite table query10
+insert into query10
 select cd_gender,
        cd_marital_status,
        cd_education_status,

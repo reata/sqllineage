@@ -1,4 +1,4 @@
-insert overwrite table query27
+insert into query27
 select i_item_id,
        s_state,
        grouping(s_state)   g_state,

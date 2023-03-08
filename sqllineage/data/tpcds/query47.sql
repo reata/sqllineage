@@ -53,7 +53,7 @@ with v1 as (
            and v1.s_company_name = v1_lead.s_company_name
            and v1.rn = v1_lag.rn + 1
            and v1.rn = v1_lead.rn - 1)
-insert overwrite table query47
+insert into query47
 select *
 from v2
 where d_year = 1999
