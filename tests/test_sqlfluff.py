@@ -26,3 +26,25 @@ FROM tab2"""
         ],
         test_sqlparse=False,
     )
+
+
+def test_tsql_assignment_operator():
+    """
+    Assignment Operator is a Transact-SQL specific feature, used interchangeably with column alias
+    https://learn.microsoft.com/en-us/sql/t-sql/language-elements/assignment-operator-transact-sql?view=sql-server-ver15
+    """
+    sql = """INSERT INTO foo
+SELECT FirstColumnHeading = 'xyz',
+       SecondColumnHeading = ProductID
+FROM Production.Product"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("ProductID", "Production.Product"),
+                ColumnQualifierTuple("SecondColumnHeading", "foo"),
+            )
+        ],
+        test_sqlparse=False,
+        dialect="tsql",
+    )
