@@ -1,5 +1,5 @@
 from sqllineage.utils.entities import ColumnQualifierTuple
-from .helpers import assert_column_lineage_equal
+from .helpers import assert_column_lineage_equal, assert_table_lineage_equal
 
 
 def test_current_timestamp():
@@ -48,3 +48,16 @@ FROM Production.Product"""
         test_sqlparse=False,
         dialect="tsql",
     )
+
+
+def test_insert_into_qualified_table_with_parenthesized_query():
+    """
+    For sqlparse, it will work if:
+        1) table in unqualified
+    OR  2) query is not surrounded by parenthesis
+    With both in the game, it breaks.
+    """
+    sql = """INSERT INTO default.tab2
+    (SELECT *
+    FROM tab1)"""
+    assert_table_lineage_equal(sql, {"tab1"}, {"default.tab2"}, test_sqlparse=False)
