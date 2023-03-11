@@ -47,3 +47,14 @@ def test_select_from_generator(dialect: str):
 FROM table(generator()) v
 ORDER BY 1;"""
     assert_table_lineage_equal(sql, dialect=dialect)
+
+
+@pytest.mark.parametrize("dialect", ["postgres", "redshift", "tsql"])
+def test_select_into(dialect: str):
+    """
+    postgres: https://www.postgresql.org/docs/current/sql-selectinto.html
+    redshift: https://docs.aws.amazon.com/redshift/latest/dg/r_SELECT_INTO.html
+    tsql: https://learn.microsoft.com/en-us/sql/t-sql/queries/select-into-clause-transact-sql?view=sql-server-ver16
+    """
+    sql = "SELECT * INTO films_recent FROM films WHERE date_prod >= '2002-01-01'"
+    assert_table_lineage_equal(sql, {"films"}, {"films_recent"}, dialect=dialect)
