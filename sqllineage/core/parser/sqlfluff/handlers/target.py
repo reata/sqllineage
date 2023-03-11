@@ -63,8 +63,10 @@ class TargetHandler(ConditionalSegmentBaseHandler):
         :param segment: segment to be processed
         :return: True if it can be handled
         """
-        if self.indicator is True or (
-            segment.type == "keyword" and segment.raw_upper in self.TARGET_KEYWORDS
+        if (
+            self.indicator is True
+            or (segment.type == "keyword" and segment.raw_upper in self.TARGET_KEYWORDS)
+            or (segment.type in ("into_table_clause", "into_clause"))
         ):
             self.indicator = True
             self._init_tokens(segment)
@@ -91,6 +93,18 @@ class TargetHandler(ConditionalSegmentBaseHandler):
             else:
                 holder.add_write(Path(escape_identifier_name(segment.raw)))
             self._reset_tokens()
+
+        elif segment.type == "into_table_clause":
+            obj_ref = get_child(segment, "object_reference")
+            if obj_ref:
+                identifier = get_child(obj_ref, "identifier")
+                if identifier:
+                    holder.add_write(SqlFluffTable.of(identifier))
+
+        elif segment.type == "into_clause":
+            tbl_ref = find_table_identifier(segment)
+            if tbl_ref:
+                holder.add_write(SqlFluffTable.of(tbl_ref))
 
         elif segment.type == "from_expression":
             from_expression_element = get_child(segment, "from_expression_element")
