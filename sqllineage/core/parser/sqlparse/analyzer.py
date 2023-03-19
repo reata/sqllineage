@@ -4,22 +4,26 @@ from typing import List, Union
 
 import sqlparse
 from sqlparse.sql import (
+    Comparison,
     Function,
     Identifier,
     IdentifierList,
+    Parenthesis,
     Statement,
     TokenList,
+    Values,
     Where,
 )
 
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext, SubQuery
+from sqllineage.core.models import AnalyzerContext, Column, SubQuery
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
 )
 from sqllineage.core.parser.sqlparse.models import SqlParseSubQuery, SqlParseTable
+from sqllineage.core.parser.sqlparse.utils.holder import get_dataset_from_identifier
 from sqllineage.core.parser.sqlparse.utils.sqlparse import (
     get_subquery_parentheses,
     is_subquery,
@@ -50,6 +54,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             or stmt.token_first(skip_cm=True).normalized == "RENAME"
         ):
             holder = self._extract_from_ddl_alter(stmt)
+        elif stmt.get_type() == "MERGE":
+            holder = self._extract_from_dml_merge(stmt)
         else:
             # DML parsing logic also applies to CREATE DDL
             holder = StatementLineageHolder.of(
@@ -89,6 +95,81 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         if any(k.normalized == "EXCHANGE" for k in keywords) and len(tables) == 2:
             holder.add_write(tables[0])
             holder.add_read(tables[1])
+        return holder
+
+    @classmethod
+    def _extract_from_dml_merge(cls, stmt: Statement) -> StatementLineageHolder:
+        holder = StatementLineageHolder()
+        src_flag = tgt_flag = update_flag = insert_flag = False
+        insert_columns = []
+        direct_source = None
+        for token in stmt.tokens:
+            if is_token_negligible(token):
+                continue
+            if token.is_keyword:
+                if token.normalized == "INTO":
+                    tgt_flag = True
+                elif token.normalized == "USING":
+                    src_flag = True
+                elif token.normalized == "SET":
+                    update_flag = True
+                elif token.normalized == "INSERT":
+                    insert_flag = True
+                elif token.normalized == "WHEN":
+                    update_flag = False
+                continue
+
+            if tgt_flag:
+                if isinstance(token, Identifier):
+                    holder.add_write(get_dataset_from_identifier(token, holder))
+                tgt_flag = False
+            elif src_flag:
+                if isinstance(token, Identifier):
+                    direct_source = get_dataset_from_identifier(token, holder)
+                    holder.add_read(direct_source)
+                    if subqueries := cls.parse_subquery(token):
+                        for sq in subqueries:
+                            holder |= cls._extract_from_dml(
+                                sq.query, AnalyzerContext(sq, holder.cte)
+                            )
+                src_flag = False
+            elif update_flag:
+                if isinstance(token, Comparison):
+                    if isinstance(right := token.right, Identifier):
+                        src_col = Column(right.get_real_name())
+                        src_col.parent = direct_source
+                        tgt_col = Column(token.left.get_real_name())
+                        tgt_col.parent = list(holder.write)[0]
+                        holder.add_column_lineage(src_col, tgt_col)
+            elif insert_flag:
+                if isinstance(token, Parenthesis):
+                    t = token.tokens[1]
+                    identifiers = []
+                    if isinstance(t, Identifier):
+                        identifiers.append(t)
+                    elif isinstance(t, IdentifierList):
+                        identifiers.extend(t.get_identifiers())
+                    for identifier in identifiers:
+                        tgt_col = Column(identifier.get_real_name())
+                        tgt_col.parent = list(holder.write)[0]
+                        insert_columns.append(tgt_col)
+                elif isinstance(token, Values):
+                    for sub_token in token.tokens:
+                        if isinstance(sub_token, Parenthesis):
+                            t = sub_token.tokens[1]
+                            identifiers = []
+                            if isinstance(t, Identifier):
+                                identifiers.append(t)
+                            elif isinstance(t, IdentifierList):
+                                identifiers.extend(t.get_identifiers())
+                            for i, identifier in enumerate(identifiers):
+                                if isinstance(identifier, Identifier):
+                                    src_col = Column(identifier.get_real_name())
+                                    src_col.parent = direct_source
+                                    holder.add_column_lineage(
+                                        src_col, insert_columns[i]
+                                    )
+                    insert_flag = False
         return holder
 
     @classmethod

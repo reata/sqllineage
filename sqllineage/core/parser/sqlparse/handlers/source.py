@@ -1,5 +1,4 @@
 import re
-from typing import Union
 
 from sqlparse.sql import (
     Case,
@@ -13,16 +12,15 @@ from sqlparse.sql import (
 from sqlparse.tokens import Literal, Wildcard
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Path, SubQuery, Table
+from sqllineage.core.models import Path
 from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlparse.handlers.base import NextTokenBaseHandler
 from sqllineage.core.parser.sqlparse.models import (
     SqlParseColumn,
     SqlParseSubQuery,
-    SqlParseTable,
 )
+from sqllineage.core.parser.sqlparse.utils.holder import get_dataset_from_identifier
 from sqllineage.core.parser.sqlparse.utils.sqlparse import (
-    get_subquery_parentheses,
     is_subquery,
     is_values_clause,
 )
@@ -112,36 +110,5 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
     def _add_dataset_from_identifier(
         self, identifier: Identifier, holder: SubQueryLineageHolder
     ) -> None:
-        dataset: Union[Path, Table, SubQuery]
-        first_token = identifier.token_first(skip_cm=True)
-        if isinstance(first_token, Function):
-            # function() as alias, no dataset involved
-            return
-        elif isinstance(first_token, Parenthesis) and is_values_clause(first_token):
-            # (VALUES ...) AS alias, no dataset involved
-            return
-        path_match = re.match(r"(parquet|csv|json)\.`(.*)`", identifier.value)
-        if path_match is not None:
-            dataset = Path(path_match.groups()[1])
-        else:
-            read: Union[Table, SubQuery, None] = None
-            subqueries = get_subquery_parentheses(identifier)
-            if len(subqueries) > 0:
-                # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier
-                # referring https://github.com/andialbrecht/sqlparse/issues/218 for further information
-                parenthesis, alias = subqueries[0]
-                read = SqlParseSubQuery.of(parenthesis, alias)
-            else:
-                cte_dict = {s.alias: s for s in holder.cte}
-                if "." not in identifier.value:
-                    cte = cte_dict.get(identifier.get_real_name())
-                    if cte is not None:
-                        # could reference CTE with or without alias
-                        read = SqlParseSubQuery.of(
-                            cte.query,
-                            identifier.get_alias() or identifier.get_real_name(),
-                        )
-                if read is None:
-                    read = SqlParseTable.of(identifier)
-            dataset = read
-        self.tables.append(dataset)
+        if dataset := get_dataset_from_identifier(identifier, holder):
+            self.tables.append(dataset)

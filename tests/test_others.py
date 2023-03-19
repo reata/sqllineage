@@ -73,6 +73,20 @@ col1""",
     )
 
 
+def test_merge_into_using_table():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN MATCHED THEN UPDATE SET target.v = src.v"""
+    assert_table_lineage_equal(sql, {"src"}, {"target"})
+
+
+def test_merge_into_using_subquery():
+    sql = """MERGE INTO target USING (select k, max(v) as v from src group by k) AS b ON target.k = b.k
+WHEN MATCHED THEN UPDATE SET target.v = b.v
+WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v)"""
+    assert_table_lineage_equal(sql, {"src"}, {"target"})
+
+
 def test_create_after_drop():
     assert_table_lineage_equal(
         "DROP TABLE IF EXISTS tab1; CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)",
