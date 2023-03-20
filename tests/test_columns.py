@@ -85,7 +85,7 @@ FROM tab2"""
         ],
     )
     sql = """INSERT INTO tab1
-SELECT cast(col1 as timestamp)
+SELECT cast(col1 AS timestamp)
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
@@ -97,7 +97,7 @@ FROM tab2"""
         ],
     )
     sql = """INSERT INTO tab1
-SELECT cast(col1 as timestamp) as col2
+SELECT cast(col1 AS timestamp) AS col2
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
@@ -126,7 +126,7 @@ FROM tab2"""
 
 def test_select_column_using_window_function():
     sql = """INSERT INTO tab1
-SELECT row_number() OVER (PARTITION BY col1 ORDER BY col2 DESC) AS rnum
+SELECT row_number() over (partition BY col1 ORDER BY col2 DESC) AS rnum
 FROM tab2"""
     assert_column_lineage_equal(
         sql,
@@ -146,7 +146,7 @@ FROM tab2"""
 def test_select_column_using_window_function_with_parameters():
     sql = """INSERT INTO tab1
 SELECT col0,
-       max(col3) OVER (PARTITION BY col1 ORDER BY col2 DESC) AS rnum,
+       max(col3) over (partition BY col1 ORDER BY col2 DESC) AS rnum,
        col4
 FROM tab2"""
     assert_column_lineage_equal(
@@ -704,7 +704,7 @@ FROM tab2"""
 
 def test_cast_using_constant():
     sql = """INSERT INTO tab1
-SELECT cast('2012-12-21' as date) AS col2"""
+SELECT cast('2012-12-21' AS date) AS col2"""
     assert_column_lineage_equal(sql)
 
 
@@ -712,7 +712,7 @@ def test_window_function_in_subquery():
     sql = """INSERT INTO tab1
 SELECT rn FROM (
     SELECT
-        row_number() OVER (PARTITION BY col1, col2) rn
+        row_number() over (partition BY col1, col2) rn
     FROM tab2
 ) sub
 WHERE rn = 1"""
@@ -728,7 +728,7 @@ WHERE rn = 1"""
 def test_invalid_syntax_as_without_alias():
     sql = """INSERT INTO tab1
 SELECT col1,
-       col2 as,
+       col2 AS,
        col3
 FROM tab2"""
     # just assure no exception, don't guarantee the result
@@ -739,7 +739,7 @@ def test_column_with_ctas_and_func():
     sql = """CREATE TABLE tab2 AS
 SELECT
   coalesce(col1, 0) AS col1,
-  IF(
+  if(
     col1 IS NOT NULL,
     1,
     NULL
@@ -941,5 +941,108 @@ FROM tab1"""
                 ColumnQualifierTuple("col1", "tab1"),
                 ColumnQualifierTuple("col2", "tab2"),
             ),
+        ],
+    )
+
+
+def test_merge_into_update():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN MATCHED THEN UPDATE SET target.v = src.v"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))],
+    )
+
+
+def test_merge_into_update_multiple_columns():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN MATCHED THEN UPDATE SET target.v = src.v AND target.v1 = src.v1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target")),
+            (ColumnQualifierTuple("v1", "src"), ColumnQualifierTuple("v1", "target")),
+        ],
+    )
+
+
+def test_merge_into_update_multiple_columns_with_constant():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN MATCHED THEN UPDATE SET target.v = src.v AND target.v1 = 1"""
+    assert_column_lineage_equal(
+        sql, [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))]
+    )
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN MATCHED THEN UPDATE SET target.v1 = 1 AND target.v = src.v"""
+    assert_column_lineage_equal(
+        sql, [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))]
+    )
+
+
+def test_merge_into_update_multiple_match():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN MATCHED AND src.v0=1 THEN UPDATE SET target.v = src.v
+WHEN MATCHED AND src.v0=2 THEN UPDATE SET target.v1 = src.v1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target")),
+            (ColumnQualifierTuple("v1", "src"), ColumnQualifierTuple("v1", "target")),
+        ],
+    )
+
+
+def test_merge_into_insert():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN NOT MATCHED THEN INSERT (k, v) VALUES (src.k, src.v)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target")),
+            (ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target")),
+        ],
+    )
+
+
+def test_merge_into_insert_with_constant():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN NOT MATCHED THEN INSERT (k, v) VALUES (src.k, 1)"""
+    assert_column_lineage_equal(
+        sql, [(ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target"))]
+    )
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN NOT MATCHED THEN INSERT (v, k) VALUES (1, src.k)"""
+    assert_column_lineage_equal(
+        sql, [(ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target"))]
+    )
+
+
+def test_merge_into_insert_one_column():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN NOT MATCHED THEN INSERT (k) VALUES (src.k)"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target"))],
+    )
+
+
+def test_merge_into_using_subquery():
+    sql = """MERGE INTO target USING (select k, max(v) as v_max from src group by k) AS b ON target.k = b.k
+WHEN MATCHED THEN UPDATE SET target.v = b.v_max
+WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v_max)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target")),
+            (ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target")),
         ],
     )

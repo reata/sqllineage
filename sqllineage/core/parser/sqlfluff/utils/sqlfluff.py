@@ -2,7 +2,7 @@
 Utils class to deal with the sqlfluff segments manipulations
 """
 import re
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Iterable, List, Optional, Tuple
 
 from sqlfluff.core.linter import ParsedString
 from sqlfluff.core.parser import BaseSegment
@@ -23,97 +23,6 @@ def is_segment_negligible(segment: BaseSegment) -> bool:
     )
 
 
-def get_bracketed_subqueries_select(
-    segment: BaseSegment,
-) -> List[SubQueryTuple]:
-    """
-    Retrieve a list of 'SubQueryTuple' for a given segment of type "select_clause"
-    :param segment: segment to be processed segment to be processed
-    :return: list is either empty when no subquery parsed or list of 'SubQueryTuple'
-    """
-    subquery = []
-    as_segment = segment.get_child("select_clause_element").get_child(
-        "alias_expression"
-    )
-    select_clause = segment.get_child("select_clause_element")
-    case_expression = select_clause.get_child("expression") and select_clause.get_child(
-        "expression"
-    ).get_child("case_expression")
-    target = case_expression or select_clause.get_child("column_reference")
-    if target and target.type == "case_expression":
-        for when_clause in target.get_children("when_clause"):
-            for bracketed_segment in get_bracketed_from(
-                when_clause, to_keyword="THEN", children_segments="expression"
-            ):
-                subquery.append(SubQueryTuple(bracketed_segment, None))
-            for bracketed_segment in get_bracketed_from(
-                when_clause, from_keyword="THEN", children_segments="expression"
-            ):
-                subquery.append(
-                    SubQueryTuple(bracketed_segment, get_identifier(as_segment))
-                )
-    return subquery
-
-
-def get_bracketed_subqueries_from(segment: BaseSegment) -> List[SubQueryTuple]:
-    """
-    Retrieve a list of 'SubQueryTuple' for a given segment of type "from_"
-    :param segment: segment to be processed
-    :return: a list of 'SubQueryTuple'
-    """
-    subquery = []
-    as_segment, target = extract_as_and_target_segment(
-        get_inner_from_expression(segment)
-    )
-    if is_subquery(target):
-        as_segment, target = extract_as_and_target_segment(
-            get_inner_from_expression(segment)
-        )
-        subquery = [
-            SubQueryTuple(
-                get_innermost_bracketed(target) if not is_union(target) else target,
-                get_identifier(as_segment) if as_segment else None,
-            )
-        ]
-    return subquery
-
-
-def get_subqueries_union(segment: BaseSegment) -> List[SubQueryTuple]:
-    """
-    Retrieve a list of 'SubQueryTuple' for a given segment of type "union"
-    :param segment: segment to be processed
-    :return: a list of 'SubQueryTuple'
-    """
-    subquery = []
-    for sq in get_union_subqueries(
-        segment
-        if segment.type == "set_expression"
-        else segment.get_child("set_expression")
-    ):
-        subquery.append(
-            SubQueryTuple(
-                sq,
-                None,
-            )
-        )
-    return subquery
-
-
-def get_bracketed_subqueries_where(
-    segment: BaseSegment,
-) -> List[SubQueryTuple]:
-    """
-    Retrieve a list of 'SubQueryTuple' for a given segment of type "where_clause"
-    :param segment: segment to be processed
-    :return: a list of 'SubQueryTuple'
-    """
-    expression_segments = segment.get_child("expression").segments or []
-    bracketed_segments = [seg for seg in expression_segments if seg.type == "bracketed"]
-    if bracketed_segments and is_subquery(bracketed_segments[0]):
-        return [SubQueryTuple(get_innermost_bracketed(bracketed_segments[0]), None)]
-    return []
-
-
 def extract_as_and_target_segment(
     segment: BaseSegment,
 ) -> Tuple[BaseSegment, BaseSegment]:
@@ -122,7 +31,7 @@ def extract_as_and_target_segment(
     :return: a Tuple of "alias_expression" and the target table
     """
     as_segment = segment.get_child("alias_expression")
-    sublist = list([seg for seg in segment.segments if not is_segment_negligible(seg)])
+    sublist = retrieve_segments(segment, False)
     target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
     return as_segment, target
 
@@ -133,14 +42,57 @@ def get_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
     :param segment: segment to be processed
     :return: a list of 'SubQueryTuple'
     """
+    subquery = []
     if segment.type in ["select_clause"]:
-        return get_bracketed_subqueries_select(segment)
+        as_segment = segment.get_child("select_clause_element").get_child(
+            "alias_expression"
+        )
+        select_clause = segment.get_child("select_clause_element")
+        case_expression = select_clause.get_child(
+            "expression"
+        ) and select_clause.get_child("expression").get_child("case_expression")
+        target = case_expression or select_clause.get_child("column_reference")
+        if target and target.type == "case_expression":
+            for when_clause in target.get_children("when_clause"):
+                for bracketed_segment in get_bracketed_from(
+                    when_clause, to_keyword="THEN", children_segments="expression"
+                ):
+                    subquery.append(SubQueryTuple(bracketed_segment, None))
+                for bracketed_segment in get_bracketed_from(
+                    when_clause, from_keyword="THEN", children_segments="expression"
+                ):
+                    subquery.append(
+                        SubQueryTuple(bracketed_segment, get_identifier(as_segment))
+                    )
+        return subquery
     elif segment.type in ["from_clause", "from_expression", "from_expression_element"]:
-        return get_bracketed_subqueries_from(segment)
+        as_segment, target = extract_as_and_target_segment(
+            get_inner_from_expression(segment)
+        )
+        if is_subquery(target):
+            as_segment, target = extract_as_and_target_segment(
+                get_inner_from_expression(segment)
+            )
+            subquery = [
+                SubQueryTuple(
+                    get_innermost_bracketed(target) if not is_union(target) else target,
+                    get_identifier(as_segment) if as_segment else None,
+                )
+            ]
+        return subquery
     elif segment.type in ["where_clause"]:
-        return get_bracketed_subqueries_where(segment)
+        expression_segments = segment.get_child("expression").segments or []
+        bracketed_segments = [s for s in expression_segments if s.type == "bracketed"]
+        if bracketed_segments and is_subquery(bracketed_segments[0]):
+            return [SubQueryTuple(get_innermost_bracketed(bracketed_segments[0]), None)]
+        return []
     elif is_union(segment):
-        return get_subqueries_union(segment)
+        if segment.type != "set_expression":
+            segment = segment.get_child("set_expression")
+        for s in retrieve_segments(segment, check_bracketed=True):
+            if s.type == "bracketed" or s.type == "select_statement":
+                subquery.append(SubQueryTuple(s, None))
+        return subquery
     else:
         raise NotImplementedError()
 
@@ -378,51 +330,6 @@ def has_alias(segment: BaseSegment) -> bool:
     return len([s for s in segment.get_children("keyword") if s.raw_upper == "AS"]) > 0
 
 
-def token_matching(
-    segment: BaseSegment,
-    funcs: Tuple[Callable[[BaseSegment], bool]],
-    start: int = 0,
-    end: Optional[int] = None,
-    reverse: bool = False,
-) -> Tuple[Union[int, None], Union[BaseSegment, None]]:
-    """
-    Next segment that match functions
-    :param segment: segment to iterate over its segments
-    :param funcs: matching function
-    :param start: start position in the list of segments
-    :param end: end position in the list of segments
-    :param reverse: if it should start from the end
-    :return Tuple of idx position of the next matched segment and the matched segment itself
-    """
-    if start is None:
-        return None
-
-    if not isinstance(funcs, (list, tuple)):
-        funcs = (funcs,)
-
-    if reverse:
-        indexes = range(start - 2, -1, -1)
-    else:
-        if end is None:
-            end = len(segment.segments)
-        indexes = range(start, end)
-    for idx in indexes:
-        token = segment.segments[idx]
-        for func in funcs:
-            if func(token):
-                return idx, token
-    return None, None
-
-
-def is_extra_segment(segment: BaseSegment) -> bool:
-    """
-    Check if the segment type is part of a join
-    :param segment: segment to be checked
-    :return: True if type is 'join_clause'
-    """
-    return bool(segment.type == "join_clause")
-
-
 def retrieve_extra_segment(segment: BaseSegment) -> Iterable[BaseSegment]:
     """
     Yield all the extra segments of the segment if it is a 'from_expression' type.
@@ -430,7 +337,7 @@ def retrieve_extra_segment(segment: BaseSegment) -> Iterable[BaseSegment]:
     """
     if segment.get_child("from_expression"):
         for sgmnt in segment.get_child("from_expression").segments:
-            if is_extra_segment(sgmnt):
+            if sgmnt.type == "join_clause":
                 yield sgmnt
 
 

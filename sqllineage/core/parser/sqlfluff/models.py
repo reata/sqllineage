@@ -10,7 +10,6 @@ from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
     is_subquery,
     is_wildcard,
     retrieve_segments,
-    token_matching,
 )
 from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
@@ -46,14 +45,12 @@ class SqlFluffTable(Table):
         :param alias: alias of the table segment
         :return: 'Table' object
         """
-        # rewrite identifier's get_real_name method, by matching the last dot instead of the first dot, so that the
-        # real name for a.b.c will be c instead of b
-        dot_idx, _ = token_matching(
-            table,
-            (lambda s: bool(s.type == "symbol"),),
-            start=len(table.segments),
-            reverse=True,
-        )
+        dot_idx = None
+        for idx in range(len(table.segments) - 2, -1, -1):
+            token = table.segments[idx]
+            if bool(token.type == "symbol"):
+                dot_idx, _ = idx, token
+                break
         real_name = (
             table.segments[dot_idx + 1].raw
             if dot_idx
