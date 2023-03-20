@@ -2,7 +2,7 @@
 Utils class to deal with the sqlfluff segments manipulations
 """
 import re
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Iterable, List, Optional, Tuple
 
 from sqlfluff.core.linter import ParsedString
 from sqlfluff.core.parser import BaseSegment
@@ -328,42 +328,6 @@ def has_alias(segment: BaseSegment) -> bool:
     :return: True if the segment contains an alias keyword
     """
     return len([s for s in segment.get_children("keyword") if s.raw_upper == "AS"]) > 0
-
-
-def token_matching(
-    segment: BaseSegment,
-    funcs: Tuple[Callable[[BaseSegment], bool]],
-    start: int = 0,
-    end: Optional[int] = None,
-    reverse: bool = False,
-) -> Tuple[Union[int, None], Union[BaseSegment, None]]:
-    """
-    Next segment that match functions
-    :param segment: segment to iterate over its segments
-    :param funcs: matching function
-    :param start: start position in the list of segments
-    :param end: end position in the list of segments
-    :param reverse: if it should start from the end
-    :return Tuple of idx position of the next matched segment and the matched segment itself
-    """
-    if start is None:
-        return None
-
-    if not isinstance(funcs, (list, tuple)):
-        funcs = (funcs,)
-
-    if reverse:
-        indexes = range(start - 2, -1, -1)
-    else:
-        if end is None:
-            end = len(segment.segments)
-        indexes = range(start, end)
-    for idx in indexes:
-        token = segment.segments[idx]
-        for func in funcs:
-            if func(token):
-                return idx, token
-    return None, None
 
 
 def retrieve_extra_segment(segment: BaseSegment) -> Iterable[BaseSegment]:
