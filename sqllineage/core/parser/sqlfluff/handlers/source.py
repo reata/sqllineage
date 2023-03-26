@@ -6,15 +6,13 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path, SubQuery, Table
 from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
+from sqllineage.core.parser.sqlfluff.holder_utils import retrieve_holder_data_from
 from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffColumn,
     SqlFluffSubQuery,
-)
-from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffTable,
 )
-from sqllineage.core.parser.sqlfluff.utils.holder import retrieve_holder_data_from
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
+from sqllineage.core.parser.sqlfluff.utils import (
     find_table_identifier,
     get_grandchild,
     get_inner_from_expression,

@@ -9,7 +9,7 @@ from sqllineage.core.models import AnalyzerContext
 from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
+from sqllineage.core.parser.sqlfluff.utils import (
     clean_parentheses,
     get_statement_segment,
     is_subquery_statement,

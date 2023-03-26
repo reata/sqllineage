@@ -22,9 +22,9 @@ from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
 )
+from sqllineage.core.parser.sqlparse.holder_utils import get_dataset_from_identifier
 from sqllineage.core.parser.sqlparse.models import SqlParseSubQuery, SqlParseTable
-from sqllineage.core.parser.sqlparse.utils.holder import get_dataset_from_identifier
-from sqllineage.core.parser.sqlparse.utils.sqlparse import (
+from sqllineage.core.parser.sqlparse.utils import (
     get_subquery_parentheses,
     is_subquery,
     is_token_negligible,

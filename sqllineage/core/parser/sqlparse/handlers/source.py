@@ -15,12 +15,12 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path
 from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlparse.handlers.base import NextTokenBaseHandler
+from sqllineage.core.parser.sqlparse.holder_utils import get_dataset_from_identifier
 from sqllineage.core.parser.sqlparse.models import (
     SqlParseColumn,
     SqlParseSubQuery,
 )
-from sqllineage.core.parser.sqlparse.utils.holder import get_dataset_from_identifier
-from sqllineage.core.parser.sqlparse.utils.sqlparse import (
+from sqllineage.core.parser.sqlparse.utils import (
     is_subquery,
     is_values_clause,
 )

@@ -11,7 +11,7 @@ from sqllineage.core.parser.sqlfluff.handlers.base import (
     SegmentBaseHandler,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
+from sqllineage.core.parser.sqlfluff.utils import (
     get_multiple_identifiers,
     get_subqueries,
     is_subquery,

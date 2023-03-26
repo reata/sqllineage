@@ -5,7 +5,7 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import get_table_alias
+from sqllineage.core.parser.sqlfluff.utils import get_table_alias
 from sqllineage.utils.helpers import escape_identifier_name
 
 

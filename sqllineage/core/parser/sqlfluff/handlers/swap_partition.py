@@ -3,7 +3,7 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.parser.sqlfluff.handlers.base import SegmentBaseHandler
 from sqllineage.core.parser.sqlfluff.models import SqlFluffTable
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
+from sqllineage.core.parser.sqlfluff.utils import (
     get_grandchild,
     get_grandchildren,
 )

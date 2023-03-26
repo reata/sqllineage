@@ -5,7 +5,7 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.models import Column, Schema, SubQuery, Table
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import (
+from sqllineage.core.parser.sqlfluff.utils import (
     get_identifier,
     is_subquery,
     is_wildcard,
