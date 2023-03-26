@@ -4,7 +4,7 @@ from sqlparse import tokens
 from sqlparse.engine import grouping
 from sqlparse.keywords import KEYWORDS, SQL_REGEX
 
-from sqllineage.core.parser.sqlparse.utils.sqlparse import group_function_with_window
+from sqllineage.core.parser.sqlparse.utils import group_function_with_window
 
 
 def _patch_adding_window_function_token() -> None:

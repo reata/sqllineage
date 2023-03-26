@@ -12,7 +12,7 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import has_alias, retrieve_segments
+from sqllineage.core.parser.sqlfluff.utils import has_alias, retrieve_segments
 
 
 class DmlCteExtractor(LineageHolderExtractor):

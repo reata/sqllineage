@@ -13,7 +13,7 @@ from sqllineage.core.parser.sqlparse.models import (
     SqlParseSubQuery,
     SqlParseTable,
 )
-from sqllineage.core.parser.sqlparse.utils.sqlparse import (
+from sqllineage.core.parser.sqlparse.utils import (
     get_subquery_parentheses,
     is_values_clause,
 )

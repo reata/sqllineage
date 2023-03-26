@@ -9,7 +9,7 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils.sqlfluff import retrieve_segments
+from sqllineage.core.parser.sqlfluff.utils import retrieve_segments
 
 
 class DmlInsertExtractor(LineageHolderExtractor):
