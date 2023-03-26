@@ -65,10 +65,16 @@ def main(args=None) -> None:
     parser.add_argument(
         "-d",
         "--dialect",
-        help="the dialect used to compute the lineage",
+        help="the dialect used to analyze the lineage, use --dialects to show all available dialects",
         type=str,
         default=DEFAULT_DIALECT,
-        metavar="ansi, mysql, snowflake, redshift, hive, etc. Check supported dialects by sqlfluff.",
+        metavar="<dialect>",
+    )
+    parser.add_argument(
+        "-ds",
+        "--dialects",
+        help="list all the available dialects",
+        action="store_true",
     )
     args = parser.parse_args(args)
     if args.e and args.f:
@@ -95,6 +101,29 @@ def main(args=None) -> None:
             runner.print_table_lineage()
     elif args.graph_visualization:
         return draw_lineage_graph(**{"host": args.host, "port": args.port})
+    elif args.dialects:
+        print(
+            """non-validating
+ansi
+athena
+bigquery
+clickhouse
+databricks
+db2
+exasol
+hive
+materialize
+mysql
+oracle
+postgres
+redshift
+snowflake
+soql
+sparksql
+sqlite
+teradata
+tsql"""
+        )
     else:
         parser.print_help()
 
