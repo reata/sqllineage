@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useEffect, useMemo} from 'react';
 import {
   AppBar,
   Box,
@@ -118,7 +118,7 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = React.useState(true);
   const [drawerWidth, setDrawerWidth] = React.useState(18);
   const [dialectMenuAnchor, setDialectMenuAnchor] = React.useState(null);
-  const [dialectSelected, setDialectSelected] = React.useState("ansi");
+  const [dialectSelected, setDialectSelected] = React.useState("non-validating");
   const classes = useStyles({drawerWidth: drawerWidth});
 
   const height = "90vh";
@@ -158,10 +158,18 @@ export default function App() {
   const handleDialectMenuClose = (e) => {
     let dialect = e.currentTarget.outerText;
     if (dialect !== "") {
-      setDialectSelected(dialect)
+      localStorage.setItem("dialect", dialect);
+      setDialectSelected(dialect);
     }
     setDialectMenuAnchor(null);
   }
+
+  useEffect(() => {
+    let dialect = localStorage.getItem("dialect");
+    if (dialect !== "") {
+      setDialectSelected(dialect);
+    }
+  })
 
   return (
     <Router basename={process.env.PUBLIC_URL}>

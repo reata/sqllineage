@@ -172,8 +172,7 @@ class SqlFluffColumn(Column):
         src_cols = [
             lineage[0]
             for lineage in LineageRunner(
-                sub_segment.raw,
-                dialect=SQLPARSE_DIALECT,
+                sub_segment.raw, dialect=SQLPARSE_DIALECT
             ).get_column_lineage(exclude_subquery=False)
         ]
         source_columns = [

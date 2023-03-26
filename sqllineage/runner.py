@@ -1,7 +1,8 @@
 import logging
+import warnings
 from typing import Dict, List, Optional, Tuple
 
-from sqllineage import SQLPARSE_DIALECT
+from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
 from sqllineage.core.holders import SQLLineageHolder
 from sqllineage.core.models import Column, Table
 from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
@@ -32,7 +33,7 @@ class LineageRunner(object):
     def __init__(
         self,
         sql: str,
-        dialect: str = "ansi",
+        dialect: str = DEFAULT_DIALECT,
         encoding: Optional[str] = None,
         verbose: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
@@ -44,6 +45,14 @@ class LineageRunner(object):
         :param encoding: the encoding for sql string
         :param verbose: verbose flag indicate whether statement-wise lineage result will be shown
         """
+        if dialect == SQLPARSE_DIALECT:
+            warnings.warn(
+                "dialect `non-validating` is deprecated, use `ansi` or dialect of your SQL instead. "
+                "`non-validating` will stop being the default dialect in v1.5.x release "
+                "and be completely removed in v1.6.x",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._encoding = encoding
         self._sql = sql
         self._verbose = verbose
