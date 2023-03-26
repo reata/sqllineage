@@ -43,6 +43,7 @@ Behind the scene
    behind_the_scene/how_sqllineage_work
    behind_the_scene/dos_and_donts
    behind_the_scene/column-level_lineage_design
+   behind_the_scene/dialect-awareness_lineage_design
 
 :doc:`behind_the_scene/why_sqllineage`
     The motivation of writing SQLLineage
@@ -53,6 +54,11 @@ Behind the scene
 :doc:`behind_the_scene/dos_and_donts`
     Design principles for SQLLineage
 
+:doc:`behind_the_scene/column-level_lineage_design`
+    Design docs for column lineage
+
+:doc:`behind_the_scene/dialect-awareness_lineage_design`
+    Design docs for dialect-awareness lineage
 
 Basic concepts
 ==============
