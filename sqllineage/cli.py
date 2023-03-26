@@ -85,13 +85,13 @@ def main(args=None) -> None:
         sql = extract_sql_from_args(args)
         runner = LineageRunner(
             sql,
+            dialect=args.dialect,
             verbose=args.verbose,
             draw_options={
                 "host": args.host,
                 "port": args.port,
                 "f": args.f if args.f else None,
             },
-            dialect=args.dialect,
         )
         if args.graph_visualization:
             runner.draw(args.dialect)

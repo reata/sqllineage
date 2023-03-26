@@ -21,6 +21,7 @@ def test_cli_dummy(_):
             main(["-f", sql_file, "-g"])
             break
     main(["-g"])
+    main(["-ds"])
     main(
         [
             "-e",
