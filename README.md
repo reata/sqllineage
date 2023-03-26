@@ -14,8 +14,10 @@ SQL Lineage Analysis Tool powered by Python
 Never get the hang of a SQL parser? SQLLineage comes to the rescue. Given a SQL command, SQLLineage will tell you its
 source and target tables, without worrying about Tokens, Keyword, Identifier and all the jagons used by SQL parsers.
 
-Behind the scene, SQLLineage uses the fantastic [`sqlparse`](https://github.com/andialbrecht/sqlparse) library to parse 
-the SQL command, and bring you all the human-readable result with ease.
+Behind the scene, SQLLineage pluggable leverages parser library ([`sqlfluff`](https://github.com/sqlfluff/sqlfluff) 
+and [`sqlparse`](https://github.com/andialbrecht/sqlparse)) to parse the SQL command, analyze the AST, stores the lineage
+information in a graph (using graph library [`networkx`](https://github.com/networkx/networkx)), and brings you all the 
+human-readable result with ease.
 
 ## Demo & Documentation
 Talk is cheap, show me a [demo](https://reata.github.io/sqllineage/).
@@ -92,6 +94,35 @@ Target Tables:
 Intermediate Tables:
     db1.table1
 ```
+
+### Dialect-Awareness Lineage
+By default, sqllineage doesn't validate your SQL and could give confusing result in case of invalid SQL syntax.
+In addition, different SQL dialect has different set of keywords, further weakening sqllineage's capabilities when 
+keyword used as table name or column name. To reduce the impact, user are strongly encouraged to pass the dialect to 
+assist the lineage analyzing. 
+
+Take below example, `analyze` is a reserved keyword in PostgreSQL. Default non-validating dialect gives incomplete result,
+while ansi dialect gives the correct one and postgres dialect tells you this causes syntax error:
+```
+$ sqllineage -e "insert into analyze select * from foo;"
+Statements(#): 1
+Source Tables:
+    <default>.foo
+Target Tables:
+    
+$ sqllineage -e "insert into analyze select * from foo;" --dialect=ansi
+Statements(#): 1
+Source Tables:
+    <default>.foo
+Target Tables:
+    <default>.analyze
+
+$ sqllineage -e "insert into analyze select * from foo;" --dialect=postgres
+...
+sqllineage.exceptions.InvalidSyntaxException: This SQL statement is unparsable, please check potential syntax error for SQL
+```
+
+Use `sqllineage --dialects` to see all available dialects.
 
 ### Column-Level Lineage
 We also support column level lineage in command line interface, set level option to column, all column lineage path will 

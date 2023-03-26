@@ -50,6 +50,39 @@ And if you want to see lineage result for every SQL statement, just toggle verbo
         db1.table1
 
 
+Dialect-Awareness Lineage
+=========================
+By default, sqllineage doesn't validate your SQL and could give confusing result in case of invalid SQL syntax.
+In addition, different SQL dialect has different set of keywords, further weakening sqllineage's capabilities when
+keyword used as table name or column name. To reduce the impact, user are strongly encouraged to pass the dialect to
+assist the lineage analyzing.
+
+Take below example, `analyze` is a reserved keyword in PostgreSQL. Default non-validating dialect gives incomplete result,
+while ansi dialect gives the correct one and postgres dialect tells you this causes syntax error:
+
+.. code-block:: bash
+
+    $ sqllineage -e "insert into analyze select * from foo;"
+    Statements(#): 1
+    Source Tables:
+        <default>.foo
+    Target Tables:
+
+    $ sqllineage -e "insert into analyze select * from foo;" --dialect=ansi
+    Statements(#): 1
+    Source Tables:
+        <default>.foo
+    Target Tables:
+        <default>.analyze
+
+    $ sqllineage -e "insert into analyze select * from foo;" --dialect=postgres
+    ...
+    sqllineage.exceptions.InvalidSyntaxException: This SQL statement is unparsable, please check potential syntax error for SQL
+
+
+Use `sqllineage \-\-dialects` to see all available dialects.
+
+
 Column-Level Lineage
 ====================
 
