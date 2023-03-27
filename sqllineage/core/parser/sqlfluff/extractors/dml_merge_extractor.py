@@ -72,26 +72,19 @@ class DmlMergeExtractor(LineageHolderExtractor):
         for match in get_grandchildren(
             statement, "merge_match", "merge_when_matched_clause"
         ):
-            set_clause = (
-                match.get_child("merge_update_clause")
-                .get_child("set_clause_list")
-                .get_child("set_clause")
-            )
-            columns = set_clause.get_children("column_reference")
-            if expression := set_clause.get_child("expression"):
-                for sgmnt in expression.segments:
-                    # in case of update set tgt.col = 1, pop the previous target column
-                    if sgmnt.type == "binary_operator" and len(columns) % 2 != 0:
-                        columns.pop()
-                    elif sgmnt.type == "column_reference":
-                        columns.append(sgmnt)
-            # iterate over every two columns
-            for tgt, src in zip(columns[0::2], columns[1::2]):
-                src_col = Column(get_identifier(src))
-                src_col.parent = direct_source
-                tgt_col = Column(get_identifier(tgt))
-                tgt_col.parent = list(holder.write)[0]
-                holder.add_column_lineage(src_col, tgt_col)
+            if (
+                merge_update_clause := match.get_child("merge_update_clause")
+            ) is not None:
+                for set_clause in get_grandchildren(
+                    merge_update_clause, "set_clause_list", "set_clause"
+                ):
+                    columns = set_clause.get_children("column_reference")
+                    if len(columns) == 2:
+                        src_col = Column(get_identifier(columns[1]))
+                        src_col.parent = direct_source
+                        tgt_col = Column(get_identifier(columns[0]))
+                        tgt_col.parent = list(holder.write)[0]
+                        holder.add_column_lineage(src_col, tgt_col)
         for not_match in get_grandchildren(
             statement, "merge_match", "merge_when_not_matched_clause"
         ):

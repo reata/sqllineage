@@ -958,7 +958,7 @@ WHEN MATCHED THEN UPDATE SET target.v = src.v"""
 def test_merge_into_update_multiple_columns():
     sql = """MERGE INTO target
 USING src ON target.k = src.k
-WHEN MATCHED THEN UPDATE SET target.v = src.v AND target.v1 = src.v1"""
+WHEN MATCHED THEN UPDATE SET target.v = src.v, target.v1 = src.v1"""
     assert_column_lineage_equal(
         sql,
         [
@@ -971,13 +971,13 @@ WHEN MATCHED THEN UPDATE SET target.v = src.v AND target.v1 = src.v1"""
 def test_merge_into_update_multiple_columns_with_constant():
     sql = """MERGE INTO target
 USING src ON target.k = src.k
-WHEN MATCHED THEN UPDATE SET target.v = src.v AND target.v1 = 1"""
+WHEN MATCHED THEN UPDATE SET target.v = src.v, target.v1 = 1"""
     assert_column_lineage_equal(
         sql, [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))]
     )
     sql = """MERGE INTO target
 USING src ON target.k = src.k
-WHEN MATCHED THEN UPDATE SET target.v1 = 1 AND target.v = src.v"""
+WHEN MATCHED THEN UPDATE SET target.v1 = 1, target.v = src.v"""
     assert_column_lineage_equal(
         sql, [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))]
     )
