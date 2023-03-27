@@ -134,11 +134,18 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                             )
                 src_flag = False
             elif update_flag:
+                comparisons = []
                 if isinstance(token, Comparison):
-                    if isinstance(right := token.right, Identifier):
+                    comparisons = [token]
+                elif isinstance(token, IdentifierList):
+                    comparisons = [
+                        t for t in token.get_identifiers() if isinstance(t, Comparison)
+                    ]
+                for c in comparisons:
+                    if isinstance(right := c.right, Identifier):
                         src_col = Column(right.get_real_name())
                         src_col.parent = direct_source
-                        tgt_col = Column(token.left.get_real_name())
+                        tgt_col = Column(c.left.get_real_name())
                         tgt_col.parent = list(holder.write)[0]
                         holder.add_column_lineage(src_col, tgt_col)
             elif insert_flag:
