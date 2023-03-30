@@ -2,6 +2,32 @@
 Changelog
 *********
 
+v1.4.0
+======
+:Date: March 31, 2023
+
+Great thanks to Nahuel, Mayur and Pere from OpenMetadata community for contributing on feature Dialect-awareness lineage.
+Leveraging sqlfluff underneath, we're now able to give more correct lineage result with user input on SQL dialect.
+
+Feature
+-------------
+* Dialect-awareness lineage (`#302 <https://github.com/reata/sqllineage/issues/302>`_)
+* support MERGE statement (`#166 <https://github.com/reata/sqllineage/issues/166>`_)
+
+Enhancement
+-------------
+* Use curved lines in lineage graph visualization (`#320 <https://github.com/reata/sqllineage/issues/320>`_)
+* Click to lock highlighted nodes in visualization (`#318 <https://github.com/reata/sqllineage/issues/318>`_)
+* Deprecate support for Python 3.6 and Python 3.7, add support for Python 3.11 (`#319 <https://github.com/reata/sqllineage/issues/319>`_)
+* support t-sql assignment operator (`#205 <https://github.com/reata/sqllineage/issues/205>`_)
+
+Bugfix
+-------------
+* exception when insert into qualified table followed by parenthesized query (`#249 <https://github.com/reata/sqllineage/issues/249>`_)
+* missing columns when current_timestamp as reserved keyword used in select clause (`#248 <https://github.com/reata/sqllineage/issues/248>`_)
+* exception when non-reserved keywords used as column name (`#183 <https://github.com/reata/sqllineage/issues/183>`_)
+* exception when non-reserved keywords used as table name (`#93 <https://github.com/reata/sqllineage/issues/93>`_)
+
 v1.3.7
 ======
 :Date: Oct 22, 2022
