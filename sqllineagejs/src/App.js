@@ -169,7 +169,7 @@ export default function App() {
     if (dialect !== "") {
       setDialectSelected(dialect);
     }
-  })
+  }, [])
 
   return (
     <Router basename={process.env.PUBLIC_URL}>
