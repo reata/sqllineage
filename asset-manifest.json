@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/static/css/main.c1b86fee.css",
-    "main.js": "/static/js/main.9c4de2e1.js",
-    "static/js/333.97bcedbd.chunk.js": "/static/js/333.97bcedbd.chunk.js",
-    "editor.worker.js": "/editor.worker.js",
-    "static/media/codicon.ttf": "/static/media/codicon.4168b9c11e5075e9cfe6.ttf",
-    "index.html": "/index.html",
-    "main.c1b86fee.css.map": "/static/css/main.c1b86fee.css.map",
-    "main.9c4de2e1.js.map": "/static/js/main.9c4de2e1.js.map",
-    "333.97bcedbd.chunk.js.map": "/static/js/333.97bcedbd.chunk.js.map"
+    "main.css": "/sqllineage/static/css/main.ec75651b.css",
+    "main.js": "/sqllineage/static/js/main.a0040ca3.js",
+    "static/js/333.97bcedbd.chunk.js": "/sqllineage/static/js/333.97bcedbd.chunk.js",
+    "editor.worker.js": "/sqllineage/editor.worker.js",
+    "static/media/codicon.ttf": "/sqllineage/static/media/codicon.4168b9c11e5075e9cfe6.ttf",
+    "index.html": "/sqllineage/index.html",
+    "main.ec75651b.css.map": "/sqllineage/static/css/main.ec75651b.css.map",
+    "main.a0040ca3.js.map": "/sqllineage/static/js/main.a0040ca3.js.map",
+    "333.97bcedbd.chunk.js.map": "/sqllineage/static/js/333.97bcedbd.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.c1b86fee.css",
-    "static/js/main.9c4de2e1.js"
+    "static/css/main.ec75651b.css",
+    "static/js/main.a0040ca3.js"
   ]
 }
