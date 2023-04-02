@@ -166,7 +166,7 @@ export default function App() {
 
   useEffect(() => {
     let dialect = localStorage.getItem("dialect");
-    if (dialect !== "") {
+    if (dialect !== null) {
       setDialectSelected(dialect);
     }
   }, [])
