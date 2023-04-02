@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v1.4.1
+======
+:Date: April 2, 2023
+
+Bugfix
+-------------
+* frontend app unable to load dialect when launched for the first time
+
 v1.4.0
 ======
 :Date: March 31, 2023

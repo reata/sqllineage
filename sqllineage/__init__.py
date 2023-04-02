@@ -2,7 +2,7 @@ import os
 
 
 NAME = "sqllineage"
-VERSION = "1.4.0"
+VERSION = "1.4.1"
 DEFAULT_LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
