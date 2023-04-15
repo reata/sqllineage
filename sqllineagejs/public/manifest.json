@@ -1,6 +1,6 @@
 {
-  "short_name": "SQLLineage",
-  "name": "SQLLineage Visualization",
+  "short_name": "USERS SQL_Visualizator",
+  "name": "SQL Visualization",
   "icons": [
     {
       "src": "favicon.ico",
