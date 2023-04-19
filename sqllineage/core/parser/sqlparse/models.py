@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from sqlparse import tokens as T
 from sqlparse.engine import grouping
+from sqlparse.lexer import Lexer
 from sqlparse.sql import (
     Case,
     Comparison,
@@ -14,7 +15,6 @@ from sqlparse.sql import (
     TokenList,
 )
 from sqlparse.utils import imt
-from sqlparse.lexer import Lexer
 
 from sqllineage.core.models import Column, Schema, SubQuery, Table
 from sqllineage.core.parser.sqlparse.utils import get_parameters, is_subquery
