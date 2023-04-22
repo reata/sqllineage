@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v1.4.2
+======
+:Date: April 22, 2023
+
+Bugfix
+-------------
+* sqlparse v0.4.4 breaks non-validating dialect (`#361 <https://github.com/reata/sqllineage/issues/361>`_)
+
 v1.4.1
 ======
 :Date: April 2, 2023
