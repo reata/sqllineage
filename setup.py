@@ -65,9 +65,9 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "sqlparse==0.4.4",
+        "sqlparse>=0.4.4",
         "networkx>=2.4",
-        "sqlfluff==2.0.3",
+        "sqlfluff>=2.0.0,<=2.0.3",
     ],
     entry_points={"console_scripts": ["sqllineage = sqllineage.cli:main"]},
     extras_require={
