@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import sqlparse
 from sqlparse.sql import Statement
@@ -33,9 +33,9 @@ class LineageRunner(object):
     def __init__(
         self,
         sql: str,
-        encoding: str = None,
+        encoding: Optional[str] = None,
         verbose: bool = False,
-        draw_options: Dict[str, str] = None,
+        draw_options: Optional[Dict[str, str]] = None,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.

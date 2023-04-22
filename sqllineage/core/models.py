@@ -341,14 +341,14 @@ class Column:
         Best guess for source table given all the possible table/subquery and their alias.
         """
 
-        def _to_src_col(name: str, parent: Union[Table, SubQuery] = None):
+        def _to_src_col(name: str, parent: Optional[Union[Table, SubQuery]] = None):
             col = Column(name)
             if parent:
                 col.parent = parent
             return col
 
         source_columns = set()
-        for (src_col, qualifier) in self.source_columns:
+        for src_col, qualifier in self.source_columns:
             if qualifier is None:
                 if src_col == "*":
                     # select *
