@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Set, Union
 
 from sqlparse import tokens as T
 from sqlparse.engine import grouping
-from sqlparse.keywords import is_keyword
+from sqlparse.lexer import Lexer
 from sqlparse.sql import (
     Case,
     Comparison,
@@ -305,7 +305,11 @@ class Column:
                 isinstance(t, Function) and t.get_real_name() not in FUNC_DTYPE
                 for t in token.tokens
             )
-            is_kw = is_keyword(real_name) if real_name is not None else False
+            is_kw = (
+                Lexer.get_default_instance().is_keyword(real_name)
+                if real_name is not None
+                else False
+            )
             if (
                 # real name is None: col1=1 AS int
                 real_name is None

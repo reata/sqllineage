@@ -21,10 +21,10 @@ def _patch_updating_lateral_view_lexeme() -> None:
     from sqlparse.keywords import SQL_REGEX
 
     for i, (regex, lexeme) in enumerate(SQL_REGEX):
-        if regex("LATERAL VIEW EXPLODE(col)"):
+        rgx = re.compile(regex, re.IGNORECASE | re.UNICODE).match
+        if rgx("LATERAL VIEW EXPLODE(col)"):
             new_regex = r"(LATERAL\s+VIEW\s+)(OUTER\s+)?(EXPLODE|INLINE|PARSE_URL_TUPLE|POSEXPLODE|STACK|JSON_TUPLE)\b"
-            new_compile = re.compile(new_regex, re.IGNORECASE | re.UNICODE).match
-            SQL_REGEX[i] = (new_compile, lexeme)
+            SQL_REGEX[i] = (new_regex, lexeme)
             break
 
 
