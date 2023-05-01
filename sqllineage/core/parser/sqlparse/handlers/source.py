@@ -96,7 +96,7 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
             )
 
     def _handle_column(self, token: Token) -> None:
-        column_token_types = (Identifier, Function, Operation, Case)
+        column_token_types = (Identifier, Function, Operation, Case, Parenthesis)
         if isinstance(token, column_token_types) or token.ttype is Wildcard:
             column_tokens = [token]
         elif isinstance(token, IdentifierList):
