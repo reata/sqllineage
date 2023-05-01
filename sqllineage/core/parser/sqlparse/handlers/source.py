@@ -47,6 +47,10 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
         if token.normalized in ("UNION", "UNION ALL"):
             self.union_barriers.append((len(self.columns), len(self.tables)))
 
+        if self.column_flag is True and bool(token.normalized == "DISTINCT"):
+            # special handling for SELECT DISTINCT
+            return True
+
         if any(re.match(regex, token.normalized) for regex in self.SOURCE_TABLE_TOKENS):
             self.column_flag = False
             return True
