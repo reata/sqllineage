@@ -24,6 +24,7 @@ NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
     "when_clause",
     "else_clause",
     "select_clause_element",
+    "cast_expression",
 ]
 
 SOURCE_COLUMN_SEGMENT_TYPE = NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + [
@@ -113,7 +114,22 @@ class SqlFluffColumn(Column):
                 for sub_segment in sub_segments:
                     if sub_segment.type == "column_reference":
                         column_name = get_identifier(sub_segment)
-
+                    elif sub_segment.type == "expression":
+                        # special handling for postgres style type cast, col as target column name instead of col::type
+                        if len(sub2_segments := retrieve_segments(sub_segment)) == 1:
+                            if (
+                                sub2_segment := sub2_segments[0]
+                            ).type == "cast_expression":
+                                if (
+                                    len(
+                                        sub3_segments := retrieve_segments(sub2_segment)
+                                    )
+                                    == 2
+                                ):
+                                    if (
+                                        sub3_segment := sub3_segments[0]
+                                    ).type == "column_reference":
+                                        column_name = get_identifier(sub3_segment)
                 return Column(
                     column.raw if column_name is None else column_name,
                     source_columns=source_columns,

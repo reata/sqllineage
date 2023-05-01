@@ -734,6 +734,16 @@ SELECT cast('2012-12-21' AS date) AS col2"""
     assert_column_lineage_equal(sql)
 
 
+def test_postgres_style_type_cast():
+    sql = """INSERT INTO tab1
+SELECT col1::timestamp
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
+
+
 def test_window_function_in_subquery():
     sql = """INSERT INTO tab1
 SELECT rn FROM (
