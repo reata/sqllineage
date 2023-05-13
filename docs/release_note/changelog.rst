@@ -2,6 +2,20 @@
 Changelog
 *********
 
+v1.4.3
+======
+:Date: May 13, 2023
+
+Enhancement
+-------------
+* Support postgres style type casts "keyword::TIMESTAMP" (`#364 <https://github.com/reata/sqllineage/issues/364>`_)
+
+Bugfix
+-------------
+* Missing column lineage from SELECT DISTINCT using non-validating dialect (`#356 <https://github.com/reata/sqllineage/issues/356>`_)
+* Missing column lineage with Parenthesis around column arithmetic operation (`#355 <https://github.com/reata/sqllineage/issues/355>`_)
+* Not Handling CTE at the start of query in DML (`#328 <https://github.com/reata/sqllineage/issues/328>`_)
+
 v1.4.2
 ======
 :Date: April 22, 2023
