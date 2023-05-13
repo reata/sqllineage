@@ -59,6 +59,14 @@ class DmlInsertExtractor(LineageHolderExtractor):
             for current_handler in handlers:
                 current_handler.handle(segment, holder)
 
+            if segment.type == "with_compound_statement":
+                from .cte_extractor import DmlCteExtractor
+
+                holder |= DmlCteExtractor(self.dialect).extract(
+                    segment,
+                    AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
+                )
+
             if segment.type == "select_statement":
                 holder |= DmlSelectExtractor(self.dialect).extract(
                     segment,
