@@ -54,3 +54,11 @@ def test_with_insert():
         {"tab2"},
         {"tab3"},
     )
+
+
+def test_with_insert_in_query():
+    assert_table_lineage_equal(
+        "INSERT INTO tab3 WITH tab1 AS (SELECT * FROM tab2) SELECT * FROM tab1",
+        {"tab2"},
+        {"tab3"},
+    )
