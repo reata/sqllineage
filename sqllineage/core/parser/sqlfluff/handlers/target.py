@@ -4,7 +4,7 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path
 from sqllineage.core.parser.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.core.parser.sqlfluff.holder_utils import retrieve_holder_data_from
-from sqllineage.core.parser.sqlfluff.models import SqlFluffTable, SqlFluffColumn
+from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
     find_table_identifier,
     get_child,
