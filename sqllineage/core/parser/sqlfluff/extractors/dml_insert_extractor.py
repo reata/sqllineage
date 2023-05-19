@@ -97,9 +97,13 @@ class DmlInsertExtractor(LineageHolderExtractor):
                     conditional_handler.handle(segment, holder)
 
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
+
+        # we are passing the write context as the subquery for type SUPPORTED_STMT_TYPES (defined above)
+        # would always be a source(read) query and it is important to pass 
+        # the write context to generate the correct lineage
         for sq in subqueries:
             holder |= DmlSelectExtractor(self.dialect).extract(
-                sq.query, AnalyzerContext(sq, holder.cte)
+                sq.query, AnalyzerContext(sq, holder.cte, holder.write)
             )
 
         return holder

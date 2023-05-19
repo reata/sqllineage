@@ -130,4 +130,5 @@ class LineageHolderExtractor:
             # If within subquery, then manually add subquery as target table
             holder.add_write(context.subquery)
 
+        holder.target_columns = context.target_columns
         return holder

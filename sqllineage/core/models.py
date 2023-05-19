@@ -228,12 +228,14 @@ class AnalyzerContext:
     subquery: Optional[SubQuery]
     prev_cte: Optional[Set[SubQuery]]
     prev_write: Optional[Set[Union[SubQuery, Table]]]
+    target_columns: Optional[List]
 
     def __init__(
         self,
         subquery: Optional[SubQuery] = None,
         prev_cte: Optional[Set[SubQuery]] = None,
         prev_write: Optional[Set[Union[SubQuery, Table]]] = None,
+        target_columns: Optional[List] = [],
     ):
         """
         :param subquery: subquery
@@ -243,3 +245,4 @@ class AnalyzerContext:
         self.subquery = subquery
         self.prev_cte = prev_cte
         self.prev_write = prev_write
+        self.target_columns = target_columns
