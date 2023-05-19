@@ -1,5 +1,5 @@
 import itertools
-from typing import Set, Tuple, Union, List, Optional
+from typing import List, Optional, Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
