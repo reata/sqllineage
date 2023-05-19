@@ -44,8 +44,7 @@ def test_insert_with_custom_columns():
         test_sqlparse=False,
     )
 
-
-    # test with plain query 
+    # test with plain query
     sql = "insert into trg_tbl(random1,random2) select col1,col2 from src_tbl_new"
     assert_column_lineage_equal(
         sql,

@@ -136,8 +136,8 @@ class TargetHandler(ConditionalSegmentBaseHandler):
 
         elif segment.type == "bracketed":
             """
-            In case of bracketed column reference, add these target columns to holder 
-            so that when we compute the column level lineage 
+            In case of bracketed column reference, add these target columns to holder
+            so that when we compute the column level lineage
             we keep these columns into consideration
             """
             sub_segments = retrieve_segments(segment)
