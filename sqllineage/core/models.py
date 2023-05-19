@@ -228,14 +228,14 @@ class AnalyzerContext:
     subquery: Optional[SubQuery]
     prev_cte: Optional[Set[SubQuery]]
     prev_write: Optional[Set[Union[SubQuery, Table]]]
-    target_columns: Optional[List[Column]]
+    target_columns: List[Column]
 
     def __init__(
         self,
         subquery: Optional[SubQuery] = None,
         prev_cte: Optional[Set[SubQuery]] = None,
         prev_write: Optional[Set[Union[SubQuery, Table]]] = None,
-        target_columns: Optional[List[Column]] = [],
+        target_columns: List[Column] = [],
     ):
         """
         :param subquery: subquery

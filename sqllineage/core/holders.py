@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Optional, Set, Tuple, Union
+from typing import List, Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
@@ -49,7 +49,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
         self.extra_subqueries: Set[SubQuery] = set()
-        self.target_columns: Optional[List[Column]] = []
+        self.target_columns: List[Column] = []
 
     def __or__(self, other):
         self.graph = nx.compose(self.graph, other.graph)
