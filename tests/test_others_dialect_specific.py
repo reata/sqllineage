@@ -106,7 +106,7 @@ def test_create_clone(dialect: str):
 
 
 @pytest.mark.parametrize("dialect", ["snowflake"])
-def test_alter_table_exchange_partition(dialect: str):
+def test_alter_table_swap_partition(dialect: str):
     """
     See https://docs.snowflake.com/en/sql-reference/sql/alter-table for language manual
     """
