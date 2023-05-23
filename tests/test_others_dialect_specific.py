@@ -105,6 +105,17 @@ def test_create_clone(dialect: str):
     )
 
 
+@pytest.mark.parametrize("dialect", ["bigquery"])
+def test_bigquery_create_clone(dialect: str):
+    assert_table_lineage_equal(
+        "CREATE TABLE myproject.myDataset_backup.myTableClone CLONE myproject.myDataset.myTable;",
+        {"myproject.myDataset.myTable"},
+        {"myproject.myDataset_backup.myTableClone"},
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
 @pytest.mark.parametrize("dialect", ["snowflake"])
 def test_alter_table_swap_partition(dialect: str):
     """
