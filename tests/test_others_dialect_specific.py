@@ -137,3 +137,48 @@ LATERAL VIEW OUTER explode(sc.json_array) q AS col1"""
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_show_create_table(dialect: str):
     assert_table_lineage_equal("show create table tab1", None, None, dialect)
+
+
+@pytest.mark.parametrize("dialect", ["bigquery"])
+def test_merge_into_insert_one_column(dialect: str):
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN NOT MATCHED THEN INSERT VALUES (src.k)"""
+    assert_table_lineage_equal(sql, {"src"}, {"target"}, dialect=dialect)
+
+
+@pytest.mark.parametrize("dialect", ["bigquery"])
+def test_merge_using_subquery(dialect: str):
+    sql = """MERGE target USING (select k, max(v) as v from src group by k) AS b ON target.k = b.k
+WHEN MATCHED THEN UPDATE SET target.v = b.v
+WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v)"""
+    assert_table_lineage_equal(sql, {"src"}, {"target"}, dialect=dialect)
+
+
+@pytest.mark.parametrize("dialect", ["bigquery"])
+def test_merge_using_cte_subquery(dialect: str):
+    sql = """MERGE `project_id.dataset_id.target_table` t
+    USING (
+    WITH base AS (
+        SELECT
+            date, channel, cnt, user_count, total_user_count,
+        FROM `project_id.dataset_id.origin_table`
+    )
+    SELECT
+        date, channel, cnt, total_user_count, SAFE_DIVIDE(cnt, user_count) AS rate
+    FROM base
+    ) s
+    ON t.date = s.date and t.channel = s.channel
+    WHEN NOT MATCHED THEN
+    INSERT ROW
+    WHEN MATCHED THEN
+    UPDATE SET t.total_user_cnt = s.total_user_cnt,
+    t.cnt = s.cnt,
+    t.rate = s.rat"""
+    assert_table_lineage_equal(
+        sql,
+        {"project_id.dataset_id.origin_table"},
+        {"project_id.dataset_id.target_table"},
+        dialect=dialect,
+        test_sqlparse=False,
+    )

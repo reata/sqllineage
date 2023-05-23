@@ -211,3 +211,30 @@ def test_split_statements_with_desc():
 
 DESC tab1;"""
     assert len(split(sql)) == 2
+
+
+def test_merge_using_cte_subquery():
+    sql = """MERGE INTO dataset_id.target_table t
+    USING (
+    WITH base AS (
+        SELECT
+            date, channel, cnt, user_count, total_user_count,
+        FROM dataset_id.origin_table
+    )
+    SELECT
+        date, channel, cnt, total_user_count, SAFE_DIVIDE(cnt, user_count) AS rate
+    FROM base
+    ) s
+    ON t.date = s.date and t.channel = s.channel
+    WHEN NOT MATCHED THEN
+    INSERT ROW
+    WHEN MATCHED THEN
+    UPDATE SET t.total_user_cnt = s.total_user_cnt,
+    t.cnt = s.cnt,
+    t.rate = s.rat"""
+    assert_table_lineage_equal(
+        sql,
+        {"dataset_id.origin_table"},
+        {"dataset_id.target_table"},
+        test_sqlparse=False,
+    )
