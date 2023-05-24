@@ -94,7 +94,7 @@ def test_alter_table_exchange_partition(dialect: str):
     )
 
 
-@pytest.mark.parametrize("dialect", ["snowflake","bigquery"])
+@pytest.mark.parametrize("dialect", ["snowflake", "bigquery"])
 def test_create_clone(dialect: str):
     assert_table_lineage_equal(
         "create table tab2 CLONE tab1;",
