@@ -52,7 +52,7 @@ class TargetHandler(ConditionalSegmentBaseHandler):
 
     def _reset_tokens(self) -> None:
         """
-        Set 'prev_token_like' and 'prev_token_like' variable to False
+        Set 'prev_token_from' and 'prev_token_read' variable to False
         """
         self.prev_token_read = False
         self.prev_token_from = False
