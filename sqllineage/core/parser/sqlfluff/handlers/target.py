@@ -4,7 +4,11 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path
 from sqllineage.core.parser.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.core.parser.sqlfluff.holder_utils import retrieve_holder_data_from
-from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffTable
+from sqllineage.core.parser.sqlfluff.models import (
+    SqlFluffColumn,
+    SqlFluffTable,
+    SubQuery,
+)
 from sqllineage.core.parser.sqlfluff.utils import (
     find_table_identifier,
     get_child,
@@ -147,7 +151,7 @@ class TargetHandler(ConditionalSegmentBaseHandler):
                     sub_segment
                     for sub_segment in sub_segments
                     if sub_segment.type != "column_reference"
-                ):
+                ) or isinstance(tgt_table, SubQuery):
                     # target columns only apply to bracketed column references
                     # return if it contains any element other than column_reference
                     return
