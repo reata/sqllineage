@@ -18,7 +18,8 @@ class SourceHandlerMixin:
         # In case of target columns the length of source column has to be
         # equal to the length of target columns otherwise that would be
         # an invalid target query
-        pick_target_column = len(holder.target_columns) == len(self.columns)
+        target_columns = holder.target_columns
+        pick_target_column = len(target_columns) == len(self.columns)
         for i, (col_barrier, tbl_barrier) in enumerate(self.union_barriers):
             prev_col_barrier, prev_tbl_barrier = (
                 (0, 0) if i == 0 else self.union_barriers[i - 1]
@@ -46,12 +47,8 @@ class SourceHandlerMixin:
 
                             # we fetching holder.target_columns[prev_col_barrier+idx]
                             # because tgt_col is actually self.columns[prev_col_barrier+idx]
-                            tgt_col = holder.target_columns[prev_col_barrier + idx]
-                            tgt_col.parent = tgt_tbl
+                            tgt_col = target_columns[prev_col_barrier + idx][1]
                         holder.add_column_lineage(src_col, tgt_col)
-
-        # cleaning the target column array as no longer relevant or needed
-        holder.target_columns.clear()
 
     @classmethod
     def get_alias_mapping_from_table_group(

@@ -9,6 +9,7 @@ class NodeTag:
     SOURCE_ONLY = "source_only"
     TARGET_ONLY = "target_only"
     SELFLOOP = "selfloop"
+    INDEX = "index"
 
 
 @unique

@@ -3,6 +3,7 @@ from .helpers import assert_column_lineage_equal
 
 
 def test_view_with_subquery_custom_columns():
+    # select as subquery
     sql = "create view my_view (random1,random2) as (select col1,col2 from table)"
     assert_column_lineage_equal(
         sql,

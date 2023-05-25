@@ -74,6 +74,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
                         SqlFluffSubQuery.of(segment, None),
                         prev_cte=holder.cte,
                         prev_write=holder.write,
+                        target_columns=holder.target_columns,
                     ),
                 )
                 continue
@@ -88,6 +89,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
                                 SqlFluffSubQuery.of(segment, None),
                                 prev_cte=holder.cte,
                                 prev_write=holder.write,
+                                target_columns=holder.target_columns,
                             ),
                         )
                 continue
@@ -102,8 +104,10 @@ class DmlInsertExtractor(LineageHolderExtractor):
         # would always be a source(read) query and it is important to pass
         # the write context to generate the correct lineage
         for sq in subqueries:
+            holder.add_read(sq)
             holder |= DmlSelectExtractor(self.dialect).extract(
-                sq.query, AnalyzerContext(sq, holder.cte, holder.write)
+                sq.query,
+                AnalyzerContext(sq, holder.cte, holder.write, holder.target_columns),
             )
 
         return holder

@@ -140,7 +140,22 @@ class TargetHandler(ConditionalSegmentBaseHandler):
             so that when we compute the column level lineage
             we keep these columns into consideration
             """
-            sub_segments = retrieve_segments(segment)
-            for sub_segment in sub_segments:
-                if sub_segment.type == "column_reference":
-                    holder.target_columns.append(SqlFluffColumn.of(sub_segment))
+            if holder.write:
+                tgt_table = list(holder.write)[0]
+                sub_segments = retrieve_segments(segment)
+                if any(
+                    sub_segment
+                    for sub_segment in sub_segments
+                    if sub_segment.type != "column_reference"
+                ):
+                    # target columns only apply to bracketed column references
+                    # return if it contains any element other than column_reference
+                    return
+
+                for i in range(len(sub_segments)):
+                    if sub_segments[i].type == "column_reference":
+                        holder.add_target_column(
+                            tgt_col=SqlFluffColumn.of(sub_segments[i]),
+                            tgt_table=tgt_table,
+                            index=i,
+                        )

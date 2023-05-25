@@ -49,7 +49,6 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
         self.extra_subqueries: Set[SubQuery] = set()
-        self.target_columns: List[Column] = []
 
     def __or__(self, other):
         self.graph = nx.compose(self.graph, other.graph)
@@ -84,6 +83,25 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def add_cte(self, value) -> None:
         self._property_setter(value, NodeTag.CTE)
+
+    @property
+    def target_columns(self) -> List[Tuple[Table, Column, int]]:
+        # return the nodes which contains the "index" which will refer to the
+        # target columns also return this data in a sorted by index
+        return sorted(
+            list(i for i in self.graph.edges(data=NodeTag.INDEX) if i[2] is not None),
+            key=lambda edge: edge[2],
+        )
+
+    def set_target_columns(
+        self, target_columns: List[Tuple[Table, Column, int]]
+    ) -> None:
+        for target_column in target_columns:
+            self.add_target_column(target_column[0], target_column[1], target_column[2])
+
+    def add_target_column(self, tgt_table: Table, tgt_col: Column, index: int) -> None:
+        tgt_col.parent = tgt_table
+        self.graph.add_edge(tgt_table, tgt_col, type=EdgeType.HAS_COLUMN, index=index)
 
     def add_column_lineage(self, src: Column, tgt: Column) -> None:
         self.graph.add_edge(src, tgt, type=EdgeType.LINEAGE)
