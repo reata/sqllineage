@@ -140,14 +140,6 @@ def test_show_create_table(dialect: str):
 
 
 @pytest.mark.parametrize("dialect", ["bigquery"])
-def test_merge_into_insert_one_column(dialect: str):
-    sql = """MERGE INTO target
-USING src ON target.k = src.k
-WHEN NOT MATCHED THEN INSERT VALUES (src.k)"""
-    assert_table_lineage_equal(sql, {"src"}, {"target"}, dialect=dialect)
-
-
-@pytest.mark.parametrize("dialect", ["bigquery"])
 def test_merge_using_subquery(dialect: str):
     sql = """MERGE target USING (select k, max(v) as v from src group by k) AS b ON target.k = b.k
 WHEN MATCHED THEN UPDATE SET target.v = b.v

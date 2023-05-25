@@ -238,3 +238,10 @@ def test_merge_using_cte_subquery():
         {"dataset_id.target_table"},
         test_sqlparse=False,
     )
+
+
+def test_merge_into_insert_one_column():
+    sql = """MERGE INTO target
+    USING src ON target.k = src.k
+    WHEN NOT MATCHED THEN INSERT VALUES (src.k)"""
+    assert_table_lineage_equal(sql, {"src"}, {"target"})
