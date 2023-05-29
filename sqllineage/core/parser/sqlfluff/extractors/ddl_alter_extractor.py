@@ -13,6 +13,8 @@ class DdlAlterExtractor(LineageHolderExtractor):
     DDL Alter queries lineage extractor
     """
 
+    SOURCE_KEYWORDS = {"EXCHANGE", "SWAP"}
+
     SUPPORTED_STMT_TYPES = [
         "alter_table_statement",
         "rename_statement",
@@ -44,7 +46,10 @@ class DdlAlterExtractor(LineageHolderExtractor):
         if any(k.raw_upper == "RENAME" for k in keywords):
             if statement.type == "alter_table_statement" and len(tables) == 2:
                 holder.add_rename(tables[0], tables[1])
-        if any(k.raw_upper == "EXCHANGE" for k in keywords) and len(tables) == 2:
+        if (
+            any(k.raw_upper in self.SOURCE_KEYWORDS for k in keywords)
+            and len(tables) == 2
+        ):
             holder.add_write(tables[0])
             holder.add_read(tables[1])
         return holder

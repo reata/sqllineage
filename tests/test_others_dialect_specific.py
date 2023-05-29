@@ -94,6 +94,38 @@ def test_alter_table_exchange_partition(dialect: str):
     )
 
 
+@pytest.mark.parametrize("dialect", ["snowflake", "bigquery"])
+def test_create_clone(dialect: str):
+    """
+    Language manual:
+        https://cloud.google.com/bigquery/docs/table-clones-create
+        https://docs.snowflake.com/en/sql-reference/sql/create-clone
+    Note clone is not a keyword in sqlparse, we'll skip testing for it.
+    """
+    assert_table_lineage_equal(
+        "create table tab2 CLONE tab1;",
+        {"tab1"},
+        {"tab2"},
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize("dialect", ["snowflake"])
+def test_alter_table_swap_partition(dialect: str):
+    """
+    See https://docs.snowflake.com/en/sql-reference/sql/alter-table for language manual
+    Note swap is not a keyword in sqlparse, we'll skip testing for it.
+    """
+    assert_table_lineage_equal(
+        "alter table tab1 swap with tab2",
+        {"tab2"},
+        {"tab1"},
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_refresh_table(dialect: str):
     assert_table_lineage_equal("refresh table tab1", None, None, dialect)
