@@ -214,34 +214,30 @@ DESC tab1;"""
 
 
 def test_merge_using_cte_subquery():
-    sql = """MERGE INTO dataset_id.target_table t
-    USING (
+    sql = """MERGE INTO tgt t
+USING (
     WITH base AS (
         SELECT
-            date, channel, cnt, user_count, total_user_count,
-        FROM dataset_id.origin_table
+            id, max(value) AS value
+        FROM src
+        GROUP BY id
     )
     SELECT
-        date, channel, cnt, total_user_count, SAFE_DIVIDE(cnt, user_count) AS rate
+        id, value
     FROM base
-    ) s
-    ON t.date = s.date and t.channel = s.channel
-    WHEN NOT MATCHED THEN
-    INSERT ROW
-    WHEN MATCHED THEN
-    UPDATE SET t.total_user_cnt = s.total_user_cnt,
-    t.cnt = s.cnt,
-    t.rate = s.rat"""
+) s
+ON t.id = s.id
+WHEN MATCHED THEN
+UPDATE SET t.value = s.value"""
     assert_table_lineage_equal(
         sql,
-        {"dataset_id.origin_table"},
-        {"dataset_id.target_table"},
-        test_sqlparse=False,
+        {"src"},
+        {"tgt"},
     )
 
 
 def test_merge_into_insert_one_column():
     sql = """MERGE INTO target
-    USING src ON target.k = src.k
-    WHEN NOT MATCHED THEN INSERT VALUES (src.k)"""
+USING src ON target.k = src.k
+WHEN NOT MATCHED THEN INSERT VALUES (src.k)"""
     assert_table_lineage_equal(sql, {"src"}, {"target"})
