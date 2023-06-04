@@ -107,7 +107,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             if is_token_negligible(token):
                 continue
             if token.is_keyword:
-                if token.normalized == "INTO":
+                if token.normalized in {"INTO", "MERGE"}:
                     tgt_flag = True
                 elif token.normalized == "USING":
                     src_flag = True
@@ -160,7 +160,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                         tgt_col = Column(identifier.get_real_name())
                         tgt_col.parent = list(holder.write)[0]
                         insert_columns.append(tgt_col)
-                elif isinstance(token, Values):
+                elif insert_columns and isinstance(token, Values):
                     for sub_token in token.tokens:
                         if isinstance(sub_token, Parenthesis):
                             t = sub_token.tokens[1]

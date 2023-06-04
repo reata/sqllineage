@@ -211,3 +211,33 @@ def test_split_statements_with_desc():
 
 DESC tab1;"""
     assert len(split(sql)) == 2
+
+
+def test_merge_using_cte_subquery():
+    sql = """MERGE INTO tgt t
+USING (
+    WITH base AS (
+        SELECT
+            id, max(value) AS value
+        FROM src
+        GROUP BY id
+    )
+    SELECT
+        id, value
+    FROM base
+) s
+ON t.id = s.id
+WHEN MATCHED THEN
+UPDATE SET t.value = s.value"""
+    assert_table_lineage_equal(
+        sql,
+        {"src"},
+        {"tgt"},
+    )
+
+
+def test_merge_into_insert_one_column():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN NOT MATCHED THEN INSERT VALUES (src.k)"""
+    assert_table_lineage_equal(sql, {"src"}, {"target"})

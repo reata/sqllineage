@@ -4,6 +4,7 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.models import AnalyzerContext, Column, SubQuery, Table
+from sqllineage.core.parser.sqlfluff.extractors.cte_extractor import DmlCteExtractor
 from sqllineage.core.parser.sqlfluff.extractors.dml_select_extractor import (
     DmlSelectExtractor,
 )
@@ -40,7 +41,7 @@ class DmlMergeExtractor(LineageHolderExtractor):
         direct_source: Optional[Union[Table, SubQuery]] = None
         segments = retrieve_segments(statement)
         for i, segment in enumerate(segments):
-            if segment.type == "keyword" and segment.raw_upper == "INTO":
+            if segment.type == "keyword" and segment.raw_upper in {"INTO", "MERGE"}:
                 tgt_flag = True
                 continue
             if segment.type == "keyword" and segment.raw_upper == "USING":
@@ -64,9 +65,18 @@ class DmlMergeExtractor(LineageHolderExtractor):
                         else None,
                     )
                     holder.add_read(direct_source)
-                    holder |= DmlSelectExtractor(self.dialect).extract(
-                        direct_source.query, AnalyzerContext(direct_source, holder.cte)
-                    )
+                    if direct_source.query.get_child("with_compound_statement"):
+                        # in case the subquery is a CTE query
+                        holder |= DmlCteExtractor(self.dialect).extract(
+                            direct_source.query,
+                            AnalyzerContext(direct_source, prev_cte=holder.cte),
+                        )
+                    else:
+                        # in case the subquery is a select query
+                        holder |= DmlSelectExtractor(self.dialect).extract(
+                            direct_source.query,
+                            AnalyzerContext(direct_source, holder.cte),
+                        )
                 src_flag = False
 
         for match in get_grandchildren(
@@ -90,19 +100,23 @@ class DmlMergeExtractor(LineageHolderExtractor):
         ):
             merge_insert = not_match.get_child("merge_insert_clause")
             insert_columns = []
-            for c in merge_insert.get_child("bracketed").get_children(
+            merge_insert_bracketed = merge_insert.get_child("bracketed")
+            if merge_insert_bracketed and merge_insert_bracketed.get_children(
                 "column_reference"
             ):
-                tgt_col = Column(get_identifier(c))
-                tgt_col.parent = list(holder.write)[0]
-                insert_columns.append(tgt_col)
-            for j, e in enumerate(
-                merge_insert.get_child("values_clause")
-                .get_child("bracketed")
-                .get_children("expression")
-            ):
-                if col_ref := e.get_child("column_reference"):
-                    src_col = Column(get_identifier(col_ref))
-                    src_col.parent = direct_source
-                    holder.add_column_lineage(src_col, insert_columns[j])
+                for c in merge_insert.get_child("bracketed").get_children(
+                    "column_reference"
+                ):
+                    tgt_col = Column(get_identifier(c))
+                    tgt_col.parent = list(holder.write)[0]
+                    insert_columns.append(tgt_col)
+                for j, e in enumerate(
+                    merge_insert.get_child("values_clause")
+                    .get_child("bracketed")
+                    .get_children("expression")
+                ):
+                    if col_ref := e.get_child("column_reference"):
+                        src_col = Column(get_identifier(col_ref))
+                        src_col.parent = direct_source
+                        holder.add_column_lineage(src_col, insert_columns[j])
         return holder
