@@ -15,18 +15,12 @@ class SourceHandlerMixin:
         for i, tbl in enumerate(self.tables):
             holder.add_read(tbl)
         self.union_barriers.append((len(self.columns), len(self.tables)))
-        # In case of target columns the length of source column has to be
-        # equal to the length of target columns otherwise that would be
-        # an invalid target query
-        target_columns = holder.target_columns
-        pick_target_column = len(target_columns) == len(self.columns)
         for i, (col_barrier, tbl_barrier) in enumerate(self.union_barriers):
             prev_col_barrier, prev_tbl_barrier = (
                 (0, 0) if i == 0 else self.union_barriers[i - 1]
             )
             col_grp = self.columns[prev_col_barrier:col_barrier]
             tbl_grp = self.tables[prev_tbl_barrier:tbl_barrier]
-            tgt_tbl = None
             if holder.write:
                 if len(holder.write) > 1:
                     raise SQLLineageException
@@ -37,17 +31,13 @@ class SourceHandlerMixin:
                     for src_col in tgt_col.to_source_columns(
                         self.get_alias_mapping_from_table_group(tbl_grp, holder)
                     ):
-                        if pick_target_column:
-                            # if length of target columns & source column is equal
-                            # then we will refer to the target column array
-                            # to fetch the actual name of the target column instead of
-                            # relying on source column name or source column alias
-                            # example query: create view test(a1) select id from person
-                            # the target column name would be a1 in above example
-
-                            # we fetching holder.target_columns[prev_col_barrier+idx]
-                            # because tgt_col is actually self.columns[prev_col_barrier+idx]
-                            tgt_col = target_columns[prev_col_barrier + idx][1]
+                        if len(target_columns := holder.target_columns) == len(col_grp):
+                            # example query: create view test (col3) select col1 as col2 from tab
+                            # without target_columns = [col3] information, by default src_col = col1 and tgt_col = col2
+                            # when target_columns exist and length matches, we want tgt_col = col3 instead of col2
+                            # for invalid query: create view test (col3, col4) select col1 as col2 from tab,
+                            # when the length doesn't match, we fall back to default behavior
+                            tgt_col = target_columns[idx][1]
                         holder.add_column_lineage(src_col, tgt_col)
 
     @classmethod
