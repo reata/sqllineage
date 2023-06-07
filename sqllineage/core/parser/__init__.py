@@ -37,7 +37,7 @@ class SourceHandlerMixin:
                             # when target_columns exist and length matches, we want tgt_col = col3 instead of col2
                             # for invalid query: create view test (col3, col4) select col1 as col2 from tab,
                             # when the length doesn't match, we fall back to default behavior
-                            tgt_col = target_columns[idx][1]
+                            tgt_col = target_columns[idx]
                         holder.add_column_lineage(src_col, tgt_col)
 
     @classmethod

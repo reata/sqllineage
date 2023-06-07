@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.helpers import escape_identifier_name
@@ -225,17 +225,12 @@ class AnalyzerContext:
     Data class to hold the analyzer context
     """
 
-    subquery: Optional[SubQuery]
-    prev_cte: Optional[Set[SubQuery]]
-    prev_write: Optional[Set[Union[SubQuery, Table]]]
-    target_columns: List[Tuple[Table, Column, int]]
-
     def __init__(
         self,
         subquery: Optional[SubQuery] = None,
         prev_cte: Optional[Set[SubQuery]] = None,
         prev_write: Optional[Set[Union[SubQuery, Table]]] = None,
-        target_columns: List[Tuple[Table, Column, int]] = [],
+        target_columns=None,
     ):
         """
         :param subquery: subquery
@@ -243,6 +238,8 @@ class AnalyzerContext:
         :param prev_write: previous written tables
         :param target_columns: previous target columns
         """
+        if target_columns is None:
+            target_columns = []
         self.subquery = subquery
         self.prev_cte = prev_cte
         self.prev_write = prev_write

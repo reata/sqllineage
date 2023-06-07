@@ -132,6 +132,6 @@ class LineageHolderExtractor:
 
         if context.target_columns:
             # target columns can be referred while creating column level lineage
-            holder.set_target_columns(context.target_columns)
+            holder.add_target_column(*context.target_columns)
 
         return holder

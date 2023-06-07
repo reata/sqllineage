@@ -5,7 +5,7 @@ import networkx as nx
 from networkx import DiGraph
 
 from sqllineage.core.models import Column, Path, SubQuery, Table
-from sqllineage.utils.constant import EdgeType, NodeTag
+from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
 DATASET_CLASSES = (Path, Table)
 
@@ -85,23 +85,31 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         self._property_setter(value, NodeTag.CTE)
 
     @property
-    def target_columns(self) -> List[Tuple[Table, Column, int]]:
+    def target_columns(self) -> List[Column]:
         # return the nodes which contains the "index" which will refer to the
         # target columns also return this data in a sorted by index
-        return sorted(
-            list(i for i in self.graph.edges(data=NodeTag.INDEX) if i[2] is not None),
-            key=lambda edge: edge[2],
-        )
+        tgt_cols = []
+        if self.write:
+            tgt_tbl = list(self.write)[0]
+            tgt_col_with_idx: List[Tuple[Column, int]] = sorted(
+                [
+                    (col, attr.get(EdgeTag.INDEX, 0))
+                    for tbl, col, attr in self.graph.out_edges(tgt_tbl, data=True)
+                    if attr["type"] == EdgeType.HAS_COLUMN
+                ],
+                key=lambda x: x[1],
+            )
+            tgt_cols = [x[0] for x in tgt_col_with_idx]
+        return tgt_cols
 
-    def set_target_columns(
-        self, target_columns: List[Tuple[Table, Column, int]]
-    ) -> None:
-        for target_column in target_columns:
-            self.add_target_column(target_column[0], target_column[1], target_column[2])
-
-    def add_target_column(self, tgt_table: Table, tgt_col: Column, index: int) -> None:
-        tgt_col.parent = tgt_table
-        self.graph.add_edge(tgt_table, tgt_col, type=EdgeType.HAS_COLUMN, index=index)
+    def add_target_column(self, *tgt_cols: Column) -> None:
+        if self.write:
+            tgt_tbl = list(self.write)[0]
+            for idx, tgt_col in enumerate(tgt_cols):
+                tgt_col.parent = tgt_tbl
+                self.graph.add_edge(
+                    tgt_tbl, tgt_col, type=EdgeType.HAS_COLUMN, **{EdgeTag.INDEX: idx}
+                )
 
     def add_column_lineage(self, src: Column, tgt: Column) -> None:
         self.graph.add_edge(src, tgt, type=EdgeType.LINEAGE)
