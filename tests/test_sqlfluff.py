@@ -188,6 +188,12 @@ def test_insert_into_with_columns_and_select_union():
         {"tab1"},
         test_sqlparse=False,
     )
+    assert_table_lineage_equal(
+        "INSERT INTO tab1 (col1, col2) (SELECT * FROM tab2 UNION SELECT * FROM tab3)",
+        {"tab2", "tab3"},
+        {"tab1"},
+        test_sqlparse=False,
+    )
 
 
 def test_insert_with_custom_columns():

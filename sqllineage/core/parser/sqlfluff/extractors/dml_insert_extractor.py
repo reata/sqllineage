@@ -11,7 +11,7 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils import get_child, retrieve_segments
+from sqllineage.core.parser.sqlfluff.utils import get_child, is_union, retrieve_segments
 
 
 class DmlInsertExtractor(LineageHolderExtractor):
@@ -62,24 +62,31 @@ class DmlInsertExtractor(LineageHolderExtractor):
                     segment,
                     AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
                 )
-            elif self.parse_subquery(segment):
+            elif segment.type == "bracketed" and (
+                self.parse_subquery(segment) or is_union(segment)
+            ):
                 # note regular subquery within SELECT statement is handled by DmlSelectExtractor, this is only to handle
                 # top-level subquery in DML like: 1) create table foo as (subquery); 2) insert into foo (subquery)
                 # subquery here isn't added as read source, and it inherits DML-level target_columns if parsed
                 if subquery_segment := get_child(segment, "select_statement"):
                     self._extract_select(holder, subquery_segment)
+                elif subquery_segment := get_child(segment, "set_expression"):
+                    self._extract_set(holder, subquery_segment)
             elif segment.type == "select_statement":
                 self._extract_select(holder, segment)
             elif segment.type == "set_expression":
-                for sub_segment in retrieve_segments(segment):
-                    if sub_segment.type == "select_statement":
-                        self._extract_select(holder, sub_segment, segment)
+                self._extract_set(holder, segment)
             else:
                 for conditional_handler in conditional_handlers:
                     if conditional_handler.indicate(segment):
                         conditional_handler.handle(segment, holder)
 
         return holder
+
+    def _extract_set(self, holder: SubQueryLineageHolder, set_segment: BaseSegment):
+        for sub_segment in retrieve_segments(set_segment):
+            if sub_segment.type == "select_statement":
+                self._extract_select(holder, sub_segment, set_segment)
 
     def _extract_select(
         self,
