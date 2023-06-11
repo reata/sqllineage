@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
@@ -9,7 +11,7 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils import retrieve_segments
+from sqllineage.core.parser.sqlfluff.utils import get_child, retrieve_segments
 
 
 class DmlInsertExtractor(LineageHolderExtractor):
@@ -48,14 +50,8 @@ class DmlInsertExtractor(LineageHolderExtractor):
 
         holder = self._init_holder(context)
 
-        subqueries = []
         segments = retrieve_segments(statement)
         for segment in segments:
-            for sq in self.parse_subquery(segment):
-                # Collecting subquery on the way, hold on parsing until last
-                # so that each handler don't have to worry about what's inside subquery
-                subqueries.append(sq)
-
             for current_handler in handlers:
                 current_handler.handle(segment, holder)
 
@@ -66,48 +62,39 @@ class DmlInsertExtractor(LineageHolderExtractor):
                     segment,
                     AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
                 )
-
-            if segment.type == "select_statement":
-                holder |= DmlSelectExtractor(self.dialect).extract(
-                    segment,
-                    AnalyzerContext(
-                        SqlFluffSubQuery.of(segment, None),
-                        prev_cte=holder.cte,
-                        prev_write=holder.write,
-                        target_columns=holder.target_columns,
-                    ),
-                )
-                continue
-
-            if segment.type == "set_expression":
-                sub_segments = retrieve_segments(segment)
-                for sub_segment in sub_segments:
+            elif self.parse_subquery(segment):
+                # note regular subquery within SELECT statement is handled by DmlSelectExtractor, this is only to handle
+                # top-level subquery in DML like: 1) create table foo as (subquery); 2) insert into foo (subquery)
+                # subquery here isn't added as read source, and it inherits DML-level target_columns if parsed
+                if subquery_segment := get_child(segment, "select_statement"):
+                    self._extract_select(holder, subquery_segment)
+            elif segment.type == "select_statement":
+                self._extract_select(holder, segment)
+            elif segment.type == "set_expression":
+                for sub_segment in retrieve_segments(segment):
                     if sub_segment.type == "select_statement":
-                        holder |= DmlSelectExtractor(self.dialect).extract(
-                            sub_segment,
-                            AnalyzerContext(
-                                SqlFluffSubQuery.of(segment, None),
-                                prev_cte=holder.cte,
-                                prev_write=holder.write,
-                                target_columns=holder.target_columns,
-                            ),
-                        )
-                continue
-
-            for conditional_handler in conditional_handlers:
-                if conditional_handler.indicate(segment):
-                    conditional_handler.handle(segment, holder)
-
-        # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
-
-        # we are passing the write context as the subquery for type SUPPORTED_STMT_TYPES (defined above)
-        # would always be a source(read) query and it is important to pass
-        # the write context to generate the correct lineage
-        for sq in subqueries:
-            holder.add_read(sq)
-            holder |= DmlSelectExtractor(self.dialect).extract(
-                sq.query,
-                AnalyzerContext(sq, holder.cte, holder.write, holder.target_columns),
-            )
+                        self._extract_select(holder, sub_segment, segment)
+            else:
+                for conditional_handler in conditional_handlers:
+                    if conditional_handler.indicate(segment):
+                        conditional_handler.handle(segment, holder)
 
         return holder
+
+    def _extract_select(
+        self,
+        holder: SubQueryLineageHolder,
+        select_segment: BaseSegment,
+        set_segment: Optional[BaseSegment] = None,
+    ):
+        holder |= DmlSelectExtractor(self.dialect).extract(
+            select_segment,
+            AnalyzerContext(
+                SqlFluffSubQuery.of(
+                    set_segment if set_segment else select_segment, None
+                ),
+                prev_cte=holder.cte,
+                prev_write=holder.write,
+                target_columns=holder.target_columns,
+            ),
+        )
