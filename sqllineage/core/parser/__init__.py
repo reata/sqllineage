@@ -21,17 +21,23 @@ class SourceHandlerMixin:
             )
             col_grp = self.columns[prev_col_barrier:col_barrier]
             tbl_grp = self.tables[prev_tbl_barrier:tbl_barrier]
-            tgt_tbl = None
             if holder.write:
                 if len(holder.write) > 1:
                     raise SQLLineageException
                 tgt_tbl = list(holder.write)[0]
-            if tgt_tbl:
-                for tgt_col in col_grp:
+                for idx in range(len(col_grp)):
+                    tgt_col = col_grp[idx]
                     tgt_col.parent = tgt_tbl
                     for src_col in tgt_col.to_source_columns(
                         self.get_alias_mapping_from_table_group(tbl_grp, holder)
                     ):
+                        if len(target_columns := holder.target_columns) == len(col_grp):
+                            # example query: create view test (col3) select col1 as col2 from tab
+                            # without target_columns = [col3] information, by default src_col = col1 and tgt_col = col2
+                            # when target_columns exist and length matches, we want tgt_col = col3 instead of col2
+                            # for invalid query: create view test (col3, col4) select col1 as col2 from tab,
+                            # when the length doesn't match, we fall back to default behavior
+                            tgt_col = target_columns[idx]
                         holder.add_column_lineage(src_col, tgt_col)
 
     @classmethod

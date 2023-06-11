@@ -5,6 +5,7 @@ from sqllineage.core.models import Path
 from sqllineage.core.parser.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.core.parser.sqlfluff.holder_utils import retrieve_holder_data_from
 from sqllineage.core.parser.sqlfluff.models import (
+    SqlFluffColumn,
     SqlFluffTable,
 )
 from sqllineage.core.parser.sqlfluff.utils import (
@@ -135,3 +136,18 @@ class TargetHandler(ConditionalSegmentBaseHandler):
                     )
                     if read:
                         holder.add_read(read)
+
+        elif segment.type == "bracketed":
+            """
+            In case of bracketed column reference, add these target columns to holder
+            so that when we compute the column level lineage
+            we keep these columns into consideration
+            """
+            sub_segments = retrieve_segments(segment)
+            if all(
+                sub_segment.type == "column_reference" for sub_segment in sub_segments
+            ):
+                # target columns only apply to bracketed column references
+                holder.add_target_column(
+                    *[SqlFluffColumn.of(sub_segment) for sub_segment in sub_segments]
+                )

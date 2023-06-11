@@ -11,6 +11,10 @@ class NodeTag:
     SELFLOOP = "selfloop"
 
 
+class EdgeTag:
+    INDEX = "index"
+
+
 @unique
 class EdgeType(Enum):
     LINEAGE = 1

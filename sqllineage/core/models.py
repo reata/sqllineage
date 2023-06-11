@@ -225,21 +225,22 @@ class AnalyzerContext:
     Data class to hold the analyzer context
     """
 
-    subquery: Optional[SubQuery]
-    prev_cte: Optional[Set[SubQuery]]
-    prev_write: Optional[Set[Union[SubQuery, Table]]]
-
     def __init__(
         self,
         subquery: Optional[SubQuery] = None,
         prev_cte: Optional[Set[SubQuery]] = None,
         prev_write: Optional[Set[Union[SubQuery, Table]]] = None,
+        target_columns=None,
     ):
         """
         :param subquery: subquery
         :param prev_cte: previous CTE queries
         :param prev_write: previous written tables
+        :param target_columns: previous target columns
         """
+        if target_columns is None:
+            target_columns = []
         self.subquery = subquery
         self.prev_cte = prev_cte
         self.prev_write = prev_write
+        self.target_columns = target_columns

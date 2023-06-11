@@ -1,11 +1,11 @@
 import itertools
-from typing import Set, Tuple, Union
+from typing import List, Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
 
 from sqllineage.core.models import Column, Path, SubQuery, Table
-from sqllineage.utils.constant import EdgeType, NodeTag
+from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
 DATASET_CLASSES = (Path, Table)
 
@@ -83,6 +83,35 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def add_cte(self, value) -> None:
         self._property_setter(value, NodeTag.CTE)
+
+    @property
+    def target_columns(self) -> List[Column]:
+        """
+        in case of DML with column specified, like INSERT INTO tab1 (col1, col2) SELECT ...
+        target_columns tell us that tab1 has column col1 and col2 in that order.
+        """
+        tgt_cols = []
+        if self.write:
+            tgt_tbl = list(self.write)[0]
+            tgt_col_with_idx: List[Tuple[Column, int]] = sorted(
+                [
+                    (col, attr.get(EdgeTag.INDEX, 0))
+                    for tbl, col, attr in self.graph.out_edges(tgt_tbl, data=True)
+                    if attr["type"] == EdgeType.HAS_COLUMN
+                ],
+                key=lambda x: x[1],
+            )
+            tgt_cols = [x[0] for x in tgt_col_with_idx]
+        return tgt_cols
+
+    def add_target_column(self, *tgt_cols: Column) -> None:
+        if self.write:
+            tgt_tbl = list(self.write)[0]
+            for idx, tgt_col in enumerate(tgt_cols):
+                tgt_col.parent = tgt_tbl
+                self.graph.add_edge(
+                    tgt_tbl, tgt_col, type=EdgeType.HAS_COLUMN, **{EdgeTag.INDEX: idx}
+                )
 
     def add_column_lineage(self, src: Column, tgt: Column) -> None:
         self.graph.add_edge(src, tgt, type=EdgeType.LINEAGE)
