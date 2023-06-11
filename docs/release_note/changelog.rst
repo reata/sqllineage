@@ -2,6 +2,21 @@
 Changelog
 *********
 
+v1.4.4
+======
+:Date: June 11, 2023
+
+Enhancement
+-------------
+* BigQuery Specific MERGE statement feature support (`#380 <https://github.com/reata/sqllineage/issues/380>`_)
+* Support snowflake create table...clone and alter table...swap (`#373 <https://github.com/reata/sqllineage/issues/373>`_)
+* Parse Column Lineage When Specify Column Names in Insert/Create Statement (`#212 <https://github.com/reata/sqllineage/issues/212>`_)
+
+Bugfix
+-------------
+* Switching Dialect in UI only works When Explicit Clicked (`#387 <https://github.com/reata/sqllineage/issues/387>`_)
+* No Column Lineage Parsed for DML with SELECT query in parenthesis (`#244 <https://github.com/reata/sqllineage/issues/244>`_)
+
 v1.4.3
 ======
 :Date: May 13, 2023
