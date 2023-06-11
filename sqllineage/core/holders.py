@@ -86,8 +86,10 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     @property
     def target_columns(self) -> List[Column]:
-        # return the nodes which contains the "index" which will refer to the
-        # target columns also return this data in a sorted by index
+        """
+        in case of DML with column specified, like INSERT INTO tab1 (col1, col2) SELECT ...
+        target_columns tell us that tab1 has column col1 and col2 in that order.
+        """
         tgt_cols = []
         if self.write:
             tgt_tbl = list(self.write)[0]
