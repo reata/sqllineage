@@ -39,11 +39,11 @@ export function Editor(props) {
         dispatch(setDagLevel("table"));
         if (file === null) {
           dispatch(setEditable(true));
-          dispatch(fetchDAG({"e": editorState.contentComposed, "dialect": dialect}))
+          dispatch(fetchDAG({"e": editorState.contentComposed}))
         } else {
           dispatch(setEditable(false));
           dispatch(fetchContent({"f": file}));
-          dispatch(fetchDAG({"f": file, "dialect": dialect}));
+          dispatch(fetchDAG({"f": file}));
         }
       }
     }
@@ -54,7 +54,7 @@ export function Editor(props) {
     editor.onDidBlurEditorText(() => {
       if (!editor.getOption(readOnly)) {
         dispatch(setContentComposed(editor.getValue()));
-        dispatch(fetchDAG({"e": editor.getValue(), "dialect": dialect}));
+        dispatch(fetchDAG({"e": editor.getValue()}));
       }
     })
     editor.onKeyDown(() => {

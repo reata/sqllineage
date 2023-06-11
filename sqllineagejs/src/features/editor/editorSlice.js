@@ -22,6 +22,10 @@ export const fetchContent = createAsyncThunk('editor/fetchContent', async (paylo
 })
 
 export const fetchDAG = createAsyncThunk('dag/fetchDAG', async (payload) => {
+  let dialect = localStorage.getItem("dialect");
+  if (dialect !== null) {
+    payload["dialect"] = dialect
+  }
   return await client.post(assemble_absolute_endpoint("/lineage"), payload);
 })
 
