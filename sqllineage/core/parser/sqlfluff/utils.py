@@ -412,20 +412,13 @@ def is_union(segment: BaseSegment) -> bool:
         > 0
     )
 
+
 def is_union_direct(segment: BaseSegment) -> bool:
     """
     like is_union but use segments rather than raw_segments
     """
-    return (
-        len(
-            [
-                s
-                for s in segment.segments
-                if s.type == "set_expression"
-            ]
-        )
-        > 0
-    )
+    return len([s for s in segment.segments if s.type == "set_expression"]) > 0
+
 
 def get_union_subqueries(segment: BaseSegment) -> List[BaseSegment]:
     """

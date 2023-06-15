@@ -12,7 +12,11 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils import has_alias, retrieve_segments, is_union_direct
+from sqllineage.core.parser.sqlfluff.utils import (
+    has_alias,
+    is_union_direct,
+    retrieve_segments,
+)
 
 
 class DmlCteExtractor(LineageHolderExtractor):
@@ -74,9 +78,9 @@ class DmlCteExtractor(LineageHolderExtractor):
                     parse_sub = self.parse_subquery(sub_segment)
                     if is_union_direct(sub_segment):
                         for sm in sub_segment.segments:
-                            if sm.type == 'set_expression':
+                            if sm.type == "set_expression":
                                 parse_sub.append(SqlFluffSubQuery.of(sm, None))
-                    
+
                     if sub_segment.type == "bracketed":
                         for sq in parse_sub:
                             if identifier:

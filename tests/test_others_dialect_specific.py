@@ -1,7 +1,8 @@
 import pytest
 
-from .helpers import assert_table_lineage_equal, assert_column_lineage_equal
 from sqllineage.utils.entities import ColumnQualifierTuple
+from .helpers import assert_column_lineage_equal, assert_table_lineage_equal
+
 
 """
 This test class will contain all the tests for testing 'Other Queries' where the dialect is not ANSI.
@@ -204,20 +205,22 @@ UPDATE SET t.col = s.col"""
         dialect=dialect,
     )
 
-@pytest.mark.parametrize("dialect", ["ansi","bigquery"])
+
+@pytest.mark.parametrize("dialect", ["ansi", "bigquery"])
 def test_union_inside_cte(dialect: str):
-    sql = """INSERT INTO dataset.target
-            WITH temp_cte as 
-        (select col1 from dataset.tab1
-            UNION ALL 
-        SELECT col1 from dataset.tab2)
-            SELECT col1 from temp_cte"""
+    sql = """INSERT INTO dataset.target WITH temp_cte AS (SELECT col1 FROM dataset.tab1 UNION ALL
+    SELECT col1 FROM dataset.tab2) SELECT col1 FROM temp_cte"""
     assert_column_lineage_equal(
         sql,
         [
-            (ColumnQualifierTuple("col1", "dataset.tab1"), ColumnQualifierTuple("col1", "dataset.target")),
-            (ColumnQualifierTuple("col1", "dataset.tab2"), ColumnQualifierTuple("col1", "dataset.target")),
-            
+            (
+                ColumnQualifierTuple("col1", "dataset.tab1"),
+                ColumnQualifierTuple("col1", "dataset.target"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "dataset.tab2"),
+                ColumnQualifierTuple("col1", "dataset.target"),
+            ),
         ],
         dialect=dialect,
         test_sqlparse=False,
