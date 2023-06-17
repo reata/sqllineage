@@ -223,5 +223,4 @@ def test_union_inside_cte(dialect: str):
             ),
         ],
         dialect=dialect,
-        test_sqlparse=False,
     )
