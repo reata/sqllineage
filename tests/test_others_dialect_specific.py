@@ -1,7 +1,6 @@
 import pytest
 
-from sqllineage.utils.entities import ColumnQualifierTuple
-from .helpers import assert_column_lineage_equal, assert_table_lineage_equal
+from .helpers import assert_table_lineage_equal
 
 
 """
@@ -202,25 +201,5 @@ UPDATE SET t.col = s.col"""
         sql,
         {"src"},
         {"tgt"},
-        dialect=dialect,
-    )
-
-
-@pytest.mark.parametrize("dialect", ["ansi", "bigquery"])
-def test_union_inside_cte(dialect: str):
-    sql = """INSERT INTO dataset.target WITH temp_cte AS (SELECT col1 FROM dataset.tab1 UNION ALL
-    SELECT col1 FROM dataset.tab2) SELECT col1 FROM temp_cte"""
-    assert_column_lineage_equal(
-        sql,
-        [
-            (
-                ColumnQualifierTuple("col1", "dataset.tab1"),
-                ColumnQualifierTuple("col1", "dataset.target"),
-            ),
-            (
-                ColumnQualifierTuple("col1", "dataset.tab2"),
-                ColumnQualifierTuple("col1", "dataset.target"),
-            ),
-        ],
         dialect=dialect,
     )

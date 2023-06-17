@@ -1082,3 +1082,21 @@ WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v_max)"""
             (ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target")),
         ],
     )
+
+
+def test_union_inside_cte():
+    sql = """INSERT INTO dataset.target WITH temp_cte AS (SELECT col1 FROM dataset.tab1 UNION ALL
+SELECT col1 FROM dataset.tab2) SELECT col1 FROM temp_cte"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "dataset.tab1"),
+                ColumnQualifierTuple("col1", "dataset.target"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "dataset.tab2"),
+                ColumnQualifierTuple("col1", "dataset.target"),
+            ),
+        ],
+    )
