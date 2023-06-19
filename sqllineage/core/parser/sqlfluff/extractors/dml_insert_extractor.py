@@ -54,6 +54,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
         handlers, conditional_handlers = self._init_handlers()
 
         holder = self._init_holder(context)
+
         segments = retrieve_segments(statement)
         for segment in segments:
             for current_handler in handlers:
