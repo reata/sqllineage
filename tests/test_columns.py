@@ -1100,3 +1100,17 @@ SELECT col1 FROM dataset.tab2) SELECT col1 FROM temp_cte"""
             ),
         ],
     )
+
+
+def test_union_inside_cte():
+    sql = """INSERT INTO tab3 (WITH tab1 AS (SELECT * FROM tab2) SELECT * FROM tab1)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("*", "tab2"),
+                ColumnQualifierTuple("*", "tab3"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
