@@ -13,9 +13,9 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
     get_child,
+    is_cte,
     is_union,
     retrieve_segments,
-    is_cte,
 )
 
 
