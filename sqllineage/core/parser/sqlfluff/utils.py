@@ -87,8 +87,6 @@ def get_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
             return [SubQueryTuple(get_innermost_bracketed(bracketed_segments[0]), None)]
         return []
     elif is_union(segment):
-        if segment.type != "set_expression":
-            segment = segment.get_child("set_expression")
         for s in retrieve_segments(segment, check_bracketed=True):
             if s.type == "bracketed" or s.type == "select_statement":
                 subquery.append(SubQueryTuple(s, None))
@@ -262,7 +260,11 @@ def retrieve_segments(
     :return: a list of segments
     """
     if segment.type == "bracketed" and is_union(segment):
-        return [segment]
+        result = []
+        for sgmt in segment.segments:
+            if sgmt.type == "set_expression":
+                result = [sgmt]
+        return result
     elif segment.type == "bracketed" and check_bracketed:
         segments = [
             sg

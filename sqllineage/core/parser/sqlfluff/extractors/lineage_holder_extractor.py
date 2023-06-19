@@ -15,7 +15,6 @@ from sqllineage.core.parser.sqlfluff.utils import (
     get_multiple_identifiers,
     get_subqueries,
     is_subquery,
-    is_union,
 )
 from sqllineage.utils.entities import SubQueryTuple
 
@@ -74,7 +73,7 @@ class LineageHolderExtractor:
             )
         if segment.type in ["select_clause", "from_clause", "where_clause"]:
             result = cls._parse_subquery(get_subqueries(segment))
-        elif is_subquery(segment) and not is_union(segment):
+        elif is_subquery(segment):
             # Parenthesis for SubQuery without alias, this is valid syntax for certain SQL dialect
             result = [SqlFluffSubQuery.of(segment, None)]
         return result
