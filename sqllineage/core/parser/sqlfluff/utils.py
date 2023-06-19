@@ -415,6 +415,14 @@ def is_union(segment: BaseSegment) -> bool:
     )
 
 
+def is_cte(segment: BaseSegment) -> bool:
+    """
+    :param segment: segment to be processed
+    :return: True if the segment contains 'UNION' or 'UNION ALL' keyword
+    """
+    return len([s for s in segment.segments if s.type == "with_compound_statement"]) > 0
+
+
 def get_union_subqueries(segment: BaseSegment) -> List[BaseSegment]:
     """
     :param segment: segment to be processed
