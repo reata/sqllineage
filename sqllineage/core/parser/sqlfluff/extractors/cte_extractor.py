@@ -12,10 +12,7 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils import (
-    has_alias,
-    retrieve_segments,
-)
+from sqllineage.core.parser.sqlfluff.utils import has_alias, retrieve_segments
 
 
 class DmlCteExtractor(LineageHolderExtractor):
@@ -73,7 +70,6 @@ class DmlCteExtractor(LineageHolderExtractor):
                         identifier = sub_segment.raw
                         if not segment_has_alias:
                             holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
-
                     if sub_segment.type == "bracketed":
                         for sq in self.parse_subquery(sub_segment):
                             if identifier:
