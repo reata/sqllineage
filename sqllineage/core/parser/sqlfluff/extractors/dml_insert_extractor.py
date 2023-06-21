@@ -22,6 +22,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
     SUPPORTED_STMT_TYPES = [
         "insert_statement",
         "create_table_statement",
+        "create_table_as_statement",
         "create_view_statement",
         "update_statement",
         "copy_statement",

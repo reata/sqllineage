@@ -116,7 +116,10 @@ class SqlParseColumn(Column):
                     )
                 ]
                 source_columns = [
-                    ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
+                    ColumnQualifierTuple(
+                        src_col.raw_name,
+                        src_col.parent.raw_name if src_col.parent else None,
+                    )
                     for src_col in src_cols
                 ]
             else:
