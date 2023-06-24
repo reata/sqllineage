@@ -11,12 +11,7 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils import (
-    get_child,
-    is_cte,
-    is_union,
-    retrieve_segments,
-)
+from sqllineage.core.parser.sqlfluff.utils import get_child, is_union, retrieve_segments
 
 
 class DmlInsertExtractor(LineageHolderExtractor):
@@ -67,7 +62,9 @@ class DmlInsertExtractor(LineageHolderExtractor):
                     segment,
                     AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
                 )
-            elif segment.type == "bracketed" and is_cte(segment):
+            elif segment.type == "bracketed" and any(
+                s.type == "with_compound_statement" for s in segment.segments
+            ):
                 for sgmt in segment.segments:
                     if sgmt.type == "with_compound_statement":
                         from .cte_extractor import DmlCteExtractor
