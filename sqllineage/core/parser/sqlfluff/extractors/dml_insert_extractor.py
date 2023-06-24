@@ -62,6 +62,19 @@ class DmlInsertExtractor(LineageHolderExtractor):
                     segment,
                     AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
                 )
+            elif segment.type == "bracketed" and any(
+                s.type == "with_compound_statement" for s in segment.segments
+            ):
+                for sgmt in segment.segments:
+                    if sgmt.type == "with_compound_statement":
+                        from .cte_extractor import DmlCteExtractor
+
+                        holder |= DmlCteExtractor(self.dialect).extract(
+                            sgmt,
+                            AnalyzerContext(
+                                prev_cte=holder.cte, prev_write=holder.write
+                            ),
+                        )
             elif segment.type == "bracketed" and (
                 self.parse_subquery(segment) or is_union(segment)
             ):
