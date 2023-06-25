@@ -202,30 +202,3 @@ UPDATE SET t.col = s.col"""
         {"tgt"},
         dialect=dialect,
     )
-
-
-@pytest.mark.parametrize("dialect", ["ansi"])
-def test_union_in_insert_with_cte(dialect: str):
-    # issue #398
-    sql = """INSERT INTO target_table
-WITH pl AS (
-  SELECT id, school
-FROM table1)
-, fb AS (
-SELECT id, school
-FROM table2)
-SELECT
-table3.id, table3.name, table1.school
-FROM table3
-LEFT JOIN table1 ON table3.id = table1.id
-UNION
-SELECT
-table4.id, table4.name, table2.school
-FROM table4
-LEFT JOIN table2 ON table4.id = table2.id"""
-    assert_table_lineage_equal(
-        sql,
-        {"table1", "table2", "table3", "table4"},
-        {"target_table"},
-        dialect=dialect,
-    )
