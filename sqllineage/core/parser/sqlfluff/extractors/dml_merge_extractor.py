@@ -41,7 +41,10 @@ class DmlMergeExtractor(LineageHolderExtractor):
         direct_source: Optional[Union[Table, SubQuery]] = None
         segments = retrieve_segments(statement)
         for i, segment in enumerate(segments):
-            if segment.type == "keyword" and segment.raw_upper in {"INTO", "MERGE"}:
+            if segment.type == "keyword" and segment.raw_upper == "MERGE":
+                tgt_flag = True
+                continue
+            if segment.type == "keyword" and segment.raw_upper == "INTO":
                 tgt_flag = True
                 continue
             if segment.type == "keyword" and segment.raw_upper == "USING":
