@@ -49,7 +49,7 @@ class DmlCteExtractor(LineageHolderExtractor):
             for current_handler in handlers:
                 current_handler.handle(segment, holder)
 
-            if segment.type == "select_statement":
+            if segment.type in ["select_statement", "set_expression"]:
                 holder |= DmlSelectExtractor(self.dialect).extract(
                     segment,
                     AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
