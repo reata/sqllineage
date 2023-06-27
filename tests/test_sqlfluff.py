@@ -278,3 +278,23 @@ def test_insert_with_custom_columns():
         ],
         test_sqlparse=False,
     )
+
+
+@pytest.mark.parametrize("dialect", ["postgres"])
+def test_create_table_with_cte(dialect: str):
+    assert_table_lineage_equal(
+        """create table my_new_table as
+        WITH my_data AS (
+            SELECT
+                column1,
+                column2,
+                (select column1 + column2 as result) as sum_result
+            FROM my_table
+        )
+        SELECT *
+        FROM my_data""",
+        {"<default>.my_table"},
+        {"<default>.my_new_table"},
+        dialect,
+        test_sqlparse=False,
+    )
