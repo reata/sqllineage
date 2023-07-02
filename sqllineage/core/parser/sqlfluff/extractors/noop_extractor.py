@@ -20,6 +20,7 @@ class NoopExtractor(LineageHolderExtractor):
         "uncache_table",
         "show_statement",
         "use_statement",
+        "declare_segment",
     ]
 
     def __init__(self, dialect: str):
