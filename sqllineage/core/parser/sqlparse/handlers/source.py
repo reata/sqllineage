@@ -104,6 +104,8 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
                 sub_token
                 for sub_token in token.tokens
                 if isinstance(sub_token, column_token_types)
+                and not sub_token.value.startswith("@")
+                # ignore tsql variable column starts with @
             ]
         else:
             # SELECT constant value will end up here
