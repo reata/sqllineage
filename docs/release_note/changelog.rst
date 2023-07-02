@@ -2,6 +2,23 @@
 Changelog
 *********
 
+v1.4.5
+======
+:Date: July 2, 2023
+
+Enhancement
+-------------
+* Switch to PyPI Trusted Publishers (`#389 <https://github.com/reata/sqllineage/issues/389>`_)
+* Support tsql Declare Statement (`#357 <https://github.com/reata/sqllineage/issues/357>`_)
+
+Bugfix
+-------------
+* Exception for Subquery Expression Without Source Tables (`#401 <https://github.com/reata/sqllineage/issues/401>`_)
+* Not Supporting Create Table AS in postgres (`#400 <https://github.com/reata/sqllineage/issues/400>`_)
+* Failed to handle UNION followed by CTE (`#398 <https://github.com/reata/sqllineage/issues/398>`_)
+* Not handling CTE inside DML query (`#377 <https://github.com/reata/sqllineage/issues/377>`_)
+* Failed to parse UNION inside CTE (`#376 <https://github.com/reata/sqllineage/issues/376>`_)
+
 v1.4.4
 ======
 :Date: June 11, 2023
