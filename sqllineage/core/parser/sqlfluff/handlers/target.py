@@ -80,7 +80,7 @@ class TargetHandler(ConditionalSegmentBaseHandler):
         :param segment: segment to be handled
         :param holder: 'SqlFluffSubQueryLineageHolder' to hold lineage
         """
-        if segment.type == "table_reference":
+        if segment.type in ["table_reference", "object_reference"]:
             write_obj = SqlFluffTable.of(segment)
             if self.prev_token_read:
                 holder.add_read(write_obj)
