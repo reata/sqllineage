@@ -189,7 +189,7 @@ class Column:
 
         def _to_src_col(
             name: str, parent: Optional[Union[Path, Table, SubQuery]] = None
-        ):
+        ) -> Column:
             col = Column(name)
             if parent:
                 col.parent = parent
@@ -204,12 +204,12 @@ class Column:
                         source_columns.add(_to_src_col(src_col, table))
                 else:
                     # select unqualified column
-                    src_col = _to_src_col(src_col, None)
+                    source = _to_src_col(src_col, None)
                     for table in set(alias_mapping.values()):
                         # in case of only one table, we get the right answer
                         # in case of multiple tables, a bunch of possible tables are set
-                        src_col.parent = table
-                    source_columns.add(src_col)
+                        source.parent = table
+                    source_columns.add(source)
             else:
                 if alias_mapping.get(qualifier):
                     source_columns.add(

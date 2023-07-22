@@ -94,6 +94,9 @@ FROM tab2"""
             (ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("cnt", "tab1")),
         ],
     )
+
+
+def test_select_column_using_cast():
     sql = """INSERT INTO tab1
 SELECT cast(col1 AS timestamp)
 FROM tab2"""
