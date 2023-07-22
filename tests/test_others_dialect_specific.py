@@ -40,20 +40,19 @@ FROM foo""",
     )
 
 
-def test_create_using_serde():
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_create_using_serde(dialect: str):
     """
     https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormats&SerDe
     here with is not an indicator for CTE
-    FIXME: sqlfluff hive dialect doesn't support parsing this yet
     """
-    # Check
-    #
+    # use raw sql string to avoid Python recognize some character as escaping
     assert_table_lineage_equal(
-        """CREATE TABLE apachelog (
+        r"""CREATE TABLE apachelog (
   host STRING,
   identity STRING,
-  user STRING,
-  time STRING,
+  `user` STRING,
+  `time` STRING,
   request STRING,
   status STRING,
   size STRING,
@@ -66,7 +65,7 @@ WITH SERDEPROPERTIES (
 STORED AS TEXTFILE""",  # noqa
         None,
         {"apachelog"},
-        test_sqlfluff=False,
+        dialect=dialect,
     )
 
 

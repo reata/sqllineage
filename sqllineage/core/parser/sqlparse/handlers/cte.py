@@ -28,6 +28,6 @@ class CTEHandler(NextTokenBaseHandler):
             cte = []
         for token in cte:
             sublist = list(token.get_sublists())
-            if sublist:
+            if sublist and not (isinstance(sublist[0], Function)):
                 # CTE: tbl AS (SELECT 1), tbl is alias and (SELECT 1) is subquery Parenthesis
                 holder.add_cte(SqlParseSubQuery.of(sublist[0], token.get_real_name()))
