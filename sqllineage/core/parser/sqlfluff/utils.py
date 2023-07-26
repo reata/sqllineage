@@ -168,14 +168,19 @@ def get_inner_from_expression(segment: BaseSegment) -> BaseSegment:
     :param segment: segment to be processed
     :return: a list of segments from a 'from_expression' or 'from_expression_element' segment
     """
-    if segment.get_child("from_expression") and segment.get_child(
-        "from_expression"
-    ).get_child("from_expression_element"):
-        return segment.get_child("from_expression").get_child("from_expression_element")
-    elif segment.get_child("from_expression_element"):
-        return segment.get_child("from_expression_element")
-    else:
-        return segment
+    if from_expression := segment.get_child("from_expression"):
+        if bracketed := from_expression.get_child("bracketed"):
+            if from_expression_element := bracketed.get_child(
+                "from_expression_element"
+            ):
+                return from_expression_element
+        elif from_expression_element := from_expression.get_child(
+            "from_expression_element"
+        ):
+            return from_expression_element
+    if from_expression_element := segment.get_child("from_expression_element"):
+        return from_expression_element
+    return segment
 
 
 def filter_segments_by_keyword(

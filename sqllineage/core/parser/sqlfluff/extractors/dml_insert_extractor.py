@@ -3,15 +3,21 @@ from typing import Optional
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext
+from sqllineage.core.models import AnalyzerContext, Path
 from sqllineage.core.parser.sqlfluff.extractors.dml_select_extractor import (
     DmlSelectExtractor,
 )
 from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
+from sqllineage.core.parser.sqlfluff.handlers.target import TargetHandler
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils import get_child, is_union, retrieve_segments
+from sqllineage.core.parser.sqlfluff.utils import (
+    get_child,
+    get_grandchildren,
+    is_union,
+    retrieve_segments,
+)
 
 
 class DmlInsertExtractor(LineageHolderExtractor):
@@ -47,15 +53,11 @@ class DmlInsertExtractor(LineageHolderExtractor):
         :param is_sub_query: determine if the statement is bracketed or not
         :return 'SubQueryLineageHolder' object
         """
-        handlers, conditional_handlers = self._init_handlers()
-
+        target_handler = TargetHandler()
         holder = self._init_holder(context)
 
         segments = retrieve_segments(statement)
         for segment in segments:
-            for current_handler in handlers:
-                current_handler.handle(segment, holder)
-
             if segment.type == "with_compound_statement":
                 from .cte_extractor import DmlCteExtractor
 
@@ -90,10 +92,19 @@ class DmlInsertExtractor(LineageHolderExtractor):
                 self._extract_select(holder, segment)
             elif segment.type == "set_expression":
                 self._extract_set(holder, segment)
+            elif segment.type == "from_clause":
+                for s in segment.segments:
+                    if s.type == "from_expression":
+                        for table_expression in get_grandchildren(
+                            s, "from_expression_element", "table_expression"
+                        ):
+                            if storage_location := table_expression.get_child(
+                                "storage_location"
+                            ):
+                                holder.add_read(Path(storage_location.raw))
             else:
-                for conditional_handler in conditional_handlers:
-                    if conditional_handler.indicate(segment):
-                        conditional_handler.handle(segment, holder)
+                if target_handler.indicate(segment):
+                    target_handler.handle(segment, holder)
 
         return holder
 

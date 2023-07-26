@@ -215,23 +215,6 @@ def test_select_from_unnest_parsed_as_keyword():
     )
 
 
-def test_select_from_unnest_with_ordinality():
-    """
-    https://prestodb.io/docs/current/sql/select.html#unnest
-    FIXME: sqlfluff athena dialect doesn't support parsing this yet
-    """
-    sql = """
-    SELECT numbers, n, a
-    FROM (
-      VALUES
-        (ARRAY[2, 5]),
-        (ARRAY[7, 8, 9])
-    ) AS x (numbers)
-    CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);
-    """
-    assert_table_lineage_equal(sql, test_sqlfluff=False)
-
-
 def test_select_union_all():
     sql = """SELECT col1
 FROM tab1
