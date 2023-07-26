@@ -111,9 +111,11 @@ class DmlMergeExtractor(LineageHolderExtractor):
                     tgt_col.parent = list(holder.write)[0]
                     insert_columns.append(tgt_col)
                 for j, e in enumerate(
-                    merge_insert.get_child("values_clause")
+                    segment
+                    for segment in merge_insert.get_child("values_clause")
                     .get_child("bracketed")
-                    .get_children("expression")
+                    .segments
+                    if segment.type in ("literal", "expression")
                 ):
                     if col_ref := e.get_child("column_reference"):
                         src_col = Column(get_identifier(col_ref))

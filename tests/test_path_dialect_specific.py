@@ -18,17 +18,22 @@ def test_copy_from_path(dialect: str):
     )
 
 
-@pytest.mark.parametrize("dialect", ["snowflake"])
-def test_copy_into_path(dialect: str):
+@pytest.mark.parametrize(
+    "dialect, path",
+    [
+        ("snowflake", "s3://mybucket/mypath"),
+        ("tsql", "https://myaccount.blob.core.windows.net/myblobcontainer/folder1/"),
+    ],
+)
+def test_copy_into_path(dialect: str, path: str):
     """
     check following link for syntax reference:
         Snowflake: https://docs.snowflake.com/en/sql-reference/sql/copy-into-table.html
         Microsoft T-SQL: https://docs.microsoft.com/en-us/sql/t-sql/statements/copy-into-transact-sql?view=azure-sqldw-latest   # noqa
-    FIXME: sqlfluff tsql dialect doesn't support parsing this yet
     """
     assert_table_lineage_equal(
-        "COPY INTO tab1 FROM 's3://mybucket/mypath'",
-        {Path("s3://mybucket/mypath")},
+        f"COPY INTO tab1 FROM '{path}'",
+        {Path(path)},
         {"tab1"},
         dialect=dialect,
     )

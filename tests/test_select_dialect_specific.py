@@ -58,3 +58,20 @@ def test_select_into(dialect: str):
     """
     sql = "SELECT * INTO films_recent FROM films WHERE date_prod >= '2002-01-01'"
     assert_table_lineage_equal(sql, {"films"}, {"films_recent"}, dialect=dialect)
+
+
+@pytest.mark.parametrize("dialect", ["athena"])
+def test_select_from_unnest_with_ordinality(dialect: str):
+    """
+    https://prestodb.io/docs/current/sql/select.html#unnest
+    """
+    sql = """
+    SELECT numbers, n, a
+    FROM (
+      VALUES
+        (ARRAY[2, 5]),
+        (ARRAY[7, 8, 9])
+    ) AS x (numbers)
+    CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);
+    """
+    assert_table_lineage_equal(sql, dialect=dialect)
