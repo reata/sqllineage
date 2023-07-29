@@ -38,17 +38,12 @@ class DmlCteExtractor(LineageHolderExtractor):
         :param is_sub_query: determine if the statement is bracketed or not
         :return 'SubQueryLineageHolder' object
         """
-        handlers, _ = self._init_handlers()
-
         holder = self._init_holder(context)
 
         subqueries = []
         segments = retrieve_segments(statement)
 
         for segment in segments:
-            for current_handler in handlers:
-                current_handler.handle(segment, holder)
-
             if segment.type in ["select_statement", "set_expression"]:
                 holder |= DmlSelectExtractor(self.dialect).extract(
                     segment,
