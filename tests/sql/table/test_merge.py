@@ -43,3 +43,18 @@ def test_merge_into_insert_one_column():
 USING src ON target.k = src.k
 WHEN NOT MATCHED THEN INSERT VALUES (src.k)"""
     assert_table_lineage_equal(sql, {"src"}, {"target"})
+
+
+def test_merge_with_union_in_subquery_and_join():
+    sql = """MERGE INTO tgt t
+USING (SELECT s1.id, baz.value
+       FROM (SELECT id
+             FROM foo
+             UNION ALL
+             SELECT id
+             FROM bar) s1
+                CROSS JOIN baz) s
+ON t.id = s.id
+WHEN MATCHED THEN UPDATE SET t.value = s.value
+"""
+    assert_table_lineage_equal(sql, {"foo", "bar", "baz"}, {"tgt"})

@@ -129,10 +129,6 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
         elif first_segment.type == "bracketed" and is_values_clause(first_segment):
             # (VALUES ...) AS alias, no dataset involved
             return
-        elif is_union(segment):
-            subqueries = get_subqueries(segment)
-            subquery, alias = subqueries[0]
-            self.tables.append(SqlFluffSubQuery.of(subquery, alias))
         else:
             subqueries = get_subqueries(segment)
             if subqueries:

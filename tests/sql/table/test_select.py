@@ -221,9 +221,9 @@ def test_select_from_unnest_parsed_as_keyword():
 
 def test_table_name_case_insensitive():
     assert_table_lineage_equal(
-        """select * from tab_b
-union all
-select * from TAB_B""",
+        """SELECT * FROM tab_b
+UNION ALL
+SELECT * FROM TAB_B""",
         {"tab_b"},
     )
 
