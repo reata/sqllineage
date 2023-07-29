@@ -1,6 +1,6 @@
 import pytest
 
-from .helpers import assert_table_lineage_equal
+from ...helpers import assert_table_lineage_equal
 
 
 """
@@ -78,3 +78,21 @@ def test_insert_overwrite_without_table_keyword(dialect: str):
         {"tab1"},
         dialect=dialect,
     )
+
+
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_lateral_view_using_json_tuple(dialect: str):
+    sql = """INSERT OVERWRITE TABLE foo
+SELECT sc.id, q.item0, q.item1
+FROM bar sc
+LATERAL VIEW json_tuple(sc.json, 'key1', 'key2') q AS item0, item1"""
+    assert_table_lineage_equal(sql, {"bar"}, {"foo"}, dialect)
+
+
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_lateral_view_outer(dialect: str):
+    sql = """INSERT OVERWRITE TABLE foo
+SELECT sc.id, q.col1
+FROM bar sc
+LATERAL VIEW OUTER explode(sc.json_array) q AS col1"""
+    assert_table_lineage_equal(sql, {"bar"}, {"foo"}, dialect)

@@ -67,17 +67,13 @@ class SqlParseColumn(Column):
                 if kw_idx is None:
                     # alias without AS
                     kw_idx, _ = column.token_next_by(i=Identifier)
-                if kw_idx is None:
-                    # invalid syntax: col AS, without alias
-                    return Column(alias)
-                else:
-                    idx, _ = column.token_prev(kw_idx, skip_cm=True)
-                    expr = grouping.group(TokenList(column.tokens[: idx + 1]))[0]
-                    source_columns = SqlParseColumn._extract_source_columns(expr)
-                    return Column(
-                        alias,
-                        source_columns=source_columns,
-                    )
+                idx, _ = column.token_prev(kw_idx, skip_cm=True)
+                expr = grouping.group(TokenList(column.tokens[: idx + 1]))[0]
+                source_columns = SqlParseColumn._extract_source_columns(expr)
+                return Column(
+                    alias,
+                    source_columns=source_columns,
+                )
             else:
                 # select column name directly without alias
                 return Column(

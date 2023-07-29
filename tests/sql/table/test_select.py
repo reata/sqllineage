@@ -1,4 +1,4 @@
-from .helpers import assert_table_lineage_equal
+from ...helpers import assert_table_lineage_equal
 
 
 def test_select():
@@ -82,6 +82,10 @@ def test_select_subquery():
     assert_table_lineage_equal("SELECT col1 FROM (SELECT col1 FROM tab1) dt", {"tab1"})
     # with an extra space
     assert_table_lineage_equal("SELECT col1 FROM ( SELECT col1 FROM tab1) dt", {"tab1"})
+
+
+def test_parenthesis():
+    assert_table_lineage_equal("(SELECT * FROM tab1)", {"tab1"})
 
 
 def test_select_subquery_with_two_parenthesis():
@@ -212,6 +216,15 @@ def test_select_from_unnest_parsed_as_keyword():
     assert_table_lineage_equal(
         "SELECT student, score FROM tests CROSS JOIN UNNEST (scores) AS t (score)",
         {"tests"},
+    )
+
+
+def test_table_name_case_insensitive():
+    assert_table_lineage_equal(
+        """select * from tab_b
+union all
+select * from TAB_B""",
+        {"tab_b"},
     )
 
 
