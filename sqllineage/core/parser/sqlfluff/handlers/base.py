@@ -30,16 +30,3 @@ class ConditionalSegmentBaseHandler:
         :param holder: 'SubQueryLineageHolder' to hold lineage
         """
         pass
-
-
-class SegmentBaseHandler:
-    """
-    Extract lineage from a specific segment
-    """
-
-    def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
-        """
-        :param segment: segment to be handled
-        :param holder: 'SubQueryLineageHolder' to hold lineage
-        """
-        raise NotImplementedError

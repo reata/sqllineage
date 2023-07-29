@@ -1,15 +1,11 @@
 from functools import reduce
 from operator import add
-from typing import List, Tuple
+from typing import List
 
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import AnalyzerContext, SubQuery
-from sqllineage.core.parser.sqlfluff.handlers.base import (
-    ConditionalSegmentBaseHandler,
-    SegmentBaseHandler,
-)
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
     get_multiple_identifiers,
@@ -89,22 +85,6 @@ class LineageHolderExtractor:
             SqlFluffSubQuery.of(bracketed_segment, alias)
             for bracketed_segment, alias in subqueries
         ]
-
-    def _init_handlers(
-        self,
-    ) -> Tuple[List[SegmentBaseHandler], List[ConditionalSegmentBaseHandler]]:
-        """
-        Initialize handlers used during the extraction of lineage
-        :return: A tuple with a list of SegmentBaseHandler and ConditionalSegmentBaseHandler
-        """
-        handlers: List[SegmentBaseHandler] = [
-            handler_cls() for handler_cls in SegmentBaseHandler.__subclasses__()
-        ]
-        conditional_handlers = [
-            handler_cls()
-            for handler_cls in ConditionalSegmentBaseHandler.__subclasses__()
-        ]
-        return handlers, conditional_handlers
 
     @staticmethod
     def _init_holder(context: AnalyzerContext) -> SubQueryLineageHolder:
