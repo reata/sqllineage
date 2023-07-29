@@ -259,33 +259,26 @@ def retrieve_segments(
     segment: BaseSegment, check_bracketed: bool = True
 ) -> List[BaseSegment]:
     """
-    Filter segments for a given segment's segments if they are not negligible
-    :param segment: segment to be processed
-    :param check_bracketed: process segment if it is of type "bracketed"
-    :return: a list of segments
+    Filter segments for a given segment's children
+    Recursive goes into bracket by default
     """
-    if segment.type == "bracketed" and is_union(segment):
-        result = []
-        for sgmt in segment.segments:
-            if sgmt.type == "set_expression":
-                result = [sgmt]
-        return result
-    elif segment.type == "bracketed" and check_bracketed:
-        segments = [
-            sg
-            for sg in segment.iter_segments(expanding=["expression"], pass_through=True)
-        ]
-        result = []
-        for sgmnt in segments:
-            if sgmnt.type == "column_reference":
-                result.append(sgmnt)
-            else:
-                for sg in sgmnt.segments:
-                    if not is_segment_negligible(sg):
-                        result.append(sg)
-        return result
+    if segment.type == "bracketed" and check_bracketed:
+        if is_union(segment):
+            return [seg for seg in segment.segments if seg.type == "set_expression"]
+        else:
+            result = []
+            for seg in segment.iter_segments(
+                expanding=["expression"], pass_through=True
+            ):
+                if seg.type == "column_reference":
+                    result.append(seg)
+                else:
+                    for s in seg.segments:
+                        if not is_segment_negligible(s):
+                            result.append(s)
+            return result
     else:
-        return [sgmnt for sgmnt in segment.segments if not is_segment_negligible(sgmnt)]
+        return [seg for seg in segment.segments if not is_segment_negligible(seg)]
 
 
 def get_identifier(col_segment: BaseSegment) -> str:
@@ -404,19 +397,8 @@ def get_statement_segment(parsed_string: ParsedString) -> BaseSegment:
 
 
 def is_union(segment: BaseSegment) -> bool:
-    """
-    :param segment: segment to be processed
-    :return: True if the segment contains 'UNION' or 'UNION ALL' keyword
-    """
-    return (
-        len(
-            [
-                s
-                for s in segment.raw_segments
-                if (s.raw_upper == "UNION" or s.raw_upper == "UNION ALL")
-            ]
-        )
-        > 0
+    return segment.type == "set_expression" or any(
+        seg.type == "set_expression" for seg in segment.segments
     )
 
 
