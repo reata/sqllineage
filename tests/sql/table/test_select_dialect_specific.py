@@ -1,6 +1,6 @@
 import pytest
 
-from .helpers import assert_table_lineage_equal
+from ...helpers import assert_table_lineage_equal
 
 
 """
