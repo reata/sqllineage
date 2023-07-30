@@ -2,7 +2,7 @@
 Utils class to deal with the sqlfluff segments manipulations
 """
 import re
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from sqlfluff.core.linter import ParsedString
 from sqlfluff.core.parser import BaseSegment
@@ -31,7 +31,7 @@ def extract_as_and_target_segment(
     :return: a Tuple of "alias_expression" and the target table
     """
     as_segment = segment.get_child("alias_expression")
-    sublist = retrieve_segments(segment, False)
+    sublist = list_child_segments(segment, False)
     target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
     return as_segment, target
 
@@ -66,19 +66,20 @@ def get_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
                     )
         return subquery
     elif segment.type in ["from_clause", "from_expression", "from_expression_element"]:
-        as_segment, target = extract_as_and_target_segment(
-            get_inner_from_expression(segment)
-        )
-        if is_subquery(target):
-            as_segment, target = extract_as_and_target_segment(
-                get_inner_from_expression(segment)
-            )
-            subquery = [
-                SubQueryTuple(
-                    get_innermost_bracketed(target) if not is_union(target) else target,
-                    get_identifier(as_segment) if as_segment else None,
+        if from_expression_element := get_from_expression_element(segment):
+            as_segment, target = extract_as_and_target_segment(from_expression_element)
+            if is_subquery(target):
+                as_segment, target = extract_as_and_target_segment(
+                    from_expression_element
                 )
-            ]
+                subquery = [
+                    SubQueryTuple(
+                        get_innermost_bracketed(target)
+                        if not is_union(target)
+                        else target,
+                        get_identifier(as_segment) if as_segment else None,
+                    )
+                ]
         return subquery
     elif segment.type in ["where_clause"]:
         expression_segments = segment.get_child("expression").segments or []
@@ -87,7 +88,7 @@ def get_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
             return [SubQueryTuple(get_innermost_bracketed(bracketed_segments[0]), None)]
         return []
     elif is_union(segment):
-        for s in retrieve_segments(segment, check_bracketed=True):
+        for s in list_child_segments(segment, check_bracketed=True):
             if s.type == "bracketed" or s.type == "select_statement":
                 subquery.append(SubQueryTuple(s, None))
         return subquery
@@ -153,34 +154,28 @@ def is_values_clause(segment: BaseSegment) -> bool:
     return False
 
 
-def get_multiple_identifiers(segment: BaseSegment) -> List[BaseSegment]:
-    """
-    :param segment: segment to be processed
-    :return: a list of segments from a 'from_clause' type segment
-    """
+def list_from_expression(segment: BaseSegment) -> List[BaseSegment]:
     if segment.type == "from_clause":
         return [seg for seg in segment.get_children("from_expression")]
     return []
 
 
-def get_inner_from_expression(segment: BaseSegment) -> BaseSegment:
+def get_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
     """
-    :param segment: segment to be processed
-    :return: a list of segments from a 'from_expression' or 'from_expression_element' segment
+    from_clause as grandparent, from_expression as parent, or from_expression_element itself
     """
+    from_expression_element = None
     if from_expression := segment.get_child("from_expression"):
         if bracketed := from_expression.get_child("bracketed"):
-            if from_expression_element := bracketed.get_child(
-                "from_expression_element"
-            ):
-                return from_expression_element
-        elif from_expression_element := from_expression.get_child(
-            "from_expression_element"
-        ):
-            return from_expression_element
-    if from_expression_element := segment.get_child("from_expression_element"):
-        return from_expression_element
-    return segment
+            if seg := bracketed.get_child("from_expression_element"):
+                from_expression_element = seg
+        elif seg := from_expression.get_child("from_expression_element"):
+            from_expression_element = seg
+    elif seg := segment.get_child("from_expression_element"):
+        from_expression_element = seg
+    elif segment.type == "from_expression_element":
+        from_expression_element = segment
+    return from_expression_element
 
 
 def filter_segments_by_keyword(
@@ -255,12 +250,11 @@ def find_table_identifier(identifier: BaseSegment) -> Optional[BaseSegment]:
     return table_identifier
 
 
-def retrieve_segments(
+def list_child_segments(
     segment: BaseSegment, check_bracketed: bool = True
 ) -> List[BaseSegment]:
     """
-    Filter segments for a given segment's children
-    Recursive goes into bracket by default
+    Filter segments for a given segment's children, recursive goes into bracket by default
     """
     if segment.type == "bracketed" and check_bracketed:
         if is_union(segment):
@@ -286,7 +280,7 @@ def get_identifier(col_segment: BaseSegment) -> str:
     :param col_segment: column segment
     :return: the table identifier name
     """
-    identifiers = retrieve_segments(col_segment)
+    identifiers = list_child_segments(col_segment)
     col_identifier = identifiers[-1]
     return str(col_identifier.raw)
 
@@ -310,15 +304,8 @@ def get_table_alias(table_segments: List[BaseSegment]) -> Optional[str]:
     """
     alias = None
     if len(table_segments) > 1 and table_segments[1].type == "alias_expression":
-        segments = retrieve_segments(table_segments[1])
+        segments = list_child_segments(table_segments[1])
         alias = segments[1].raw if len(segments) > 1 else segments[0].raw
-    elif (
-        len(table_segments) == 1 and table_segments[0].type == "from_expression_element"
-    ):
-        table_and_alias = retrieve_segments(table_segments[0])
-        if len(table_and_alias) > 1 and table_and_alias[1].type == "alias_expression":
-            segments = retrieve_segments(table_and_alias[1])
-            alias = segments[1].raw if len(segments) > 1 else segments[0].raw
     return str(alias) if alias else None
 
 
@@ -330,15 +317,10 @@ def has_alias(segment: BaseSegment) -> bool:
     return len([s for s in segment.get_children("keyword") if s.raw_upper == "AS"]) > 0
 
 
-def retrieve_extra_segment(segment: BaseSegment) -> Iterable[BaseSegment]:
-    """
-    Yield all the extra segments of the segment if it is a 'from_expression' type.
-    :param segment: segment to be processed
-    """
-    if segment.get_child("from_expression"):
-        for sgmnt in segment.get_child("from_expression").segments:
-            if sgmnt.type == "join_clause":
-                yield sgmnt
+def list_join_clause(segment: BaseSegment) -> List[BaseSegment]:
+    if from_expression := segment.get_child("from_expression"):
+        return [seg for seg in from_expression.segments if seg.type == "join_clause"]
+    return []
 
 
 def get_grandchild(
@@ -400,17 +382,6 @@ def is_union(segment: BaseSegment) -> bool:
     return segment.type == "set_expression" or any(
         seg.type == "set_expression" for seg in segment.segments
     )
-
-
-def get_union_subqueries(segment: BaseSegment) -> List[BaseSegment]:
-    """
-    :param segment: segment to be processed
-    :return: a list of subqueries or select statements from a UNION segment
-    """
-    sub_segments = retrieve_segments(segment, check_bracketed=True)
-    return [
-        s for s in sub_segments if s.type == "bracketed" or s.type == "select_statement"
-    ]
 
 
 def is_subquery_statement(stmt: str) -> bool:

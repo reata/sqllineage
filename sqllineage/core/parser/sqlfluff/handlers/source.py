@@ -14,14 +14,14 @@ from sqllineage.core.parser.sqlfluff.models import (
 )
 from sqllineage.core.parser.sqlfluff.utils import (
     find_table_identifier,
+    get_from_expression_element,
     get_grandchild,
-    get_inner_from_expression,
-    get_multiple_identifiers,
     get_subqueries,
     is_union,
     is_values_clause,
-    retrieve_extra_segment,
-    retrieve_segments,
+    list_child_segments,
+    list_from_expression,
+    list_join_clause,
 )
 
 
@@ -61,30 +61,37 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
             self._handle_column(segment)
 
     def _handle_table(
-        self, segment: BaseSegment, holder: SubQueryLineageHolder
+        self, from_or_join_clause: BaseSegment, holder: SubQueryLineageHolder
     ) -> None:
         """
-        Table handler method
-        :param segment: segment to be handled
-        :param holder: 'SubQueryLineageHolder' to hold lineage
+        handle from_clause or join_clause, join_clause is a child node of from_clause.
         """
-        identifiers = get_multiple_identifiers(segment)
-        if identifiers and len(identifiers) > 1:
-            for identifier in identifiers:
-                self._add_dataset_from_expression_element(identifier, holder)
-        from_segment = get_inner_from_expression(segment)
-        if from_segment.type == "from_expression_element":
-            self._add_dataset_from_expression_element(from_segment, holder)
-        for extra_segment in retrieve_extra_segment(segment):
-            self._handle_table(extra_segment, holder)
+        from_expressions = list_from_expression(from_or_join_clause)
+        if len(from_expressions) > 1:
+            # SQL89 style of join
+            for from_expression in from_expressions:
+                if from_expression_element := get_from_expression_element(
+                    from_expression
+                ):
+                    self._add_dataset_from_expression_element(
+                        from_expression_element, holder
+                    )
+        else:
+            if from_expression_element := get_from_expression_element(
+                from_or_join_clause
+            ):
+                self._add_dataset_from_expression_element(
+                    from_expression_element, holder
+                )
+            for join_clause in list_join_clause(from_or_join_clause):
+                self._handle_table(join_clause, holder)
 
     def _handle_column(self, segment: BaseSegment) -> None:
         """
         Column handler method
         :param segment: segment to be handled
         """
-        sub_segments = retrieve_segments(segment)
-        for sub_segment in sub_segments:
+        for sub_segment in list_child_segments(segment):
             if sub_segment.type == "select_clause_element":
                 self.columns.append(SqlFluffColumn.of(sub_segment))
 
@@ -102,8 +109,7 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
                 table_identifier = find_table_identifier(subquery)
                 if table_identifier:
                     read_sq = SqlFluffTable.of(table_identifier, alias)
-                    segments = retrieve_segments(subquery)
-                    for seg in segments:
+                    for seg in list_child_segments(subquery):
                         if seg.type == "select_clause":
                             self._handle_column(seg)
                     self.tables.append(read_sq)
@@ -119,7 +125,7 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
         """
         dataset: Union[Path, Table, SubQuery]
         all_segments = [
-            seg for seg in retrieve_segments(segment) if seg.type != "keyword"
+            seg for seg in list_child_segments(segment) if seg.type != "keyword"
         ]
         first_segment = all_segments[0]
         function_as_table = get_grandchild(segment, "table_expression", "function")

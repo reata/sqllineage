@@ -9,7 +9,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     get_identifier,
     is_subquery,
     is_wildcard,
-    retrieve_segments,
+    list_child_segments,
 )
 from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
@@ -109,20 +109,21 @@ class SqlFluffColumn(Column):
                     source_columns=source_columns,
                 )
             if source_columns:
-                sub_segments = retrieve_segments(column)
                 column_name = None
-                for sub_segment in sub_segments:
+                for sub_segment in list_child_segments(column):
                     if sub_segment.type == "column_reference":
                         column_name = get_identifier(sub_segment)
                     elif sub_segment.type == "expression":
                         # special handling for postgres style type cast, col as target column name instead of col::type
-                        if len(sub2_segments := retrieve_segments(sub_segment)) == 1:
+                        if len(sub2_segments := list_child_segments(sub_segment)) == 1:
                             if (
                                 sub2_segment := sub2_segments[0]
                             ).type == "cast_expression":
                                 if (
                                     len(
-                                        sub3_segments := retrieve_segments(sub2_segment)
+                                        sub3_segments := list_child_segments(
+                                            sub2_segment
+                                        )
                                     )
                                     == 2
                                 ):
@@ -154,7 +155,7 @@ class SqlFluffColumn(Column):
             parent, column = SqlFluffColumn._get_column_and_parent(segment)
             return [ColumnQualifierTuple(column, parent)]
         if segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
-            sub_segments = retrieve_segments(segment)
+            sub_segments = list_child_segments(segment)
             col_list = []
             for sub_segment in sub_segments:
                 if sub_segment.type == "bracketed":
@@ -219,7 +220,7 @@ class SqlFluffColumn(Column):
     ) -> Tuple[List[ColumnQualifierTuple], Optional[str]]:
         alias = None
         columns = []
-        sub_segments = retrieve_segments(segment, check_bracketed)
+        sub_segments = list_child_segments(segment, check_bracketed)
         for sub_segment in sub_segments:
             if sub_segment.type == "alias_expression":
                 alias = get_identifier(sub_segment)
@@ -233,7 +234,7 @@ class SqlFluffColumn(Column):
 
     @staticmethod
     def _get_column_and_parent(col_segment: BaseSegment) -> Tuple[Optional[str], str]:
-        identifiers = retrieve_segments(col_segment)
+        identifiers = list_child_segments(col_segment)
         if len(identifiers) > 1:
             return identifiers[-2].raw, identifiers[-1].raw
         return None, identifiers[-1].raw
