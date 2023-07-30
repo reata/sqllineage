@@ -78,6 +78,33 @@ def test_select_count():
     assert_table_lineage_equal("SELECT count(*) FROM tab1", {"tab1"})
 
 
+def test_select_parenthesized_from_table():
+    sql = "SELECT * FROM (tab1)"
+    assert_table_lineage_equal(sql, {"tab1"})
+
+
+def test_select_parenthesized_from_table_join():
+    sql = """SELECT tab1.id
+FROM (tab1
+    LEFT JOIN tab2 ON tab1.id = tab2.id)"""
+    assert_table_lineage_equal(sql, {"tab1", "tab2"})
+
+
+def test_select_parenthesized_from_table_join_using():
+    sql = """SELECT tab1.id
+FROM (tab1
+    LEFT JOIN tab2 USING (id))"""
+    assert_table_lineage_equal(sql, {"tab1", "tab2"})
+
+
+def test_select_parenthesized_from_table_join_recursive():
+    sql = """SELECT tab1.id
+FROM ((tab1
+    LEFT JOIN tab2 ON tab1.id = tab2.id)
+    LEFT JOIN tab3 ON tab1.id = tab3.id)"""
+    assert_table_lineage_equal(sql, {"tab1", "tab2", "tab3"})
+
+
 def test_select_subquery():
     assert_table_lineage_equal("SELECT col1 FROM (SELECT col1 FROM tab1) dt", {"tab1"})
     # with an extra space

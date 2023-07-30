@@ -162,17 +162,25 @@ def list_from_expression(segment: BaseSegment) -> List[BaseSegment]:
 
 def get_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
     """
-    from_clause as grandparent, from_expression as parent, or from_expression_element itself
+    capable of handing:
+        from_clause as grandparent
+        from_expression/join_clause as parent
+        from_expression_element itself
     """
     from_expression_element = None
-    if from_expression := segment.get_child("from_expression"):
-        if bracketed := from_expression.get_child("bracketed"):
-            if seg := bracketed.get_child("from_expression_element"):
+    if segment.type == "from_clause":
+        if from_expression := segment.get_child("from_expression"):
+            non_bracket = from_expression
+            while non_bracket.get_child("bracketed"):
+                non_bracket = non_bracket.get_child("bracketed")
+            if seg := non_bracket.get_child("from_expression_element"):
                 from_expression_element = seg
-        elif seg := from_expression.get_child("from_expression_element"):
+            elif seg := non_bracket.get_child("from_expression"):
+                if sub_seg := seg.get_child("from_expression_element"):
+                    from_expression_element = sub_seg
+    elif segment.type in ("from_expression", "join_clause"):
+        if seg := segment.get_child("from_expression_element"):
             from_expression_element = seg
-    elif seg := segment.get_child("from_expression_element"):
-        from_expression_element = seg
     elif segment.type == "from_expression_element":
         from_expression_element = segment
     return from_expression_element
@@ -318,8 +326,17 @@ def has_alias(segment: BaseSegment) -> bool:
 
 
 def list_join_clause(segment: BaseSegment) -> List[BaseSegment]:
+    """
+    traverse from_clause, recursively goes into bracket by default
+    """
     if from_expression := segment.get_child("from_expression"):
-        return [seg for seg in from_expression.segments if seg.type == "join_clause"]
+        if bracketed := from_expression.get_child("bracketed"):
+            join_clauses = bracketed.get_children("join_clause")
+            if inner_bracket := bracketed.get_child("bracketed"):
+                join_clauses = list_join_clause(inner_bracket) + join_clauses
+            return join_clauses
+        else:
+            return from_expression.get_children("join_clause")
     return []
 
 
