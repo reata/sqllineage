@@ -10,7 +10,7 @@ from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTab
 from sqllineage.core.parser.sqlfluff.utils import (
     get_grandchild,
     get_grandchildren,
-    retrieve_segments,
+    list_child_segments,
 )
 from sqllineage.utils.helpers import escape_identifier_name
 
@@ -48,7 +48,7 @@ class DmlSelectExtractor(LineageHolderExtractor):
         segments = (
             [statement]
             if statement.type == "set_expression"
-            else retrieve_segments(statement)
+            else list_child_segments(statement)
         )
         for segment in segments:
             for sq in self.parse_subquery(segment):

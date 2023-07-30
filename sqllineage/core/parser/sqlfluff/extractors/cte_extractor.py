@@ -12,7 +12,7 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils import has_alias, retrieve_segments
+from sqllineage.core.parser.sqlfluff.utils import has_alias, list_child_segments
 
 
 class DmlCteExtractor(LineageHolderExtractor):
@@ -39,11 +39,8 @@ class DmlCteExtractor(LineageHolderExtractor):
         :return 'SubQueryLineageHolder' object
         """
         holder = self._init_holder(context)
-
         subqueries = []
-        segments = retrieve_segments(statement)
-
-        for segment in segments:
+        for segment in list_child_segments(statement):
             if segment.type in ["select_statement", "set_expression"]:
                 holder |= DmlSelectExtractor(self.dialect).extract(
                     segment,
@@ -59,7 +56,7 @@ class DmlCteExtractor(LineageHolderExtractor):
             identifier = None
             if segment.type == "common_table_expression":
                 segment_has_alias = has_alias(segment)
-                sub_segments = retrieve_segments(segment)
+                sub_segments = list_child_segments(segment)
                 for sub_segment in sub_segments:
                     if sub_segment.type == "identifier":
                         identifier = sub_segment.raw

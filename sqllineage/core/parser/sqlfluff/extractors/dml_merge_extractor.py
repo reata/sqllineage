@@ -16,7 +16,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     get_grandchildren,
     get_identifier,
     get_innermost_bracketed,
-    retrieve_segments,
+    list_child_segments,
 )
 
 
@@ -39,7 +39,7 @@ class DmlMergeExtractor(LineageHolderExtractor):
         holder = StatementLineageHolder()
         src_flag = tgt_flag = False
         direct_source: Optional[Union[Table, SubQuery]] = None
-        segments = retrieve_segments(statement)
+        segments = list_child_segments(statement)
         for i, segment in enumerate(segments):
             if segment.type == "keyword" and segment.raw_upper in {"INTO", "MERGE"}:
                 tgt_flag = True

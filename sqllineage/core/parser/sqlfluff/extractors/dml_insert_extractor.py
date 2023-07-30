@@ -16,7 +16,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     get_child,
     get_grandchildren,
     is_union,
-    retrieve_segments,
+    list_child_segments,
 )
 
 
@@ -55,9 +55,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
         """
         target_handler = TargetHandler()
         holder = self._init_holder(context)
-
-        segments = retrieve_segments(statement)
-        for segment in segments:
+        for segment in list_child_segments(statement):
             if segment.type == "with_compound_statement":
                 from .cte_extractor import DmlCteExtractor
 
@@ -109,7 +107,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
         return holder
 
     def _extract_set(self, holder: SubQueryLineageHolder, set_segment: BaseSegment):
-        for sub_segment in retrieve_segments(set_segment):
+        for sub_segment in list_child_segments(set_segment):
             if sub_segment.type == "select_statement":
                 self._extract_select(holder, sub_segment, set_segment)
 

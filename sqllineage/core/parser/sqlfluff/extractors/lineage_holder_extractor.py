@@ -8,9 +8,9 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import AnalyzerContext, SubQuery
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
-    get_multiple_identifiers,
     get_subqueries,
     is_subquery,
+    list_from_expression,
 )
 from sqllineage.utils.entities import SubQueryTuple
 
@@ -56,7 +56,7 @@ class LineageHolderExtractor:
         types it returns an empty list.
         """
         result: List[SubQuery] = []
-        identifiers = get_multiple_identifiers(segment)
+        identifiers = list_from_expression(segment)
         if identifiers and len(identifiers) > 1:
             # for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
             return reduce(

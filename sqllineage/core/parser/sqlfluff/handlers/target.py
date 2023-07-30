@@ -11,7 +11,7 @@ from sqllineage.core.parser.sqlfluff.models import (
 from sqllineage.core.parser.sqlfluff.utils import (
     find_table_identifier,
     get_child,
-    retrieve_segments,
+    list_child_segments,
 )
 from sqllineage.utils.helpers import escape_identifier_name
 
@@ -113,7 +113,7 @@ class TargetHandler(ConditionalSegmentBaseHandler):
                 table_identifier = find_table_identifier(from_expression_element)
                 all_segments = [
                     seg
-                    for seg in retrieve_segments(from_expression_element)
+                    for seg in list_child_segments(from_expression_element)
                     if seg.type != "keyword"
                 ]
                 if table_identifier:
@@ -127,7 +127,7 @@ class TargetHandler(ConditionalSegmentBaseHandler):
                 table_identifier = find_table_identifier(join_clause)
                 all_segments = [
                     seg
-                    for seg in retrieve_segments(join_clause)
+                    for seg in list_child_segments(join_clause)
                     if seg.type != "keyword"
                 ]
                 if table_identifier:
@@ -143,7 +143,7 @@ class TargetHandler(ConditionalSegmentBaseHandler):
             so that when we compute the column level lineage
             we keep these columns into consideration
             """
-            sub_segments = retrieve_segments(segment)
+            sub_segments = list_child_segments(segment)
             if all(
                 sub_segment.type == "column_reference" for sub_segment in sub_segments
             ):
