@@ -82,8 +82,15 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
                 # SELECT * FROM (VALUES ...), no operation needed
                 pass
             else:
-                # SELECT * FROM (tab2), which is valid syntax
-                self._handle(token.tokens[1], holder)
+                # SELECT * FROM (tab2) or SELECT * FROM (tab2 JOIN tab1), which is valid syntax
+                using_flag = False
+                for t in token.tokens:
+                    if t.is_keyword and t.normalized == "USING":
+                        using_flag = True
+                    if isinstance(t, Identifier) or (
+                        isinstance(t, Parenthesis) and using_flag is False
+                    ):
+                        self._handle(t, holder)
         elif token.ttype == Literal.String.Single:
             self.tables.append(Path(token.value))
         elif isinstance(token, Function):
