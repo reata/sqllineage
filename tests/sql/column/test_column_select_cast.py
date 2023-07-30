@@ -49,7 +49,9 @@ FROM tab2"""
     )
 
 
-@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "decimal(18, 0)"])
+@pytest.mark.parametrize(
+    "dtype", ["string", "timestamp", "date", "decimal(18, 0)", "varchar(255)"]
+)
 def test_cast_to_data_type(dtype: str):
     sql = f"""INSERT INTO tab1
 SELECT cast(col1 as {dtype}) AS col1
@@ -60,7 +62,9 @@ FROM tab2"""
     )
 
 
-@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "decimal(18, 0)"])
+@pytest.mark.parametrize(
+    "dtype", ["string", "timestamp", "date", "decimal(18, 0)", "varchar(255)"]
+)
 def test_nested_cast_to_data_type(dtype: str):
     sql = f"""INSERT INTO tab1
 SELECT cast(cast(col1 AS {dtype}) AS {dtype}) AS col1
@@ -78,7 +82,9 @@ FROM tab2"""
     )
 
 
-@pytest.mark.parametrize("dtype", ["string", "timestamp", "date", "decimal(18, 0)"])
+@pytest.mark.parametrize(
+    "dtype", ["string", "timestamp", "date", "decimal(18, 0)", "varchar(255)"]
+)
 def test_cast_to_data_type_with_case_when(dtype: str):
     sql = f"""INSERT INTO tab1
 SELECT cast(case when col1 > 0 then col2 else col3 end as {dtype}) AS col1

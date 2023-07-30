@@ -5,7 +5,7 @@ note the table-level lineage works, only column-level lineage breaks for sqlpars
 """
 
 from sqllineage.utils.entities import ColumnQualifierTuple
-from ....helpers import assert_column_lineage_equal, assert_table_lineage_equal
+from ...helpers import assert_column_lineage_equal, assert_table_lineage_equal
 
 
 def test_insert_into_qualified_table_with_parenthesized_query():
