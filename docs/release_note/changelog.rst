@@ -2,6 +2,25 @@
 Changelog
 *********
 
+v1.4.6
+======
+:Date: July 31, 2023
+
+In this release, we finally reach the milestone to make all sqlparse only test cases passed with sqlfluff implementation.
+That's a big step in ultimately deprecating sqlparse. Also by upgrading to latest version of sqlfluff (with our PR merged),
+we enjoy the benefits of improved sqlfluff performance when parsing some SQLs with nested query pattern.
+
+Enhancement
+-------------
+* Improve sqlfluff Performance Issue on Nested Query Pattern (`#348 <https://github.com/reata/sqllineage/issues/348>`_)
+* Reduce sqlparse only test cases (`#347 <https://github.com/reata/sqllineage/issues/347>`_)
+
+Bugfix
+-------------
+* Missing Source Table for MERGE statement when UNION involved in source subquery (`#406 <https://github.com/reata/sqllineage/issues/406>`_)
+* Column lineage does not work for CAST to Parameterized Data Type (`#329 <https://github.com/reata/sqllineage/issues/329>`_)
+* Can't handle parenthesized from clause (`#278 <https://github.com/reata/sqllineage/issues/278>`_)
+
 v1.4.5
 ======
 :Date: July 2, 2023
