@@ -3,7 +3,7 @@ specify columns in CREATE/INSERT statement, sqlparse would parse table/view name
 """
 
 from sqllineage.utils.entities import ColumnQualifierTuple
-from ....helpers import assert_column_lineage_equal, assert_table_lineage_equal
+from ...helpers import assert_column_lineage_equal, assert_table_lineage_equal
 
 
 def test_view_with_subquery_custom_columns():

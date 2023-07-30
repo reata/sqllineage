@@ -4,7 +4,7 @@ sqlparse doesn't handle keyword as identifier name very well for following cases
 
 
 from sqllineage.utils.entities import ColumnQualifierTuple
-from ....helpers import assert_column_lineage_equal, assert_table_lineage_equal
+from ...helpers import assert_column_lineage_equal, assert_table_lineage_equal
 
 
 def test_non_reserved_keyword_as_source():
@@ -66,6 +66,31 @@ FROM tab2"""
             ),
             (
                 ColumnQualifierTuple("col3", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
+
+
+def test_coalesce_with_whitespace():
+    """
+    coalesce is a keyword since ANSI SQL-2023
+    usually it's parsed as a function. however, when whitespace followed which is valid syntax,
+    sqlparse cannot produce the correct AST
+    """
+    sql = """INSERT INTO tab1
+SELECT coalesce (col1, col2) as col3
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
                 ColumnQualifierTuple("col3", "tab1"),
             ),
         ],

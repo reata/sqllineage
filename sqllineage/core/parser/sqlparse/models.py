@@ -152,7 +152,7 @@ class SqlParseColumn(Column):
         elif isinstance(token, Identifier):
             real_name = token.get_real_name()
             # ignore function dtypes that don't need to check for extract column
-            FUNC_DTYPE = ["decimal", "numeric"]
+            FUNC_DTYPE = ["decimal", "numeric", "varchar"]
             has_function = any(
                 isinstance(t, Function) and t.get_real_name() not in FUNC_DTYPE
                 for t in token.tokens
