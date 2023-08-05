@@ -1,6 +1,3 @@
-from enum import Enum, unique
-
-
 class NodeTag:
     READ = "read"
     WRITE = "write"
@@ -15,12 +12,11 @@ class EdgeTag:
     INDEX = "index"
 
 
-@unique
-class EdgeType(Enum):
-    LINEAGE = 1
-    RENAME = 2
-    HAS_COLUMN = 3
-    HAS_ALIAS = 4
+class EdgeType:
+    LINEAGE = "lineage"
+    RENAME = "rename"
+    HAS_COLUMN = "has_column"
+    HAS_ALIAS = "has_alias"
 
 
 class LineageLevel:
