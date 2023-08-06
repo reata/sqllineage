@@ -3,7 +3,7 @@ from typing import Optional, Union
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext, Column, SubQuery, Table
+from sqllineage.core.models import Column, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.extractors.cte_extractor import DmlCteExtractor
 from sqllineage.core.parser.sqlfluff.extractors.dml_select_extractor import (
     DmlSelectExtractor,
@@ -18,6 +18,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     get_innermost_bracketed,
     list_child_segments,
 )
+from sqllineage.utils.entities import AnalyzerContext
 
 
 class DmlMergeExtractor(LineageHolderExtractor):

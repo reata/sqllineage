@@ -1,10 +1,10 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext
 from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
+from sqllineage.utils.entities import AnalyzerContext
 
 
 class NoopExtractor(LineageHolderExtractor):

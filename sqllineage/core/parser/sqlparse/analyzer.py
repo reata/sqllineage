@@ -17,7 +17,7 @@ from sqlparse.sql import (
 
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext, Column, SubQuery
+from sqllineage.core.models import Column, SubQuery
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
@@ -29,6 +29,7 @@ from sqllineage.core.parser.sqlparse.utils import (
     is_subquery,
     is_token_negligible,
 )
+from sqllineage.utils.entities import AnalyzerContext
 from sqllineage.utils.helpers import trim_comment
 
 

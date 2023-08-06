@@ -218,26 +218,3 @@ class Column:
                 else:
                     source_columns.add(_to_src_col(src_col, Table(qualifier)))
         return source_columns
-
-
-class AnalyzerContext:
-    """
-    Data class to hold the analyzer context
-    """
-
-    def __init__(
-        self,
-        prev_cte: Optional[Set[SubQuery]] = None,
-        prev_write: Optional[Set[Union[SubQuery, Table]]] = None,
-        target_columns=None,
-    ):
-        """
-        :param prev_cte: previous CTE queries
-        :param prev_write: previous written tables
-        :param target_columns: previous target columns
-        """
-        if target_columns is None:
-            target_columns = []
-        self.prev_cte = prev_cte
-        self.prev_write = prev_write
-        self.target_columns = target_columns

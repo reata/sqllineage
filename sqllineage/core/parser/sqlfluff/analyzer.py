@@ -5,7 +5,6 @@ from sqllineage.core.holders import (
     StatementLineageHolder,
     SubQueryLineageHolder,
 )
-from sqllineage.core.models import AnalyzerContext
 from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
@@ -14,6 +13,7 @@ from sqllineage.exceptions import (
     InvalidSyntaxException,
     UnsupportedStatementException,
 )
+from sqllineage.utils.entities import AnalyzerContext
 
 
 class SqlFluffLineageAnalyzer(LineageAnalyzer):

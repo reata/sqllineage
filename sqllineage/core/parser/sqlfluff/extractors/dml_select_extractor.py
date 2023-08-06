@@ -1,7 +1,6 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext
 from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
@@ -12,6 +11,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     get_grandchildren,
     list_child_segments,
 )
+from sqllineage.utils.entities import AnalyzerContext
 from sqllineage.utils.helpers import escape_identifier_name
 
 

@@ -5,14 +5,14 @@ from typing import List
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext, SubQuery
+from sqllineage.core.models import SubQuery
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
     get_subqueries,
     is_subquery,
     list_from_expression,
 )
-from sqllineage.utils.entities import SubQueryTuple
+from sqllineage.utils.entities import AnalyzerContext, SubQueryTuple
 
 
 class LineageHolderExtractor:
