@@ -1,9 +1,7 @@
-from typing import Optional
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext, Path
+from sqllineage.core.models import Path
 from sqllineage.core.parser.sqlfluff.extractors.dml_select_extractor import (
     DmlSelectExtractor,
 )
@@ -11,13 +9,13 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.handlers.target import TargetHandler
-from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
     get_child,
     get_grandchildren,
     is_union,
     list_child_segments,
 )
+from sqllineage.utils.entities import AnalyzerContext
 
 
 class DmlInsertExtractor(LineageHolderExtractor):
@@ -44,13 +42,11 @@ class DmlInsertExtractor(LineageHolderExtractor):
         self,
         statement: BaseSegment,
         context: AnalyzerContext,
-        is_sub_query: bool = False,
     ) -> SubQueryLineageHolder:
         """
         Extract lineage for a given statement.
         :param statement: a sqlfluff segment with a statement
         :param context: 'AnalyzerContext'
-        :param is_sub_query: determine if the statement is bracketed or not
         :return 'SubQueryLineageHolder' object
         """
         target_handler = TargetHandler()
@@ -61,7 +57,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
 
                 holder |= DmlCteExtractor(self.dialect).extract(
                     segment,
-                    AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
+                    AnalyzerContext(cte=holder.cte, write=holder.write),
                 )
             elif segment.type == "bracketed" and any(
                 s.type == "with_compound_statement" for s in segment.segments
@@ -72,16 +68,14 @@ class DmlInsertExtractor(LineageHolderExtractor):
 
                         holder |= DmlCteExtractor(self.dialect).extract(
                             sgmt,
-                            AnalyzerContext(
-                                prev_cte=holder.cte, prev_write=holder.write
-                            ),
+                            AnalyzerContext(cte=holder.cte, write=holder.write),
                         )
             elif segment.type == "bracketed" and (
                 self.parse_subquery(segment) or is_union(segment)
             ):
                 # note regular subquery within SELECT statement is handled by DmlSelectExtractor, this is only to handle
                 # top-level subquery in DML like: 1) create table foo as (subquery); 2) insert into foo (subquery)
-                # subquery here isn't added as read source, and it inherits DML-level target_columns if parsed
+                # subquery here isn't added as read source, and it inherits DML-level write_columns if parsed
                 if subquery_segment := get_child(segment, "select_statement"):
                     self._extract_select(holder, subquery_segment)
                 elif subquery_segment := get_child(segment, "set_expression"):
@@ -109,22 +103,18 @@ class DmlInsertExtractor(LineageHolderExtractor):
     def _extract_set(self, holder: SubQueryLineageHolder, set_segment: BaseSegment):
         for sub_segment in list_child_segments(set_segment):
             if sub_segment.type == "select_statement":
-                self._extract_select(holder, sub_segment, set_segment)
+                self._extract_select(holder, sub_segment)
 
     def _extract_select(
         self,
         holder: SubQueryLineageHolder,
         select_segment: BaseSegment,
-        set_segment: Optional[BaseSegment] = None,
     ):
         holder |= DmlSelectExtractor(self.dialect).extract(
             select_segment,
             AnalyzerContext(
-                SqlFluffSubQuery.of(
-                    set_segment if set_segment else select_segment, None
-                ),
-                prev_cte=holder.cte,
-                prev_write=holder.write,
-                target_columns=holder.target_columns,
+                cte=holder.cte,
+                write=holder.write,
+                write_columns=holder.write_columns,
             ),
         )

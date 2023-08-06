@@ -17,7 +17,7 @@ from sqlparse.sql import (
 
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext, Column, SubQuery
+from sqllineage.core.models import Column, SubQuery
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
@@ -29,6 +29,7 @@ from sqllineage.core.parser.sqlparse.utils import (
     is_subquery,
     is_token_negligible,
 )
+from sqllineage.utils.entities import AnalyzerContext
 from sqllineage.utils.helpers import trim_comment
 
 
@@ -130,7 +131,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                     if subqueries := cls.parse_subquery(token):
                         for sq in subqueries:
                             holder |= cls._extract_from_dml(
-                                sq.query, AnalyzerContext(sq, holder.cte)
+                                sq.query,
+                                AnalyzerContext(cte=holder.cte, write={sq}),
                             )
                 src_flag = False
             elif update_flag:
@@ -184,13 +186,14 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         cls, token: TokenList, context: AnalyzerContext
     ) -> SubQueryLineageHolder:
         holder = SubQueryLineageHolder()
-        if context.prev_cte is not None:
+        if context.cte is not None:
             # CTE can be referenced by subsequent CTEs
-            for cte in context.prev_cte:
+            for cte in context.cte:
                 holder.add_cte(cte)
-        if context.subquery is not None:
+        if context.write is not None:
             # If within subquery, then manually add subquery as target table
-            holder.add_write(context.subquery)
+            for write in context.write:
+                holder.add_write(write)
         current_handlers = [
             handler_cls() for handler_cls in CurrentTokenBaseHandler.__subclasses__()
         ]
@@ -225,7 +228,9 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 next_handler.end_of_query_cleanup(holder)
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
-            holder |= cls._extract_from_dml(sq.query, AnalyzerContext(sq, holder.cte))
+            holder |= cls._extract_from_dml(
+                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
+            )
         return holder
 
     @classmethod

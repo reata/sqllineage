@@ -148,6 +148,6 @@ class TargetHandler(ConditionalSegmentBaseHandler):
                 sub_segment.type == "column_reference" for sub_segment in sub_segments
             ):
                 # target columns only apply to bracketed column references
-                holder.add_target_column(
+                holder.add_write_column(
                     *[SqlFluffColumn.of(sub_segment) for sub_segment in sub_segments]
                 )

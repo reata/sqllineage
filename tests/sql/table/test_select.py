@@ -111,10 +111,6 @@ def test_select_subquery():
     assert_table_lineage_equal("SELECT col1 FROM ( SELECT col1 FROM tab1) dt", {"tab1"})
 
 
-def test_parenthesis():
-    assert_table_lineage_equal("(SELECT * FROM tab1)", {"tab1"})
-
-
 def test_select_subquery_with_two_parenthesis():
     assert_table_lineage_equal(
         "SELECT col1 FROM ((SELECT col1 FROM tab1)) dt", {"tab1"}

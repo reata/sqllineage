@@ -5,20 +5,15 @@ from sqllineage.core.holders import (
     StatementLineageHolder,
     SubQueryLineageHolder,
 )
-from sqllineage.core.models import AnalyzerContext
 from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
-from sqllineage.core.parser.sqlfluff.utils import (
-    clean_parentheses,
-    get_statement_segment,
-    is_subquery_statement,
-    remove_statement_parentheses,
-)
+from sqllineage.core.parser.sqlfluff.utils import get_statement_segment
 from sqllineage.exceptions import (
     InvalidSyntaxException,
     UnsupportedStatementException,
 )
+from sqllineage.utils.entities import AnalyzerContext
 
 
 class SqlFluffLineageAnalyzer(LineageAnalyzer):
@@ -28,11 +23,6 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         self._dialect = dialect
 
     def analyze(self, sql: str) -> StatementLineageHolder:
-        # remove nested parentheses that sqlfluff cannot parse
-        sql = clean_parentheses(sql)
-        is_sub_query = is_subquery_statement(sql)
-        if is_sub_query:
-            sql = remove_statement_parentheses(sql)
         linter = Linter(dialect=self._dialect)
         parsed_string = linter.parse_string(sql)
         statement_segment = get_statement_segment(parsed_string)
@@ -61,7 +51,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                     for extractor in extractors:
                         if extractor.can_extract(statement_segment.type):
                             lineage_holder = extractor.extract(
-                                statement_segment, AnalyzerContext(), is_sub_query
+                                statement_segment, AnalyzerContext()
                             )
                             break
                     return StatementLineageHolder.of(lineage_holder)

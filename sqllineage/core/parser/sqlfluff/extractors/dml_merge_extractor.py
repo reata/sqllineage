@@ -3,7 +3,7 @@ from typing import Optional, Union
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.core.models import AnalyzerContext, Column, SubQuery, Table
+from sqllineage.core.models import Column, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.extractors.cte_extractor import DmlCteExtractor
 from sqllineage.core.parser.sqlfluff.extractors.dml_select_extractor import (
     DmlSelectExtractor,
@@ -18,6 +18,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     get_innermost_bracketed,
     list_child_segments,
 )
+from sqllineage.utils.entities import AnalyzerContext
 
 
 class DmlMergeExtractor(LineageHolderExtractor):
@@ -34,7 +35,6 @@ class DmlMergeExtractor(LineageHolderExtractor):
         self,
         statement: BaseSegment,
         context: AnalyzerContext,
-        is_sub_query: bool = False,
     ) -> SubQueryLineageHolder:
         holder = StatementLineageHolder()
         src_flag = tgt_flag = False
@@ -69,13 +69,13 @@ class DmlMergeExtractor(LineageHolderExtractor):
                         # in case the subquery is a CTE query
                         holder |= DmlCteExtractor(self.dialect).extract(
                             direct_source.query,
-                            AnalyzerContext(direct_source, prev_cte=holder.cte),
+                            AnalyzerContext(cte=holder.cte, write={direct_source}),
                         )
                     else:
                         # in case the subquery is a select query
                         holder |= DmlSelectExtractor(self.dialect).extract(
                             direct_source.query,
-                            AnalyzerContext(direct_source, holder.cte),
+                            AnalyzerContext(cte=holder.cte, write={direct_source}),
                         )
                 src_flag = False
 
