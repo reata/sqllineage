@@ -6,7 +6,7 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
-from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
+from sqllineage.core.parser.sqlfluff.models import SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
     get_grandchild,
     get_grandchildren,
@@ -20,7 +20,7 @@ class DmlSelectExtractor(LineageHolderExtractor):
     DML Select queries lineage extractor
     """
 
-    SUPPORTED_STMT_TYPES = ["select_statement", "set_expression"]
+    SUPPORTED_STMT_TYPES = ["select_statement", "set_expression", "bracketed"]
 
     def __init__(self, dialect: str):
         super().__init__(dialect)
@@ -29,13 +29,11 @@ class DmlSelectExtractor(LineageHolderExtractor):
         self,
         statement: BaseSegment,
         context: AnalyzerContext,
-        is_sub_query: bool = False,
     ) -> SubQueryLineageHolder:
         """
         Extract lineage for a given statement.
         :param statement: a sqlfluff segment with a statement
         :param context: 'AnalyzerContext'
-        :param is_sub_query: determine if the statement is bracketed or not
         :return 'SubQueryLineageHolder' object
         """
         # to support SELECT INTO in some dialects, we also need to initialize target handler here
@@ -44,7 +42,7 @@ class DmlSelectExtractor(LineageHolderExtractor):
             for handler_cls in ConditionalSegmentBaseHandler.__subclasses__()
         ]
         holder = self._init_holder(context)
-        subqueries = [SqlFluffSubQuery.of(statement, None)] if is_sub_query else []
+        subqueries = []
         segments = (
             [statement]
             if statement.type == "set_expression"

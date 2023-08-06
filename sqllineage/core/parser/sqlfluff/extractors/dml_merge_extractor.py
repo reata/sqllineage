@@ -34,7 +34,6 @@ class DmlMergeExtractor(LineageHolderExtractor):
         self,
         statement: BaseSegment,
         context: AnalyzerContext,
-        is_sub_query: bool = False,
     ) -> SubQueryLineageHolder:
         holder = StatementLineageHolder()
         src_flag = tgt_flag = False

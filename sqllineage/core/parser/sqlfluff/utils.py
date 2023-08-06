@@ -401,16 +401,6 @@ def is_union(segment: BaseSegment) -> bool:
     )
 
 
-def is_subquery_statement(stmt: str) -> bool:
-    parentheses_regex = r"^\(.*\)"
-    return bool(re.match(parentheses_regex, stmt))
-
-
-def remove_statement_parentheses(stmt: str) -> str:
-    parentheses_regex = r"^\((.*)\)"
-    return re.sub(parentheses_regex, r"\1", stmt)
-
-
 def clean_parentheses(stmt: str) -> str:
     """
       Clean redundant parentheses from a SQL statement e.g:

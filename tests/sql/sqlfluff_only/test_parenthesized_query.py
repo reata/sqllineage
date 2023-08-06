@@ -8,6 +8,10 @@ from sqllineage.utils.entities import ColumnQualifierTuple
 from ...helpers import assert_column_lineage_equal, assert_table_lineage_equal
 
 
+def test_parenthesis():
+    assert_table_lineage_equal("(SELECT * FROM tab1)", {"tab1"}, test_sqlparse=False)
+
+
 def test_insert_into_qualified_table_with_parenthesized_query():
     """
     For sqlparse, it will work if:
