@@ -1,7 +1,6 @@
 """
 Utils class to deal with the sqlfluff segments manipulations
 """
-import re
 from typing import Any, List, Optional, Tuple
 
 from sqlfluff.core.linter import ParsedString
@@ -399,19 +398,3 @@ def is_union(segment: BaseSegment) -> bool:
     return segment.type == "set_expression" or any(
         seg.type == "set_expression" for seg in segment.segments
     )
-
-
-def clean_parentheses(stmt: str) -> str:
-    """
-      Clean redundant parentheses from a SQL statement e.g:
-        `SELECT col1 FROM (((((((SELECT col1 FROM tab1))))))) dt`
-      will be:
-        `SELECT col1 FROM (SELECT col1 FROM tab1) dt`
-
-    :param stmt: a SQL str to be cleaned
-    """
-    redundant_parentheses = r"\(\(([^()]+)\)\)"
-    if re.findall(redundant_parentheses, stmt):
-        stmt = re.sub(redundant_parentheses, r"(\1)", stmt)
-        stmt = clean_parentheses(stmt)
-    return stmt

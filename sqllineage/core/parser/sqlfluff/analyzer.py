@@ -9,10 +9,7 @@ from sqllineage.core.models import AnalyzerContext
 from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
     LineageHolderExtractor,
 )
-from sqllineage.core.parser.sqlfluff.utils import (
-    clean_parentheses,
-    get_statement_segment,
-)
+from sqllineage.core.parser.sqlfluff.utils import get_statement_segment
 from sqllineage.exceptions import (
     InvalidSyntaxException,
     UnsupportedStatementException,
@@ -26,8 +23,6 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         self._dialect = dialect
 
     def analyze(self, sql: str) -> StatementLineageHolder:
-        # remove nested parentheses that sqlfluff cannot parse
-        sql = clean_parentheses(sql)
         linter = Linter(dialect=self._dialect)
         parsed_string = linter.parse_string(sql)
         statement_segment = get_statement_segment(parsed_string)
