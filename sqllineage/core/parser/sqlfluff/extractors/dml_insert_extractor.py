@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
@@ -11,7 +9,6 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.handlers.target import TargetHandler
-from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
     get_child,
     get_grandchildren,
@@ -107,20 +104,16 @@ class DmlInsertExtractor(LineageHolderExtractor):
     def _extract_set(self, holder: SubQueryLineageHolder, set_segment: BaseSegment):
         for sub_segment in list_child_segments(set_segment):
             if sub_segment.type == "select_statement":
-                self._extract_select(holder, sub_segment, set_segment)
+                self._extract_select(holder, sub_segment)
 
     def _extract_select(
         self,
         holder: SubQueryLineageHolder,
         select_segment: BaseSegment,
-        set_segment: Optional[BaseSegment] = None,
     ):
         holder |= DmlSelectExtractor(self.dialect).extract(
             select_segment,
             AnalyzerContext(
-                SqlFluffSubQuery.of(
-                    set_segment if set_segment else select_segment, None
-                ),
                 prev_cte=holder.cte,
                 prev_write=holder.write,
                 target_columns=holder.target_columns,

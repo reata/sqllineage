@@ -68,13 +68,17 @@ class DmlMergeExtractor(LineageHolderExtractor):
                         # in case the subquery is a CTE query
                         holder |= DmlCteExtractor(self.dialect).extract(
                             direct_source.query,
-                            AnalyzerContext(direct_source, prev_cte=holder.cte),
+                            AnalyzerContext(
+                                prev_cte=holder.cte, prev_write={direct_source}
+                            ),
                         )
                     else:
                         # in case the subquery is a select query
                         holder |= DmlSelectExtractor(self.dialect).extract(
                             direct_source.query,
-                            AnalyzerContext(direct_source, holder.cte),
+                            AnalyzerContext(
+                                prev_cte=holder.cte, prev_write={direct_source}
+                            ),
                         )
                 src_flag = False
 

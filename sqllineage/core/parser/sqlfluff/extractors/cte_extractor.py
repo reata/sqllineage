@@ -72,7 +72,7 @@ class DmlCteExtractor(LineageHolderExtractor):
         for sq in subqueries:
             holder |= DmlSelectExtractor(self.dialect).extract(
                 sq.query,
-                AnalyzerContext(sq, prev_cte=holder.cte),
+                AnalyzerContext(prev_cte=holder.cte, prev_write={sq}),
             )
 
         return holder
