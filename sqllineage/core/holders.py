@@ -85,10 +85,10 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         self._property_setter(value, NodeTag.CTE)
 
     @property
-    def target_columns(self) -> List[Column]:
+    def write_columns(self) -> List[Column]:
         """
         in case of DML with column specified, like INSERT INTO tab1 (col1, col2) SELECT ...
-        target_columns tell us that tab1 has column col1 and col2 in that order.
+        write_columns tell us that tab1 has column col1 and col2 in that order.
         """
         tgt_cols = []
         if self.write:
@@ -104,7 +104,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             tgt_cols = [x[0] for x in tgt_col_with_idx]
         return tgt_cols
 
-    def add_target_column(self, *tgt_cols: Column) -> None:
+    def add_write_column(self, *tgt_cols: Column) -> None:
         if self.write:
             tgt_tbl = list(self.write)[0]
             for idx, tgt_col in enumerate(tgt_cols):

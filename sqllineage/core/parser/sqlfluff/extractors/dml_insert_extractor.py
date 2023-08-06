@@ -57,7 +57,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
 
                 holder |= DmlCteExtractor(self.dialect).extract(
                     segment,
-                    AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
+                    AnalyzerContext(cte=holder.cte, write=holder.write),
                 )
             elif segment.type == "bracketed" and any(
                 s.type == "with_compound_statement" for s in segment.segments
@@ -68,16 +68,14 @@ class DmlInsertExtractor(LineageHolderExtractor):
 
                         holder |= DmlCteExtractor(self.dialect).extract(
                             sgmt,
-                            AnalyzerContext(
-                                prev_cte=holder.cte, prev_write=holder.write
-                            ),
+                            AnalyzerContext(cte=holder.cte, write=holder.write),
                         )
             elif segment.type == "bracketed" and (
                 self.parse_subquery(segment) or is_union(segment)
             ):
                 # note regular subquery within SELECT statement is handled by DmlSelectExtractor, this is only to handle
                 # top-level subquery in DML like: 1) create table foo as (subquery); 2) insert into foo (subquery)
-                # subquery here isn't added as read source, and it inherits DML-level target_columns if parsed
+                # subquery here isn't added as read source, and it inherits DML-level write_columns if parsed
                 if subquery_segment := get_child(segment, "select_statement"):
                     self._extract_select(holder, subquery_segment)
                 elif subquery_segment := get_child(segment, "set_expression"):
@@ -115,8 +113,8 @@ class DmlInsertExtractor(LineageHolderExtractor):
         holder |= DmlSelectExtractor(self.dialect).extract(
             select_segment,
             AnalyzerContext(
-                prev_cte=holder.cte,
-                prev_write=holder.write,
-                target_columns=holder.target_columns,
+                cte=holder.cte,
+                write=holder.write,
+                write_columns=holder.write_columns,
             ),
         )

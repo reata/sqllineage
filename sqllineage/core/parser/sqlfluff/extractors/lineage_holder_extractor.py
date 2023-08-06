@@ -93,18 +93,18 @@ class LineageHolderExtractor:
         """
         holder = SubQueryLineageHolder()
 
-        if context.prev_cte is not None:
+        if context.cte is not None:
             # CTE can be referenced by subsequent CTEs
-            for cte in context.prev_cte:
+            for cte in context.cte:
                 holder.add_cte(cte)
 
-        if context.prev_write is not None:
+        if context.write is not None:
             # If within subquery, then manually add subquery as target table
-            for write in context.prev_write:
+            for write in context.write:
                 holder.add_write(write)
 
-        if context.target_columns:
+        if context.write_columns:
             # target columns can be referred while creating column level lineage
-            holder.add_target_column(*context.target_columns)
+            holder.add_write_column(*context.write_columns)
 
         return holder

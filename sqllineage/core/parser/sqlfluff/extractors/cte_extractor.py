@@ -42,13 +42,13 @@ class DmlCteExtractor(LineageHolderExtractor):
             if segment.type in ["select_statement", "set_expression"]:
                 holder |= DmlSelectExtractor(self.dialect).extract(
                     segment,
-                    AnalyzerContext(prev_cte=holder.cte, prev_write=holder.write),
+                    AnalyzerContext(cte=holder.cte, write=holder.write),
                 )
 
             if segment.type == "insert_statement":
                 holder |= DmlInsertExtractor(self.dialect).extract(
                     segment,
-                    AnalyzerContext(prev_cte=holder.cte),
+                    AnalyzerContext(cte=holder.cte),
                 )
 
             identifier = None
@@ -72,7 +72,7 @@ class DmlCteExtractor(LineageHolderExtractor):
         for sq in subqueries:
             holder |= DmlSelectExtractor(self.dialect).extract(
                 sq.query,
-                AnalyzerContext(prev_cte=holder.cte, prev_write={sq}),
+                AnalyzerContext(cte=holder.cte, write={sq}),
             )
 
         return holder

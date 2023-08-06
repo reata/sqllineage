@@ -20,17 +20,17 @@ class AnalyzerContext:
 
     def __init__(
         self,
-        prev_cte: Optional[Set[SubQuery]] = None,
-        prev_write: Optional[Set[Union[SubQuery, Table]]] = None,
-        target_columns=None,
+        cte: Optional[Set[SubQuery]] = None,
+        write: Optional[Set[Union[SubQuery, Table]]] = None,
+        write_columns=None,
     ):
         """
-        :param prev_cte: previous CTE queries
-        :param prev_write: previous written tables
-        :param target_columns: previous target columns
+        :param cte: CTE queries that can be select from in current query context
+        :param write: table that current top-level query is writing to, subquery in case of subquery context
+        :param write_columns: columns that write table specifies, used for `INSERT INTO x (col1, col2) SELECT` syntax
         """
-        if target_columns is None:
-            target_columns = []
-        self.prev_cte = prev_cte
-        self.prev_write = prev_write
-        self.target_columns = target_columns
+        self.cte = cte
+        self.write = write
+        if write_columns is None:
+            write_columns = []
+        self.write_columns = write_columns

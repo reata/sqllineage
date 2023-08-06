@@ -132,7 +132,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                         for sq in subqueries:
                             holder |= cls._extract_from_dml(
                                 sq.query,
-                                AnalyzerContext(prev_cte=holder.cte, prev_write={sq}),
+                                AnalyzerContext(cte=holder.cte, write={sq}),
                             )
                 src_flag = False
             elif update_flag:
@@ -186,13 +186,13 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         cls, token: TokenList, context: AnalyzerContext
     ) -> SubQueryLineageHolder:
         holder = SubQueryLineageHolder()
-        if context.prev_cte is not None:
+        if context.cte is not None:
             # CTE can be referenced by subsequent CTEs
-            for cte in context.prev_cte:
+            for cte in context.cte:
                 holder.add_cte(cte)
-        if context.prev_write is not None:
+        if context.write is not None:
             # If within subquery, then manually add subquery as target table
-            for write in context.prev_write:
+            for write in context.write:
                 holder.add_write(write)
         current_handlers = [
             handler_cls() for handler_cls in CurrentTokenBaseHandler.__subclasses__()
@@ -229,7 +229,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= cls._extract_from_dml(
-                sq.query, AnalyzerContext(prev_cte=holder.cte, prev_write={sq})
+                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
             )
         return holder
 
