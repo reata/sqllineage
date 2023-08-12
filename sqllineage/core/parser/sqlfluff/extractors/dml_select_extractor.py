@@ -70,11 +70,6 @@ class DmlSelectExtractor(LineageHolderExtractor):
                 sq.query, AnalyzerContext(cte=holder.cte, write={sq})
             )
 
-        for sq in holder.extra_subqueries:
-            holder |= self.extract(
-                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
-            )
-
         return holder
 
     @staticmethod

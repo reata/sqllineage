@@ -141,7 +141,6 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
                 for sq in subqueries:
                     bracketed, alias = sq
                     read_sq = SqlFluffSubQuery.of(bracketed, alias)
-                    holder.extra_subqueries.add(read_sq)
                     self.tables.append(read_sq)
             else:
                 table_identifier = find_table_identifier(segment)
