@@ -11,7 +11,7 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
     LineageHolderExtractor,
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils import has_alias, list_child_segments
+from sqllineage.core.parser.sqlfluff.utils import get_children, list_child_segments
 from sqllineage.utils.entities import AnalyzerContext
 
 
@@ -53,7 +53,9 @@ class DmlCteExtractor(LineageHolderExtractor):
 
             identifier = None
             if segment.type == "common_table_expression":
-                segment_has_alias = has_alias(segment)
+                segment_has_alias = any(
+                    s for s in get_children(segment, "keyword") if s.raw_upper == "AS"
+                )
                 sub_segments = list_child_segments(segment)
                 for sub_segment in sub_segments:
                     if sub_segment.type == "identifier":

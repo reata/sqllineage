@@ -8,9 +8,9 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import SubQuery
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
-    get_subqueries,
+    get_children,
     is_subquery,
-    list_from_expression,
+    list_subqueries,
 )
 from sqllineage.utils.entities import AnalyzerContext, SubQueryTuple
 
@@ -54,19 +54,19 @@ class LineageHolderExtractor:
         types it returns an empty list.
         """
         result: List[SubQuery] = []
-        identifiers = list_from_expression(segment)
+        identifiers = get_children(segment, "from_expression")
         if identifiers and len(identifiers) > 1:
             # for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
             return reduce(
                 add,
                 [
-                    cls._parse_subquery(get_subqueries(identifier))
+                    cls._parse_subquery(list_subqueries(identifier))
                     for identifier in identifiers
                 ],
                 [],
             )
         if segment.type in ["select_clause", "from_clause", "where_clause"]:
-            result = cls._parse_subquery(get_subqueries(segment))
+            result = cls._parse_subquery(list_subqueries(segment))
         elif is_subquery(segment):
             # Parenthesis for SubQuery without alias, this is valid syntax for certain SQL dialect
             result = [SqlFluffSubQuery.of(segment, None)]

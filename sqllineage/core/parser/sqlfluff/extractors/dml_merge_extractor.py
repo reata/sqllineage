@@ -13,9 +13,10 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
 )
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
-    get_grandchildren,
-    get_identifier,
-    get_innermost_bracketed,
+    extract_identifier,
+    extract_innermost_bracketed,
+    get_child,
+    get_children,
     list_child_segments,
 )
 from sqllineage.utils.entities import AnalyzerContext
@@ -59,8 +60,8 @@ class DmlMergeExtractor(LineageHolderExtractor):
                 elif segment.type == "bracketed":
                     next_segment = segments[i + 1]
                     direct_source = SqlFluffSubQuery.of(
-                        get_innermost_bracketed(segment),
-                        get_identifier(next_segment)
+                        extract_innermost_bracketed(segment),
+                        extract_identifier(next_segment)
                         if next_segment.type == "alias_expression"
                         else None,
                     )
@@ -79,46 +80,47 @@ class DmlMergeExtractor(LineageHolderExtractor):
                         )
                 src_flag = False
 
-        for match in get_grandchildren(
-            statement, "merge_match", "merge_when_matched_clause"
-        ):
-            if (
-                merge_update_clause := match.get_child("merge_update_clause")
-            ) is not None:
-                for set_clause in get_grandchildren(
-                    merge_update_clause, "set_clause_list", "set_clause"
-                ):
-                    columns = set_clause.get_children("column_reference")
-                    if len(columns) == 2:
-                        src_col = Column(get_identifier(columns[1]))
-                        src_col.parent = direct_source
-                        tgt_col = Column(get_identifier(columns[0]))
-                        tgt_col.parent = list(holder.write)[0]
-                        holder.add_column_lineage(src_col, tgt_col)
-        for not_match in get_grandchildren(
-            statement, "merge_match", "merge_when_not_matched_clause"
-        ):
-            merge_insert = not_match.get_child("merge_insert_clause")
-            insert_columns = []
-            merge_insert_bracketed = merge_insert.get_child("bracketed")
-            if merge_insert_bracketed and merge_insert_bracketed.get_children(
-                "column_reference"
+        if merge_match := get_child(statement, "merge_match"):
+            for merge_when_matched_clause in get_children(
+                merge_match, "merge_when_matched_clause"
             ):
-                for c in merge_insert.get_child("bracketed").get_children(
-                    "column_reference"
+                if merge_update_clause := get_child(
+                    merge_when_matched_clause, "merge_update_clause"
                 ):
-                    tgt_col = Column(get_identifier(c))
-                    tgt_col.parent = list(holder.write)[0]
-                    insert_columns.append(tgt_col)
-                for j, e in enumerate(
-                    segment
-                    for segment in merge_insert.get_child("values_clause")
-                    .get_child("bracketed")
-                    .segments
-                    if segment.type in ("literal", "expression")
-                ):
-                    if col_ref := e.get_child("column_reference"):
-                        src_col = Column(get_identifier(col_ref))
-                        src_col.parent = direct_source
-                        holder.add_column_lineage(src_col, insert_columns[j])
+                    if set_clause_list := get_child(
+                        merge_update_clause, "set_clause_list"
+                    ):
+                        for set_clause in get_children(set_clause_list, "set_clause"):
+                            columns = get_children(set_clause, "column_reference")
+                            if len(columns) == 2:
+                                src_col = Column(extract_identifier(columns[1]))
+                                src_col.parent = direct_source
+                                tgt_col = Column(extract_identifier(columns[0]))
+                                tgt_col.parent = list(holder.write)[0]
+                                holder.add_column_lineage(src_col, tgt_col)
+            for merge_when_not_matched_clause in get_children(
+                merge_match, "merge_when_not_matched_clause"
+            ):
+                merge_insert = get_child(
+                    merge_when_not_matched_clause, "merge_insert_clause"
+                )
+                insert_columns = []
+                if bracketed := get_child(merge_insert, "bracketed"):
+                    for column_reference in get_children(bracketed, "column_reference"):
+                        tgt_col = Column(extract_identifier(column_reference))
+                        tgt_col.parent = list(holder.write)[0]
+                        insert_columns.append(tgt_col)
+                    if values_clause := get_child(merge_insert, "values_clause"):
+                        if bracketed := get_child(values_clause, "bracketed"):
+                            for j, e in enumerate(
+                                get_children(bracketed, "literal", "expression")
+                            ):
+                                if column_reference := get_child(e, "column_reference"):
+                                    src_col = Column(
+                                        extract_identifier(column_reference)
+                                    )
+                                    src_col.parent = direct_source
+                                    holder.add_column_lineage(
+                                        src_col, insert_columns[j]
+                                    )
         return holder

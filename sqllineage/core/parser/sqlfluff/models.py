@@ -6,7 +6,7 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.models import Column, Schema, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.utils import (
-    get_identifier,
+    extract_identifier,
     is_subquery,
     is_wildcard,
     list_child_segments,
@@ -112,7 +112,7 @@ class SqlFluffColumn(Column):
                 column_name = None
                 for sub_segment in list_child_segments(column):
                     if sub_segment.type == "column_reference":
-                        column_name = get_identifier(sub_segment)
+                        column_name = extract_identifier(sub_segment)
                     elif sub_segment.type == "expression":
                         # special handling for postgres style type cast, col as target column name instead of col::type
                         if len(sub2_segments := list_child_segments(sub_segment)) == 1:
@@ -130,7 +130,7 @@ class SqlFluffColumn(Column):
                                     if (
                                         sub3_segment := sub3_segments[0]
                                     ).type == "column_reference":
-                                        column_name = get_identifier(sub3_segment)
+                                        column_name = extract_identifier(sub3_segment)
                 return Column(
                     column.raw if column_name is None else column_name,
                     source_columns=source_columns,
@@ -223,7 +223,7 @@ class SqlFluffColumn(Column):
         sub_segments = list_child_segments(segment, check_bracketed)
         for sub_segment in sub_segments:
             if sub_segment.type == "alias_expression":
-                alias = get_identifier(sub_segment)
+                alias = extract_identifier(sub_segment)
             elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
                 sub_segment
             ):

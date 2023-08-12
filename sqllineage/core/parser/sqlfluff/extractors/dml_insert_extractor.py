@@ -10,9 +10,10 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
 )
 from sqllineage.core.parser.sqlfluff.handlers.target import TargetHandler
 from sqllineage.core.parser.sqlfluff.utils import (
+    find_from_expression_element,
     get_child,
-    get_grandchildren,
-    is_union,
+    get_children,
+    is_set_expression,
     list_child_segments,
 )
 from sqllineage.utils.entities import AnalyzerContext
@@ -71,7 +72,7 @@ class DmlInsertExtractor(LineageHolderExtractor):
                             AnalyzerContext(cte=holder.cte, write=holder.write),
                         )
             elif segment.type == "bracketed" and (
-                self.parse_subquery(segment) or is_union(segment)
+                self.parse_subquery(segment) or is_set_expression(segment)
             ):
                 # note regular subquery within SELECT statement is handled by DmlSelectExtractor, this is only to handle
                 # top-level subquery in DML like: 1) create table foo as (subquery); 2) insert into foo (subquery)
@@ -85,15 +86,14 @@ class DmlInsertExtractor(LineageHolderExtractor):
             elif segment.type == "set_expression":
                 self._extract_set(holder, segment)
             elif segment.type == "from_clause":
-                for s in segment.segments:
-                    if s.type == "from_expression":
-                        for table_expression in get_grandchildren(
-                            s, "from_expression_element", "table_expression"
+                if from_expression_element := find_from_expression_element(segment):
+                    for table_expression in get_children(
+                        from_expression_element, "table_expression"
+                    ):
+                        if storage_location := get_child(
+                            table_expression, "storage_location"
                         ):
-                            if storage_location := table_expression.get_child(
-                                "storage_location"
-                            ):
-                                holder.add_read(Path(storage_location.raw))
+                            holder.add_read(Path(storage_location.raw))
             else:
                 if target_handler.indicate(segment):
                     target_handler.handle(segment, holder)
