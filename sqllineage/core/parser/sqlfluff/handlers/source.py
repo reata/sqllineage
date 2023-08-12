@@ -13,15 +13,14 @@ from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffTable,
 )
 from sqllineage.core.parser.sqlfluff.utils import (
+    find_from_expression_element,
     find_table_identifier,
-    get_from_expression_element,
-    get_grandchild,
-    get_subqueries,
-    is_union,
-    is_values_clause,
+    get_child,
+    get_children,
+    is_set_expression,
     list_child_segments,
-    list_from_expression,
     list_join_clause,
+    list_subqueries,
 )
 
 
@@ -44,7 +43,7 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
         return (
             self._indicate_column(segment)
             or self._indicate_table(segment)
-            or is_union(segment)
+            or is_set_expression(segment)
         )
 
     def handle(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
@@ -55,7 +54,7 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
         """
         if self._indicate_table(segment):
             self._handle_table(segment, holder)
-        elif is_union(segment):
+        elif is_set_expression(segment):
             self._handle_union(segment)
         if self._indicate_column(segment):
             self._handle_column(segment)
@@ -66,18 +65,18 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
         """
         handle from_clause or join_clause, join_clause is a child node of from_clause.
         """
-        from_expressions = list_from_expression(from_or_join_clause)
+        from_expressions = get_children(from_or_join_clause, "from_expression")
         if len(from_expressions) > 1:
             # SQL89 style of join
             for from_expression in from_expressions:
-                if from_expression_element := get_from_expression_element(
+                if from_expression_element := find_from_expression_element(
                     from_expression
                 ):
                     self._add_dataset_from_expression_element(
                         from_expression_element, holder
                     )
         else:
-            if from_expression_element := get_from_expression_element(
+            if from_expression_element := find_from_expression_element(
                 from_or_join_clause
             ):
                 self._add_dataset_from_expression_element(
@@ -100,7 +99,7 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
         Union handler method
         :param segment: segment to be handled
         """
-        subqueries = get_subqueries(segment)
+        subqueries = list_subqueries(segment)
         if subqueries:
             for idx, sq in enumerate(subqueries):
                 if idx != 0:
@@ -127,28 +126,29 @@ class SourceHandler(SourceHandlerMixin, ConditionalSegmentBaseHandler):
         all_segments = [
             seg for seg in list_child_segments(segment) if seg.type != "keyword"
         ]
+        if table_expression := get_child(segment, "table_expression"):
+            if get_child(table_expression, "function"):
+                # for UNNEST or generator function, no dataset involved
+                return
         first_segment = all_segments[0]
-        function_as_table = get_grandchild(segment, "table_expression", "function")
-        if first_segment.type == "function" or function_as_table:
-            # function() as alias, no dataset involved
-            return
-        elif first_segment.type == "bracketed" and is_values_clause(first_segment):
-            # (VALUES ...) AS alias, no dataset involved
-            return
+        if first_segment.type == "bracketed":
+            if table_expression := get_child(first_segment, "table_expression"):
+                if get_child(table_expression, "values_clause"):
+                    # (VALUES ...) AS alias, no dataset involved
+                    return
+        subqueries = list_subqueries(segment)
+        if subqueries:
+            for sq in subqueries:
+                bracketed, alias = sq
+                read_sq = SqlFluffSubQuery.of(bracketed, alias)
+                self.tables.append(read_sq)
         else:
-            subqueries = get_subqueries(segment)
-            if subqueries:
-                for sq in subqueries:
-                    bracketed, alias = sq
-                    read_sq = SqlFluffSubQuery.of(bracketed, alias)
-                    self.tables.append(read_sq)
-            else:
-                table_identifier = find_table_identifier(segment)
-                if table_identifier:
-                    dataset = retrieve_holder_data_from(
-                        all_segments, holder, table_identifier
-                    )
-                    self.tables.append(dataset)
+            table_identifier = find_table_identifier(segment)
+            if table_identifier:
+                dataset = retrieve_holder_data_from(
+                    all_segments, holder, table_identifier
+                )
+                self.tables.append(dataset)
 
     @staticmethod
     def _indicate_column(segment: BaseSegment) -> bool:

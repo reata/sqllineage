@@ -7,8 +7,8 @@ from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import 
 from sqllineage.core.parser.sqlfluff.handlers.base import ConditionalSegmentBaseHandler
 from sqllineage.core.parser.sqlfluff.models import SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
-    get_grandchild,
-    get_grandchildren,
+    get_child,
+    get_children,
     list_child_segments,
 )
 from sqllineage.utils.entities import AnalyzerContext
@@ -77,20 +77,17 @@ class DmlSelectExtractor(LineageHolderExtractor):
         """
         A handler for swap_partitions_between_tables function
         """
-        function_from_select = get_grandchild(
-            segment, "select_clause_element", "function"
-        )
-        if (
-            function_from_select
-            and function_from_select.first_non_whitespace_segment_raw_upper
-            == "SWAP_PARTITIONS_BETWEEN_TABLES"
-        ):
-            function_parameters = get_grandchildren(
-                function_from_select, "bracketed", "expression"
-            )
-            holder.add_read(
-                SqlFluffTable(escape_identifier_name(function_parameters[0].raw))
-            )
-            holder.add_write(
-                SqlFluffTable(escape_identifier_name(function_parameters[3].raw))
-            )
+        if select_clause_element := get_child(segment, "select_clause_element"):
+            if function := get_child(select_clause_element, "function"):
+                if (
+                    function.first_non_whitespace_segment_raw_upper
+                    == "SWAP_PARTITIONS_BETWEEN_TABLES"
+                ):
+                    if bracketed := get_child(function, "bracketed"):
+                        expressions = get_children(bracketed, "expression")
+                        holder.add_read(
+                            SqlFluffTable(escape_identifier_name(expressions[0].raw))
+                        )
+                        holder.add_write(
+                            SqlFluffTable(escape_identifier_name(expressions[3].raw))
+                        )

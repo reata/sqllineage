@@ -5,7 +5,7 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
-from sqllineage.core.parser.sqlfluff.utils import get_table_alias
+from sqllineage.core.parser.sqlfluff.utils import list_child_segments
 from sqllineage.utils.helpers import escape_identifier_name
 
 
@@ -23,7 +23,10 @@ def retrieve_holder_data_from(
     :return: 'Path' or 'SqlFluffSubQuery' or 'SqlFluffTable' object
     """
     data = None
-    alias = get_table_alias(segments)
+    alias = None
+    if len(segments) > 1 and segments[1].type == "alias_expression":
+        segments = list_child_segments(segments[1])
+        alias = str(segments[1].raw if len(segments) > 1 else segments[0].raw)
     if "." not in table_identifier.raw:
         cte_dict = {s.alias: s for s in holder.cte}
         cte = cte_dict.get(table_identifier.raw)
