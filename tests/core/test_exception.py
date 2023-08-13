@@ -48,3 +48,14 @@ def test_deprecated_warning_in_sqlparse():
         LineageRunner("SELECT * FROM DUAL", dialect="non-validating")._eval()
         assert len(w) == 1
         assert issubclass(w[0].category, DeprecationWarning)
+
+
+def test_syntax_warning_no_semicolon_in_tsql():
+    with warnings.catch_warnings(record=True) as w:
+        LineageRunner(
+            """SELECT * FROM foo
+SELECT * FROM bar""",
+            dialect="tsql",
+        )._eval()
+        assert len(w) == 1
+        assert issubclass(w[0].category, SyntaxWarning)
