@@ -3,12 +3,31 @@ import pytest
 from ...helpers import assert_table_lineage_equal
 
 
-@pytest.mark.parametrize("dialect", ["bigquery", "snowflake"])
-def test_create_bucket_table(dialect: str):
+@pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
+def test_create_bucket_table_in_spark(dialect: str):
     assert_table_lineage_equal(
-        "CREATE TABLE tab1 USING parquet CLUSTERED BY (col1) INTO 500 BUCKETS",
+        """CREATE TABLE student (id INT, name STRING, age INT)
+USING CSV
+PARTITIONED BY (age)
+CLUSTERED BY (Id) INTO 4 buckets""",
         None,
-        {"tab1"},
+        {"student"},
+        dialect,
+        skip_graph_check=True,  # sqlfluff graph includes table to column edge
+    )
+
+
+@pytest.mark.parametrize("dialect", ["athena"])
+def test_create_bucket_table_in_athena(dialect: str):
+    assert_table_lineage_equal(
+        """CREATE TABLE bar
+WITH (
+  bucketed_by = ARRAY['customer_id'],
+  bucket_count = 8
+)
+AS SELECT * FROM foo""",
+        {"foo"},
+        {"bar"},
         dialect,
     )
 
@@ -62,4 +81,5 @@ STORED AS TEXTFILE""",  # noqa
         None,
         {"apachelog"},
         dialect=dialect,
+        skip_graph_check=True,  # sqlfluff graph includes table to column edge
     )

@@ -89,11 +89,15 @@ class TargetHandler(ConditionalSegmentBaseHandler):
             self._reset_tokens()
 
         elif segment.type in {"literal", "storage_location"}:
-            if self.prev_token_from:
-                holder.add_read(Path(escape_identifier_name(segment.raw)))
+            if segment.raw.isnumeric():
+                # Special Handling for Spark Bucket Table DDL
+                pass
             else:
-                holder.add_write(Path(escape_identifier_name(segment.raw)))
-            self._reset_tokens()
+                if self.prev_token_from:
+                    holder.add_read(Path(escape_identifier_name(segment.raw)))
+                else:
+                    holder.add_write(Path(escape_identifier_name(segment.raw)))
+                self._reset_tokens()
 
         elif segment.type == "into_table_clause":
             obj_ref = get_child(segment, "object_reference")
@@ -145,9 +149,13 @@ class TargetHandler(ConditionalSegmentBaseHandler):
             """
             sub_segments = list_child_segments(segment)
             if all(
-                sub_segment.type == "column_reference" for sub_segment in sub_segments
+                sub_segment.type in ["column_reference", "column_definition"]
+                for sub_segment in sub_segments
             ):
-                # target columns only apply to bracketed column references
-                holder.add_write_column(
-                    *[SqlFluffColumn.of(sub_segment) for sub_segment in sub_segments]
-                )
+                # target columns only apply to bracketed column_reference and column_definition
+                columns = []
+                for sub_segment in sub_segments:
+                    if sub_segment.type == "column_definition":
+                        sub_segment = get_child(sub_segment, "identifier")
+                    columns.append(SqlFluffColumn.of(sub_segment))
+                holder.add_write_column(*columns)

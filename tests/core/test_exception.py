@@ -27,6 +27,15 @@ def test_partial_unparsable_query_in_sqlfluff():
         )._eval()
 
 
+def test_partial_unparsable_query_in_sqlfluff_with_tsql_batch():
+    sql = """SELECT *
+INTO tgt
+FROM tab1 src1 AS src1
+CROSS JOIN tab2 AS src2"""
+    with pytest.raises(InvalidSyntaxException):
+        LineageRunner(sql, dialect="tsql")._eval()
+
+
 def test_unsupported_query_type_in_sqlfluff():
     with pytest.raises(UnsupportedStatementException):
         LineageRunner(

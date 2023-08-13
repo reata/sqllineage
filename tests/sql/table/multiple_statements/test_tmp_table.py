@@ -24,7 +24,7 @@ FROM tab_a;"""
 
 def test_create_after_drop():
     assert_table_lineage_equal(
-        "DROP TABLE IF EXISTS tab1; CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)",
+        "DROP TABLE IF EXISTS tab1; CREATE TABLE IF NOT EXISTS tab1 AS SELECT 1",
         None,
         {"tab1"},
     )
@@ -32,7 +32,7 @@ def test_create_after_drop():
 
 def test_drop_after_create():
     assert_table_lineage_equal(
-        "CREATE TABLE IF NOT EXISTS tab1 (col1 STRING);DROP TABLE IF EXISTS tab1",
+        "CREATE TABLE IF NOT EXISTS tab1 AS SELECT 1; DROP TABLE IF EXISTS tab1",
         None,
         None,
     )
