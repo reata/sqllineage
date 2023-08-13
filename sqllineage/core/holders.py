@@ -108,6 +108,9 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             tgt_tbl = list(self.write)[0]
             for idx, tgt_col in enumerate(tgt_cols):
                 tgt_col.parent = tgt_tbl
+                if tgt_col in self.write_columns:
+                    # for DDL with PARTITIONED BY (col) or CLUSTERED BY (col), column can be added multiple times
+                    break
                 self.graph.add_edge(
                     tgt_tbl, tgt_col, type=EdgeType.HAS_COLUMN, **{EdgeTag.INDEX: idx}
                 )

@@ -202,7 +202,7 @@ def list_child_segments(
             for seg in segment.iter_segments(
                 expanding=["expression"], pass_through=True
             ):
-                if seg.type == "column_reference":
+                if seg.type in ["column_reference", "column_definition"]:
                     result.append(seg)
                 else:
                     for s in seg.segments:

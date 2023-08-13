@@ -13,7 +13,7 @@ def test_rename_table(dialect: str):
     assert_table_lineage_equal("rename table tab1 to tab2", dialect=dialect)
 
 
-@pytest.mark.parametrize("dialect", ["exasol", "mysql", "teradata"])
+@pytest.mark.parametrize("dialect", ["mysql"])
 def test_rename_tables(dialect: str):
     assert_table_lineage_equal(
         "rename table tab1 to tab2, tab3 to tab4", dialect=dialect

@@ -46,6 +46,7 @@ def assert_table_lineage_equal(
     dialect: str = "ansi",
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
+    skip_graph_check: bool = False,
 ):
     lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
     lr_sqlfluff = LineageRunner(sql, dialect=dialect)
@@ -53,7 +54,7 @@ def assert_table_lineage_equal(
         assert_table_lineage(lr, source_tables, target_tables)
     if test_sqlfluff:
         assert_table_lineage(lr_sqlfluff, source_tables, target_tables)
-    if test_sqlparse and test_sqlfluff:
+    if test_sqlparse and test_sqlfluff and not skip_graph_check:
         assert_lr_graphs_match(lr, lr_sqlfluff)
 
 
@@ -63,6 +64,7 @@ def assert_column_lineage_equal(
     dialect: str = "ansi",
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
+    skip_graph_check: bool = False,
 ):
     lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
     lr_sqlfluff = LineageRunner(sql, dialect=dialect)
@@ -70,7 +72,7 @@ def assert_column_lineage_equal(
         assert_column_lineage(lr, column_lineages)
     if test_sqlfluff:
         assert_column_lineage(lr_sqlfluff, column_lineages)
-    if test_sqlparse and test_sqlfluff:
+    if test_sqlparse and test_sqlfluff and not skip_graph_check:
         assert_lr_graphs_match(lr, lr_sqlfluff)
 
 

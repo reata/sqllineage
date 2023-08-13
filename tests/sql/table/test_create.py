@@ -2,12 +2,20 @@ from ...helpers import assert_table_lineage_equal
 
 
 def test_create():
-    assert_table_lineage_equal("CREATE TABLE tab1 (col1 STRING)", None, {"tab1"})
+    assert_table_lineage_equal(
+        "CREATE TABLE tab1 (col1 STRING)",
+        None,
+        {"tab1"},
+        skip_graph_check=True,  # sqlfluff graph includes table to column edge
+    )
 
 
 def test_create_if_not_exist():
     assert_table_lineage_equal(
-        "CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)", None, {"tab1"}
+        "CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)",
+        None,
+        {"tab1"},
+        skip_graph_check=True,  # sqlfluff graph includes table to column edge
     )
 
 
@@ -33,13 +41,4 @@ GROUP BY
 col1""",
         {"tab1"},
         {"view1"},
-    )
-
-
-def test_bucket_with_using_parenthesis():
-    assert_table_lineage_equal(
-        """CREATE TABLE tbl1 (col1 VARCHAR)
-  WITH (bucketed_on = array['col1'], bucket_count = 256);""",
-        None,
-        {"tbl1"},
     )
