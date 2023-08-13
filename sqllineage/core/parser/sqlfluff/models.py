@@ -6,6 +6,7 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.models import Column, Schema, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.utils import (
+    extract_column_qualifier,
     extract_identifier,
     is_subquery,
     is_wildcard,
@@ -111,8 +112,11 @@ class SqlFluffColumn(Column):
             if source_columns:
                 column_name = None
                 for sub_segment in list_child_segments(column):
-                    if sub_segment.type == "column_reference":
-                        column_name = extract_identifier(sub_segment)
+                    if sub_segment.type == "column_reference" or is_wildcard(
+                        sub_segment
+                    ):
+                        if cqt := extract_column_qualifier(sub_segment):
+                            column_name = cqt.column
                     elif sub_segment.type == "expression":
                         # special handling for postgres style type cast, col as target column name instead of col::type
                         if len(sub2_segments := list_child_segments(sub_segment)) == 1:
@@ -130,7 +134,10 @@ class SqlFluffColumn(Column):
                                     if (
                                         sub3_segment := sub3_segments[0]
                                     ).type == "column_reference":
-                                        column_name = extract_identifier(sub3_segment)
+                                        if cqt := extract_column_qualifier(
+                                            sub3_segment
+                                        ):
+                                            column_name = cqt.column
                 return Column(
                     column.raw if column_name is None else column_name,
                     source_columns=source_columns,
@@ -149,12 +156,11 @@ class SqlFluffColumn(Column):
         :param segment: segment to be processed
         :return: list of extracted source columns
         """
-        if segment.type == "identifier" or is_wildcard(segment):
-            return [ColumnQualifierTuple(segment.raw, None)]
-        if segment.type == "column_reference":
-            parent, column = SqlFluffColumn._get_column_and_parent(segment)
-            return [ColumnQualifierTuple(column, parent)]
-        if segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
+        col_list = []
+        if segment.type in ("identifier", "column_reference") or is_wildcard(segment):
+            if cqt := extract_column_qualifier(segment):
+                col_list = [cqt]
+        elif segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
             sub_segments = list_child_segments(segment)
             col_list = []
             for sub_segment in sub_segments:
@@ -172,8 +178,7 @@ class SqlFluffColumn(Column):
                 ):
                     res = SqlFluffColumn._extract_source_columns(sub_segment)
                     col_list.extend(res)
-            return col_list
-        return []
+        return col_list
 
     @staticmethod
     def _get_column_from_subquery(
@@ -229,12 +234,4 @@ class SqlFluffColumn(Column):
             ):
                 res = SqlFluffColumn._extract_source_columns(sub_segment)
                 columns += res if res else []
-
         return columns, alias
-
-    @staticmethod
-    def _get_column_and_parent(col_segment: BaseSegment) -> Tuple[Optional[str], str]:
-        identifiers = list_child_segments(col_segment)
-        if len(identifiers) > 1:
-            return identifiers[-2].raw, identifiers[-1].raw
-        return None, identifiers[-1].raw

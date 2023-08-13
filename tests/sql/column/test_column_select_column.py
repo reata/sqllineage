@@ -48,6 +48,27 @@ FROM tab2 a
     )
 
 
+def test_select_column_wildcard_with_qualifier():
+    sql = """INSERT INTO tab1
+SELECT tab2.*
+FROM tab2 a
+         INNER JOIN tab3 b
+                    ON a.id = b.id"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1"))],
+    )
+    sql = """INSERT INTO tab1
+SELECT a.*
+FROM tab2 a
+         INNER JOIN tab3 b
+                    ON a.id = b.id"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1"))],
+    )
+
+
 def test_select_distinct_column():
     sql = """INSERT INTO tab1
 SELECT DISTINCT col1

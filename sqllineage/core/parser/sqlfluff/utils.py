@@ -12,7 +12,7 @@ from typing import List, Optional, Tuple
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.utils.entities import SubQueryTuple
+from sqllineage.utils.entities import ColumnQualifierTuple, SubQueryTuple
 
 
 def is_negligible(segment: BaseSegment) -> bool:
@@ -226,6 +226,23 @@ def extract_as_and_target_segment(
     sublist = list_child_segments(segment, False)
     target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
     return as_segment, target
+
+
+def extract_column_qualifier(segment: BaseSegment) -> Optional[ColumnQualifierTuple]:
+    cqt = None
+    if is_wildcard(segment):
+        identifiers = segment.raw.split(".")
+        column = identifiers[-1]
+        parent = identifiers[-2] if len(identifiers) > 1 else None
+        cqt = ColumnQualifierTuple(column, parent)
+    elif segment.type == "column_reference":
+        sub_segments = list_child_segments(segment)
+        column = sub_segments[-1].raw
+        parent = sub_segments[-2].raw if len(sub_segments) > 1 else None
+        cqt = ColumnQualifierTuple(column, parent)
+    elif segment.type == "identifier":
+        cqt = ColumnQualifierTuple(segment.raw, None)
+    return cqt
 
 
 def extract_innermost_bracketed(bracketed_segment: BaseSegment) -> BaseSegment:
