@@ -1,3 +1,5 @@
+import warnings
+
 from sqlfluff.core import Linter, SQLLexError, SQLParseError
 
 from sqllineage.core.analyzer import LineageAnalyzer
@@ -39,7 +41,15 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                 statement_segment = top_segment.segments[0]
                 break
             elif top_segment.type == "batch":
-                statement_segment = top_segment.get_child("statement").segments[0]
+                statements = top_segment.get_children("statement")
+                if len(statements) > 1:
+                    warnings.warn(
+                        "SQL statements is not split by semicolon. "
+                        "SQLLineage is not guaranteed to generate correct result under this circumstances.",
+                        SyntaxWarning,
+                        stacklevel=2,
+                    )
+                statement_segment = statements[0].segments[0]
                 break
         if statement_segment is None:
             raise UnsupportedStatementException(
