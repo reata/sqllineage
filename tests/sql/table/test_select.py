@@ -49,6 +49,12 @@ def test_select_with_where():
     )
 
 
+def test_select_with_parenthesized_where():
+    assert_table_lineage_equal(
+        "SELECT * FROM tab1 WHERE (col1 > val1 AND col2 = 'val2')", {"tab1"}
+    )
+
+
 def test_select_with_comment():
     assert_table_lineage_equal("SELECT -- comment1\n col1 FROM tab1", {"tab1"})
 
