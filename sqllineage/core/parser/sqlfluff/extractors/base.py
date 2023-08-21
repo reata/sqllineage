@@ -1,12 +1,12 @@
 from functools import reduce
 from operator import add
-from typing import List
+from typing import List, Optional, Type
 
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import SubQuery
-from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
+from sqllineage.core.models import SubQuery, Table
+from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
     get_children,
     is_subquery,
@@ -15,7 +15,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
 from sqllineage.utils.entities import AnalyzerContext, SubQueryTuple
 
 
-class LineageHolderExtractor:
+class BaseExtractor:
     """
     Abstract class implementation for extract 'SubQueryLineageHolder' from different statement types
     """
@@ -46,7 +46,14 @@ class LineageHolderExtractor:
         raise NotImplementedError
 
     @classmethod
-    def parse_subquery(cls, segment: BaseSegment) -> List[SubQuery]:
+    def find_table(cls, segment: BaseSegment) -> Optional[Table]:
+        table = None
+        if segment.type in ["table_reference", "object_reference"]:
+            table = SqlFluffTable.of(segment)
+        return table
+
+    @classmethod
+    def list_subquery(cls, segment: BaseSegment) -> List[SubQuery]:
         """
         The parse_subquery function takes a segment as an argument.
         :param segment: segment to determine if it is a subquery
@@ -83,6 +90,17 @@ class LineageHolderExtractor:
             SqlFluffSubQuery.of(bracketed_segment, alias)
             for bracketed_segment, alias in subqueries
         ]
+
+    def delegate_to(
+        self,
+        extractor_cls: "Type[BaseExtractor]",
+        segment: BaseSegment,
+        context: AnalyzerContext,
+    ) -> SubQueryLineageHolder:
+        """
+        delegate to another type of extractor to extract
+        """
+        return extractor_cls(self.dialect).extract(segment, context)
 
     @staticmethod
     def _init_holder(context: AnalyzerContext) -> SubQueryLineageHolder:

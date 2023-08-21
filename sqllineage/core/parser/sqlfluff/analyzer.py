@@ -4,9 +4,7 @@ from sqlfluff.core import Linter, SQLLexError, SQLParseError
 
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder
-from sqllineage.core.parser.sqlfluff.extractors.lineage_holder_extractor import (
-    LineageHolderExtractor,
-)
+from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.exceptions import (
     InvalidSyntaxException,
     UnsupportedStatementException,
@@ -58,7 +56,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         else:
             for extractor in [
                 extractor_cls(self._dialect)
-                for extractor_cls in LineageHolderExtractor.__subclasses__()
+                for extractor_cls in BaseExtractor.__subclasses__()
             ]:
                 if extractor.can_extract(statement_segment.type):
                     lineage_holder = extractor.extract(
