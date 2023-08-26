@@ -78,19 +78,17 @@ def find_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
     return from_expression_element
 
 
-def find_table_identifier(identifier: BaseSegment) -> Optional[BaseSegment]:
+def find_table_identifier(segment: BaseSegment) -> Optional[BaseSegment]:
     """
-    table_identifier could be table_reference or file_reference
+    recursively find table identifier
     """
     table_identifier = None
-    if identifier.segments:
-        for segment in identifier.segments:
-            if segment.type in ("table_reference", "file_reference"):
-                return segment
-            else:
-                table_identifier = find_table_identifier(segment)
-                if table_identifier:
-                    return table_identifier
+    if segment.type in ["table_reference", "file_reference", "object_reference"]:
+        return segment
+    else:
+        for sub_segment in segment.segments:
+            if identifier := find_table_identifier(sub_segment):
+                return identifier
     return table_identifier
 
 
