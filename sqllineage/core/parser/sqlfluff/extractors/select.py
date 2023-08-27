@@ -1,12 +1,9 @@
-from typing import Union
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Path, SubQuery, Table
+from sqllineage.core.models import Path
 from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
-from sqllineage.core.parser.sqlfluff.holder_utils import retrieve_holder_data_from
 from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffColumn,
     SqlFluffSubQuery,
@@ -167,7 +164,6 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         Append tables and subqueries identified in the 'from_expression_element' type segment to the table and
         holder extra subqueries sets
         """
-        dataset: Union[Path, Table, SubQuery]
         all_segments = [
             seg for seg in list_child_segments(segment) if seg.type != "keyword"
         ]
@@ -190,7 +186,37 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         else:
             table_identifier = find_table_identifier(segment)
             if table_identifier:
-                dataset = retrieve_holder_data_from(
-                    all_segments, holder, table_identifier
-                )
-                self.tables.append(dataset)
+                subquery_flag = False
+                alias = None
+                if len(all_segments) > 1 and all_segments[1].type == "alias_expression":
+                    all_segments = list_child_segments(all_segments[1])
+                    alias = str(
+                        all_segments[1].raw
+                        if len(all_segments) > 1
+                        else all_segments[0].raw
+                    )
+                if "." not in table_identifier.raw:
+                    cte_dict = {s.alias: s for s in holder.cte}
+                    cte = cte_dict.get(table_identifier.raw)
+                    if cte is not None:
+                        # could reference CTE with or without alias
+                        self.tables.append(
+                            SqlFluffSubQuery.of(
+                                cte.query,
+                                alias or table_identifier.raw,
+                            )
+                        )
+                        subquery_flag = True
+                if subquery_flag is False:
+                    if table_identifier.type == "file_reference":
+                        self.tables.append(
+                            Path(
+                                escape_identifier_name(
+                                    table_identifier.segments[-1].raw
+                                )
+                            )
+                        )
+                    else:
+                        self.tables.append(
+                            SqlFluffTable.of(table_identifier, alias=alias)
+                        )

@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import add
-from typing import List, Union
+from typing import List, Optional, Union
 
 import sqlparse
 from sqlparse.sql import (
@@ -17,12 +17,11 @@ from sqlparse.sql import (
 
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.core.models import Column, SubQuery
+from sqllineage.core.models import Column, SubQuery, Table
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
 )
-from sqllineage.core.parser.sqlparse.holder_utils import get_dataset_from_identifier
 from sqllineage.core.parser.sqlparse.models import SqlParseSubQuery, SqlParseTable
 from sqllineage.core.parser.sqlparse.utils import (
     get_subquery_parentheses,
@@ -103,7 +102,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         holder = StatementLineageHolder()
         src_flag = tgt_flag = update_flag = insert_flag = False
         insert_columns = []
-        direct_source = None
+        direct_source: Optional[Union[Table, SubQuery]] = None
         for token in stmt.tokens:
             if is_token_negligible(token):
                 continue
@@ -122,18 +121,20 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
 
             if tgt_flag:
                 if isinstance(token, Identifier):
-                    holder.add_write(get_dataset_from_identifier(token, holder))
+                    holder.add_write(SqlParseTable.of(token))
                 tgt_flag = False
             elif src_flag:
                 if isinstance(token, Identifier):
-                    direct_source = get_dataset_from_identifier(token, holder)
-                    holder.add_read(direct_source)
                     if subqueries := cls.parse_subquery(token):
                         for sq in subqueries:
+                            direct_source = SqlParseSubQuery.of(sq.query, sq.alias)
                             holder |= cls._extract_from_dml(
                                 sq.query,
                                 AnalyzerContext(cte=holder.cte, write={sq}),
                             )
+                    else:
+                        direct_source = SqlParseTable.of(token)
+                    holder.add_read(direct_source)
                 src_flag = False
             elif update_flag:
                 comparisons = []
