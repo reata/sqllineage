@@ -7,6 +7,7 @@ from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
     get_child,
+    get_children,
     is_set_expression,
     list_child_segments,
 )
@@ -45,6 +46,17 @@ class CreateInsertExtractor(BaseExtractor):
                         holder |= self.delegate_to_cte(segment, holder)
             elif segment.type in ("select_statement", "set_expression"):
                 holder |= self.delegate_to_select(segment, holder)
+            elif segment.type == "values_clause":
+                for bracketed in get_children(segment, "bracketed"):
+                    for expression in get_children(bracketed, "expression"):
+                        if sub_bracketed := get_child(expression, "bracketed"):
+                            if sub_expression := get_child(sub_bracketed, "expression"):
+                                if select_statement := get_child(
+                                    sub_expression, "select_statement"
+                                ):
+                                    holder |= self.delegate_to_select(
+                                        select_statement, holder
+                                    )
             elif segment.type == "bracketed" and (
                 self.list_subquery(segment) or is_set_expression(segment)
             ):
