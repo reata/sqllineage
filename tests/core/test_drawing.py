@@ -4,6 +4,7 @@ from collections import namedtuple
 from http import HTTPStatus
 from io import StringIO
 
+from sqllineage import DATA_FOLDER
 from sqllineage.drawing import app
 
 
@@ -37,9 +38,11 @@ def test_handler():
     assert container.status.startswith(str(HTTPStatus.OK.value))
     mock_request("POST", "/script", {"e": "SELECT * FROM dual", "p": 5000})
     assert container.status.startswith(str(HTTPStatus.OK.value))
-    mock_request("POST", "/directory", {"f": __file__})
+    mock_request(
+        "POST", "/directory", {"f": os.path.join(DATA_FOLDER, "tpcds/query01.sql")}
+    )
     assert container.status.startswith(str(HTTPStatus.OK.value))
-    mock_request("POST", "/directory", {"d": os.path.dirname(__file__)})
+    mock_request("POST", "/directory", {"d": os.path.join(DATA_FOLDER, "tpcds/")})
     assert container.status.startswith(str(HTTPStatus.OK.value))
     mock_request("POST", "/directory", {})
     assert container.status.startswith(str(HTTPStatus.OK.value))
@@ -48,12 +51,19 @@ def test_handler():
     # 400
     mock_request("POST", "/lineage", {"e": "SELECT * FROM where foo='bar'"})
     assert container.status.startswith(str(HTTPStatus.BAD_REQUEST.value))
+    # 403
+    mock_request("POST", "/directory", {"f": "/etc/passwd"})
+    assert container.status.startswith(str(HTTPStatus.FORBIDDEN.value))
+    mock_request("POST", "/directory", {"d": "/"})
+    assert container.status.startswith(str(HTTPStatus.FORBIDDEN.value))
     # 404
     mock_request("GET", "/non-exist-resource")
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
     mock_request("GET", "/static")
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
-    mock_request("POST", "/script", {"f": "non-exist-file"})
+    mock_request(
+        "POST", "/script", {"f": os.path.join(DATA_FOLDER, "tpcds/query100.sql")}
+    )
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
     mock_request("POST", "/non-exist-resource", {"e": "SELECT * FROM where foo='bar'"})
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
