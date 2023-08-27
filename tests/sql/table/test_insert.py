@@ -1,7 +1,7 @@
 from ...helpers import assert_table_lineage_equal
 
 
-def test_insert_into():
+def test_insert_into_values():
     assert_table_lineage_equal("INSERT INTO tab1 VALUES (1, 2)", set(), {"tab1"})
 
 

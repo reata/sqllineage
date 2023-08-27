@@ -10,6 +10,7 @@ from sqlparse.sql import (
     Identifier,
     Parenthesis,
     TokenList,
+    Values,
     Where,
 )
 from sqlparse.tokens import DML, Keyword, Name, Wildcard
@@ -99,7 +100,7 @@ def is_values_clause(token: Parenthesis) -> bool:
 
 
 def get_subquery_parentheses(
-    token: Union[Identifier, Function, Where]
+    token: Union[Identifier, Function, Values, Where]
 ) -> List[SubQueryTuple]:
     """
     Retrieve subquery list
@@ -115,7 +116,7 @@ def get_subquery_parentheses(
         if isinstance(token, Function):
             # CTE without AS: tbl (SELECT 1)
             target = token.tokens[-1]
-        elif isinstance(token, Where):
+        elif isinstance(token, (Values, Where)):
             # WHERE col1 IN (SELECT max(col1) FROM tab2)
             target = token
         else:
@@ -131,6 +132,11 @@ def get_subquery_parentheses(
                     subquery.append(SubQueryTuple(tk.right, tk.right.get_real_name()))
             elif is_subquery(tk):
                 subquery.append(SubQueryTuple(tk, token.get_real_name()))
+    elif isinstance(target, Values):
+        for row in target.get_sublists():
+            for col in row:
+                if is_subquery(col):
+                    subquery.append(SubQueryTuple(col, col.get_real_name()))
     elif is_subquery(target):
         target = remove_parenthesis_between_union(target)
         subquery = [

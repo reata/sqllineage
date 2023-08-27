@@ -237,7 +237,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
     @classmethod
     def parse_subquery(cls, token: TokenList) -> List[SubQuery]:
         result = []
-        if isinstance(token, (Identifier, Function, Where)):
+        if isinstance(token, (Identifier, Function, Where, Values)):
             # usually SubQuery is an Identifier, but not all Identifiers are SubQuery
             # Function for CTE without AS keyword
             result = cls._parse_subquery(token)
