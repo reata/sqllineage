@@ -2,6 +2,22 @@
 Changelog
 *********
 
+v1.4.7
+======
+:Date: August 27, 2023
+
+Enhancement
+-------------
+* Support subquery in VALUES clause (`#432 <https://github.com/reata/sqllineage/issues/432>`_)
+* Dialect='tsql' should return warning when no semicolons are detected (`#422 <https://github.com/reata/sqllineage/issues/422>`_)
+* Restricting folder and files user can access from frontend (`#405 <https://github.com/reata/sqllineage/issues/405>`_)
+* throw exception when the statement missing the semicolon as splitter (`#159 <https://github.com/reata/sqllineage/issues/159>`_)
+
+Bugfix
+-------------
+* AttributeError raised using parenthesized where clause (`#426 <https://github.com/reata/sqllineage/issues/426>`_)
+* qualified wildcard recognized as wrong column name (`#423 <https://github.com/reata/sqllineage/issues/423>`_)
+
 v1.4.6
 ======
 :Date: July 31, 2023
