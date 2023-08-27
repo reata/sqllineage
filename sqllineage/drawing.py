@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 class SQLLineageApp:
     def __init__(self) -> None:
         self.routes: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {}
+        self.root_path = Path(DATA_FOLDER)
 
     def route(self, path: str):
         def wrapper(handler):
@@ -74,6 +75,11 @@ class SQLLineageApp:
                     request_body_size = int(environ["CONTENT_LENGTH"])
                     request_body = environ["wsgi.input"].read(request_body_size)
                     payload = json.loads(request_body)
+                    for param in ["d", "f"]:
+                        if param in payload and not str(
+                            Path(payload[param]).absolute()
+                        ).startswith(str(Path(self.root_path).absolute())):
+                            return self.handle_403(start_response)
                     data = self.routes[path_info](payload)
                     return self.handle_200_json(start_response, data)
                 else:
@@ -115,6 +121,12 @@ class SQLLineageApp:
     def handle_400(self, start_response, message) -> List[bytes]:
         return self.handle_client_error_response(
             start_response, HTTPStatus.BAD_REQUEST, message
+        )
+
+    def handle_403(self, start_response) -> List[bytes]:
+        message = "File Not Allowed For Accessing"
+        return self.handle_client_error_response(
+            start_response, HTTPStatus.FORBIDDEN, message
         )
 
     def handle_404(self, start_response) -> List[bytes]:
@@ -199,6 +211,8 @@ def draw_lineage_graph(**kwargs) -> None:
     port = kwargs.pop("port", DEFAULT_PORT)
     querystring = urlencode({k: v for k, v in kwargs.items() if v})
     path = f"/?{querystring}" if querystring else "/"
+    if "f" in kwargs:
+        app.root_path = Path(kwargs["f"]).parent
     with make_server(host, port, app) as httpd:
         print(f" * SQLLineage Running on http://{host}:{port}{path}")
         httpd.serve_forever()
