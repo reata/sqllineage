@@ -1,7 +1,7 @@
 import argparse
 import logging
 import logging.config
-
+import warnings
 
 from sqllineage import DEFAULT_DIALECT, DEFAULT_HOST, DEFAULT_LOGGING, DEFAULT_PORT
 from sqllineage.drawing import draw_lineage_graph
@@ -78,9 +78,7 @@ def main(args=None) -> None:
     )
     args = parser.parse_args(args)
     if args.e and args.f:
-        logging.warning(
-            "Both -e and -f options are specified. -e option will be ignored"
-        )
+        warnings.warn("Both -e and -f options are specified. -e option will be ignored")
     if args.f or args.e:
         sql = extract_sql_from_args(args)
         runner = LineageRunner(

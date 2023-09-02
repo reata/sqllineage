@@ -1,6 +1,3 @@
-import os
-
-
 NAME = "sqllineage"
 VERSION = "1.4.7"
 DEFAULT_LOGGING = {
@@ -31,9 +28,6 @@ DEFAULT_LOGGING = {
 }
 
 STATIC_FOLDER = "build"
-DATA_FOLDER = os.environ.get(
-    "SQLLINEAGE_DIRECTORY", os.path.join(os.path.dirname(__file__), "data")
-)
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 5000
 SQLPARSE_DIALECT = "non-validating"

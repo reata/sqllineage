@@ -3,6 +3,7 @@ import warnings
 from typing import Dict, List, Optional, Tuple
 
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
+from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SQLLineageHolder
 from sqllineage.core.models import Column, Table
 from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
@@ -168,12 +169,20 @@ Target Tables:
         print(str(self))
 
     def _eval(self):
-        self._stmt = split(self._sql.strip())
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT
             else SqlFluffLineageAnalyzer(self._dialect)
         )
+        if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
+            self._stmt = analyzer.split_tsql(self._sql.strip())
+        else:
+            if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect != "tsql":
+                warnings.warn(
+                    f"Dialect={self._dialect}, TSQL_NO_SEMICOLON will be ignored unless dialect is tsql"
+                )
+            self._stmt = split(self._sql.strip())
+
         self._stmt_holders = [analyzer.analyze(stmt) for stmt in self._stmt]
         self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
         self._evaluated = True

@@ -4,7 +4,7 @@ from collections import namedtuple
 from http import HTTPStatus
 from io import StringIO
 
-from sqllineage import DATA_FOLDER
+from sqllineage.config import SQLLineageConfig
 from sqllineage.drawing import app
 
 
@@ -39,10 +39,16 @@ def test_handler():
     mock_request("POST", "/script", {"e": "SELECT * FROM dual", "p": 5000})
     assert container.status.startswith(str(HTTPStatus.OK.value))
     mock_request(
-        "POST", "/directory", {"f": os.path.join(DATA_FOLDER, "tpcds/query01.sql")}
+        "POST",
+        "/directory",
+        {"f": os.path.join(SQLLineageConfig.DIRECTORY, "tpcds/query01.sql")},
     )
     assert container.status.startswith(str(HTTPStatus.OK.value))
-    mock_request("POST", "/directory", {"d": os.path.join(DATA_FOLDER, "tpcds/")})
+    mock_request(
+        "POST",
+        "/directory",
+        {"d": os.path.join(SQLLineageConfig.DIRECTORY, "tpcds/")},
+    )
     assert container.status.startswith(str(HTTPStatus.OK.value))
     mock_request("POST", "/directory", {})
     assert container.status.startswith(str(HTTPStatus.OK.value))
@@ -62,7 +68,9 @@ def test_handler():
     mock_request("GET", "/static")
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
     mock_request(
-        "POST", "/script", {"f": os.path.join(DATA_FOLDER, "tpcds/query100.sql")}
+        "POST",
+        "/script",
+        {"f": os.path.join(SQLLineageConfig.DIRECTORY, "tpcds/query100.sql")},
     )
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
     mock_request("POST", "/non-exist-resource", {"e": "SELECT * FROM where foo='bar'"})

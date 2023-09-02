@@ -1,4 +1,4 @@
-import warnings
+from unittest.mock import patch
 
 import pytest
 
@@ -43,19 +43,25 @@ def test_unsupported_query_type_in_sqlfluff():
         )._eval()
 
 
-def test_deprecated_warning_in_sqlparse():
-    with warnings.catch_warnings(record=True) as w:
+def test_deprecation_warning_in_sqlparse():
+    with pytest.warns(DeprecationWarning):
         LineageRunner("SELECT * FROM DUAL", dialect="non-validating")._eval()
-        assert len(w) == 1
-        assert issubclass(w[0].category, DeprecationWarning)
 
 
 def test_syntax_warning_no_semicolon_in_tsql():
-    with warnings.catch_warnings(record=True) as w:
+    with pytest.warns(SyntaxWarning):
         LineageRunner(
             """SELECT * FROM foo
 SELECT * FROM bar""",
             dialect="tsql",
         )._eval()
-        assert len(w) == 1
-        assert issubclass(w[0].category, SyntaxWarning)
+
+
+@patch("os.environ", {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
+def test_user_warning_enable_tsql_no_semicolon_with_other_dialect():
+    with pytest.warns(UserWarning):
+        LineageRunner(
+            """SELECT * FROM foo;
+SELECT * FROM bar""",
+            dialect="ansi",
+        )._eval()
