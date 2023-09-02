@@ -17,13 +17,8 @@ from typing import Any, Callable, Dict, List
 from urllib.parse import urlencode
 from wsgiref.simple_server import make_server
 
-from sqllineage import (
-    DATA_FOLDER,
-    DEFAULT_DIALECT,
-    DEFAULT_HOST,
-    DEFAULT_PORT,
-)
-from sqllineage import STATIC_FOLDER
+from sqllineage import DEFAULT_DIALECT, DEFAULT_HOST, DEFAULT_PORT, STATIC_FOLDER
+from sqllineage.config import SQLLineageConfig
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import extract_sql_from_args
@@ -34,7 +29,7 @@ logger = logging.getLogger(__name__)
 class SQLLineageApp:
     def __init__(self) -> None:
         self.routes: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {}
-        self.root_path = Path(DATA_FOLDER)
+        self.root_path = Path(SQLLineageConfig.DIRECTORY)
 
     def route(self, path: str):
         def wrapper(handler):
@@ -193,7 +188,7 @@ def directory(payload):
     elif payload.get("d"):
         root = Path(payload["d"])
     else:
-        root = Path(DATA_FOLDER)
+        root = Path(SQLLineageConfig.DIRECTORY)
     data = {
         "id": str(root),
         "name": root.name,

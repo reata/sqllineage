@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from sqllineage import DATA_FOLDER
 from sqllineage.cli import main
+from sqllineage.config import SQLLineageConfig
 
 
 @patch("socketserver.BaseServer.serve_forever")
@@ -13,7 +13,7 @@ def test_cli_dummy(_):
     main([])
     main(["-e", "select * from dual"])
     main(["-e", "insert into foo select * from dual", "-l", "column"])
-    for dirname, _, files in os.walk(DATA_FOLDER):
+    for dirname, _, files in os.walk(SQLLineageConfig.DIRECTORY):
         if len(files) > 0:
             sql_file = str(Path(dirname).joinpath(Path(files[0])))
             main(["-f", sql_file])
