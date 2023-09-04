@@ -108,6 +108,7 @@ class SqlFluffColumn(Column):
                 return Column(
                     alias,
                     source_columns=source_columns,
+                    source_expression=column.raw,
                 )
             if source_columns:
                 column_name = None
@@ -141,6 +142,7 @@ class SqlFluffColumn(Column):
                 return Column(
                     column.raw if column_name is None else column_name,
                     source_columns=source_columns,
+                    source_expression=column.raw,
                 )
 
         # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
@@ -148,6 +150,7 @@ class SqlFluffColumn(Column):
         return Column(
             column.raw,
             source_columns=source_columns,
+            source_expression=column.raw,
         )
 
     @staticmethod
