@@ -304,6 +304,7 @@ class SQLLineageHolder(ColumnLineageMixin):
             for parent in unresolved_col.parent_candidates:
                 src_col = Column(unresolved_col.raw_name)
                 src_col.parent = parent
+                src_col.source_expression = unresolved_col.source_expression
                 if g.has_edge(parent, src_col):
                     src_cols.append(src_col)
             if len(src_cols) == 1:

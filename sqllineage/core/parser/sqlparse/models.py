@@ -73,6 +73,7 @@ class SqlParseColumn(Column):
                 return Column(
                     alias,
                     source_columns=source_columns,
+                    source_expression=column.value,
                 )
             else:
                 # select column name directly without alias
@@ -81,6 +82,7 @@ class SqlParseColumn(Column):
                     source_columns=(
                         (column.get_real_name(), column.get_parent_name()),
                     ),
+                    source_expression=column.value,
                 )
         else:
             # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
@@ -88,6 +90,7 @@ class SqlParseColumn(Column):
             return Column(
                 column.value,
                 source_columns=source_columns,
+                source_expression=column.value,
             )
 
     @staticmethod
