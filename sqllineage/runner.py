@@ -155,6 +155,17 @@ Target Tables:
             key=lambda x: (str(x[-1]), str(x[0])),
         )
 
+    @lazy_method
+    def get_column_lineage_edges(self, exclude_subquery=True) -> List[Tuple[Column, Column, str]]:
+        """
+        a list of column tuple :class:`sqllineage.models.Column`
+        """
+        # sort by target column, and then source column
+        return sorted(
+            self._sql_holder.get_column_lineage_edges(exclude_subquery),
+            key=lambda x: (str(x[1]), str(x[0])),
+        )
+
     def print_column_lineage(self) -> None:
         """
         print column level lineage to stdout

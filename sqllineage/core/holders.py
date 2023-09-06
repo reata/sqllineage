@@ -1,5 +1,6 @@
+import copy
 import itertools
-from typing import List, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
@@ -33,6 +34,13 @@ class ColumnLineageMixin:
             for path in simple_paths:
                 columns.add(tuple(path))
         return columns
+
+    def get_column_lineage_edges(self, exclude_subquery=True) -> Set[Tuple[Column, Column, str]]:
+        column_edges = [(edge[0], edge[1], edge[2]["expression"])
+                            for edge in self.graph.edges.data()
+                                if len(edge) > 2 and isinstance(edge[2], Dict)
+                                    and "expression" in edge[2]]
+        return set(column_edges)
 
 
 class SubQueryLineageHolder(ColumnLineageMixin):
@@ -260,7 +268,14 @@ class SQLLineageHolder(ColumnLineageMixin):
         :class:`sqllineage.holders.SQLLineageHolder`
         """
         g = DiGraph()
+        column_expressions = {}
         for holder in args:
+            # Storing column expressions
+            column_lineage = holder.get_column_lineage(False)
+            for item in column_lineage:
+                item_expressions = column_expressions.setdefault(item, [])
+                item_expressions.append(item[0]._source_expression)
+
             g = nx.compose(g, holder.graph)
             if holder.drop:
                 for table in holder.drop:
@@ -304,7 +319,7 @@ class SQLLineageHolder(ColumnLineageMixin):
             for parent in unresolved_col.parent_candidates:
                 src_col = Column(unresolved_col.raw_name)
                 src_col.parent = parent
-                src_col.source_expression = unresolved_col.source_expression
+                src_col._source_expression = unresolved_col._source_expression
                 if g.has_edge(parent, src_col):
                     src_cols.append(src_col)
             if len(src_cols) == 1:
@@ -314,6 +329,13 @@ class SQLLineageHolder(ColumnLineageMixin):
         for node in [n for n, deg in g.degree if deg == 0]:
             if isinstance(node, Column) and len(node.parent_candidates) > 1:
                 g.remove_node(node)
+        # Adding column expressions to the edge data.
+        for edge in g.edges.data():
+            expressions = column_expressions.get((edge[0], edge[1]))
+            if expressions and len(expressions):
+                expression = expressions.pop(0)
+                edge[2]["expression"] = expression
+
         return g
 
     @staticmethod
