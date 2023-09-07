@@ -156,13 +156,13 @@ Target Tables:
         )
 
     @lazy_method
-    def get_column_lineage_edges(self, exclude_subquery=True) -> List[Tuple[Column, Column, str]]:
+    def get_column_lineage_edges(self) -> List[Tuple[Column, Column, str]]:
         """
         a list of column tuple :class:`sqllineage.models.Column`
         """
         # sort by target column, and then source column
         return sorted(
-            self._sql_holder.get_column_lineage_edges(exclude_subquery),
+            self._sql_holder.get_column_lineage_edges(),
             key=lambda x: (str(x[1]), str(x[0])),
         )
 

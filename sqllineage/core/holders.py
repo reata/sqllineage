@@ -35,11 +35,12 @@ class ColumnLineageMixin:
                 columns.add(tuple(path))
         return columns
 
-    def get_column_lineage_edges(self, exclude_subquery=True) -> Set[Tuple[Column, Column, str]]:
-        column_edges = [(edge[0], edge[1], edge[2]["expression"])
-                            for edge in self.graph.edges.data()
-                                if len(edge) > 2 and isinstance(edge[2], Dict)
-                                    and "expression" in edge[2]]
+    def get_column_lineage_edges(self) -> Set[Tuple[Column, Column, str]]:
+        column_edges = [
+            (edge[0], edge[1], edge[2]["expression"])
+            for edge in self.graph.edges.data()
+            if len(edge) > 2 and isinstance(edge[2], Dict) and "expression" in edge[2]
+        ]
         return set(column_edges)
 
 
