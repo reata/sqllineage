@@ -1,4 +1,3 @@
-import copy
 import itertools
 from typing import Dict, List, Set, Tuple, Union
 
@@ -269,7 +268,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         :class:`sqllineage.holders.SQLLineageHolder`
         """
         g = DiGraph()
-        column_expressions = {}
+        column_expressions: Dict[Tuple[Column, ...], List[str]] = {}
         for holder in args:
             # Storing column expressions
             column_lineage = holder.get_column_lineage(False)
