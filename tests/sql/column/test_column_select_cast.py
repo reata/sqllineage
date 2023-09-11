@@ -1,7 +1,7 @@
 import pytest
 
 from sqllineage.utils.entities import ColumnQualifierTuple
-from ...helpers import assert_column_lineage_equal
+from ...helpers import assert_column_lineage_edges_equal, assert_column_lineage_equal
 
 
 def test_select_column_using_cast():
@@ -14,6 +14,16 @@ FROM tab2"""
             (
                 ColumnQualifierTuple("col1", "tab2"),
                 ColumnQualifierTuple("cast(col1 as timestamp)", "tab1"),
+            )
+        ],
+    )
+    assert_column_lineage_edges_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("cast(col1 as timestamp)", "tab1"),
+                "cast(col1 AS timestamp)",
             )
         ],
     )

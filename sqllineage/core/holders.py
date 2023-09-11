@@ -273,8 +273,10 @@ class SQLLineageHolder(ColumnLineageMixin):
             # Storing column expressions
             column_lineage = holder.get_column_lineage(False)
             for item in column_lineage:
-                item_expressions = column_expressions.setdefault(item, [])
-                item_expressions.append(item[0]._source_expression)
+                for i in range(len(item) - 1):
+                    pair = (item[i], item[i + 1])
+                    pair_expressions = column_expressions.setdefault(pair, [])
+                    pair_expressions.append(pair[0]._source_expression)
 
             g = nx.compose(g, holder.graph)
             if holder.drop:

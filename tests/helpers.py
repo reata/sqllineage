@@ -1,7 +1,7 @@
 import networkx as nx
 
 from sqllineage import SQLPARSE_DIALECT
-from sqllineage.core.models import Column, Table
+from sqllineage.core.models import Column, SubQuery, Table
 from sqllineage.runner import LineageRunner
 
 
@@ -33,6 +33,35 @@ def assert_column_lineage(lr: LineageRunner, column_lineages=None):
             tgt_col.parent = Table(tgt.qualifier)
             expected.add((src_col, tgt_col))
     actual = {(lineage[0], lineage[-1]) for lineage in set(lr.get_column_lineage())}
+
+    assert (
+        set(actual) == expected
+    ), f"\n\tExpected Lineage: {expected}\n\tActual Lineage: {actual}"
+
+
+def assert_column_lineage_edges(lr: LineageRunner, column_lineage_edges=None):
+    expected = set()
+    if column_lineage_edges:
+        for src, tgt, expression in column_lineage_edges:
+            src_col: Column = Column(src.column)
+            if src.qualifier is not None:
+                src_col.parent = (
+                    Table(src.qualifier)
+                    if src.qualifier != "temp_cte"
+                    else SubQuery("temp_cte", "", "temp_cte")
+                )
+            tgt_col: Column = Column(tgt.column)
+            if tgt.qualifier is not None:
+                tgt_col.parent = (
+                    Table(tgt.qualifier)
+                    if tgt.qualifier != "temp_cte"
+                    else SubQuery("temp_cte", "", "temp_cte")
+                )
+            expected.add((src_col, tgt_col, expression))
+    actual = {
+        (lineage[0], lineage[-2], lineage[-1])
+        for lineage in set(lr.get_column_lineage_edges())
+    }
 
     assert (
         set(actual) == expected
@@ -74,6 +103,21 @@ def assert_column_lineage_equal(
         assert_column_lineage(lr_sqlfluff, column_lineages)
     if test_sqlparse and test_sqlfluff and not skip_graph_check:
         assert_lr_graphs_match(lr, lr_sqlfluff)
+
+
+def assert_column_lineage_edges_equal(
+    sql: str,
+    column_lineage_edges=None,
+    dialect: str = "ansi",
+    test_sqlfluff: bool = True,
+    test_sqlparse: bool = True,
+):
+    lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
+    lr_sqlfluff = LineageRunner(sql, dialect=dialect)
+    if test_sqlparse:
+        assert_column_lineage_edges(lr, column_lineage_edges)
+    if test_sqlfluff:
+        assert_column_lineage_edges(lr_sqlfluff, column_lineage_edges)
 
 
 def assert_lr_graphs_match(lr: LineageRunner, lr_sqlfluff: LineageRunner) -> None:

@@ -1,5 +1,5 @@
 from sqllineage.utils.entities import ColumnQualifierTuple
-from ...helpers import assert_column_lineage_equal
+from ...helpers import assert_column_lineage_edges_equal, assert_column_lineage_equal
 
 
 def test_column_reference_using_union():
@@ -56,6 +56,26 @@ SELECT col1 FROM dataset.tab2) SELECT col1 FROM temp_cte"""
             (
                 ColumnQualifierTuple("col1", "dataset.tab2"),
                 ColumnQualifierTuple("col1", "dataset.target"),
+            ),
+        ],
+    )
+    assert_column_lineage_edges_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "dataset.tab1"),
+                ColumnQualifierTuple("col1", "temp_cte"),
+                "col1",
+            ),
+            (
+                ColumnQualifierTuple("col1", "temp_cte"),
+                ColumnQualifierTuple("col1", "dataset.target"),
+                "col1",
+            ),
+            (
+                ColumnQualifierTuple("col1", "dataset.tab2"),
+                ColumnQualifierTuple("col1", "temp_cte"),
+                "col1",
             ),
         ],
     )

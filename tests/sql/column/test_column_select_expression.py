@@ -1,5 +1,5 @@
 from sqllineage.utils.entities import ColumnQualifierTuple
-from ...helpers import assert_column_lineage_equal
+from ...helpers import assert_column_lineage_edges_equal, assert_column_lineage_equal
 
 
 def test_select_column_using_expression():
@@ -19,6 +19,21 @@ FROM tab2"""
             ),
         ],
     )
+    assert_column_lineage_edges_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1 + col2", "tab1"),
+                "col1 + col2",
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col1 + col2", "tab1"),
+                "col1 + col2",
+            ),
+        ],
+    )
     sql = """INSERT INTO tab1
 SELECT col1 + col2 AS col3
 FROM tab2"""
@@ -32,6 +47,21 @@ FROM tab2"""
             (
                 ColumnQualifierTuple("col2", "tab2"),
                 ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
+    )
+    assert_column_lineage_edges_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+                "col1 + col2 AS col3",
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+                "col1 + col2 AS col3",
             ),
         ],
     )

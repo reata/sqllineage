@@ -1,5 +1,5 @@
 from sqllineage.utils.entities import ColumnQualifierTuple
-from ...helpers import assert_column_lineage_equal
+from ...helpers import assert_column_lineage_edges_equal, assert_column_lineage_equal
 
 
 def test_select_column_using_function():
@@ -20,6 +20,21 @@ FROM tab2"""
             ),
         ],
     )
+    assert_column_lineage_edges_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("max(col1)", "tab1"),
+                "max(col1)",
+            ),
+            (
+                ColumnQualifierTuple("*", "tab2"),
+                ColumnQualifierTuple("count(*)", "tab1"),
+                "count(*)",
+            ),
+        ],
+    )
     sql = """INSERT INTO tab1
 SELECT max(col1) AS col2,
        count(*)  AS cnt
@@ -32,6 +47,21 @@ FROM tab2"""
                 ColumnQualifierTuple("col2", "tab1"),
             ),
             (ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("cnt", "tab1")),
+        ],
+    )
+    assert_column_lineage_edges_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+                "max(col1) AS col2",
+            ),
+            (
+                ColumnQualifierTuple("*", "tab2"),
+                ColumnQualifierTuple("cnt", "tab1"),
+                "count(*)  AS cnt",
+            ),
         ],
     )
 
