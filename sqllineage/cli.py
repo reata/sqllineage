@@ -3,7 +3,7 @@ import logging
 import logging.config
 import warnings
 
-from sqllineage import DEFAULT_DIALECT, DEFAULT_HOST, DEFAULT_LOGGING, DEFAULT_PORT
+from sqllineage import DEFAULT_DIALECT, DEFAULT_HOST, DEFAULT_LOGGING, DEFAULT_PORT, NAME as MAIN_NAME, VERSION as MAIN_VERSION
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
@@ -23,6 +23,7 @@ def main(args=None) -> None:
     parser = argparse.ArgumentParser(
         prog="sqllineage", description="SQL Lineage Parser."
     )
+    parser.add_argument('--version', action='version', version='%s %s' % (MAIN_NAME, MAIN_VERSION))
     parser.add_argument(
         "-e", metavar="<quoted-query-string>", help="SQL from command line"
     )
