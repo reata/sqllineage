@@ -43,3 +43,13 @@ def test_uncache_table_if_exists(dialect: str):
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_show_create_table(dialect: str):
     assert_table_lineage_equal("show create table tab1", dialect=dialect)
+
+
+@pytest.mark.parametrize("dialect", ["postgres", "redshift"])
+def test_analyze_table(dialect: str):
+    assert_table_lineage_equal("analyze tab", dialect=dialect)
+
+
+@pytest.mark.parametrize("dialect", ["postgres", "redshift"])
+def test_analyze_table_column(dialect: str):
+    assert_table_lineage_equal("analyze tab (col1, col2)", dialect=dialect)
