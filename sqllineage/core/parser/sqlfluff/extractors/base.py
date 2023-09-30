@@ -8,7 +8,6 @@ from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import SubQuery, Table
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
-    get_children,
     is_subquery,
     list_subqueries,
 )
@@ -61,7 +60,7 @@ class BaseExtractor:
         types it returns an empty list.
         """
         result: List[SubQuery] = []
-        identifiers = get_children(segment, "from_expression")
+        identifiers = segment.get_children("from_expression")
         if identifiers and len(identifiers) > 1:
             # for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
             return reduce(

@@ -6,8 +6,6 @@ from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
-    get_child,
-    get_children,
     is_set_expression,
     list_child_segments,
 )
@@ -47,12 +45,12 @@ class CreateInsertExtractor(BaseExtractor):
             elif segment.type in ("select_statement", "set_expression"):
                 holder |= self.delegate_to_select(segment, holder)
             elif segment.type == "values_clause":
-                for bracketed in get_children(segment, "bracketed"):
-                    for expression in get_children(bracketed, "expression"):
-                        if sub_bracketed := get_child(expression, "bracketed"):
-                            if sub_expression := get_child(sub_bracketed, "expression"):
-                                if select_statement := get_child(
-                                    sub_expression, "select_statement"
+                for bracketed in segment.get_children("bracketed"):
+                    for expression in bracketed.get_children("expression"):
+                        if sub_bracketed := expression.get_child("bracketed"):
+                            if sub_expression := sub_bracketed.get_child("expression"):
+                                if select_statement := sub_expression.get_child(
+                                    "select_statement"
                                 ):
                                     holder |= self.delegate_to_select(
                                         select_statement, holder
@@ -63,8 +61,8 @@ class CreateInsertExtractor(BaseExtractor):
                 # note regular subquery within SELECT statement is handled by SelectExtractor, this is only to handle
                 # top-level subquery in DML like: 1) create table foo as (subquery); 2) insert into foo (subquery)
                 # subquery here isn't added as read source, and it inherits DML-level write_columns if parsed
-                if subquery_segment := get_child(
-                    segment, "select_statement", "set_expression"
+                if subquery_segment := segment.get_child(
+                    "select_statement", "set_expression"
                 ):
                     holder |= self.delegate_to_select(subquery_segment, holder)
 
@@ -81,7 +79,8 @@ class CreateInsertExtractor(BaseExtractor):
                     columns = []
                     for sub_segment in sub_segments:
                         if sub_segment.type == "column_definition":
-                            sub_segment = get_child(sub_segment, "identifier")
+                            if identifier := sub_segment.get_child("identifier"):
+                                sub_segment = identifier
                         columns.append(SqlFluffColumn.of(sub_segment))
                     holder.add_write_column(*columns)
 
