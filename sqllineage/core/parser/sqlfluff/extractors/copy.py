@@ -5,8 +5,6 @@ from sqllineage.core.models import Path
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.utils import (
     find_from_expression_element,
-    get_child,
-    get_children,
     list_child_segments,
 )
 from sqllineage.utils.entities import AnalyzerContext
@@ -31,11 +29,11 @@ class CopyExtractor(BaseExtractor):
         for segment in list_child_segments(statement):
             if segment.type == "from_clause":
                 if from_expression_element := find_from_expression_element(segment):
-                    for table_expression in get_children(
-                        from_expression_element, "table_expression"
+                    for table_expression in from_expression_element.get_children(
+                        "table_expression"
                     ):
-                        if storage_location := get_child(
-                            table_expression, "storage_location"
+                        if storage_location := table_expression.get_child(
+                            "storage_location"
                         ):
                             holder.add_read(Path(storage_location.raw))
             elif segment.type == "keyword":

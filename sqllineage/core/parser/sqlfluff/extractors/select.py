@@ -12,8 +12,6 @@ from sqllineage.core.parser.sqlfluff.models import (
 from sqllineage.core.parser.sqlfluff.utils import (
     find_from_expression_element,
     find_table_identifier,
-    get_child,
-    get_children,
     is_set_expression,
     list_child_segments,
     list_join_clause,
@@ -76,14 +74,14 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         A handler for swap_partitions_between_tables function
         """
         if segment.type == "select_clause":
-            if select_clause_element := get_child(segment, "select_clause_element"):
-                if function := get_child(select_clause_element, "function"):
+            if select_clause_element := segment.get_child("select_clause_element"):
+                if function := select_clause_element.get_child("function"):
                     if (
                         function.first_non_whitespace_segment_raw_upper
                         == "SWAP_PARTITIONS_BETWEEN_TABLES"
                     ):
-                        if bracketed := get_child(function, "bracketed"):
-                            expressions = get_children(bracketed, "expression")
+                        if bracketed := function.get_child("bracketed"):
+                            expressions = bracketed.get_children("expression")
                             holder.add_read(
                                 SqlFluffTable(
                                     escape_identifier_name(expressions[0].raw)
@@ -111,7 +109,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         handle from_clause or join_clause, join_clause is a child node of from_clause.
         """
         if segment.type in ["from_clause", "join_clause"]:
-            from_expressions = get_children(segment, "from_expression")
+            from_expressions = segment.get_children("from_expression")
             if len(from_expressions) > 1:
                 # SQL89 style of join
                 for from_expression in from_expressions:
@@ -134,7 +132,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         Column handler method
         """
         if segment.type == "select_clause":
-            for sub_segment in get_children(segment, "select_clause_element"):
+            for sub_segment in segment.get_children("select_clause_element"):
                 self.columns.append(SqlFluffColumn.of(sub_segment))
 
     def _handle_set(self, segment: BaseSegment) -> None:
@@ -167,14 +165,14 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         all_segments = [
             seg for seg in list_child_segments(segment) if seg.type != "keyword"
         ]
-        if table_expression := get_child(segment, "table_expression"):
-            if get_child(table_expression, "function"):
+        if table_expression := segment.get_child("table_expression"):
+            if table_expression.get_child("function"):
                 # for UNNEST or generator function, no dataset involved
                 return
         first_segment = all_segments[0]
         if first_segment.type == "bracketed":
-            if table_expression := get_child(first_segment, "table_expression"):
-                if get_child(table_expression, "values_clause"):
+            if table_expression := first_segment.get_child("table_expression"):
+                if table_expression.get_child("values_clause"):
                     # (VALUES ...) AS alias, no dataset involved
                     return
         subqueries = list_subqueries(segment)

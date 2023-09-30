@@ -7,7 +7,7 @@ from sqllineage.core.parser.sqlfluff.extractors.create_insert import (
 )
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
-from sqllineage.core.parser.sqlfluff.utils import get_children, list_child_segments
+from sqllineage.core.parser.sqlfluff.utils import list_child_segments
 from sqllineage.utils.entities import AnalyzerContext
 
 
@@ -39,7 +39,7 @@ class CteExtractor(BaseExtractor):
             elif segment.type == "common_table_expression":
                 identifier = None
                 segment_has_alias = any(
-                    s for s in get_children(segment, "keyword") if s.raw_upper == "AS"
+                    s for s in segment.get_children("keyword") if s.raw_upper == "AS"
                 )
                 sub_segments = list_child_segments(segment)
                 for sub_segment in sub_segments:

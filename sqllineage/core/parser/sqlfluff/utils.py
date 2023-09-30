@@ -36,16 +36,11 @@ def is_subquery(segment: BaseSegment) -> bool:
             segment if segment.type == "bracketed" else segment.segments[0]
         )
         # check if innermost parenthesis contains SELECT
-        sub_token = (
-            token.get_child("select_statement")
-            or token.get_child("set_expression")
-            or (
-                token.get_child("expression")
-                and token.get_child("expression").get_child("select_statement")
-            )
-        )
-        if sub_token is not None:
+        if token.get_child("select_statement", "set_expression"):
             return True
+        elif expression := token.get_child("expression"):
+            if expression.get_child("select_statement"):
+                return True
     return False
 
 
@@ -65,8 +60,8 @@ def find_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
     if segment.type == "from_clause":
         if from_expression := segment.get_child("from_expression"):
             non_bracket = from_expression
-            while non_bracket.get_child("bracketed"):
-                non_bracket = non_bracket.get_child("bracketed")
+            while bracketed := non_bracket.get_child("bracketed"):
+                non_bracket = bracketed
             if seg := non_bracket.get_child("from_expression_element"):
                 from_expression_element = seg
             elif seg := non_bracket.get_child("from_expression"):
@@ -134,26 +129,26 @@ def list_expression_from_when_clause(
 def list_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
     subquery = []
     if segment.type == "select_clause":
-        as_segment = segment.get_child("select_clause_element").get_child(
-            "alias_expression"
-        )
-        select_clause = segment.get_child("select_clause_element")
-        case_expression = select_clause.get_child(
-            "expression"
-        ) and select_clause.get_child("expression").get_child("case_expression")
-        target = case_expression or select_clause.get_child("column_reference")
-        if target and target.type == "case_expression":
-            for when_clause in target.get_children("when_clause"):
-                for bracketed_segment in list_expression_from_when_clause(
-                    when_clause, sub_type="WHEN"
-                ):
-                    subquery.append(SubQueryTuple(bracketed_segment, None))
-                for bracketed_segment in list_expression_from_when_clause(
-                    when_clause, sub_type="THEN"
-                ):
-                    subquery.append(
-                        SubQueryTuple(bracketed_segment, extract_identifier(as_segment))
-                    )
+        if select_clause_element := segment.get_child("select_clause_element"):
+            if expression := select_clause_element.get_child("expression"):
+                if case_expression := expression.get_child("case_expression"):
+                    for when_clause in case_expression.get_children("when_clause"):
+                        for bracketed_segment in list_expression_from_when_clause(
+                            when_clause, sub_type="WHEN"
+                        ):
+                            subquery.append(SubQueryTuple(bracketed_segment, None))
+                        for bracketed_segment in list_expression_from_when_clause(
+                            when_clause, sub_type="THEN"
+                        ):
+                            alias_expression = select_clause_element.get_child(
+                                "alias_expression"
+                            )
+                            alias = (
+                                extract_identifier(alias_expression)
+                                if alias_expression
+                                else None
+                            )
+                            subquery.append(SubQueryTuple(bracketed_segment, alias))
     elif segment.type == "from_expression_element":
         as_segment, target = extract_as_and_target_segment(segment)
         if is_subquery(target):
@@ -226,7 +221,7 @@ def extract_identifier(col_segment: BaseSegment) -> str:
 
 def extract_as_and_target_segment(
     segment: BaseSegment,
-) -> Tuple[BaseSegment, BaseSegment]:
+) -> Tuple[Optional[BaseSegment], BaseSegment]:
     as_segment = segment.get_child("alias_expression")
     sublist = list_child_segments(segment, False)
     target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
@@ -266,17 +261,3 @@ def extract_innermost_bracketed(bracketed_segment: BaseSegment) -> BaseSegment:
         else:
             break
     return bracketed_segment
-
-
-def get_child(segment: BaseSegment, *seg_type: str) -> BaseSegment:
-    """
-    bypass mypy type check as sqlfluff get_child is untyped yet
-    """
-    return segment.get_child(*seg_type)
-
-
-def get_children(segment: BaseSegment, *seg_type: str) -> List[BaseSegment]:
-    """
-    bypass mypy type check as sqlfluff get_children is untyped yet
-    """
-    return segment.get_children(*seg_type)
