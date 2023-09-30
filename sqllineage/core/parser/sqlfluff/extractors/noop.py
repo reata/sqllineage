@@ -19,6 +19,7 @@ class NoopExtractor(BaseExtractor):
         "show_statement",
         "use_statement",
         "declare_segment",
+        "analyze_statement",
     ]
 
     def extract(
