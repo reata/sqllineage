@@ -16,6 +16,10 @@ DROP TABLE IF EXISTS tab1"""
     )
 
 
+def test_drop_view():
+    assert_table_lineage_equal("DROP VIEW IF EXISTS view1")
+
+
 def test_alter_table_rename():
     assert_table_lineage_equal("ALTER TABLE tab1 rename TO tab2")
 
