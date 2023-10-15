@@ -1,7 +1,7 @@
 import warnings
 from typing import Dict, List
 
-from sqlfluff.core import Linter, SQLLexError, SQLParseError
+from sqlfluff.core import Linter, SQLLexError, SQLParseError, dialect_readout
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.analyzer import LineageAnalyzer
@@ -16,6 +16,9 @@ from sqllineage.utils.entities import AnalyzerContext
 
 class SqlFluffLineageAnalyzer(LineageAnalyzer):
     """SQL Statement Level Lineage Analyzer for `sqlfluff`"""
+
+    PARSER_NAME = "sqlfluff"
+    SUPPORTED_DIALECTS = list(dialect.label for dialect in dialect_readout())
 
     def __init__(self, dialect: str):
         self._dialect = dialect

@@ -35,6 +35,9 @@ from sqllineage.utils.helpers import trim_comment
 class SqlParseLineageAnalyzer(LineageAnalyzer):
     """SQL Statement Level Lineage Analyzer."""
 
+    PARSER_NAME = "sqlparse"
+    SUPPORTED_DIALECTS = ["non-validating"]
+
     def analyze(self, sql: str) -> StatementLineageHolder:
         # get rid of comments, which cause inconsistencies in sqlparse output
         stmt = sqlparse.parse(trim_comment(sql))[0]
