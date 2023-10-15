@@ -1,5 +1,6 @@
 import logging
 import warnings
+from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
@@ -186,3 +187,23 @@ Target Tables:
         self._stmt_holders = [analyzer.analyze(stmt) for stmt in self._stmt]
         self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
         self._evaluated = True
+
+    @staticmethod
+    def supported_dialects() -> Dict[str, List[str]]:
+        """
+        an ordered dict (so we can make sure the default parser implementation comes first)
+        with kv as parser_name: dialect list
+        """
+        dialects = OrderedDict(
+            [
+                (
+                    SqlParseLineageAnalyzer.PARSER_NAME,
+                    SqlParseLineageAnalyzer.SUPPORTED_DIALECTS,
+                ),
+                (
+                    SqlFluffLineageAnalyzer.PARSER_NAME,
+                    SqlFluffLineageAnalyzer.SUPPORTED_DIALECTS,
+                ),
+            ]
+        )
+        return dialects

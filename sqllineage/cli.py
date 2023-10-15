@@ -110,28 +110,10 @@ def main(args=None) -> None:
     elif args.graph_visualization:
         return draw_lineage_graph(**{"host": args.host, "port": args.port})
     elif args.dialects:
-        print(
-            """non-validating
-ansi
-athena
-bigquery
-clickhouse
-databricks
-db2
-exasol
-hive
-materialize
-mysql
-oracle
-postgres
-redshift
-snowflake
-soql
-sparksql
-sqlite
-teradata
-tsql"""
-        )
+        dialects = []
+        for _, supported_dialects in LineageRunner.supported_dialects().items():
+            dialects += supported_dialects
+        print("\n".join(dialects))
     else:
         parser.print_help()
 

@@ -94,8 +94,11 @@ const dialects = {
     "athena",
     "bigquery",
     "clickhouse",
+    "databricks",
     "db2",
+    "duckdb",
     "exasol",
+    "greenplum",
     "hive",
     "materialize",
     "mysql",
@@ -107,6 +110,7 @@ const dialects = {
     "sparksql",
     "sqlite",
     "teradata",
+    "trino",
     "tsql"
   ]
 }
