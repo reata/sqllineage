@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/sqllineage/static/css/main.ec75651b.css",
-    "main.js": "/sqllineage/static/js/main.0b5f2539.js",
-    "static/js/333.97bcedbd.chunk.js": "/sqllineage/static/js/333.97bcedbd.chunk.js",
-    "editor.worker.js": "/sqllineage/editor.worker.js",
-    "static/media/codicon.ttf": "/sqllineage/static/media/codicon.4168b9c11e5075e9cfe6.ttf",
-    "index.html": "/sqllineage/index.html",
-    "main.ec75651b.css.map": "/sqllineage/static/css/main.ec75651b.css.map",
-    "main.0b5f2539.js.map": "/sqllineage/static/js/main.0b5f2539.js.map",
-    "333.97bcedbd.chunk.js.map": "/sqllineage/static/js/333.97bcedbd.chunk.js.map"
+    "main.css": "https://reata.github.io/sqllineage/static/css/main.dc83f471.css",
+    "main.js": "https://reata.github.io/sqllineage/static/js/main.62647d47.js",
+    "static/js/333.97bcedbd.chunk.js": "https://reata.github.io/sqllineage/static/js/333.97bcedbd.chunk.js",
+    "editor.worker.js": "https://reata.github.io/sqllineage/editor.worker.js",
+    "static/media/codicon.ttf": "https://reata.github.io/sqllineage/static/media/codicon.4168b9c11e5075e9cfe6.ttf",
+    "index.html": "https://reata.github.io/sqllineage/index.html",
+    "main.dc83f471.css.map": "https://reata.github.io/sqllineage/static/css/main.dc83f471.css.map",
+    "main.62647d47.js.map": "https://reata.github.io/sqllineage/static/js/main.62647d47.js.map",
+    "333.97bcedbd.chunk.js.map": "https://reata.github.io/sqllineage/static/js/333.97bcedbd.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.ec75651b.css",
-    "static/js/main.0b5f2539.js"
+    "static/css/main.dc83f471.css",
+    "static/js/main.62647d47.js"
   ]
 }
