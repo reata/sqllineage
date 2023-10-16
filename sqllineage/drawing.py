@@ -75,11 +75,8 @@ class SQLLineageApp:
                             Path(payload[param]).absolute()
                         ).startswith(str(Path(self.root_path).absolute())):
                             return self.handle_403(start_response)
-                    try:
-                        data = self.routes[path_info](payload)
-                        return self.handle_200_json(start_response, data)
-                    except Exception as e:  # noqa
-                        return self.handle_400(start_response, str(e))
+                    data = self.routes[path_info](payload)
+                    return self.handle_200_json(start_response, data)
                 else:
                     return self.handle_404(start_response)
             elif request_method == "OPTIONS":
@@ -102,7 +99,7 @@ class SQLLineageApp:
                 return self.handle_405(start_response)
         except (SystemExit, IsADirectoryError, FileNotFoundError, PermissionError):
             return self.handle_404(start_response)
-        except SQLLineageException as e:
+        except (SQLLineageException, RuntimeError) as e:
             return self.handle_400(start_response, str(e))
 
     @staticmethod
