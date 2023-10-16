@@ -2,6 +2,23 @@
 Changelog
 *********
 
+v1.4.8
+======
+:Date: October 16, 2023
+
+Enhancement
+-------------
+* Support Python 3.12 (`#469 <https://github.com/reata/sqllineage/issues/469>`_)
+* programmatically list supported dialects (`#462 <https://github.com/reata/sqllineage/issues/462>`_)
+* add versioning of package to cli (`#457 <https://github.com/reata/sqllineage/issues/457>`_)
+* Add Support of DROP VIEW statements  (`#456 <https://github.com/reata/sqllineage/issues/456>`_)
+* support split SQL statements without semicolon in tsql (`#384 <https://github.com/reata/sqllineage/issues/384>`_)
+
+Bugfix
+-------------
+* SqlFluff RuntimeError Triggers Server Error 500 in Frontend (`#467 <https://github.com/reata/sqllineage/issues/467>`_)
+* ignore lineage for analyze statement (`#459 <https://github.com/reata/sqllineage/issues/459>`_)
+
 v1.4.7
 ======
 :Date: August 27, 2023
