@@ -99,7 +99,7 @@ class SQLLineageApp:
                 return self.handle_405(start_response)
         except (SystemExit, IsADirectoryError, FileNotFoundError, PermissionError):
             return self.handle_404(start_response)
-        except SQLLineageException as e:
+        except (SQLLineageException, RuntimeError) as e:
             return self.handle_400(start_response, str(e))
 
     @staticmethod
