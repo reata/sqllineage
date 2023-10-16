@@ -68,7 +68,7 @@ setup(
     install_requires=[
         "sqlparse>=0.4.4",
         "networkx>=2.4",
-        "sqlfluff==2.3.2",
+        "sqlfluff==2.3.3",
     ],
     entry_points={"console_scripts": ["sqllineage = sqllineage.cli:main"]},
     extras_require={
