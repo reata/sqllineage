@@ -2,6 +2,7 @@ import networkx as nx
 
 from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.models import Column, Table
+from sqllineage.metadata_service import MetaDataService
 from sqllineage.runner import LineageRunner
 
 
@@ -81,3 +82,22 @@ def assert_lr_graphs_match(lr: LineageRunner, lr_sqlfluff: LineageRunner) -> Non
         f"\n\tGraph with sqlparse: {lr._sql_holder.graph}\n\t"
         f"Graph with sqlfluff: {lr_sqlfluff._sql_holder.graph}"
     )
+
+
+def assert_column_lineage_metadata_service(
+    sql: str,
+    metadata_service: MetaDataService,
+    column_lineages=None,
+    dialect: str = "ansi",
+    test_sqlfluff: bool = True,
+    test_sqlparse: bool = True,
+    skip_graph_check: bool = False,
+):
+    lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT, metadata_service=metadata_service)
+    lr_sqlfluff = LineageRunner(sql, dialect=dialect, metadata_service=metadata_service)
+    if test_sqlparse:
+        assert_column_lineage(lr, column_lineages)
+    if test_sqlfluff:
+        assert_column_lineage(lr_sqlfluff, column_lineages)
+    if test_sqlparse and test_sqlfluff and not skip_graph_check:
+        assert_lr_graphs_match(lr, lr_sqlfluff)

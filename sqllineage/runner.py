@@ -10,6 +10,7 @@ from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
 from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
+from sqllineage.metadata_service import MetaDataService
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import split, trim_comment
 
@@ -38,6 +39,7 @@ class LineageRunner(object):
         encoding: Optional[str] = None,
         verbose: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
+        metadata_service: Optional[MetaDataService] = None,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -45,6 +47,7 @@ class LineageRunner(object):
         :param sql: a string representation of SQL statements.
         :param encoding: the encoding for sql string
         :param verbose: verbose flag indicate whether statement-wise lineage result will be shown
+        :param metadata_service: metadata service object providing table schema
         """
         if dialect == SQLPARSE_DIALECT:
             warnings.warn(
@@ -61,6 +64,7 @@ class LineageRunner(object):
         self._evaluated = False
         self._stmt: List[str] = []
         self._dialect = dialect
+        self._metadata_service = metadata_service
 
     @lazy_method
     def __str__(self):
@@ -184,5 +188,7 @@ Target Tables:
             self._stmt = split(self._sql.strip())
 
         self._stmt_holders = [analyzer.analyze(stmt) for stmt in self._stmt]
-        self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
+        self._sql_holder = SQLLineageHolder.of(
+            self._metadata_service, *self._stmt_holders
+        )
         self._evaluated = True
