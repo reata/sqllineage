@@ -61,13 +61,14 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     python_requires=">=3.8",
     install_requires=[
         "sqlparse>=0.4.4",
         "networkx>=2.4",
-        "sqlfluff==2.3.2",
+        "sqlfluff==2.3.3",
     ],
     entry_points={"console_scripts": ["sqllineage = sqllineage.cli:main"]},
     extras_require={
