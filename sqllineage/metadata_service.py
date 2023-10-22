@@ -25,4 +25,4 @@ class MetaDataService(metaclass=abc.ABCMeta):
         :param table: table name
         :return: a list of column names
         """
-        pass
+        raise NotImplementedError
