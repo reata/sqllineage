@@ -1,8 +1,8 @@
-import abc
+from abc import abstractmethod
 from typing import List
 
 
-class MetaDataService(metaclass=abc.ABCMeta):
+class MetaDataProvider:
     """Abstract class used to provide metadata service like table schema.
 
     When parse below sql:
@@ -17,7 +17,7 @@ class MetaDataService(metaclass=abc.ABCMeta):
     It can help parse column lineage correctly.
     """
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_table_columns(self, db: str, table: str, **kwargs) -> List[str]:
         """Get all columns of a table.
 
@@ -25,4 +25,3 @@ class MetaDataService(metaclass=abc.ABCMeta):
         :param table: table name
         :return: a list of column names
         """
-        raise NotImplementedError

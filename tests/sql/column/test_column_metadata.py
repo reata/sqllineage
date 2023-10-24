@@ -1,31 +1,21 @@
-from typing import List
-
 import pytest
 from tests.helpers import assert_column_lineage_metadata_service
 
+from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.exceptions import InvalidSyntaxException
-from sqllineage.metadata_service import MetaDataService
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.entities import ColumnQualifierTuple
 
 
-class TestMetaDataService(MetaDataService):
-    def __init__(self, schemas: dict):
-        self.schemas = schemas
-
-    def get_table_columns(self, db: str, table: str, **kwargs) -> List[str]:
-        return self.schemas.get(f"{db}.{table}", set())
-
-
 test_schemas = {
-    "db1.table1": set(["id", "a", "b", "c", "d"]),
-    "db2.table2": set(["id", "h", "i", "j", "k"]),
-    "db3.table3": set(["pk", "p", "q", "r"]),
+    "db1.table1": ["id", "a", "b", "c", "d"],
+    "db2.table2": ["id", "h", "i", "j", "k"],
+    "db3.table3": ["pk", "p", "q", "r"],
 }
 
 
 def test_select_column_from_tables():
-    service = TestMetaDataService(test_schemas)
+    service = DummyMetaDataProvider(test_schemas)
 
     sql = """insert into table db.tbl
 select t1.id, a as x, b, h, i as y
@@ -104,7 +94,7 @@ join db2.table2 t2 on t1.id = t2.id
 
 
 def test_select_column_from_subqueries():
-    service = TestMetaDataService(test_schemas)
+    service = DummyMetaDataProvider(test_schemas)
 
     sql = """insert into table db.tbl
 select a, b as x, h, y
@@ -176,7 +166,7 @@ left join (select pk, p, q from db3.table3) t3 on t1.id = t3.pk
 
 
 def test_select_column_from_table_subquery():
-    service = TestMetaDataService(test_schemas)
+    service = DummyMetaDataProvider(test_schemas)
 
     sql = """insert into table db.tbl
 select a as x, b, q, pk as y
@@ -248,7 +238,7 @@ left join (select pk, p, q as z from db3.table3) t3 on t2.id = t3.pk
 
 
 def test_select_column_from_tempview_view_subquery():
-    service = TestMetaDataService(test_schemas)
+    service = DummyMetaDataProvider(test_schemas)
 
     sql = """
 create or replace temporary view test_view
@@ -296,7 +286,7 @@ left join (select pk, p, q as z from db3.table3) t3 on t2.id = t3.pk
 
 
 def test_sqlparse_exception():
-    service = TestMetaDataService(test_schemas)
+    service = DummyMetaDataProvider(test_schemas)
     sql = """insert into table db.tbl
 select id
 from db1.table1 t1

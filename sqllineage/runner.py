@@ -6,12 +6,12 @@ from typing import Dict, List, Optional, Tuple
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SQLLineageHolder
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Table
 from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
 from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
-from sqllineage.metadata_service import MetaDataService
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import split, trim_comment
 
@@ -40,7 +40,7 @@ class LineageRunner(object):
         encoding: Optional[str] = None,
         verbose: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
-        metadata_service: Optional[MetaDataService] = None,
+        metadata_service: Optional[MetaDataProvider] = None,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.

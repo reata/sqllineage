@@ -4,9 +4,9 @@ from typing import List, Set, Tuple, Union
 import networkx as nx
 from networkx import DiGraph
 
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.exceptions import InvalidSyntaxException
-from sqllineage.metadata_service import MetaDataService
 from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
 DATASET_CLASSES = (Path, Table)
@@ -257,7 +257,7 @@ class SQLLineageHolder(ColumnLineageMixin):
 
     @staticmethod
     def _build_digraph(
-        metadata_service: MetaDataService, *args: StatementLineageHolder
+        metadata_service: MetaDataProvider, *args: StatementLineageHolder
     ) -> DiGraph:
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
@@ -314,7 +314,7 @@ class SQLLineageHolder(ColumnLineageMixin):
             # if not in graph, check if defined in table schema by metadata service
             if len(src_cols) == 0:
                 if metadata_service is not None and isinstance(
-                    metadata_service, MetaDataService
+                    metadata_service, MetaDataProvider
                 ):
                     for parent in unresolved_col.parent_candidates:
                         if (

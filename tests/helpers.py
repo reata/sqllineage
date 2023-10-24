@@ -1,8 +1,8 @@
 import networkx as nx
 
 from sqllineage import SQLPARSE_DIALECT
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Table
-from sqllineage.metadata_service import MetaDataService
 from sqllineage.runner import LineageRunner
 
 
@@ -86,7 +86,7 @@ def assert_lr_graphs_match(lr: LineageRunner, lr_sqlfluff: LineageRunner) -> Non
 
 def assert_column_lineage_metadata_service(
     sql: str,
-    metadata_service: MetaDataService,
+    metadata_service: MetaDataProvider,
     column_lineages=None,
     dialect: str = "ansi",
     test_sqlfluff: bool = True,
