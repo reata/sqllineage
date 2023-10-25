@@ -4,7 +4,9 @@ from typing import List, Set, Tuple, Union
 import networkx as nx
 from networkx import DiGraph
 
-from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.core.metadata_provider import MetaDataProvider
+from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
+from sqllineage.exceptions import InvalidSyntaxException
 from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
 DATASET_CLASSES = (Path, Table)
@@ -254,7 +256,9 @@ class SQLLineageHolder(ColumnLineageMixin):
         }
 
     @staticmethod
-    def _build_digraph(*args: StatementLineageHolder) -> DiGraph:
+    def _build_digraph(
+        metadata_provider: MetaDataProvider, *args: StatementLineageHolder
+    ) -> DiGraph:
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
@@ -301,11 +305,32 @@ class SQLLineageHolder(ColumnLineageMixin):
         for unresolved_col, tgt_col in unresolved_cols:
             # check if there's only one parent candidate contains the column with same name
             src_cols = []
+            # check if source column exists in graph
             for parent in unresolved_col.parent_candidates:
                 src_col = Column(unresolved_col.raw_name)
                 src_col.parent = parent
                 if g.has_edge(parent, src_col):
                     src_cols.append(src_col)
+            # if not in graph, check if defined in table schema by metadata service
+            if len(src_cols) == 0 and bool(metadata_provider):
+                for parent in unresolved_col.parent_candidates:
+                    if (
+                        isinstance(parent, Table)
+                        and str(parent.schema) != Schema.unknown
+                    ):
+                        columns = metadata_provider.get_table_columns(
+                            str(parent.schema), str(parent.raw_name)
+                        )
+                        if columns is not None and unresolved_col.raw_name in columns:
+                            src_col = Column(unresolved_col.raw_name)
+                            src_col.parent = parent
+                            src_cols.append(src_col)
+
+            if len(src_cols) > 1:
+                raise InvalidSyntaxException(
+                    f"{unresolved_col.raw_name} is not allowed from more than one table or subquery"
+                )
+
             if len(src_cols) == 1:
                 g.add_edge(src_cols[0], tgt_col, type=EdgeType.LINEAGE)
                 g.remove_edge(unresolved_col, tgt_col)
@@ -316,10 +341,10 @@ class SQLLineageHolder(ColumnLineageMixin):
         return g
 
     @staticmethod
-    def of(*args: StatementLineageHolder) -> "SQLLineageHolder":
+    def of(metadata_provider, *args: StatementLineageHolder) -> "SQLLineageHolder":
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
         """
-        g = SQLLineageHolder._build_digraph(*args)
+        g = SQLLineageHolder._build_digraph(metadata_provider, *args)
         return SQLLineageHolder(g)

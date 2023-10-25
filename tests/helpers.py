@@ -1,6 +1,10 @@
+from typing import Optional
+
 import networkx as nx
 
 from sqllineage import SQLPARSE_DIALECT
+from sqllineage.core.metadata.dummy import DummyMetaDataProvider
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Table
 from sqllineage.runner import LineageRunner
 
@@ -62,12 +66,20 @@ def assert_column_lineage_equal(
     sql: str,
     column_lineages=None,
     dialect: str = "ansi",
+    metadata_provider: Optional[MetaDataProvider] = None,
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
     skip_graph_check: bool = False,
 ):
-    lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
-    lr_sqlfluff = LineageRunner(sql, dialect=dialect)
+    metadata_provider = (
+        DummyMetaDataProvider() if metadata_provider is None else metadata_provider
+    )
+    lr = LineageRunner(
+        sql, dialect=SQLPARSE_DIALECT, metadata_provider=metadata_provider
+    )
+    lr_sqlfluff = LineageRunner(
+        sql, dialect=dialect, metadata_provider=metadata_provider
+    )
     if test_sqlparse:
         assert_column_lineage(lr, column_lineages)
     if test_sqlfluff:
