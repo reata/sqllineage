@@ -5,7 +5,7 @@ import networkx as nx
 from networkx import DiGraph
 
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
 from sqllineage.exceptions import InvalidSyntaxException
 from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
@@ -257,7 +257,7 @@ class SQLLineageHolder(ColumnLineageMixin):
 
     @staticmethod
     def _build_digraph(
-        metadata_service: MetaDataProvider, *args: StatementLineageHolder
+        metadata_provider: MetaDataProvider, *args: StatementLineageHolder
     ) -> DiGraph:
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
@@ -312,25 +312,19 @@ class SQLLineageHolder(ColumnLineageMixin):
                 if g.has_edge(parent, src_col):
                     src_cols.append(src_col)
             # if not in graph, check if defined in table schema by metadata service
-            if len(src_cols) == 0:
-                if metadata_service is not None and isinstance(
-                    metadata_service, MetaDataProvider
-                ):
-                    for parent in unresolved_col.parent_candidates:
-                        if (
-                            isinstance(parent, Table)
-                            and str(parent.schema) != "<default>"
-                        ):
-                            db = str(parent.schema)
-                            tbl = str(parent.raw_name)
-                            columns = set(metadata_service.get_table_columns(db, tbl))
-                            if (
-                                columns is not None
-                                and unresolved_col.raw_name in columns
-                            ):
-                                src_col = Column(unresolved_col.raw_name)
-                                src_col.parent = parent
-                                src_cols.append(src_col)
+            if len(src_cols) == 0 and bool(metadata_provider):
+                for parent in unresolved_col.parent_candidates:
+                    if (
+                        isinstance(parent, Table)
+                        and str(parent.schema) != Schema.unknown
+                    ):
+                        columns = metadata_provider.get_table_columns(
+                            str(parent.schema), str(parent.raw_name)
+                        )
+                        if columns is not None and unresolved_col.raw_name in columns:
+                            src_col = Column(unresolved_col.raw_name)
+                            src_col.parent = parent
+                            src_cols.append(src_col)
 
             if len(src_cols) > 1:
                 raise InvalidSyntaxException(
@@ -347,10 +341,10 @@ class SQLLineageHolder(ColumnLineageMixin):
         return g
 
     @staticmethod
-    def of(metadata_service, *args: StatementLineageHolder) -> "SQLLineageHolder":
+    def of(metadata_provider, *args: StatementLineageHolder) -> "SQLLineageHolder":
         """
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
         """
-        g = SQLLineageHolder._build_digraph(metadata_service, *args)
+        g = SQLLineageHolder._build_digraph(metadata_provider, *args)
         return SQLLineageHolder(g)

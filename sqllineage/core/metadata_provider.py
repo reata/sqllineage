@@ -18,10 +18,16 @@ class MetaDataProvider:
     """
 
     @abstractmethod
-    def get_table_columns(self, db: str, table: str, **kwargs) -> List[str]:
+    def get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
         """Get all columns of a table.
 
-        :param db: database name
+        :param schema: database name
         :param table: table name
         :return: a list of column names
         """
+
+    def __bool__(self):
+        """
+        bool value tells whether this provider is ready to provide metadata
+        """
+        return True
