@@ -6,7 +6,8 @@ logger = logging.getLogger(__name__)
 
 
 def escape_identifier_name(name: str):
-    return name.strip("`").strip('"').strip("'")
+    stripped_name = name.strip("`").strip('"').strip("'")
+    return name.lower() if name == stripped_name else stripped_name
 
 
 def extract_sql_from_args(args: Namespace) -> str:
