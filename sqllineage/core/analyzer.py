@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import List
 
 from sqllineage.core.holders import StatementLineageHolder
+from sqllineage.core.metadata_provider import MetaDataProvider
 
 
 class LineageAnalyzer:
@@ -13,7 +14,13 @@ class LineageAnalyzer:
     SUPPORTED_DIALECTS: List[str] = []
 
     @abstractmethod
-    def analyze(self, sql: str, silent_mode: bool) -> StatementLineageHolder:
+    def analyze(
+        self,
+        sql: str,
+        pre_stmt_holders: List[StatementLineageHolder],
+        metadata_provider: MetaDataProvider,
+        silent_mode: bool,
+    ) -> StatementLineageHolder:
         """
         to analyze single statement sql and store the result into
         :class:`sqllineage.core.holders.StatementLineageHolder`

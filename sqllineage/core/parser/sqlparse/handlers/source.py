@@ -112,8 +112,11 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
             column_tokens = [
                 sub_token
                 for sub_token in token.tokens
-                if isinstance(sub_token, column_token_types)
-                and not sub_token.value.startswith("@")
+                if (
+                    isinstance(sub_token, column_token_types)
+                    and not sub_token.value.startswith("@")
+                )
+                or sub_token.ttype is Wildcard
                 # ignore tsql variable column starts with @
             ]
         else:

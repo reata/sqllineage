@@ -6,6 +6,7 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.exceptions import (
     InvalidSyntaxException,
@@ -35,7 +36,13 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             sqls.append(segment.raw)
         return sqls
 
-    def analyze(self, sql: str, silent_mode: bool = False) -> StatementLineageHolder:
+    def analyze(
+        self,
+        sql: str,
+        pre_stmt_holders: List[StatementLineageHolder],
+        metadata_provider: MetaDataProvider,
+        silent_mode: bool = False,
+    ) -> StatementLineageHolder:
         if sql in self.tsql_split_cache:
             statement_segments = [self.tsql_split_cache[sql]]
         else:

@@ -124,6 +124,48 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
             self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
 
+    def get_node_src_lineage(
+        self, node: Union[Column, Table, SubQuery]
+    ) -> List[Union[Column, Table, SubQuery]]:
+        src_list = []
+        for src, tgt, edge_type in self.graph.in_edges(nbunch=node, data="type"):
+            if edge_type == EdgeType.LINEAGE:
+                src_list.append(src)
+        return src_list
+
+    def get_table_columns(self, table: Union[Table, SubQuery]) -> List[Column]:
+        columns = []
+        for tbl, col, e_type in self.graph.edges(nbunch=table, data="type"):
+            if (
+                e_type == EdgeType.HAS_COLUMN
+                and isinstance(col, Column)
+                and col.raw_name != "*"
+            ):
+                columns.append(col)
+        return columns
+
+    def replace_wildcard(
+        self,
+        target_table: Union[Table, SubQuery],
+        source_columns: List[Column],
+        current_wildcard: Column,
+        src_wildcard: Column,
+    ) -> None:
+        target_columns = self.get_table_columns(target_table)
+        for src_col in source_columns:
+            new_column = Column(src_col.raw_name)
+            new_column.parent = target_table
+            if new_column in target_columns or src_col.raw_name == "*":
+                continue
+            self.graph.add_edge(target_table, new_column, type=EdgeType.HAS_COLUMN)
+            self.graph.add_edge(src_col.parent, src_col, type=EdgeType.HAS_COLUMN)
+            self.graph.add_edge(src_col, new_column, type=EdgeType.LINEAGE)
+        # remove wildcard
+        if current_wildcard is not None and self.graph.has_node(current_wildcard):
+            self.graph.remove_node(current_wildcard)
+        if src_wildcard is not None and self.graph.has_node(src_wildcard):
+            self.graph.remove_node(src_wildcard)
+
 
 class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
     """

@@ -93,3 +93,26 @@ def assert_lr_graphs_match(lr: LineageRunner, lr_sqlfluff: LineageRunner) -> Non
         f"\n\tGraph with sqlparse: {lr._sql_holder.graph}\n\t"
         f"Graph with sqlfluff: {lr_sqlfluff._sql_holder.graph}"
     )
+
+
+def assert_wildcard_lineage(
+    sql: str,
+    metadata_provider: MetaDataProvider,
+    column_lineages=None,
+    dialect: str = "ansi",
+    test_sqlfluff: bool = False,
+    test_sqlparse: bool = True,
+    skip_graph_check: bool = False,
+):
+    lr = LineageRunner(
+        sql, dialect=SQLPARSE_DIALECT, metadata_provider=metadata_provider
+    )
+    lr_sqlfluff = LineageRunner(
+        sql, dialect=dialect, metadata_provider=metadata_provider
+    )
+    if test_sqlparse:
+        assert_column_lineage(lr, column_lineages)
+    if test_sqlfluff:
+        assert_column_lineage(lr_sqlfluff, column_lineages)
+    if test_sqlparse and test_sqlfluff and not skip_graph_check:
+        assert_lr_graphs_match(lr, lr_sqlfluff)

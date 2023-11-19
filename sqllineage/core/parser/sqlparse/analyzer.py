@@ -17,7 +17,8 @@ from sqlparse.sql import (
 
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
-from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.core.metadata_provider import MetaDataProvider
+from sqllineage.core.models import Column, Schema, SubQuery, Table
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
@@ -38,7 +39,13 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlparse"
     SUPPORTED_DIALECTS = ["non-validating"]
 
-    def analyze(self, sql: str, silent_mode: bool = False) -> StatementLineageHolder:
+    def analyze(
+        self,
+        sql: str,
+        pre_stmt_holders: List[StatementLineageHolder],
+        metadata_provider: MetaDataProvider,
+        silent_mode: bool = False,
+    ) -> StatementLineageHolder:
         # get rid of comments, which cause inconsistencies in sqlparse output
         stmt = sqlparse.parse(trim_comment(sql))[0]
         if (
@@ -58,11 +65,15 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         ):
             holder = self._extract_from_ddl_alter(stmt)
         elif stmt.get_type() == "MERGE":
-            holder = self._extract_from_dml_merge(stmt)
+            holder = self._extract_from_dml_merge(
+                stmt, pre_stmt_holders, metadata_provider
+            )
         else:
             # DML parsing logic also applies to CREATE DDL
             holder = StatementLineageHolder.of(
-                self._extract_from_dml(stmt, AnalyzerContext())
+                self._extract_from_dml(
+                    stmt, AnalyzerContext(), pre_stmt_holders, metadata_provider
+                )
             )
         return holder
 
@@ -101,7 +112,12 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         return holder
 
     @classmethod
-    def _extract_from_dml_merge(cls, stmt: Statement) -> StatementLineageHolder:
+    def _extract_from_dml_merge(
+        cls,
+        stmt: Statement,
+        pre_stmt_holders: List[StatementLineageHolder],
+        metadata_provider: MetaDataProvider,
+    ) -> StatementLineageHolder:
         holder = StatementLineageHolder()
         src_flag = tgt_flag = update_flag = insert_flag = False
         insert_columns = []
@@ -134,6 +150,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                             holder |= cls._extract_from_dml(
                                 sq.query,
                                 AnalyzerContext(cte=holder.cte, write={sq}),
+                                pre_stmt_holders,
+                                metadata_provider,
                             )
                     else:
                         direct_source = SqlParseTable.of(token)
@@ -187,7 +205,11 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
 
     @classmethod
     def _extract_from_dml(
-        cls, token: TokenList, context: AnalyzerContext
+        cls,
+        token: TokenList,
+        context: AnalyzerContext,
+        pre_stmt_holders: List[StatementLineageHolder],
+        metadata_provider: MetaDataProvider,
     ) -> SubQueryLineageHolder:
         holder = SubQueryLineageHolder()
         if context.cte is not None:
@@ -230,11 +252,79 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             # call end of query hook here as loop is over
             for next_handler in next_handlers:
                 next_handler.end_of_query_cleanup(holder)
+
+        # find wildcard in current subquery
+        wildcards = []
+        for column in holder.write_columns:
+            if column.raw_name == "*":
+                wildcards.append(column)
+        # save write table of current subquery
+        if len(wildcards) > 0:
+            target_table = list(holder.write)[0]
+
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= cls._extract_from_dml(
-                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
+                sq.query,
+                AnalyzerContext(cte=holder.cte, write={sq}),
+                pre_stmt_holders,
+                metadata_provider,
             )
+
+        # replace wildcard with real columns
+        for wildcard in wildcards:
+            for src_wildcard in holder.get_node_src_lineage(wildcard):
+                if isinstance(src_wildcard, Column):
+                    source_table = src_wildcard.parent
+                    if source_table is not None:
+                        if isinstance(source_table, SubQuery):
+                            src_table_columns = holder.get_table_columns(source_table)
+                            if len(src_table_columns) > 0:
+                                holder.replace_wildcard(
+                                    target_table,
+                                    src_table_columns,
+                                    wildcard,
+                                    src_wildcard,
+                                )
+                        elif isinstance(source_table, Table):
+                            # if wildcard's source table is <default>
+                            # means it is probably a temporary view, search in previous statement holder firstly
+                            is_replaced = False
+                            if source_table.schema.raw_name == Schema.unknown:
+                                for pre_stmt_holder in reversed(pre_stmt_holders):
+                                    if pre_stmt_holder.graph.has_node(source_table):
+                                        src_table_columns = (
+                                            pre_stmt_holder.get_table_columns(
+                                                source_table
+                                            )
+                                        )
+                                        if len(src_table_columns) > 0:
+                                            holder.replace_wildcard(
+                                                target_table,
+                                                src_table_columns,
+                                                wildcard,
+                                                src_wildcard,
+                                            )
+                                            is_replaced = True
+                                            break
+                            # if not founded or source table is not <default>, try to search by metadata service
+                            if not is_replaced and metadata_provider is not None:
+                                db = source_table.schema.raw_name
+                                table = source_table.raw_name
+                                source_columns = []
+                                for col in metadata_provider.get_table_columns(
+                                    db, table
+                                ):
+                                    column = Column(col)
+                                    column.parent = source_table
+                                    source_columns.append(column)
+                                if len(source_columns) > 0:
+                                    holder.replace_wildcard(
+                                        target_table,
+                                        source_columns,
+                                        wildcard,
+                                        src_wildcard,
+                                    )
         return holder
 
     @classmethod
