@@ -19,7 +19,7 @@ class Schema:
         self.raw_name = escape_identifier_name(name)
 
     def __str__(self):
-        return self.raw_name.lower()
+        return self.raw_name
 
     def __repr__(self):
         return "Schema: " + str(self)
@@ -59,7 +59,7 @@ class Table:
         self.alias = kwargs.pop("alias", self.raw_name)
 
     def __str__(self):
-        return f"{self.schema}.{self.raw_name.lower()}"
+        return f"{self.schema}.{self.raw_name}"
 
     def __repr__(self):
         return "Table: " + str(self)
@@ -111,7 +111,11 @@ class SubQuery:
         """
         self.query = subquery
         self.query_raw = subquery_raw
-        self.alias = alias if alias is not None else f"subquery_{hash(self)}"
+        self.alias = (
+            escape_identifier_name(alias)
+            if alias is not None
+            else f"subquery_{hash(self)}"
+        )
 
     def __str__(self):
         return self.alias
@@ -147,16 +151,20 @@ class Column:
 
     def __str__(self):
         return (
-            f"{self.parent}.{self.raw_name.lower()}"
+            f"{self.parent}.{self.raw_name}"
             if self.parent is not None and not isinstance(self.parent, Path)
-            else f"{self.raw_name.lower()}"
+            else f"{self.raw_name}"
         )
 
     def __repr__(self):
         return "Column: " + str(self)
 
     def __eq__(self, other):
-        return isinstance(other, Column) and str(self) == str(other)
+        return (
+            isinstance(other, Column)
+            and str(self) == str(other)
+            and self.parent == other.parent
+        )
 
     def __hash__(self):
         return hash(str(self))
