@@ -6,8 +6,19 @@ logger = logging.getLogger(__name__)
 
 
 def escape_identifier_name(name: str):
-    stripped_name = name.strip("`").strip('"').strip("'")
-    return name.lower() if name == stripped_name else stripped_name
+    """
+    conform to ANSI SQL standard that:
+        1) unquoted identifier name is case-insensitive, convert to lower case
+        2) quoted identifier name is case-sensitive, reserve case and remove quote char
+    Reference: https://stackoverflow.com/a/19933159
+    """
+    quote_chars = ["`", '"', "'"]
+    if any(quote_char in name for quote_char in quote_chars):
+        for quote_char in quote_chars:
+            name = name.strip(quote_char)
+        return name
+    else:
+        return name.lower()
 
 
 def extract_sql_from_args(args: Namespace) -> str:
