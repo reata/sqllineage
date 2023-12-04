@@ -1,4 +1,5 @@
 import itertools
+import re
 from typing import List, Set, Tuple, Union
 
 import networkx as nx
@@ -263,8 +264,82 @@ class SQLLineageHolder(ColumnLineageMixin):
         To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
         :class:`sqllineage.holders.SQLLineageHolder`
         """
+
+        def has_same_subquery_alias(graph1: nx.DiGraph, graph2: nx.DiGraph) -> bool:
+            graph1_subqueries = [n for n in graph1.nodes if isinstance(n, SubQuery)]
+            graph2_subqueries = [n for n in graph2.nodes if isinstance(n, SubQuery)]
+
+            for n1, n2 in itertools.product(graph1_subqueries, graph2_subqueries):
+                if (
+                    n1.alias == n2.alias
+                    and re.sub(r"\s+", " ", n1.query_raw).strip()
+                    != re.sub(r"\s+", " ", n2.query_raw).strip()
+                ):
+                    return True
+
+            return False
+
+        def preprocess(graph: nx.DiGraph) -> nx.DiGraph:
+            """
+            Preprocessing identical aliases across statements.
+            """
+            subqueries_to_replace = {}
+            columns_to_replace = {}
+            for n in graph.nodes:
+                if not isinstance(n, SubQuery):
+                    continue
+                old_node = n
+                new_node: SubQuery = SubQuery(
+                    old_node.query,
+                    old_node.query_raw,
+                    f"{old_node.alias}_{i + 1}",
+                )
+                for successor in graph.successors(old_node):
+                    if not isinstance(successor, Column):
+                        continue
+                    if successor.parent is None:
+                        continue
+
+                    succ_old_node = successor
+                    succ_new_node: Column = Column(
+                        succ_old_node.raw_name,
+                        source_columns=succ_old_node.source_columns,
+                    )
+
+                    if succ_old_node.parent is None:
+                        return graph
+
+                    succ_new_node._parent = {new_node}
+                    columns_to_replace[succ_old_node] = succ_new_node
+
+                subqueries_to_replace[old_node] = new_node
+
+            for old_node, new_node in columns_to_replace.items():  # type: ignore
+                for predecessor in graph.predecessors(old_node):
+                    edge_attr = graph.get_edge_data(predecessor, old_node)
+                    graph.add_edge(predecessor, new_node, **edge_attr)
+                for successor in graph.successors(old_node):
+                    edge_attr = graph.get_edge_data(old_node, successor)
+                    graph.add_edge(new_node, successor, **edge_attr)
+                graph.remove_node(old_node)
+
+            for old_node, new_node in subqueries_to_replace.items():
+                successors = {
+                    successor: graph.get_edge_data(old_node, successor)
+                    for successor in graph.successors(old_node)
+                }
+                graph.remove_node(old_node)
+                for successor, edge_attr in successors.items():
+                    if edge_attr["type"] == EdgeType.HAS_ALIAS:
+                        successor = new_node.alias
+                    graph.add_edge(new_node, successor, **edge_attr)
+
+            return graph
+
         g = DiGraph()
-        for holder in args:
+        for i, holder in enumerate(args):
+            if has_same_subquery_alias(g, holder.graph):
+                holder.graph = preprocess(holder.graph)
             g = nx.compose(g, holder.graph)
             if holder.drop:
                 for table in holder.drop:
