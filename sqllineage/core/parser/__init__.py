@@ -12,7 +12,12 @@ class SourceHandlerMixin:
     union_barriers: List[Tuple[int, int]]
 
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
+        subqueries_within_set = (
+            self.subqueries_within_set if hasattr(self, "subqueries_within_set") else []
+        )
         for i, tbl in enumerate(self.tables):
+            if tbl in subqueries_within_set:
+                continue
             holder.add_read(tbl)
         self.union_barriers.append((len(self.columns), len(self.tables)))
         for i, (col_barrier, tbl_barrier) in enumerate(self.union_barriers):
@@ -21,6 +26,18 @@ class SourceHandlerMixin:
             )
             col_grp = self.columns[prev_col_barrier:col_barrier]
             tbl_grp = self.tables[prev_tbl_barrier:tbl_barrier]
+
+            for tg in tbl_grp:
+                if tg in subqueries_within_set:
+                    origin_alias = tg.alias  # type: ignore
+                    tg.alias = f"{tg.alias}_{subqueries_within_set.index(tg) + 1}"  # type: ignore
+                    holder.add_read(tg)
+                    for cg in col_grp:
+                        for j, (sc_column, sc_qulifier) in enumerate(cg.source_columns):
+                            if sc_qulifier == origin_alias:
+                                cg.source_columns.remove((sc_column, sc_qulifier))
+                                cg.source_columns.insert(j, (sc_column, tg.alias))  # type: ignore
+
             if holder.write:
                 if len(holder.write) > 1:
                     raise SQLLineageException
