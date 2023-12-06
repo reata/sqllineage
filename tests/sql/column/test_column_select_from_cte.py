@@ -61,8 +61,14 @@ INSERT INTO tab3
     assert_column_lineage_equal(
         sql,
         [
-            (ColumnQualifierTuple("col1", "tab1"), ColumnQualifierTuple("col1", "tab3")),
-            (ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab3")),
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col1", "tab3"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab3"),
+            ),
         ],
     )
 
