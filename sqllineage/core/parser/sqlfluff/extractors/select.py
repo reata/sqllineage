@@ -1,10 +1,7 @@
-from typing import List
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path
-from sqllineage.core.models import SubQuery
 from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.models import (
@@ -36,7 +33,6 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         self.columns = []
         self.tables = []
         self.union_barriers = []
-        self.subqueries_within_set: List[SubQuery] = []
 
     def extract(
         self,
@@ -66,12 +62,6 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
 
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
-            holder |= SelectExtractor(self.dialect).extract(
-                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
-            )
-
-        for i, sq in enumerate(self.subqueries_within_set):
-            sq.alias = f"{sq.alias}_{i + 1}"
             holder |= SelectExtractor(self.dialect).extract(
                 sq.query, AnalyzerContext(cte=holder.cte, write={sq})
             )
@@ -145,27 +135,19 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             for sub_segment in segment.get_children("select_clause_element"):
                 self.columns.append(SqlFluffColumn.of(sub_segment))
 
-    def _handle_set(self, segment: BaseSegment, holder) -> None:
+    def _handle_set(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
         set handler method
         """
         if is_set_expression(segment):
-            subqueries = list_subqueries(segment)
-            if subqueries:
-                for idx, sq in enumerate(subqueries):
-                    if idx != 0:
-                        self.union_barriers.append(
-                            (len(self.columns), len(self.tables))
-                        )
-                    subquery, alias = sq
-                    table_identifier = find_table_identifier(subquery)
-                    if table_identifier:
-                        for seg in list_child_segments(subquery):
-                            for set_subquery in self.list_subquery(seg):
-                                self.subqueries_within_set.append(set_subquery)
-
-                            self._handle_table(seg, holder)
-                            self._handle_column(seg)
+            for idx, sub_segment in enumerate(
+                segment.get_children("select_statement", "bracketed")
+            ):
+                if idx != 0:
+                    self.union_barriers.append((len(self.columns), len(self.tables)))
+                for seg in list_child_segments(sub_segment):
+                    self._handle_table(seg, holder)
+                    self._handle_column(seg)
 
     def _add_dataset_from_expression_element(
         self, segment: BaseSegment, holder: SubQueryLineageHolder
