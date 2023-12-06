@@ -56,7 +56,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             self._handle_select_into(segment, holder)
             self._handle_table(segment, holder)
             self._handle_column(segment)
-            self._handle_set(segment)
+            self._handle_set(segment, holder)
 
         self.end_of_query_cleanup(holder)
 
@@ -135,25 +135,19 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             for sub_segment in segment.get_children("select_clause_element"):
                 self.columns.append(SqlFluffColumn.of(sub_segment))
 
-    def _handle_set(self, segment: BaseSegment) -> None:
+    def _handle_set(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
         """
         set handler method
         """
         if is_set_expression(segment):
-            subqueries = list_subqueries(segment)
-            if subqueries:
-                for idx, sq in enumerate(subqueries):
-                    if idx != 0:
-                        self.union_barriers.append(
-                            (len(self.columns), len(self.tables))
-                        )
-                    subquery, alias = sq
-                    table_identifier = find_table_identifier(subquery)
-                    if table_identifier:
-                        read_sq = SqlFluffTable.of(table_identifier, alias)
-                        for seg in list_child_segments(subquery):
-                            self._handle_column(seg)
-                        self.tables.append(read_sq)
+            for idx, sub_segment in enumerate(
+                segment.get_children("select_statement", "bracketed")
+            ):
+                if idx != 0:
+                    self.union_barriers.append((len(self.columns), len(self.tables)))
+                for seg in list_child_segments(sub_segment):
+                    self._handle_table(seg, holder)
+                    self._handle_column(seg)
 
     def _add_dataset_from_expression_element(
         self, segment: BaseSegment, holder: SubQueryLineageHolder

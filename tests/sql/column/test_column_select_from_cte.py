@@ -51,6 +51,28 @@ WHERE cte1.a = cte2.a"""
     )
 
 
+def test_column_reference_from_cte_and_union():
+    sql = """WITH cte_1 AS (select col1 from tab1),
+cte_2 AS (SELECT col1 from tab2)
+INSERT INTO tab3
+    SELECT col1 from cte_1
+    UNION
+    SELECT col1 from cte_2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab1"),
+                ColumnQualifierTuple("col1", "tab3"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab3"),
+            ),
+        ],
+    )
+
+
 def test_smarter_column_resolution_using_query_context():
     sql = """WITH
 cte1 AS (SELECT a, b FROM tab1),

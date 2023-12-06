@@ -64,7 +64,18 @@ def test_with_insert_in_query():
     )
 
 
-def test_union_at_last_cte():
+def test_cte_and_union():
+    sql = """WITH cte_1 AS (select col1 from tab1)
+SELECT col2 from tab2
+UNION
+SELECT col3 from cte_1"""
+    assert_table_lineage_equal(
+        sql,
+        {"tab1", "tab2"},
+    )
+
+
+def test_cte_and_union_but_not_selecting_from_cte():
     # issue #398
     sql = """WITH cte_1 AS (select col1 from tab1)
 SELECT col2 from tab2
@@ -72,5 +83,5 @@ UNION
 SELECT col3 from tab3"""
     assert_table_lineage_equal(
         sql,
-        {"tab1", "tab2", "tab3", "tab3"},
+        {"tab1", "tab2", "tab3"},
     )
