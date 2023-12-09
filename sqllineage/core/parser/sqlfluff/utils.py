@@ -36,7 +36,9 @@ def is_subquery(segment: BaseSegment) -> bool:
             segment if segment.type == "bracketed" else segment.segments[0]
         )
         # check if innermost parenthesis contains SELECT
-        if token.get_child("select_statement", "set_expression"):
+        if token.get_child(
+            "select_statement", "set_expression", "with_compound_statement"
+        ):
             return True
         elif expression := token.get_child("expression"):
             if expression.get_child("select_statement"):
@@ -152,7 +154,6 @@ def list_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
     elif segment.type == "from_expression_element":
         as_segment, target = extract_as_and_target_segment(segment)
         if is_subquery(target):
-            as_segment, target = extract_as_and_target_segment(segment)
             subquery = [
                 SubQueryTuple(
                     extract_innermost_bracketed(target)
