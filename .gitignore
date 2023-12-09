@@ -103,9 +103,6 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# pycharm
-.idea/
-
 # dependencies
 node_modules
 .pnp
@@ -124,3 +121,9 @@ yarn-error.log*
 
 # Optional eslint cache
 .eslintcache
+
+# pycharm
+.idea/
+
+# local testing sql files
+test*.sql
