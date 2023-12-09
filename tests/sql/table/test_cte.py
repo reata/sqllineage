@@ -85,3 +85,15 @@ SELECT col3 from tab3"""
         sql,
         {"tab1", "tab2", "tab3"},
     )
+
+
+def test_cte_within_subquery():
+    sql = """SELECT sq.col1
+FROM (WITH cte1 AS (SELECT col1 FROM tab1)
+      SELECT col1
+      FROM cte1
+               INNER JOIN tab2 ON cte1.col1 = tab2.col1) AS sq"""
+    assert_table_lineage_equal(
+        sql,
+        {"tab1", "tab2"},
+    )
