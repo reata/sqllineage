@@ -30,7 +30,11 @@ class CteExtractor(BaseExtractor):
                 holder |= self.delegate_to(
                     SelectExtractor,
                     segment,
-                    AnalyzerContext(cte=holder.cte, write=holder.write),
+                    AnalyzerContext(
+                        cte=holder.cte,
+                        write=holder.write,
+                        write_columns=holder.write_columns,
+                    ),
                 )
             elif segment.type == "insert_statement":
                 holder |= self.delegate_to(

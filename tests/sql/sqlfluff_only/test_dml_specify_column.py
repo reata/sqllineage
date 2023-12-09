@@ -117,3 +117,19 @@ def test_insert_with_custom_columns():
         ],
         test_sqlparse=False,
     )
+
+
+def test_insert_with_custom_columns_and_cte_within_query():
+    sql = """INSERT INTO tab2 (col1)
+WITH cte1 AS (SELECT col2 FROM tab1)
+SELECT col2 FROM cte1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col2", "tab1"),
+                ColumnQualifierTuple("col1", "tab2"),
+            )
+        ],
+        test_sqlparse=False,
+    )
