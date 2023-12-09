@@ -271,3 +271,14 @@ ORDER BY col1"""
         sql,
         {"tab1", "tab2", "tab3"},
     )
+
+
+def test_select_union_all_with_nested_subquery():
+    sql = """SELECT sq1.id
+FROM (SELECT id
+      FROM tab1) sq1
+UNION ALL
+SELECT sq2.id
+FROM (SELECT id
+      FROM tab2) sq2"""
+    assert_table_lineage_equal(sql, {"tab1", "tab2"})

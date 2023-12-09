@@ -56,7 +56,20 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             self._handle_select_into(segment, holder)
             self._handle_table(segment, holder)
             self._handle_column(segment)
-            self._handle_set(segment, holder)
+
+            if is_set_expression(segment):
+                for idx, sub_segment in enumerate(
+                    segment.get_children("select_statement", "bracketed")
+                ):
+                    if idx != 0:
+                        self.union_barriers.append(
+                            (len(self.columns), len(self.tables))
+                        )
+                    for seg in list_child_segments(sub_segment):
+                        for sq in self.list_subquery(seg):
+                            subqueries.append(sq)
+                        self._handle_table(seg, holder)
+                        self._handle_column(seg)
 
         self.end_of_query_cleanup(holder)
 
@@ -134,20 +147,6 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         if segment.type == "select_clause":
             for sub_segment in segment.get_children("select_clause_element"):
                 self.columns.append(SqlFluffColumn.of(sub_segment))
-
-    def _handle_set(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> None:
-        """
-        set handler method
-        """
-        if is_set_expression(segment):
-            for idx, sub_segment in enumerate(
-                segment.get_children("select_statement", "bracketed")
-            ):
-                if idx != 0:
-                    self.union_barriers.append((len(self.columns), len(self.tables)))
-                for seg in list_child_segments(sub_segment):
-                    self._handle_table(seg, holder)
-                    self._handle_column(seg)
 
     def _add_dataset_from_expression_element(
         self, segment: BaseSegment, holder: SubQueryLineageHolder
