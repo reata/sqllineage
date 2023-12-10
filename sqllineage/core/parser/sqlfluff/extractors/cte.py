@@ -6,6 +6,7 @@ from sqllineage.core.parser.sqlfluff.extractors.create_insert import (
     CreateInsertExtractor,
 )
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
+from sqllineage.core.parser.sqlfluff.extractors.update import UpdateExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import list_child_segments
 from sqllineage.utils.entities import AnalyzerContext
@@ -39,6 +40,10 @@ class CteExtractor(BaseExtractor):
             elif segment.type == "insert_statement":
                 holder |= self.delegate_to(
                     CreateInsertExtractor, segment, AnalyzerContext(cte=holder.cte)
+                )
+            elif segment.type == "update_statement":
+                holder |= self.delegate_to(
+                    UpdateExtractor, segment, AnalyzerContext(cte=holder.cte)
                 )
             elif segment.type == "common_table_expression":
                 identifier = None

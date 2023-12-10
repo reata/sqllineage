@@ -1,10 +1,11 @@
-from typing import Optional
+from typing import Optional, Union
 
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.holders import StatementLineageHolder
-from sqllineage.core.models import Table
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import SubQuery, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
+from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
     find_from_expression_element,
     find_table_identifier,
@@ -23,19 +24,19 @@ class UpdateExtractor(BaseExtractor):
 
     def extract(
         self, statement: BaseSegment, context: AnalyzerContext
-    ) -> StatementLineageHolder:
-        holder = StatementLineageHolder()
+    ) -> SubQueryLineageHolder:
+        holder = self._init_holder(context)
         tgt_flag = False
         for segment in list_child_segments(statement):
             if segment.type == "from_expression":
-                # UPDATE with JOIN
+                # UPDATE with JOIN, mysql only syntax
                 if table := self.find_table_from_from_expression_or_join_clause(
-                    segment
+                    segment, holder
                 ):
                     holder.add_write(table)
                 for join_clause in list_join_clause(statement):
                     if table := self.find_table_from_from_expression_or_join_clause(
-                        join_clause
+                        join_clause, holder
                     ):
                         holder.add_read(table)
 
@@ -48,13 +49,25 @@ class UpdateExtractor(BaseExtractor):
                     holder.add_write(table)
                 tgt_flag = False
 
+            if segment.type == "from_clause":
+                # UPDATE FROM, ansi syntax
+                if from_expression := segment.get_child("from_expression"):
+                    if table := self.find_table_from_from_expression_or_join_clause(
+                        from_expression, holder
+                    ):
+                        holder.add_read(table)
+
         return holder
 
     def find_table_from_from_expression_or_join_clause(
-        self, segment
-    ) -> Optional[Table]:
-        table = None
+        self, segment, holder
+    ) -> Optional[Union[Table, SubQuery]]:
+        table: Optional[Union[Table, SubQuery]] = None
         if from_expression_element := find_from_expression_element(segment):
             if table_identifier := find_table_identifier(from_expression_element):
-                table = self.find_table(table_identifier)
+                cte_dict = {c.alias: c for c in holder.cte}
+                if cte := cte_dict.get(table_identifier.raw):
+                    table = SqlFluffSubQuery.of(cte.query, table_identifier.raw)
+                else:
+                    table = self.find_table(table_identifier)
         return table
