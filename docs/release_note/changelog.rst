@@ -4,6 +4,21 @@ Changelog
 
 v1.4.8
 ======
+:Date: December 10, 2023
+
+This is a bugfix release where we closed a bunch of issues concerning CTE and UNION
+
+Bugfix
+-------------
+* Not Using Column Name Specified in Query For CTE within Query (`#486 <https://github.com/reata/sqllineage/issues/486>`_)
+* CTE (Common Table Expressions) within CTE (`#484 <https://github.com/reata/sqllineage/issues/484>`_)
+* lineage inaccurate when CTE used in subquery (`#476 <https://github.com/reata/sqllineage/issues/476>`_)
+* UNION ALL Queries resolves column lineage incorrectly (`#475 <https://github.com/reata/sqllineage/issues/475>`_)
+* Missing table when parsing sql with UNION ALL (`#466 <https://github.com/reata/sqllineage/issues/466>`_)
+* No target tables in UPDATE statement using CTE (`#453 <https://github.com/reata/sqllineage/issues/453>`_)
+
+v1.4.8
+======
 :Date: October 16, 2023
 
 Enhancement
