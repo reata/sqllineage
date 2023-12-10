@@ -48,7 +48,7 @@ def test_with_select_join_table_with_same_name():
     )
 
 
-def test_with_insert():
+def test_cte_insert():
     assert_table_lineage_equal(
         "WITH tab1 AS (SELECT * FROM tab2) INSERT INTO tab3 SELECT * FROM tab1",
         {"tab2"},
@@ -56,11 +56,22 @@ def test_with_insert():
     )
 
 
-def test_with_insert_in_query():
+def test_cte_insert_cte_in_query():
     assert_table_lineage_equal(
         "INSERT INTO tab3 WITH tab1 AS (SELECT * FROM tab2) SELECT * FROM tab1",
         {"tab2"},
         {"tab3"},
+    )
+
+
+def test_cte_update_from():
+    assert_table_lineage_equal(
+        """WITH cte1 AS (SELECT col1, col2 FROM tab1)
+UPDATE tab2
+SET tab2.col2 = cte1.col2 FROM cte1
+WHERE tab2.col1 = cte1.col1;""",
+        {"tab1"},
+        {"tab2"},
     )
 
 
