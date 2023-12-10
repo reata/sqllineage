@@ -59,11 +59,6 @@ class CteExtractor(BaseExtractor):
                         if segment_has_alias:
                             holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
 
-        # By recursively extracting each extractor of the parent and merge, we're doing Depth-first search
-        for sq in subqueries:
-            holder |= SelectExtractor(self.dialect).extract(
-                sq.query,
-                AnalyzerContext(cte=holder.cte, write={sq}),
-            )
+        self.extract_subquery(subqueries, holder)
 
         return holder

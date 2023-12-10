@@ -101,6 +101,25 @@ class BaseExtractor:
         """
         return extractor_cls(self.dialect).extract(segment, context)
 
+    def extract_subquery(
+        self, subqueries: List[SubQuery], holder: SubQueryLineageHolder
+    ):
+        """
+        extract subqueries collected from statement-level segment
+        """
+        from .cte import CteExtractor
+        from .select import SelectExtractor
+
+        for sq in subqueries:
+            extractor_cls = (
+                CteExtractor
+                if sq.query.get_child("with_compound_statement")
+                else SelectExtractor
+            )
+            holder |= extractor_cls(self.dialect).extract(
+                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
+            )
+
     @staticmethod
     def _init_holder(context: AnalyzerContext) -> SubQueryLineageHolder:
         """
