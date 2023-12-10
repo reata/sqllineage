@@ -97,3 +97,15 @@ FROM (WITH cte1 AS (SELECT col1 FROM tab1)
         sql,
         {"tab1", "tab2"},
     )
+
+
+def test_cte_within_cte():
+    sql = """WITH cte1 AS
+         (WITH cte2 AS
+                   (SELECT id
+                    FROM tab1)
+          SELECT id
+          FROM cte2)
+SELECT id
+FROM cte1"""
+    assert_table_lineage_equal(sql, {"tab1"})

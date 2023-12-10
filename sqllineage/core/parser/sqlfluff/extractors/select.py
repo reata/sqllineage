@@ -70,21 +70,9 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                             subqueries.append(sq)
                         self._handle_table(seg, holder)
                         self._handle_column(seg)
-
         self.end_of_query_cleanup(holder)
 
-        # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
-        for sq in subqueries:
-            from .cte import CteExtractor
-
-            extractor_cls = (
-                CteExtractor
-                if sq.query.get_child("with_compound_statement")
-                else SelectExtractor
-            )
-            holder |= extractor_cls(self.dialect).extract(
-                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
-            )
+        self.extract_subquery(subqueries, holder)
 
         return holder
 
