@@ -17,9 +17,14 @@ class NoopExtractor(BaseExtractor):
         "cache_table",
         "uncache_table",
         "show_statement",
+        "describe_statement",
         "use_statement",
         "declare_segment",
         "analyze_statement",
+        "add_jar_statement",
+        "create_function_statement",
+        "drop_function_statement",
+        "set_statement",
     ]
 
     def extract(
