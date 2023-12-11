@@ -2,7 +2,7 @@
 Changelog
 *********
 
-v1.4.8
+v1.4.9
 ======
 :Date: December 10, 2023
 
