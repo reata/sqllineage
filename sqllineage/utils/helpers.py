@@ -45,9 +45,18 @@ def extract_sql_from_args(args: Namespace) -> str:
 def split(sql: str) -> List[str]:
     # TODO: we need a parser independent split function
     import sqlparse
+    from sqlparse.tokens import Punctuation
 
-    # sometimes sqlparse split out a statement that is comment only, we want to exclude that
-    return [s.value for s in sqlparse.parse(sql) if s.token_first(skip_cm=True)]
+    result = []
+    for s in sqlparse.parse(sql):
+        if first_token := s.token_first(skip_cm=True):
+            # sometimes sqlparse split out a statement that is comment only or semicolon only, we want to exclude that
+            if first_token.ttype == Punctuation and first_token.value == ";":
+                # exclude semicolon only statement
+                continue
+            else:
+                result.append(s.value)
+    return result
 
 
 def trim_comment(sql: str) -> str:

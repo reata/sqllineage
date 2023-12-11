@@ -30,3 +30,8 @@ def test_split_statements_with_desc():
 
 DESC tab1;"""
     assert len(split(sql)) == 2
+
+
+def test_split_statement_ends_with_multiple_semicolons():
+    sql = "SELECT 1;;;"
+    assert len(split(sql)) == 1
