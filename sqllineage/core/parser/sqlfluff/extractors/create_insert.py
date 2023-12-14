@@ -122,7 +122,11 @@ class CreateInsertExtractor(BaseExtractor):
         from .cte import CteExtractor
 
         return self.delegate_to(
-            CteExtractor, segment, AnalyzerContext(cte=holder.cte, write=holder.write)
+            CteExtractor,
+            segment,
+            AnalyzerContext(
+                cte=holder.cte, write=holder.write, write_columns=holder.write_columns
+            ),
         )
 
     def delegate_to_select(

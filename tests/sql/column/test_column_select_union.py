@@ -59,3 +59,27 @@ SELECT col1 FROM dataset.tab2) SELECT col1 FROM temp_cte"""
             ),
         ],
     )
+
+
+def test_union_with_subquery():
+    sql = """INSERT INTO tab3
+SELECT sq1.id
+FROM (SELECT id
+      FROM tab1) sq1
+UNION ALL
+SELECT sq2.id
+FROM (SELECT id
+      FROM tab2) sq2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("id", "tab1"),
+                ColumnQualifierTuple("id", "tab3"),
+            ),
+            (
+                ColumnQualifierTuple("id", "tab2"),
+                ColumnQualifierTuple("id", "tab3"),
+            ),
+        ],
+    )

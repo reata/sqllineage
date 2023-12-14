@@ -6,6 +6,7 @@ from sqllineage.core.parser.sqlfluff.extractors.create_insert import (
     CreateInsertExtractor,
 )
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
+from sqllineage.core.parser.sqlfluff.extractors.update import UpdateExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import list_child_segments
 from sqllineage.utils.entities import AnalyzerContext
@@ -30,11 +31,19 @@ class CteExtractor(BaseExtractor):
                 holder |= self.delegate_to(
                     SelectExtractor,
                     segment,
-                    AnalyzerContext(cte=holder.cte, write=holder.write),
+                    AnalyzerContext(
+                        cte=holder.cte,
+                        write=holder.write,
+                        write_columns=holder.write_columns,
+                    ),
                 )
             elif segment.type == "insert_statement":
                 holder |= self.delegate_to(
                     CreateInsertExtractor, segment, AnalyzerContext(cte=holder.cte)
+                )
+            elif segment.type == "update_statement":
+                holder |= self.delegate_to(
+                    UpdateExtractor, segment, AnalyzerContext(cte=holder.cte)
                 )
             elif segment.type == "common_table_expression":
                 identifier = None
@@ -55,11 +64,6 @@ class CteExtractor(BaseExtractor):
                         if segment_has_alias:
                             holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
 
-        # By recursively extracting each extractor of the parent and merge, we're doing Depth-first search
-        for sq in subqueries:
-            holder |= SelectExtractor(self.dialect).extract(
-                sq.query,
-                AnalyzerContext(cte=holder.cte, write={sq}),
-            )
+        self.extract_subquery(subqueries, holder)
 
         return holder

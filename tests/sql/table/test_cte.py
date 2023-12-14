@@ -48,7 +48,7 @@ def test_with_select_join_table_with_same_name():
     )
 
 
-def test_with_insert():
+def test_cte_insert():
     assert_table_lineage_equal(
         "WITH tab1 AS (SELECT * FROM tab2) INSERT INTO tab3 SELECT * FROM tab1",
         {"tab2"},
@@ -56,7 +56,7 @@ def test_with_insert():
     )
 
 
-def test_with_insert_in_query():
+def test_cte_insert_cte_in_query():
     assert_table_lineage_equal(
         "INSERT INTO tab3 WITH tab1 AS (SELECT * FROM tab2) SELECT * FROM tab1",
         {"tab2"},
@@ -64,7 +64,29 @@ def test_with_insert_in_query():
     )
 
 
-def test_union_at_last_cte():
+def test_cte_update_from():
+    assert_table_lineage_equal(
+        """WITH cte1 AS (SELECT col1, col2 FROM tab1)
+UPDATE tab2
+SET tab2.col2 = cte1.col2 FROM cte1
+WHERE tab2.col1 = cte1.col1;""",
+        {"tab1"},
+        {"tab2"},
+    )
+
+
+def test_cte_and_union():
+    sql = """WITH cte_1 AS (select col1 from tab1)
+SELECT col2 from tab2
+UNION
+SELECT col3 from cte_1"""
+    assert_table_lineage_equal(
+        sql,
+        {"tab1", "tab2"},
+    )
+
+
+def test_cte_and_union_but_not_selecting_from_cte():
     # issue #398
     sql = """WITH cte_1 AS (select col1 from tab1)
 SELECT col2 from tab2
@@ -72,5 +94,29 @@ UNION
 SELECT col3 from tab3"""
     assert_table_lineage_equal(
         sql,
-        {"tab1", "tab2", "tab3", "tab3"},
+        {"tab1", "tab2", "tab3"},
     )
+
+
+def test_cte_within_subquery():
+    sql = """SELECT sq.col1
+FROM (WITH cte1 AS (SELECT col1 FROM tab1)
+      SELECT col1
+      FROM cte1
+               INNER JOIN tab2 ON cte1.col1 = tab2.col1) AS sq"""
+    assert_table_lineage_equal(
+        sql,
+        {"tab1", "tab2"},
+    )
+
+
+def test_cte_within_cte():
+    sql = """WITH cte1 AS
+         (WITH cte2 AS
+                   (SELECT id
+                    FROM tab1)
+          SELECT id
+          FROM cte2)
+SELECT id
+FROM cte1"""
+    assert_table_lineage_equal(sql, {"tab1"})
