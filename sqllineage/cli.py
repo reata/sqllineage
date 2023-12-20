@@ -86,6 +86,11 @@ def main(args=None) -> None:
         help="list all the available dialects",
         action="store_true",
     )
+    parser.add_argument(
+        "--silent_mode",
+        help="skip unsupported statements",
+        action="store_true",
+    )
     args = parser.parse_args(args)
     if args.e and args.f:
         warnings.warn("Both -e and -f options are specified. -e option will be ignored")
@@ -100,6 +105,7 @@ def main(args=None) -> None:
                 "port": args.port,
                 "f": args.f if args.f else None,
             },
+            silent_mode=args.silent_mode
         )
         if args.graph_visualization:
             runner.draw(args.dialect)
