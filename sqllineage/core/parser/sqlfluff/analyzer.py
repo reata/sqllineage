@@ -35,7 +35,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             sqls.append(segment.raw)
         return sqls
 
-    def analyze(self, sql: str) -> StatementLineageHolder:
+    def analyze(self, sql: str, silent_mode: bool = False) -> StatementLineageHolder:
         if sql in self.tsql_split_cache:
             statement_segments = [self.tsql_split_cache[sql]]
         else:
@@ -56,10 +56,17 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                     )
                     return StatementLineageHolder.of(lineage_holder)
             else:
-                raise UnsupportedStatementException(
-                    f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:"
-                    f"{sql}"
-                )
+                if silent_mode:
+                    warnings.warn(
+                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:"
+                        f"{sql}"
+                    )
+                    return StatementLineageHolder()
+                else:
+                    raise UnsupportedStatementException(
+                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:"
+                        f"{sql}"
+                    )
 
     def _list_specific_statement_segment(self, sql: str):
         parsed = Linter(dialect=self._dialect).parse_string(sql)

@@ -38,7 +38,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlparse"
     SUPPORTED_DIALECTS = ["non-validating"]
 
-    def analyze(self, sql: str) -> StatementLineageHolder:
+    def analyze(self, sql: str, silent_mode: bool = False) -> StatementLineageHolder:
         # get rid of comments, which cause inconsistencies in sqlparse output
         stmt = sqlparse.parse(trim_comment(sql))[0]
         if (
