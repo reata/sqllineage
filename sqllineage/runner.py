@@ -192,7 +192,9 @@ Target Tables:
                 )
             self._stmt = split(self._sql.strip())
 
-        self._stmt_holders = [analyzer.analyze(stmt, self._silent_mode) for stmt in self._stmt]
+        self._stmt_holders = [
+            analyzer.analyze(stmt, self._silent_mode) for stmt in self._stmt
+        ]
         self._sql_holder = SQLLineageHolder.of(
             self._metadata_provider, *self._stmt_holders
         )
