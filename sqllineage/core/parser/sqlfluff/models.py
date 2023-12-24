@@ -209,13 +209,9 @@ class SqlFluffColumn(Column):
     def _get_column_from_parenthesis(
         sub_segment: BaseSegment,
     ) -> List[ColumnQualifierTuple]:
-        """
-        :param sub_segment: segment to be processed
-        :return: list of columns and alias from the segment
-        """
-        col, _ = SqlFluffColumn._get_column_and_alias(sub_segment)
-        if col:
-            return col
+        # windows function has an extra layer, get rid of it so that it can be handled as regular functions
+        if window_specification := sub_segment.get_child("window_specification"):
+            sub_segment = window_specification
         col, _ = SqlFluffColumn._get_column_and_alias(sub_segment, False)
         return col if col else []
 
@@ -223,6 +219,10 @@ class SqlFluffColumn(Column):
     def _get_column_and_alias(
         segment: BaseSegment, check_bracketed: bool = True
     ) -> Tuple[List[ColumnQualifierTuple], Optional[str]]:
+        """
+        check_bracketed is True for top-level column definition, like (col1 + col2) as col3
+        set to False for bracket in function call, like coalesce(col1, col2) as col3
+        """
         alias = None
         columns = []
         sub_segments = list_child_segments(segment, check_bracketed)

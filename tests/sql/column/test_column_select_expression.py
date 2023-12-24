@@ -37,6 +37,21 @@ FROM tab2"""
     )
 
 
+def test_select_column_multiply_expression():
+    sql = """INSERT INTO tab1
+SELECT col1 * 1 AS col1
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+        ],
+    )
+
+
 def test_select_column_using_expression_in_parenthesis():
     sql = """INSERT INTO tab1
 SELECT (col1 + col2)
