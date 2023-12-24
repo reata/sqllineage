@@ -48,7 +48,7 @@ def is_subquery(segment: BaseSegment) -> bool:
 
 def is_wildcard(segment: BaseSegment) -> bool:
     return segment.type == "wildcard_expression" or (
-        segment.type == "symbol" and segment.raw == "*"
+        segment.type == "symbol" and segment.raw == "*" and segment.get_type() == "star"
     )
 
 
