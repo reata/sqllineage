@@ -41,6 +41,7 @@ class LineageRunner(object):
         metadata_provider: MetaDataProvider = DummyMetaDataProvider(),
         encoding: Optional[str] = None,
         verbose: bool = False,
+        silent_mode: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
     ):
         """
@@ -68,6 +69,7 @@ class LineageRunner(object):
         self._stmt: List[str] = []
         self._dialect = dialect
         self._metadata_provider = metadata_provider
+        self._silent_mode = silent_mode
 
     @lazy_method
     def __str__(self):
@@ -190,7 +192,9 @@ Target Tables:
                 )
             self._stmt = split(self._sql.strip())
 
-        self._stmt_holders = [analyzer.analyze(stmt) for stmt in self._stmt]
+        self._stmt_holders = [
+            analyzer.analyze(stmt, self._silent_mode) for stmt in self._stmt
+        ]
         self._sql_holder = SQLLineageHolder.of(
             self._metadata_provider, *self._stmt_holders
         )

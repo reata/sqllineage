@@ -17,3 +17,8 @@ def test_statements_trim_comment():
     comment = "------------------\n"
     sql = "select * from dual;"
     assert LineageRunner(comment + sql).statements()[0] == sql
+
+
+def test_silent_mode():
+    sql = "begin; select * from dual;"
+    LineageRunner(sql, dialect="greenplum", silent_mode=True)._eval()

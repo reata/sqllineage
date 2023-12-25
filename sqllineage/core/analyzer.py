@@ -13,8 +13,10 @@ class LineageAnalyzer:
     SUPPORTED_DIALECTS: List[str] = []
 
     @abstractmethod
-    def analyze(self, sql: str) -> StatementLineageHolder:
+    def analyze(self, sql: str, silent_mode: bool) -> StatementLineageHolder:
         """
         to analyze single statement sql and store the result into
-        :class:`sqllineage.core.holders.StatementLineageHolder`.
+        :class:`sqllineage.core.holders.StatementLineageHolder`
+
+        :param silent_mode: skip unsupported statements.
         """
