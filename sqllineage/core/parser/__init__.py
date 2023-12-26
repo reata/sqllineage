@@ -25,8 +25,7 @@ class SourceHandlerMixin:
                 if len(holder.write) > 1:
                     raise SQLLineageException
                 tgt_tbl = list(holder.write)[0]
-                for idx in range(len(col_grp)):
-                    tgt_col = col_grp[idx]
+                for idx, tgt_col in enumerate(col_grp):
                     tgt_col.parent = tgt_tbl
                     for src_col in tgt_col.to_source_columns(
                         self.get_alias_mapping_from_table_group(tbl_grp, holder)
