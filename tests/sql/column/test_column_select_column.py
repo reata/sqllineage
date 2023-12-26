@@ -173,3 +173,19 @@ FROM tab2 a"""
             ),
         ],
     )
+
+
+def test_select_column_name_case_insensitive():
+    sql = """INSERT INTO tab1
+SELECT col1,
+COL1
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            )
+        ],
+    )

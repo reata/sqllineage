@@ -147,7 +147,15 @@ class Column:
         """
         self._parent: Set[Union[Path, Table, SubQuery]] = set()
         self.raw_name = escape_identifier_name(name)
-        self.source_columns = kwargs.pop("source_columns", ((self.raw_name, None),))
+        self.source_columns = (
+            (
+                escape_identifier_name(raw_name),
+                escape_identifier_name(qualifier) if qualifier is not None else None,
+            )
+            for raw_name, qualifier in kwargs.pop(
+                "source_columns", ((self.raw_name, None),)
+            )
+        )
 
     def __str__(self):
         return (
