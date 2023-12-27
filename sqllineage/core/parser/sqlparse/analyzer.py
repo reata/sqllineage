@@ -260,7 +260,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 wildcards.append(column)
         # save write table of current subquery
         if len(wildcards) > 0:
-            target_table = list(holder.write)[0]
+            tgt_table = list(holder.write)[0]
 
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
@@ -273,58 +273,52 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
 
         # replace wildcard with real columns
         for wildcard in wildcards:
-            for src_wildcard in holder.get_node_src_lineage(wildcard):
-                if isinstance(src_wildcard, Column):
-                    source_table = src_wildcard.parent
-                    if source_table is not None:
-                        if isinstance(source_table, SubQuery):
-                            src_table_columns = holder.get_table_columns(source_table)
-                            if len(src_table_columns) > 0:
+            for src_wildcard in holder.get_source_columns(wildcard):
+                if source_table := src_wildcard.parent:
+                    if isinstance(source_table, SubQuery):
+                        # the columns of SubQuery can be inferred from graph
+                        if src_table_columns := holder.get_table_columns(source_table):
+                            holder.replace_wildcard(
+                                tgt_table,
+                                src_table_columns,
+                                wildcard,
+                                src_wildcard,
+                            )
+                    elif isinstance(source_table, Table):
+                        # if wildcard's source table is <default>
+                        # means it is probably a temporary view, search in previous statement holder firstly
+                        is_replaced = False
+                        if source_table.schema.raw_name == Schema.unknown:
+                            for pre_stmt_holder in reversed(pre_stmt_holders):
+                                if pre_stmt_holder.graph.has_node(source_table):
+                                    src_table_columns = (
+                                        pre_stmt_holder.get_table_columns(source_table)
+                                    )
+                                    if len(src_table_columns) > 0:
+                                        holder.replace_wildcard(
+                                            tgt_table,
+                                            src_table_columns,
+                                            wildcard,
+                                            src_wildcard,
+                                        )
+                                        is_replaced = True
+                                        break
+                        # if not founded or source table is not <default>, try to search by metadata service
+                        if not is_replaced and metadata_provider is not None:
+                            db = source_table.schema.raw_name
+                            table = source_table.raw_name
+                            source_columns = []
+                            for col in metadata_provider.get_table_columns(db, table):
+                                column = Column(col)
+                                column.parent = source_table
+                                source_columns.append(column)
+                            if len(source_columns) > 0:
                                 holder.replace_wildcard(
-                                    target_table,
-                                    src_table_columns,
+                                    tgt_table,
+                                    source_columns,
                                     wildcard,
                                     src_wildcard,
                                 )
-                        elif isinstance(source_table, Table):
-                            # if wildcard's source table is <default>
-                            # means it is probably a temporary view, search in previous statement holder firstly
-                            is_replaced = False
-                            if source_table.schema.raw_name == Schema.unknown:
-                                for pre_stmt_holder in reversed(pre_stmt_holders):
-                                    if pre_stmt_holder.graph.has_node(source_table):
-                                        src_table_columns = (
-                                            pre_stmt_holder.get_table_columns(
-                                                source_table
-                                            )
-                                        )
-                                        if len(src_table_columns) > 0:
-                                            holder.replace_wildcard(
-                                                target_table,
-                                                src_table_columns,
-                                                wildcard,
-                                                src_wildcard,
-                                            )
-                                            is_replaced = True
-                                            break
-                            # if not founded or source table is not <default>, try to search by metadata service
-                            if not is_replaced and metadata_provider is not None:
-                                db = source_table.schema.raw_name
-                                table = source_table.raw_name
-                                source_columns = []
-                                for col in metadata_provider.get_table_columns(
-                                    db, table
-                                ):
-                                    column = Column(col)
-                                    column.parent = source_table
-                                    source_columns.append(column)
-                                if len(source_columns) > 0:
-                                    holder.replace_wildcard(
-                                        target_table,
-                                        source_columns,
-                                        wildcard,
-                                        src_wildcard,
-                                    )
         return holder
 
     @classmethod

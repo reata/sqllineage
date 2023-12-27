@@ -5,9 +5,9 @@ from sqllineage.utils.entities import ColumnQualifierTuple
 
 
 test_schemas = {
-    "db.tbl_x": set(["id", "a", "b"]),
-    "db.tbl_y": set(["id", "h", "i"]),
-    "db.tbl_z": set(["pk", "s", "t"]),
+    "db.tbl_x": ["id", "a", "b"],
+    "db.tbl_y": ["id", "h", "i"],
+    "db.tbl_z": ["pk", "s", "t"],
 }
 
 

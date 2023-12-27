@@ -88,8 +88,9 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     @property
     def write_columns(self) -> List[Column]:
         """
-        in case of DML with column specified, like INSERT INTO tab1 (col1, col2) SELECT ...
-        write_columns tell us that tab1 has column col1 and col2 in that order.
+        return a list of columns that write table contains
+        it's either automatic added from via `add_column_lineage` parsing from SELECT
+        or manually added via `add_write_column` if specified in DML
         """
         tgt_cols = []
         if self.write:
@@ -106,6 +107,10 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         return tgt_cols
 
     def add_write_column(self, *tgt_cols: Column) -> None:
+        """
+        in case of DML with column specified, like INSERT INTO tab1 (col1, col2) SELECT col3, col4
+        this method is called to make sure tab1 has column col1 and col2 instead of col3 and col4
+        """
         if self.write:
             tgt_tbl = list(self.write)[0]
             for idx, tgt_col in enumerate(tgt_cols):
@@ -124,25 +129,21 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
             self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
 
-    def get_node_src_lineage(
-        self, node: Union[Column, Table, SubQuery]
-    ) -> List[Union[Column, Table, SubQuery]]:
-        src_list = []
-        for src, tgt, edge_type in self.graph.in_edges(nbunch=node, data="type"):
-            if edge_type == EdgeType.LINEAGE:
-                src_list.append(src)
-        return src_list
+    def get_source_columns(self, node: Column) -> List[Column]:
+        return [
+            src
+            for (src, tgt, edge_type) in self.graph.in_edges(nbunch=node, data="type")
+            if edge_type == EdgeType.LINEAGE and isinstance(src, Column)
+        ]
 
     def get_table_columns(self, table: Union[Table, SubQuery]) -> List[Column]:
-        columns = []
-        for tbl, col, e_type in self.graph.edges(nbunch=table, data="type"):
-            if (
-                e_type == EdgeType.HAS_COLUMN
-                and isinstance(col, Column)
-                and col.raw_name != "*"
-            ):
-                columns.append(col)
-        return columns
+        return [
+            tgt
+            for (src, tgt, edge_type) in self.graph.out_edges(nbunch=table, data="type")
+            if edge_type == EdgeType.HAS_COLUMN
+            and isinstance(tgt, Column)
+            and tgt.raw_name != "*"
+        ]
 
     def replace_wildcard(
         self,
