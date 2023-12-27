@@ -1,4 +1,4 @@
-from tests.helpers import assert_wildcard_lineage
+from tests.helpers import assert_column_lineage_equal
 
 from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
@@ -18,9 +18,8 @@ def test_select_single_table():
     select *
     from db.tbl_x
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("id", "db.tbl_x"),
@@ -35,6 +34,8 @@ def test_select_single_table():
                 ColumnQualifierTuple("b", "<default>.test_v"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
 
     sql = """create temporary view test_v
@@ -46,9 +47,8 @@ def test_select_single_table():
         ) t1
     ) t2
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("id", "db.tbl_x"),
@@ -59,6 +59,8 @@ def test_select_single_table():
                 ColumnQualifierTuple("b", "<default>.test_v"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
 
     sql = """create temporary view test_v
@@ -69,9 +71,8 @@ def test_select_single_table():
     ) t1
     where rn = 1
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("a", "db.tbl_x"),
@@ -82,6 +83,8 @@ def test_select_single_table():
                 ColumnQualifierTuple("b", "<default>.test_v"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
 
     sql = """create temporary view test_v
@@ -92,9 +95,8 @@ def test_select_single_table():
     ) t1
     where rn = 1
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("a", "db.tbl_x"),
@@ -105,6 +107,8 @@ def test_select_single_table():
                 ColumnQualifierTuple("b", "<default>.test_v"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
 
 
@@ -118,9 +122,8 @@ def test_select_table_join_table():
         join db.tbl_y y on x.id = y.id
     ) t
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("a", "db.tbl_x"),
@@ -135,6 +138,8 @@ def test_select_table_join_table():
                 ColumnQualifierTuple("h", "<default>.test_v"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
 
     sql = """create temporary view test_v
@@ -144,9 +149,8 @@ def test_select_table_join_table():
         join db.tbl_y y on x.id = y.id
     ) t
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("a", "db.tbl_x"),
@@ -161,6 +165,8 @@ def test_select_table_join_table():
                 ColumnQualifierTuple("h", "<default>.test_v"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
 
     sql = """create temporary view test_v
@@ -170,9 +176,8 @@ def test_select_table_join_table():
         join db.tbl_y y on x.id = y.id
     ) t
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("a", "db.tbl_x"),
@@ -183,6 +188,8 @@ def test_select_table_join_table():
                 ColumnQualifierTuple("h", "<default>.test_v"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
 
     sql = """create temporary view test_v
@@ -192,9 +199,8 @@ def test_select_table_join_table():
         join db.tbl_z z on x.id = z.pk
     ) t
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("a", "db.tbl_x"),
@@ -221,6 +227,8 @@ def test_select_table_join_table():
                 ColumnQualifierTuple("t", "<default>.test_v"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
 
     sql = """create temporary view test_v
@@ -234,9 +242,8 @@ def test_select_table_join_table():
     ) y
     on x.id = y.id
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("a", "db.tbl_x"),
@@ -259,6 +266,8 @@ def test_select_table_join_table():
                 ColumnQualifierTuple("i", "<default>.test_v"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
 
 
@@ -285,9 +294,8 @@ def test_multiple_statements():
     join (select * from db.tbl_y where i > 0) t2 on t1.id = t2.id
     left join test_z t3 on t2.id = t3.pk
     """
-    assert_wildcard_lineage(
+    assert_column_lineage_equal(
         sql,
-        provider,
         [
             (
                 ColumnQualifierTuple("a", "db.tbl_x"),
@@ -314,4 +322,6 @@ def test_multiple_statements():
                 ColumnQualifierTuple("t", "db.tbl"),
             ),
         ],
+        metadata_provider=provider,
+        test_sqlfluff=False,
     )
