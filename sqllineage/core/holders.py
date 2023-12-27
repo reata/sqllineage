@@ -132,13 +132,6 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
             self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
 
-    def get_source_columns(self, node: Column) -> List[Column]:
-        return [
-            src
-            for (src, tgt, edge_type) in self.graph.in_edges(nbunch=node, data="type")
-            if edge_type == EdgeType.LINEAGE and isinstance(src, Column)
-        ]
-
     def get_table_columns(self, table: Union[Table, SubQuery]) -> List[Column]:
         return [
             tgt
@@ -154,14 +147,14 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             for column in self.write_columns:
                 if column.raw_name == "*":
                     wildcard = column
-                    for src_wildcard in self.get_source_columns(wildcard):
+                    for src_wildcard in self._get_source_columns(wildcard):
                         if source_table := src_wildcard.parent:
                             if isinstance(source_table, SubQuery):
                                 # the columns of SubQuery can be inferred from graph
                                 if src_table_columns := self.get_table_columns(
                                     source_table
                                 ):
-                                    self.replace_wildcard(
+                                    self._replace_wildcard(
                                         tgt_table,
                                         src_table_columns,
                                         wildcard,
@@ -180,14 +173,21 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                                         column.parent = source_table
                                         source_columns.append(column)
                                     if len(source_columns) > 0:
-                                        self.replace_wildcard(
+                                        self._replace_wildcard(
                                             tgt_table,
                                             source_columns,
                                             wildcard,
                                             src_wildcard,
                                         )
 
-    def replace_wildcard(
+    def _get_source_columns(self, node: Column) -> List[Column]:
+        return [
+            src
+            for (src, tgt, edge_type) in self.graph.in_edges(nbunch=node, data="type")
+            if edge_type == EdgeType.LINEAGE and isinstance(src, Column)
+        ]
+
+    def _replace_wildcard(
         self,
         target_table: Union[Table, SubQuery],
         source_columns: List[Column],
