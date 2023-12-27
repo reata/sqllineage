@@ -15,14 +15,13 @@ class LineageAnalyzer:
 
     @abstractmethod
     def analyze(
-        self,
-        sql: str,
-        metadata_provider: MetaDataProvider,
-        silent_mode: bool,
+        self, sql: str, metadata_provider: MetaDataProvider
     ) -> StatementLineageHolder:
         """
         to analyze single statement sql and store the result into
         :class:`sqllineage.core.holders.StatementLineageHolder`
 
-        :param silent_mode: skip unsupported statements.
+        :param sql: single-statement SQL string to be processed
+        :param metadata_provider: :class:`sqllineage.core.metadata_provider.MetaDataProvider` provides metadata on
+        tables to help lineage analyzing
         """

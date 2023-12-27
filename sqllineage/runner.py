@@ -181,7 +181,7 @@ Target Tables:
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT
-            else SqlFluffLineageAnalyzer(self._dialect)
+            else SqlFluffLineageAnalyzer(self._dialect, self._silent_mode)
         )
         if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
             self._stmt = analyzer.split_tsql(self._sql.strip())
@@ -194,9 +194,7 @@ Target Tables:
 
         stmt_holders = []
         for stmt in self._stmt:
-            stmt_holder = analyzer.analyze(
-                stmt, self._metadata_provider, self._silent_mode
-            )
+            stmt_holder = analyzer.analyze(stmt, self._metadata_provider)
             if write := stmt_holder.write:
                 tgt_table = list(write)[0]
                 if isinstance(tgt_table, Table):

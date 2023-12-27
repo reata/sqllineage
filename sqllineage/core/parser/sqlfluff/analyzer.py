@@ -21,8 +21,9 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlfluff"
     SUPPORTED_DIALECTS = list(dialect.label for dialect in dialect_readout())
 
-    def __init__(self, dialect: str):
+    def __init__(self, dialect: str, silent_mode: bool = False):
         self._dialect = dialect
+        self._silent_mode = silent_mode
         self.tsql_split_cache: Dict[str, BaseSegment] = {}
 
     def split_tsql(self, sql: str) -> List[str]:
@@ -37,10 +38,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         return sqls
 
     def analyze(
-        self,
-        sql: str,
-        metadata_provider: MetaDataProvider,
-        silent_mode: bool = False,
+        self, sql: str, metadata_provider: MetaDataProvider
     ) -> StatementLineageHolder:
         if sql in self.tsql_split_cache:
             statement_segments = [self.tsql_split_cache[sql]]
@@ -62,7 +60,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                     )
                     return StatementLineageHolder.of(lineage_holder)
             else:
-                if silent_mode:
+                if self._silent_mode:
                     warnings.warn(
                         f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:"
                         f"{sql}"
