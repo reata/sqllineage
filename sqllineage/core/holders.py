@@ -73,6 +73,9 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     @property
     def write(self) -> Set[Union[SubQuery, Table]]:
+        # because subquery can be nested, SubQueryLineageHolder.write can return SubQuery or Table,
+        # or both when __or__ together.
+        # This is different from StatementLineageHolder.write, where Table is the only possibility.
         return self._property_getter(NodeTag.WRITE)
 
     def add_write(self, value) -> None:
@@ -93,8 +96,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         or manually added via `add_write_column` if specified in DML
         """
         tgt_cols = []
-        if self.write:
-            tgt_tbl = list(self.write)[0]
+        if write_only := self.write.difference(self.read):
+            tgt_tbl = list(write_only)[0]
             tgt_col_with_idx: List[Tuple[Column, int]] = sorted(
                 [
                     (col, attr.get(EdgeTag.INDEX, 0))
