@@ -1,9 +1,9 @@
 from abc import abstractmethod
-from typing import List
+from typing import Dict, List
 
 
 class MetaDataProvider:
-    """Abstract class used to provide metadata service like table schema.
+    """Base class used to provide metadata service like table schema.
 
     When parse below sql:
     Insert into db1.table1
@@ -17,14 +17,29 @@ class MetaDataProvider:
     It can help parse column lineage correctly.
     """
 
-    @abstractmethod
-    def get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
-        """Get all columns of a table.
+    def __init__(self) -> None:
+        self._session_metadata: Dict[str, List[str]] = {}
 
-        :param schema: database name
-        :param table: table name
-        :return: a list of column names
-        """
+    def get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
+        key = f"{schema}.{table}"
+        if key in self._session_metadata:
+            return self._session_metadata[key]
+        else:
+            return self._get_table_columns(schema, table, **kwargs)
+
+    @abstractmethod
+    def _get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
+        """To be implemented by subclasses."""
+
+    def register_session_metadata(
+        self, schema: str, table: str, columns: List[str]
+    ) -> None:
+        """Register session-level metadata, like temporary table or view created."""
+        self._session_metadata[f"{schema}.{table}"] = columns
+
+    def deregister_session_metadata(self) -> None:
+        """Deregister session-level metadata."""
+        self._session_metadata.clear()
 
     def __bool__(self):
         """

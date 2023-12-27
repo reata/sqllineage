@@ -17,7 +17,6 @@ class LineageAnalyzer:
     def analyze(
         self,
         sql: str,
-        pre_stmt_holders: List[StatementLineageHolder],
         metadata_provider: MetaDataProvider,
         silent_mode: bool,
     ) -> StatementLineageHolder:

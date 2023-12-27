@@ -18,7 +18,7 @@ from sqlparse.sql import (
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.core.models import Column, Schema, SubQuery, Table
+from sqllineage.core.models import Column, SubQuery, Table
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
@@ -42,7 +42,6 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
     def analyze(
         self,
         sql: str,
-        pre_stmt_holders: List[StatementLineageHolder],
         metadata_provider: MetaDataProvider,
         silent_mode: bool = False,
     ) -> StatementLineageHolder:
@@ -65,15 +64,11 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         ):
             holder = self._extract_from_ddl_alter(stmt)
         elif stmt.get_type() == "MERGE":
-            holder = self._extract_from_dml_merge(
-                stmt, pre_stmt_holders, metadata_provider
-            )
+            holder = self._extract_from_dml_merge(stmt, metadata_provider)
         else:
             # DML parsing logic also applies to CREATE DDL
             holder = StatementLineageHolder.of(
-                self._extract_from_dml(
-                    stmt, AnalyzerContext(), pre_stmt_holders, metadata_provider
-                )
+                self._extract_from_dml(stmt, AnalyzerContext(), metadata_provider)
             )
         return holder
 
@@ -115,7 +110,6 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
     def _extract_from_dml_merge(
         cls,
         stmt: Statement,
-        pre_stmt_holders: List[StatementLineageHolder],
         metadata_provider: MetaDataProvider,
     ) -> StatementLineageHolder:
         holder = StatementLineageHolder()
@@ -150,7 +144,6 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                             holder |= cls._extract_from_dml(
                                 sq.query,
                                 AnalyzerContext(cte=holder.cte, write={sq}),
-                                pre_stmt_holders,
                                 metadata_provider,
                             )
                     else:
@@ -208,7 +201,6 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         cls,
         token: TokenList,
         context: AnalyzerContext,
-        pre_stmt_holders: List[StatementLineageHolder],
         metadata_provider: MetaDataProvider,
     ) -> SubQueryLineageHolder:
         holder = SubQueryLineageHolder()
@@ -267,7 +259,6 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             holder |= cls._extract_from_dml(
                 sq.query,
                 AnalyzerContext(cte=holder.cte, write={sq}),
-                pre_stmt_holders,
                 metadata_provider,
             )
 
@@ -285,26 +276,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                                 src_wildcard,
                             )
                     elif isinstance(source_table, Table):
-                        # if wildcard's source table is <default>
-                        # means it is probably a temporary view, search in previous statement holder firstly
-                        is_replaced = False
-                        if source_table.schema.raw_name == Schema.unknown:
-                            for pre_stmt_holder in reversed(pre_stmt_holders):
-                                if pre_stmt_holder.graph.has_node(source_table):
-                                    src_table_columns = (
-                                        pre_stmt_holder.get_table_columns(source_table)
-                                    )
-                                    if len(src_table_columns) > 0:
-                                        holder.replace_wildcard(
-                                            tgt_table,
-                                            src_table_columns,
-                                            wildcard,
-                                            src_wildcard,
-                                        )
-                                        is_replaced = True
-                                        break
-                        # if not founded or source table is not <default>, try to search by metadata service
-                        if not is_replaced and metadata_provider is not None:
+                        # search by metadata service
+                        if metadata_provider:
                             db = source_table.schema.raw_name
                             table = source_table.raw_name
                             source_columns = []

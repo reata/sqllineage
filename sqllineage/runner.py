@@ -195,13 +195,22 @@ Target Tables:
         stmt_holders = []
         for stmt in self._stmt:
             stmt_holder = analyzer.analyze(
-                stmt, stmt_holders, self._metadata_provider, self._silent_mode
+                stmt, self._metadata_provider, self._silent_mode
             )
+            if write := stmt_holder.write:
+                tgt_table = list(write)[0]
+                if isinstance(tgt_table, Table):
+                    self._metadata_provider.register_session_metadata(
+                        tgt_table.schema.raw_name,
+                        tgt_table.raw_name,
+                        [c.raw_name for c in stmt_holder.get_table_columns(tgt_table)],
+                    )
             stmt_holders.append(stmt_holder)
         self._stmt_holders = stmt_holders
         self._sql_holder = SQLLineageHolder.of(
             self._metadata_provider, *self._stmt_holders
         )
+        self._metadata_provider.deregister_session_metadata()
         self._evaluated = True
 
     @staticmethod
