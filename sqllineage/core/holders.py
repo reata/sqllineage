@@ -148,6 +148,45 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             and tgt.raw_name != "*"
         ]
 
+    def expand_wildcard(self, metadata_provider) -> None:
+        if write_only := self.write.difference(self.read):
+            tgt_table = list(write_only)[0]
+            for column in self.write_columns:
+                if column.raw_name == "*":
+                    wildcard = column
+                    for src_wildcard in self.get_source_columns(wildcard):
+                        if source_table := src_wildcard.parent:
+                            if isinstance(source_table, SubQuery):
+                                # the columns of SubQuery can be inferred from graph
+                                if src_table_columns := self.get_table_columns(
+                                    source_table
+                                ):
+                                    self.replace_wildcard(
+                                        tgt_table,
+                                        src_table_columns,
+                                        wildcard,
+                                        src_wildcard,
+                                    )
+                            elif isinstance(source_table, Table):
+                                # search by metadata service
+                                if metadata_provider:
+                                    db = source_table.schema.raw_name
+                                    table = source_table.raw_name
+                                    source_columns = []
+                                    for col in metadata_provider.get_table_columns(
+                                        db, table
+                                    ):
+                                        column = Column(col)
+                                        column.parent = source_table
+                                        source_columns.append(column)
+                                    if len(source_columns) > 0:
+                                        self.replace_wildcard(
+                                            tgt_table,
+                                            source_columns,
+                                            wildcard,
+                                            src_wildcard,
+                                        )
+
     def replace_wildcard(
         self,
         target_table: Union[Table, SubQuery],

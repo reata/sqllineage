@@ -251,43 +251,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             )
 
         # replace wildcard with real columns, put here so that wildcard in subqueries are already replaced
-        if write_only := holder.write.difference(holder.read):
-            tgt_table = list(write_only)[0]
-            for column in holder.write_columns:
-                if column.raw_name == "*":
-                    wildcard = column
-                    for src_wildcard in holder.get_source_columns(wildcard):
-                        if source_table := src_wildcard.parent:
-                            if isinstance(source_table, SubQuery):
-                                # the columns of SubQuery can be inferred from graph
-                                if src_table_columns := holder.get_table_columns(
-                                    source_table
-                                ):
-                                    holder.replace_wildcard(
-                                        tgt_table,
-                                        src_table_columns,
-                                        wildcard,
-                                        src_wildcard,
-                                    )
-                            elif isinstance(source_table, Table):
-                                # search by metadata service
-                                if metadata_provider:
-                                    db = source_table.schema.raw_name
-                                    table = source_table.raw_name
-                                    source_columns = []
-                                    for col in metadata_provider.get_table_columns(
-                                        db, table
-                                    ):
-                                        column = Column(col)
-                                        column.parent = source_table
-                                        source_columns.append(column)
-                                    if len(source_columns) > 0:
-                                        holder.replace_wildcard(
-                                            tgt_table,
-                                            source_columns,
-                                            wildcard,
-                                            src_wildcard,
-                                        )
+        holder.expand_wildcard(metadata_provider)
         return holder
 
     @classmethod

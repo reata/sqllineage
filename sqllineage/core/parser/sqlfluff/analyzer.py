@@ -51,7 +51,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         else:
             statement_segment = statement_segments[0]
             for extractor in [
-                extractor_cls(self._dialect)
+                extractor_cls(self._dialect, metadata_provider)
                 for extractor_cls in BaseExtractor.__subclasses__()
             ]:
                 if extractor.can_extract(statement_segment.type):

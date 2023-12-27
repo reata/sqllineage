@@ -5,6 +5,7 @@ from typing import List, Optional, Type
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import SubQuery, Table
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
@@ -21,8 +22,9 @@ class BaseExtractor:
 
     SUPPORTED_STMT_TYPES: List[str] = []
 
-    def __init__(self, dialect: str):
+    def __init__(self, dialect: str, metadata_provider: MetaDataProvider):
         self.dialect = dialect
+        self.metadata_provider = metadata_provider
 
     def can_extract(self, statement_type: str) -> bool:
         """
@@ -99,7 +101,9 @@ class BaseExtractor:
         """
         delegate to another type of extractor to extract
         """
-        return extractor_cls(self.dialect).extract(segment, context)
+        return extractor_cls(self.dialect, self.metadata_provider).extract(
+            segment, context
+        )
 
     def extract_subquery(
         self, subqueries: List[SubQuery], holder: SubQueryLineageHolder
@@ -116,7 +120,7 @@ class BaseExtractor:
                 if sq.query.get_child("with_compound_statement")
                 else SelectExtractor
             )
-            holder |= extractor_cls(self.dialect).extract(
+            holder |= extractor_cls(self.dialect, self.metadata_provider).extract(
                 sq.query, AnalyzerContext(cte=holder.cte, write={sq})
             )
 

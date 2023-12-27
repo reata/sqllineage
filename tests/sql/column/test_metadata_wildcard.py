@@ -14,7 +14,7 @@ test_schemas = {
 def test_select_single_table():
     provider = DummyMetaDataProvider(test_schemas)
 
-    sql = """create temporary view test_v
+    sql = """insert into test_v
     select *
     from db.tbl_x
     """
@@ -35,10 +35,9 @@ def test_select_single_table():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
 
-    sql = """create temporary view test_v
+    sql = """insert into test_v
     select id, b
     from (
         select *
@@ -60,10 +59,9 @@ def test_select_single_table():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
 
-    sql = """create temporary view test_v
+    sql = """insert into test_v
     select a, b
     from (
         select *, row_number() over (partition by id) as rn
@@ -84,10 +82,9 @@ def test_select_single_table():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
 
-    sql = """create temporary view test_v
+    sql = """insert into test_v
     select a, b
     from (
         select *, row_number() over (partition by a) as rn
@@ -108,14 +105,13 @@ def test_select_single_table():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
 
 
 def test_select_table_join_table():
     provider = DummyMetaDataProvider(test_schemas)
 
-    sql = """create temporary view test_v
+    sql = """insert into test_v
     select a, id, h
     from (
         select x.a, y.* from db.tbl_x x
@@ -139,10 +135,9 @@ def test_select_table_join_table():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
 
-    sql = """create temporary view test_v
+    sql = """insert into test_v
     select a, id, h
     from (
         select x.*, y.h from db.tbl_x x
@@ -166,10 +161,9 @@ def test_select_table_join_table():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
 
-    sql = """create temporary view test_v
+    sql = """insert into test_v
     select a, h
     from (
         select x.*, y.* from db.tbl_x x
@@ -189,10 +183,9 @@ def test_select_table_join_table():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
 
-    sql = """create temporary view test_v
+    sql = """insert into test_v
     select *
     from (
         select x.*, z.* from db.tbl_x x
@@ -228,10 +221,9 @@ def test_select_table_join_table():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
 
-    sql = """create temporary view test_v
+    sql = """insert into test_v
     select x.*, y.h, y.i
     from (select * from db.tbl_x where a = 0) x
     join (select *
@@ -267,14 +259,13 @@ def test_select_table_join_table():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
 
 
 def test_multiple_statements():
     provider = DummyMetaDataProvider(test_schemas)
 
-    sql = """create temporary view test_x
+    sql = """create table test_x as
     select a, b
     from (
         select *, row_number() over (partition by id) as rn
@@ -283,12 +274,12 @@ def test_multiple_statements():
     where rn = 1
     ;
 
-    create temporary view test_z
+    create table test_z as
     select *
     from db.tbl_z
     ;
 
-    insert into table db.tbl
+    insert into db.tbl
     select t1.*, t2.h, t3.*
     from test_x t1
     join (select * from db.tbl_y where i > 0) t2 on t1.id = t2.id
@@ -323,5 +314,4 @@ def test_multiple_statements():
             ),
         ],
         metadata_provider=provider,
-        test_sqlfluff=False,
     )
