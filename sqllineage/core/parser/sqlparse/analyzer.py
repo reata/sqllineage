@@ -17,6 +17,7 @@ from sqlparse.sql import (
 
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, SubQuery, Table
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
@@ -38,7 +39,9 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlparse"
     SUPPORTED_DIALECTS = ["non-validating"]
 
-    def analyze(self, sql: str, silent_mode: bool = False) -> StatementLineageHolder:
+    def analyze(
+        self, sql: str, metadata_provider: MetaDataProvider
+    ) -> StatementLineageHolder:
         # get rid of comments, which cause inconsistencies in sqlparse output
         stmt = sqlparse.parse(trim_comment(sql))[0]
         if (
@@ -58,11 +61,11 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         ):
             holder = self._extract_from_ddl_alter(stmt)
         elif stmt.get_type() == "MERGE":
-            holder = self._extract_from_dml_merge(stmt)
+            holder = self._extract_from_dml_merge(stmt, metadata_provider)
         else:
             # DML parsing logic also applies to CREATE DDL
             holder = StatementLineageHolder.of(
-                self._extract_from_dml(stmt, AnalyzerContext())
+                self._extract_from_dml(stmt, AnalyzerContext(), metadata_provider)
             )
         return holder
 
@@ -101,7 +104,11 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         return holder
 
     @classmethod
-    def _extract_from_dml_merge(cls, stmt: Statement) -> StatementLineageHolder:
+    def _extract_from_dml_merge(
+        cls,
+        stmt: Statement,
+        metadata_provider: MetaDataProvider,
+    ) -> StatementLineageHolder:
         holder = StatementLineageHolder()
         src_flag = tgt_flag = update_flag = insert_flag = False
         insert_columns = []
@@ -134,6 +141,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                             holder |= cls._extract_from_dml(
                                 sq.query,
                                 AnalyzerContext(cte=holder.cte, write={sq}),
+                                metadata_provider,
                             )
                     else:
                         direct_source = SqlParseTable.of(token)
@@ -187,7 +195,10 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
 
     @classmethod
     def _extract_from_dml(
-        cls, token: TokenList, context: AnalyzerContext
+        cls,
+        token: TokenList,
+        context: AnalyzerContext,
+        metadata_provider: MetaDataProvider,
     ) -> SubQueryLineageHolder:
         holder = SubQueryLineageHolder()
         if context.cte is not None:
@@ -233,8 +244,12 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= cls._extract_from_dml(
-                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
+                sq.query,
+                AnalyzerContext(cte=holder.cte, write={sq}),
+                metadata_provider,
             )
+        # replace wildcard with real columns, put here so that wildcard in subqueries are already replaced
+        holder.expand_wildcard(metadata_provider)
         return holder
 
     @classmethod

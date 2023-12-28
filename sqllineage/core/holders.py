@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
@@ -73,6 +73,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     @property
     def write(self) -> Set[Union[SubQuery, Table]]:
+        # SubQueryLineageHolder.write can return a single SubQuery or Table, or both when __or__ together.
+        # This is different from StatementLineageHolder.write, where Table is the only possibility.
         return self._property_getter(NodeTag.WRITE)
 
     def add_write(self, value) -> None:
@@ -88,12 +90,12 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     @property
     def write_columns(self) -> List[Column]:
         """
-        in case of DML with column specified, like INSERT INTO tab1 (col1, col2) SELECT ...
-        write_columns tell us that tab1 has column col1 and col2 in that order.
+        return a list of columns that write table contains
+        it's either manually added via `add_write_column` if specified in DML
+        or automatic added via `add_column_lineage` after parsing from SELECT
         """
         tgt_cols = []
-        if self.write:
-            tgt_tbl = list(self.write)[0]
+        if tgt_tbl := self._get_target_table():
             tgt_col_with_idx: List[Tuple[Column, int]] = sorted(
                 [
                     (col, attr.get(EdgeTag.INDEX, 0))
@@ -106,6 +108,10 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         return tgt_cols
 
     def add_write_column(self, *tgt_cols: Column) -> None:
+        """
+        in case of DML with column specified, like INSERT INTO tab1 (col1, col2) SELECT col3, col4
+        this method is called to make sure tab1 has column col1 and col2 instead of col3 and col4
+        """
         if self.write:
             tgt_tbl = list(self.write)[0]
             for idx, tgt_col in enumerate(tgt_cols):
@@ -123,6 +129,74 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         if src.parent is not None:
             # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
             self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
+
+    def get_table_columns(self, table: Union[Table, SubQuery]) -> List[Column]:
+        return [
+            tgt
+            for (src, tgt, edge_type) in self.graph.out_edges(nbunch=table, data="type")
+            if edge_type == EdgeType.HAS_COLUMN
+            and isinstance(tgt, Column)
+            and tgt.raw_name != "*"
+        ]
+
+    def expand_wildcard(self, metadata_provider: MetaDataProvider) -> None:
+        if tgt_table := self._get_target_table():
+            for column in self.write_columns:
+                if column.raw_name == "*":
+                    tgt_wildcard = column
+                    for src_wildcard in self._get_source_columns(tgt_wildcard):
+                        if source_table := src_wildcard.parent:
+                            src_table_columns = []
+                            if isinstance(source_table, SubQuery):
+                                # the columns of SubQuery can be inferred from graph
+                                src_table_columns = self.get_table_columns(source_table)
+                            elif isinstance(source_table, Table) and metadata_provider:
+                                # search by metadata service
+                                src_table_columns = metadata_provider.get_table_columns(
+                                    source_table
+                                )
+                            if src_table_columns:
+                                self._replace_wildcard(
+                                    tgt_table,
+                                    src_table_columns,
+                                    tgt_wildcard,
+                                    src_wildcard,
+                                )
+
+    def _get_target_table(self) -> Optional[Union[SubQuery, Table]]:
+        table = None
+        if write_only := self.write.difference(self.read):
+            table = next(iter(write_only))
+        return table
+
+    def _get_source_columns(self, node: Column) -> List[Column]:
+        return [
+            src
+            for (src, tgt, edge_type) in self.graph.in_edges(nbunch=node, data="type")
+            if edge_type == EdgeType.LINEAGE and isinstance(src, Column)
+        ]
+
+    def _replace_wildcard(
+        self,
+        tgt_table: Union[Table, SubQuery],
+        src_table_columns: List[Column],
+        tgt_wildcard: Column,
+        src_wildcard: Column,
+    ) -> None:
+        target_columns = self.get_table_columns(tgt_table)
+        for src_col in src_table_columns:
+            new_column = Column(src_col.raw_name)
+            new_column.parent = tgt_table
+            if new_column in target_columns or src_col.raw_name == "*":
+                continue
+            self.graph.add_edge(tgt_table, new_column, type=EdgeType.HAS_COLUMN)
+            self.graph.add_edge(src_col.parent, src_col, type=EdgeType.HAS_COLUMN)
+            self.graph.add_edge(src_col, new_column, type=EdgeType.LINEAGE)
+        # remove wildcard
+        if self.graph.has_node(tgt_wildcard):
+            self.graph.remove_node(tgt_wildcard)
+        if self.graph.has_node(src_wildcard):
+            self.graph.remove_node(src_wildcard)
 
 
 class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
@@ -318,13 +392,10 @@ class SQLLineageHolder(ColumnLineageMixin):
                         isinstance(parent, Table)
                         and str(parent.schema) != Schema.unknown
                     ):
-                        columns = metadata_provider.get_table_columns(
-                            str(parent.schema), str(parent.raw_name)
-                        )
-                        if columns is not None and unresolved_col.raw_name in columns:
-                            src_col = Column(unresolved_col.raw_name)
-                            src_col.parent = parent
-                            src_cols.append(src_col)
+                        columns = metadata_provider.get_table_columns(parent)
+                        for src_col in columns:
+                            if unresolved_col.raw_name == src_col.raw_name:
+                                src_cols.append(src_col)
 
             if len(src_cols) > 1:
                 raise InvalidSyntaxException(

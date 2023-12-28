@@ -1,6 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Path
 from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
@@ -28,8 +29,8 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
 
     SUPPORTED_STMT_TYPES = ["select_statement", "set_expression", "bracketed"]
 
-    def __init__(self, dialect: str):
-        super().__init__(dialect)
+    def __init__(self, dialect: str, metadata_provider: MetaDataProvider):
+        super().__init__(dialect, metadata_provider)
         self.columns = []
         self.tables = []
         self.union_barriers = []
@@ -73,6 +74,8 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         self.end_of_query_cleanup(holder)
 
         self.extract_subquery(subqueries, holder)
+
+        holder.expand_wildcard(self.metadata_provider)
 
         return holder
 

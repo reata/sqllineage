@@ -9,9 +9,10 @@ class DummyMetaDataProvider(MetaDataProvider):
     """
 
     def __init__(self, metadata: Optional[Dict[str, List[str]]] = None):
+        super().__init__()
         self.metadata = metadata if metadata is not None else {}
 
-    def get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
+    def _get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
         return self.metadata.get(f"{schema}.{table}", [])
 
     def __bool__(self):

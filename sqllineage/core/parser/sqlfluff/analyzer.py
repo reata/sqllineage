@@ -6,6 +6,7 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.exceptions import (
     InvalidSyntaxException,
@@ -20,8 +21,9 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlfluff"
     SUPPORTED_DIALECTS = list(dialect.label for dialect in dialect_readout())
 
-    def __init__(self, dialect: str):
+    def __init__(self, dialect: str, silent_mode: bool = False):
         self._dialect = dialect
+        self._silent_mode = silent_mode
         self.tsql_split_cache: Dict[str, BaseSegment] = {}
 
     def split_tsql(self, sql: str) -> List[str]:
@@ -35,7 +37,9 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             sqls.append(segment.raw)
         return sqls
 
-    def analyze(self, sql: str, silent_mode: bool = False) -> StatementLineageHolder:
+    def analyze(
+        self, sql: str, metadata_provider: MetaDataProvider
+    ) -> StatementLineageHolder:
         if sql in self.tsql_split_cache:
             statement_segments = [self.tsql_split_cache[sql]]
         else:
@@ -47,7 +51,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         else:
             statement_segment = statement_segments[0]
             for extractor in [
-                extractor_cls(self._dialect)
+                extractor_cls(self._dialect, metadata_provider)
                 for extractor_cls in BaseExtractor.__subclasses__()
             ]:
                 if extractor.can_extract(statement_segment.type):
@@ -56,7 +60,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                     )
                     return StatementLineageHolder.of(lineage_holder)
             else:
-                if silent_mode:
+                if self._silent_mode:
                     warnings.warn(
                         f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:"
                         f"{sql}"

@@ -179,7 +179,7 @@ class Column:
 
     @property
     def parent(self) -> Optional[Union[Path, Table, SubQuery]]:
-        return list(self._parent)[0] if len(self._parent) == 1 else None
+        return next(iter(self._parent)) if len(self._parent) == 1 else None
 
     @parent.setter
     def parent(self, value: Union[Path, Table, SubQuery]):

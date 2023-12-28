@@ -112,9 +112,13 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
             column_tokens = [
                 sub_token
                 for sub_token in token.tokens
-                if isinstance(sub_token, column_token_types)
-                and not sub_token.value.startswith("@")
-                # ignore tsql variable column starts with @
+                if (
+                    isinstance(sub_token, column_token_types)
+                    and not sub_token.value.startswith(
+                        "@"
+                    )  # ignore tsql variable column starts with @
+                )
+                or sub_token.ttype is Wildcard  # For case like: select a.col, b.*
             ]
         else:
             # SELECT constant value will end up here

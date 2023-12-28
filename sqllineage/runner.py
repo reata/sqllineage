@@ -181,7 +181,7 @@ Target Tables:
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT
-            else SqlFluffLineageAnalyzer(self._dialect)
+            else SqlFluffLineageAnalyzer(self._dialect, self._silent_mode)
         )
         if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
             self._stmt = analyzer.split_tsql(self._sql.strip())
@@ -192,12 +192,21 @@ Target Tables:
                 )
             self._stmt = split(self._sql.strip())
 
-        self._stmt_holders = [
-            analyzer.analyze(stmt, self._silent_mode) for stmt in self._stmt
-        ]
-        self._sql_holder = SQLLineageHolder.of(
-            self._metadata_provider, *self._stmt_holders
-        )
+        with self._metadata_provider.session() as session:
+            stmt_holders = []
+            for stmt in self._stmt:
+                stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
+                if write := stmt_holder.write:
+                    tgt_table = next(iter(write))
+                    if isinstance(tgt_table, Table):
+                        session.register_session_metadata(
+                            tgt_table, stmt_holder.get_table_columns(tgt_table)
+                        )
+                stmt_holders.append(stmt_holder)
+            self._stmt_holders = stmt_holders
+            self._sql_holder = SQLLineageHolder.of(
+                session.metadata_provider, *self._stmt_holders
+            )
         self._evaluated = True
 
     @staticmethod
