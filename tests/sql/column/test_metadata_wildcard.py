@@ -9,11 +9,10 @@ test_schemas = {
     "db.tbl_y": ["id", "h", "i"],
     "db.tbl_z": ["pk", "s", "t"],
 }
+provider = DummyMetaDataProvider(test_schemas)
 
 
-def test_select_single_table():
-    provider = DummyMetaDataProvider(test_schemas)
-
+def test_select_single_table_wildcard():
     sql = """insert into test_v
     select *
     from db.tbl_x
@@ -37,6 +36,8 @@ def test_select_single_table():
         metadata_provider=provider,
     )
 
+
+def test_select_single_table_wildcard_in_subquery():
     sql = """insert into test_v
     select id, b
     from (
@@ -61,6 +62,8 @@ def test_select_single_table():
         metadata_provider=provider,
     )
 
+
+def test_select_single_table_partial_wildcard_in_subquery():
     sql = """insert into test_v
     select a, b
     from (
@@ -83,7 +86,6 @@ def test_select_single_table():
         ],
         metadata_provider=provider,
     )
-
     sql = """insert into test_v
     select a, b
     from (
@@ -108,9 +110,7 @@ def test_select_single_table():
     )
 
 
-def test_select_table_join_table():
-    provider = DummyMetaDataProvider(test_schemas)
-
+def test_select_table_join_partial_wildcard_at_last():
     sql = """insert into test_v
     select a, id, h
     from (
@@ -137,6 +137,8 @@ def test_select_table_join_table():
         metadata_provider=provider,
     )
 
+
+def test_select_table_join_partial_wildcard_at_beginning():
     sql = """insert into test_v
     select a, id, h
     from (
@@ -163,6 +165,8 @@ def test_select_table_join_table():
         metadata_provider=provider,
     )
 
+
+def test_select_table_join_multiple_wildcards():
     sql = """insert into test_v
     select a, h
     from (
@@ -185,6 +189,8 @@ def test_select_table_join_table():
         metadata_provider=provider,
     )
 
+
+def test_select_table_join_multiple_wildcards_merged_at_top_level():
     sql = """insert into test_v
     select *
     from (
@@ -223,6 +229,8 @@ def test_select_table_join_table():
         metadata_provider=provider,
     )
 
+
+def test_select_table_join_multiple_wildcards_at_different_level():
     sql = """insert into test_v
     select x.*, y.h, y.i
     from (select * from db.tbl_x where a = 0) x
@@ -262,9 +270,7 @@ def test_select_table_join_table():
     )
 
 
-def test_multiple_statements():
-    provider = DummyMetaDataProvider(test_schemas)
-
+def test_wildcard_reference_from_previous_statements():
     sql = """create table test_x as
     select a, b
     from (
