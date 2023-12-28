@@ -241,7 +241,6 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             # call end of query hook here as loop is over
             for next_handler in next_handlers:
                 next_handler.end_of_query_cleanup(holder)
-
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
             holder |= cls._extract_from_dml(
@@ -249,7 +248,6 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 AnalyzerContext(cte=holder.cte, write={sq}),
                 metadata_provider,
             )
-
         # replace wildcard with real columns, put here so that wildcard in subqueries are already replaced
         holder.expand_wildcard(metadata_provider)
         return holder

@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 
 import networkx as nx
 from networkx import DiGraph
@@ -73,8 +73,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     @property
     def write(self) -> Set[Union[SubQuery, Table]]:
-        # because subquery can be nested, SubQueryLineageHolder.write can return SubQuery or Table,
-        # or both when __or__ together.
+        # SubQueryLineageHolder.write can return a single SubQuery or Table, or both when __or__ together.
         # This is different from StatementLineageHolder.write, where Table is the only possibility.
         return self._property_getter(NodeTag.WRITE)
 
@@ -92,12 +91,11 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     def write_columns(self) -> List[Column]:
         """
         return a list of columns that write table contains
-        it's either automatic added from via `add_column_lineage` parsing from SELECT
-        or manually added via `add_write_column` if specified in DML
+        it's either manually added via `add_write_column` if specified in DML
+        or automatic added via `add_column_lineage` after parsing from SELECT
         """
         tgt_cols = []
-        if write_only := self.write.difference(self.read):
-            tgt_tbl = list(write_only)[0]
+        if tgt_tbl := self._get_target_table():
             tgt_col_with_idx: List[Tuple[Column, int]] = sorted(
                 [
                     (col, attr.get(EdgeTag.INDEX, 0))
@@ -142,38 +140,34 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         ]
 
     def expand_wildcard(self, metadata_provider: MetaDataProvider) -> None:
-        if write_only := self.write.difference(self.read):
-            tgt_table = list(write_only)[0]
+        if tgt_table := self._get_target_table():
             for column in self.write_columns:
                 if column.raw_name == "*":
-                    wildcard = column
-                    for src_wildcard in self._get_source_columns(wildcard):
+                    tgt_wildcard = column
+                    for src_wildcard in self._get_source_columns(tgt_wildcard):
                         if source_table := src_wildcard.parent:
+                            src_table_columns = []
                             if isinstance(source_table, SubQuery):
                                 # the columns of SubQuery can be inferred from graph
-                                if src_table_columns := self.get_table_columns(
-                                    source_table
-                                ):
-                                    self._replace_wildcard(
-                                        tgt_table,
-                                        src_table_columns,
-                                        wildcard,
-                                        src_wildcard,
-                                    )
-                            elif isinstance(source_table, Table):
+                                src_table_columns = self.get_table_columns(source_table)
+                            elif isinstance(source_table, Table) and metadata_provider:
                                 # search by metadata service
-                                if metadata_provider:
-                                    if source_columns := (
-                                        metadata_provider.get_table_columns(
-                                            source_table
-                                        )
-                                    ):
-                                        self._replace_wildcard(
-                                            tgt_table,
-                                            source_columns,
-                                            wildcard,
-                                            src_wildcard,
-                                        )
+                                src_table_columns = metadata_provider.get_table_columns(
+                                    source_table
+                                )
+                            if src_table_columns:
+                                self._replace_wildcard(
+                                    tgt_table,
+                                    src_table_columns,
+                                    tgt_wildcard,
+                                    src_wildcard,
+                                )
+
+    def _get_target_table(self) -> Optional[Union[SubQuery, Table]]:
+        table = None
+        if write_only := self.write.difference(self.read):
+            table = next(iter(write_only))
+        return table
 
     def _get_source_columns(self, node: Column) -> List[Column]:
         return [
@@ -184,24 +178,24 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def _replace_wildcard(
         self,
-        target_table: Union[Table, SubQuery],
-        source_columns: List[Column],
-        current_wildcard: Column,
+        tgt_table: Union[Table, SubQuery],
+        src_table_columns: List[Column],
+        tgt_wildcard: Column,
         src_wildcard: Column,
     ) -> None:
-        target_columns = self.get_table_columns(target_table)
-        for src_col in source_columns:
+        target_columns = self.get_table_columns(tgt_table)
+        for src_col in src_table_columns:
             new_column = Column(src_col.raw_name)
-            new_column.parent = target_table
+            new_column.parent = tgt_table
             if new_column in target_columns or src_col.raw_name == "*":
                 continue
-            self.graph.add_edge(target_table, new_column, type=EdgeType.HAS_COLUMN)
+            self.graph.add_edge(tgt_table, new_column, type=EdgeType.HAS_COLUMN)
             self.graph.add_edge(src_col.parent, src_col, type=EdgeType.HAS_COLUMN)
             self.graph.add_edge(src_col, new_column, type=EdgeType.LINEAGE)
         # remove wildcard
-        if current_wildcard is not None and self.graph.has_node(current_wildcard):
-            self.graph.remove_node(current_wildcard)
-        if src_wildcard is not None and self.graph.has_node(src_wildcard):
+        if self.graph.has_node(tgt_wildcard):
+            self.graph.remove_node(tgt_wildcard)
+        if self.graph.has_node(src_wildcard):
             self.graph.remove_node(src_wildcard)
 
 

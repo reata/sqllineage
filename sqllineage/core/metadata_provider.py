@@ -23,10 +23,10 @@ class MetaDataProvider:
         self._session_metadata: Dict[str, List[str]] = {}
 
     def get_table_columns(self, table: Table, **kwargs) -> List[Column]:
-        if (key := str(table)) in self._session_metadata:
-            cols = self._session_metadata[key]
-        else:
-            cols = self._get_table_columns(str(table.schema), table.raw_name, **kwargs)
+        cols = self._session_metadata.get(
+            str(table),
+            self._get_table_columns(str(table.schema), table.raw_name, **kwargs),
+        )
         columns = []
         for col in cols:
             column = Column(col)
@@ -67,7 +67,7 @@ class MetaDataProvider:
 class MetaDataSession:
     """
     Create an analyzer session which can register session-level metadata as a supplement to global metadata.
-    This way, table or views created during the session before available in global metadata can be queried.
+    This way, table or views created during the session can be queried.
     All session-level metadata will be deregistered once session closed.
     """
 

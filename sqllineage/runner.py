@@ -197,7 +197,7 @@ Target Tables:
             for stmt in self._stmt:
                 stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
                 if write := stmt_holder.write:
-                    tgt_table = list(write)[0]
+                    tgt_table = next(iter(write))
                     if isinstance(tgt_table, Table):
                         session.register_session_metadata(
                             tgt_table, stmt_holder.get_table_columns(tgt_table)
