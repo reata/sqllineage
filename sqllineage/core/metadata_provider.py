@@ -41,8 +41,43 @@ class MetaDataProvider:
         """Deregister session-level metadata."""
         self._session_metadata.clear()
 
+    def session(self):
+        return MetaDataSession(self)
+
     def __bool__(self):
         """
         bool value tells whether this provider is ready to provide metadata
         """
         return True
+
+    def open(self) -> None:  # noqa
+        """Open metadata connection if needed."""
+        pass
+
+    def close(self) -> None:
+        """Close metadata connection if needed"""
+        pass
+
+
+class MetaDataSession:
+    """
+    Create an analyzer session which can register session-level metadata as a supplement to global metadata.
+    This way, table or views created during the session before available in global metadata can be queried.
+    All session-level metadata will be deregistered once session closed.
+    """
+
+    def __init__(self, metadata_provider: MetaDataProvider):
+        self.metadata_provider = metadata_provider
+        self.metadata_provider.open()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.metadata_provider.deregister_session_metadata()
+        self.metadata_provider.close()
+
+    def register_session_metadata(
+        self, schema: str, table: str, columns: List[str]
+    ) -> None:
+        self.metadata_provider.register_session_metadata(schema, table, columns)

@@ -192,23 +192,26 @@ Target Tables:
                 )
             self._stmt = split(self._sql.strip())
 
-        stmt_holders = []
-        for stmt in self._stmt:
-            stmt_holder = analyzer.analyze(stmt, self._metadata_provider)
-            if write := stmt_holder.write:
-                tgt_table = list(write)[0]
-                if isinstance(tgt_table, Table):
-                    self._metadata_provider.register_session_metadata(
-                        tgt_table.schema.raw_name,
-                        tgt_table.raw_name,
-                        [c.raw_name for c in stmt_holder.get_table_columns(tgt_table)],
-                    )
-            stmt_holders.append(stmt_holder)
-        self._stmt_holders = stmt_holders
-        self._sql_holder = SQLLineageHolder.of(
-            self._metadata_provider, *self._stmt_holders
-        )
-        self._metadata_provider.deregister_session_metadata()
+        with self._metadata_provider.session() as session:
+            stmt_holders = []
+            for stmt in self._stmt:
+                stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
+                if write := stmt_holder.write:
+                    tgt_table = list(write)[0]
+                    if isinstance(tgt_table, Table):
+                        session.register_session_metadata(
+                            tgt_table.schema.raw_name,
+                            tgt_table.raw_name,
+                            [
+                                c.raw_name
+                                for c in stmt_holder.get_table_columns(tgt_table)
+                            ],
+                        )
+                stmt_holders.append(stmt_holder)
+            self._stmt_holders = stmt_holders
+            self._sql_holder = SQLLineageHolder.of(
+                session.metadata_provider, *self._stmt_holders
+            )
         self._evaluated = True
 
     @staticmethod
