@@ -1,6 +1,8 @@
 from abc import abstractmethod
 from typing import Dict, List
 
+from sqllineage.core.models import Column, Table
+
 
 class MetaDataProvider:
     """Base class used to provide metadata service like table schema.
@@ -20,22 +22,25 @@ class MetaDataProvider:
     def __init__(self) -> None:
         self._session_metadata: Dict[str, List[str]] = {}
 
-    def get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
-        key = f"{schema}.{table}"
-        if key in self._session_metadata:
-            return self._session_metadata[key]
+    def get_table_columns(self, table: Table, **kwargs) -> List[Column]:
+        if (key := str(table)) in self._session_metadata:
+            cols = self._session_metadata[key]
         else:
-            return self._get_table_columns(schema, table, **kwargs)
+            cols = self._get_table_columns(str(table.schema), table.raw_name, **kwargs)
+        columns = []
+        for col in cols:
+            column = Column(col)
+            column.parent = table
+            columns.append(column)
+        return columns
 
     @abstractmethod
     def _get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
         """To be implemented by subclasses."""
 
-    def register_session_metadata(
-        self, schema: str, table: str, columns: List[str]
-    ) -> None:
+    def register_session_metadata(self, table: Table, columns: List[Column]) -> None:
         """Register session-level metadata, like temporary table or view created."""
-        self._session_metadata[f"{schema}.{table}"] = columns
+        self._session_metadata[str(table)] = [c.raw_name for c in columns]
 
     def deregister_session_metadata(self) -> None:
         """Deregister session-level metadata."""
@@ -77,7 +82,5 @@ class MetaDataSession:
         self.metadata_provider.deregister_session_metadata()
         self.metadata_provider.close()
 
-    def register_session_metadata(
-        self, schema: str, table: str, columns: List[str]
-    ) -> None:
-        self.metadata_provider.register_session_metadata(schema, table, columns)
+    def register_session_metadata(self, table: Table, columns: List[Column]) -> None:
+        self.metadata_provider.register_session_metadata(table, columns)

@@ -200,12 +200,7 @@ Target Tables:
                     tgt_table = list(write)[0]
                     if isinstance(tgt_table, Table):
                         session.register_session_metadata(
-                            tgt_table.schema.raw_name,
-                            tgt_table.raw_name,
-                            [
-                                c.raw_name
-                                for c in stmt_holder.get_table_columns(tgt_table)
-                            ],
+                            tgt_table, stmt_holder.get_table_columns(tgt_table)
                         )
                 stmt_holders.append(stmt_holder)
             self._stmt_holders = stmt_holders

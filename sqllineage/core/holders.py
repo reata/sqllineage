@@ -141,7 +141,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             and tgt.raw_name != "*"
         ]
 
-    def expand_wildcard(self, metadata_provider) -> None:
+    def expand_wildcard(self, metadata_provider: MetaDataProvider) -> None:
         if write_only := self.write.difference(self.read):
             tgt_table = list(write_only)[0]
             for column in self.write_columns:
@@ -163,16 +163,11 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                             elif isinstance(source_table, Table):
                                 # search by metadata service
                                 if metadata_provider:
-                                    db = source_table.schema.raw_name
-                                    table = source_table.raw_name
-                                    source_columns = []
-                                    for col in metadata_provider.get_table_columns(
-                                        db, table
+                                    if source_columns := (
+                                        metadata_provider.get_table_columns(
+                                            source_table
+                                        )
                                     ):
-                                        column = Column(col)
-                                        column.parent = source_table
-                                        source_columns.append(column)
-                                    if len(source_columns) > 0:
                                         self._replace_wildcard(
                                             tgt_table,
                                             source_columns,
@@ -403,13 +398,10 @@ class SQLLineageHolder(ColumnLineageMixin):
                         isinstance(parent, Table)
                         and str(parent.schema) != Schema.unknown
                     ):
-                        columns = metadata_provider.get_table_columns(
-                            str(parent.schema), str(parent.raw_name)
-                        )
-                        if columns is not None and unresolved_col.raw_name in columns:
-                            src_col = Column(unresolved_col.raw_name)
-                            src_col.parent = parent
-                            src_cols.append(src_col)
+                        columns = metadata_provider.get_table_columns(parent)
+                        for src_col in columns:
+                            if unresolved_col.raw_name == src_col.raw_name:
+                                src_cols.append(src_col)
 
             if len(src_cols) > 1:
                 raise InvalidSyntaxException(
