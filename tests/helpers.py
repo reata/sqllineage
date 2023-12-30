@@ -117,7 +117,9 @@ def generate_metadata_providers(test_schemas):
         if schema not in ("main", "temp") and not inspect(
             sqlite3_sqlalchemy_provider.engine
         ).has_schema(schema):
-            db_file_path = Path(os.path.dirname(__file__)).parent.joinpath(f"{schema}.db")
+            db_file_path = Path(os.path.dirname(__file__)).parent.joinpath(
+                f"{schema}.db"
+            )
             with sqlite3_sqlalchemy_provider.engine.connect() as conn:
                 conn.execute(text(f"ATTACH DATABASE '{db_file_path}' AS '{schema}'"))
         SQLAlchemyTable(
