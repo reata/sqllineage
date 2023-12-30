@@ -1,3 +1,4 @@
+import os.path
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -111,23 +112,20 @@ def generate_metadata_providers(test_schemas):
 
     sqlite3_sqlalchemy_provider = SQLAlchemyMetaDataProvider("sqlite:///:memory:")
     metadata = MetaData()
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        for full_table_name, columns_names in test_schemas.items():
-            schema, table = full_table_name.split(".")
-            if schema not in ("main", "temp") and not inspect(
-                sqlite3_sqlalchemy_provider.engine
-            ).has_schema(schema):
-                db_file_path = Path(tmpdirname).joinpath(f"{schema}.db")
-                with sqlite3_sqlalchemy_provider.engine.connect() as conn:
-                    conn.execute(
-                        text(f"ATTACH DATABASE '{db_file_path}' AS '{schema}'")
-                    )
-            SQLAlchemyTable(
-                table,
-                metadata,
-                *[SQLAlchemyColumn(c, Integer) for c in columns_names],
-                schema=schema,
-            )
-        metadata.create_all(bind=sqlite3_sqlalchemy_provider.engine)
+    for full_table_name, columns_names in test_schemas.items():
+        schema, table = full_table_name.split(".")
+        if schema not in ("main", "temp") and not inspect(
+            sqlite3_sqlalchemy_provider.engine
+        ).has_schema(schema):
+            db_file_path = Path(os.path.dirname(__file__)).parent.joinpath(f"{schema}.db")
+            with sqlite3_sqlalchemy_provider.engine.connect() as conn:
+                conn.execute(text(f"ATTACH DATABASE '{db_file_path}' AS '{schema}'"))
+        SQLAlchemyTable(
+            table,
+            metadata,
+            *[SQLAlchemyColumn(c, Integer) for c in columns_names],
+            schema=schema,
+        )
+    metadata.create_all(bind=sqlite3_sqlalchemy_provider.engine)
 
     return [dummy_provider, sqlite3_sqlalchemy_provider]
