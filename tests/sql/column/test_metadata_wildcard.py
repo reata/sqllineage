@@ -1,18 +1,21 @@
-from tests.helpers import assert_column_lineage_equal
+import pytest
+from tests.helpers import assert_column_lineage_equal, generate_metadata_providers
 
-from sqllineage.core.metadata.dummy import DummyMetaDataProvider
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
 
 
-test_schemas = {
-    "db.tbl_x": ["id", "a", "b"],
-    "db.tbl_y": ["id", "h", "i"],
-    "db.tbl_z": ["pk", "s", "t"],
-}
-provider = DummyMetaDataProvider(test_schemas)
+providers = generate_metadata_providers(
+    {
+        "db.tbl_x": ["id", "a", "b"],
+        "db.tbl_y": ["id", "h", "i"],
+        "db.tbl_z": ["pk", "s", "t"],
+    }
+)
 
 
-def test_select_single_table_wildcard():
+@pytest.mark.parametrize("provider", providers)
+def test_select_single_table_wildcard(provider: MetaDataProvider):
     sql = """insert into test_v
     select *
     from db.tbl_x
@@ -37,7 +40,8 @@ def test_select_single_table_wildcard():
     )
 
 
-def test_select_single_table_wildcard_in_subquery():
+@pytest.mark.parametrize("provider", providers)
+def test_select_single_table_wildcard_in_subquery(provider: MetaDataProvider):
     sql = """insert into test_v
     select id, b
     from (
@@ -63,7 +67,8 @@ def test_select_single_table_wildcard_in_subquery():
     )
 
 
-def test_select_single_table_partial_wildcard_in_subquery():
+@pytest.mark.parametrize("provider", providers)
+def test_select_single_table_partial_wildcard_in_subquery(provider: MetaDataProvider):
     sql = """insert into test_v
     select a, b
     from (
@@ -110,7 +115,8 @@ def test_select_single_table_partial_wildcard_in_subquery():
     )
 
 
-def test_select_table_join_partial_wildcard_at_last():
+@pytest.mark.parametrize("provider", providers)
+def test_select_table_join_partial_wildcard_at_last(provider: MetaDataProvider):
     sql = """insert into test_v
     select a, id, h
     from (
@@ -138,7 +144,8 @@ def test_select_table_join_partial_wildcard_at_last():
     )
 
 
-def test_select_table_join_partial_wildcard_at_beginning():
+@pytest.mark.parametrize("provider", providers)
+def test_select_table_join_partial_wildcard_at_beginning(provider: MetaDataProvider):
     sql = """insert into test_v
     select a, id, h
     from (
@@ -166,7 +173,8 @@ def test_select_table_join_partial_wildcard_at_beginning():
     )
 
 
-def test_select_table_join_multiple_wildcards():
+@pytest.mark.parametrize("provider", providers)
+def test_select_table_join_multiple_wildcards(provider: MetaDataProvider):
     sql = """insert into test_v
     select a, h
     from (
@@ -190,7 +198,10 @@ def test_select_table_join_multiple_wildcards():
     )
 
 
-def test_select_table_join_multiple_wildcards_merged_at_top_level():
+@pytest.mark.parametrize("provider", providers)
+def test_select_table_join_multiple_wildcards_merged_at_top_level(
+    provider: MetaDataProvider,
+):
     sql = """insert into test_v
     select *
     from (
@@ -230,7 +241,10 @@ def test_select_table_join_multiple_wildcards_merged_at_top_level():
     )
 
 
-def test_select_table_join_multiple_wildcards_at_different_level():
+@pytest.mark.parametrize("provider", providers)
+def test_select_table_join_multiple_wildcards_at_different_level(
+    provider: MetaDataProvider,
+):
     sql = """insert into test_v
     select x.*, y.h, y.i
     from (select * from db.tbl_x where a = 0) x
@@ -270,7 +284,8 @@ def test_select_table_join_multiple_wildcards_at_different_level():
     )
 
 
-def test_wildcard_reference_from_previous_statements():
+@pytest.mark.parametrize("provider", providers)
+def test_wildcard_reference_from_previous_statements(provider: MetaDataProvider):
     sql = """create table test_x as
     select a, b
     from (

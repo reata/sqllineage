@@ -69,6 +69,7 @@ setup(
         "sqlparse==0.4.4",
         "networkx>=2.4",
         "sqlfluff==2.3.5",
+        "sqlalchemy>=2.0.0",
     ],
     entry_points={"console_scripts": ["sqllineage = sqllineage.cli:main"]},
     extras_require={

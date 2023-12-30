@@ -1,21 +1,23 @@
 import pytest
-from tests.helpers import assert_column_lineage_equal
+from tests.helpers import assert_column_lineage_equal, generate_metadata_providers
 
-from sqllineage.core.metadata.dummy import DummyMetaDataProvider
+from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.exceptions import InvalidSyntaxException
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.entities import ColumnQualifierTuple
 
 
-test_schemas = {
-    "db1.table1": ["id", "a", "b", "c", "d"],
-    "db2.table2": ["id", "h", "i", "j", "k"],
-    "db3.table3": ["pk", "p", "q", "r"],
-}
-provider = DummyMetaDataProvider(test_schemas)
+providers = generate_metadata_providers(
+    {
+        "db1.table1": ["id", "a", "b", "c", "d"],
+        "db2.table2": ["id", "h", "i", "j", "k"],
+        "db3.table3": ["pk", "p", "q", "r"],
+    }
+)
 
 
-def test_select_column_from_tables():
+@pytest.mark.parametrize("provider", providers)
+def test_select_column_from_tables(provider: MetaDataProvider):
     sql = """insert into db.tbl
 select t1.id, a as x, b, h, i as y
 from db1.table1 t1
@@ -90,7 +92,8 @@ join db2.table2 t2 on t1.id = t2.id
     )
 
 
-def test_select_column_from_subqueries():
+@pytest.mark.parametrize("provider", providers)
+def test_select_column_from_subqueries(provider: MetaDataProvider):
     sql = """insert into db.tbl
 select a, b as x, h, y
 from (select a, b, c from db1.table1) t1
@@ -158,7 +161,8 @@ left join (select pk, p, q from db3.table3) t3 on t1.id = t3.pk
     )
 
 
-def test_select_column_from_table_subquery():
+@pytest.mark.parametrize("provider", providers)
+def test_select_column_from_table_subquery(provider: MetaDataProvider):
     sql = """insert into db.tbl
 select a as x, b, q, pk as y
 from db1.table1 t1
@@ -226,7 +230,8 @@ left join (select pk, p, q as z from db3.table3) t3 on t2.id = t3.pk
     )
 
 
-def test_select_column_from_tempview_view_subquery():
+@pytest.mark.parametrize("provider", providers)
+def test_select_column_from_tempview_view_subquery(provider: MetaDataProvider):
     sql = """
 create or replace view test_view
 as
@@ -271,7 +276,8 @@ left join (select pk, p, q as z from db3.table3) t3 on t2.id = t3.pk
     )
 
 
-def test_sqlparse_exception():
+@pytest.mark.parametrize("provider", providers)
+def test_sqlparse_exception(provider: MetaDataProvider):
     sql = """insert into table db.tbl
 select id
 from db1.table1 t1
