@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from sqllineage.core.metadata.sqlalchemy import SQLAlchemyMetaDataProvider
@@ -5,9 +7,12 @@ from sqllineage.exceptions import MetaDataProviderException
 
 
 def test_sqlalchemy_metadata_provider_connection_fail():
-    # connect to /root directory as sqlite db, which is not possible. Simulate connection failure
+    # connect to a directory as sqlite db, which is not possible. Simulate connection failure
     with pytest.raises(MetaDataProviderException):
-        SQLAlchemyMetaDataProvider("sqlite:////root/")
+        SQLAlchemyMetaDataProvider(f"sqlite:///{os.path.dirname(__file__)}")
+
+
+def test_sqlalchemy_metadata_provider_driver_not_install():
     # use an unknown driver to connect. Simulate driver not installed
     with pytest.raises(MetaDataProviderException):
         SQLAlchemyMetaDataProvider("sqlite+unknown_driver:///:memory:")
