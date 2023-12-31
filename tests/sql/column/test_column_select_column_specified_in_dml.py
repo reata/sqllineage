@@ -1,5 +1,6 @@
 """
-specify columns in CREATE/INSERT statement, sqlparse would parse table/view name as function call
+specify columns in CREATE/INSERT statement.
+DO NOT support this feature with non-validating dialect because sqlparse would parse table/view name as function call
 """
 
 from sqllineage.utils.entities import ColumnQualifierTuple

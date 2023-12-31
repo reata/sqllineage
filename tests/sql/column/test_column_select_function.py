@@ -125,3 +125,28 @@ FROM tab1"""
             ),
         ],
     )
+
+
+def test_coalesce_with_whitespace():
+    """
+    coalesce is a keyword since ANSI SQL-2023
+    usually it's parsed as a function. however, when whitespace followed which is valid syntax,
+    sqlparse cannot produce the correct AST
+    """
+    sql = """INSERT INTO tab1
+SELECT coalesce (col1, col2) as col3
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )

@@ -120,3 +120,12 @@ def test_cte_within_cte():
 SELECT id
 FROM cte1"""
     assert_table_lineage_equal(sql, {"tab1"})
+
+
+def test_non_reserved_keyword_as_cte():
+    assert_table_lineage_equal(
+        "WITH summary AS (SELECT * FROM segment) INSERT INTO host SELECT * FROM summary",
+        {"segment"},
+        {"host"},
+        test_sqlparse=False,
+    )

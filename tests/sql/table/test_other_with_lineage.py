@@ -1,4 +1,4 @@
-from ....helpers import assert_table_lineage_equal
+from ...helpers import assert_table_lineage_equal
 
 
 def test_swapping_partitions():

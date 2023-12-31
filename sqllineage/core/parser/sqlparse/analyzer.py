@@ -15,6 +15,7 @@ from sqlparse.sql import (
     Where,
 )
 
+from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
@@ -37,7 +38,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
     """SQL Statement Level Lineage Analyzer."""
 
     PARSER_NAME = "sqlparse"
-    SUPPORTED_DIALECTS = ["non-validating"]
+    SUPPORTED_DIALECTS = [SQLPARSE_DIALECT]
 
     def analyze(
         self, sql: str, metadata_provider: MetaDataProvider

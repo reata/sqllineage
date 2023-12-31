@@ -1,7 +1,8 @@
 from unittest.mock import patch
 
 import pytest
-from tests.helpers import assert_table_lineage_equal
+
+from ....helpers import assert_table_lineage_equal
 
 
 @patch("os.environ", {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})

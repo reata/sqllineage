@@ -55,9 +55,8 @@ class LineageRunner(object):
         """
         if dialect == SQLPARSE_DIALECT:
             warnings.warn(
-                "dialect `non-validating` is deprecated, use `ansi` or dialect of your SQL instead. "
-                "`non-validating` will stop being the default dialect in v1.5.x release "
-                "and be completely removed in v1.6.x",
+                f"dialect `{SQLPARSE_DIALECT}` is deprecated, use `ansi` or dialect of your SQL instead. "
+                f"`{SQLPARSE_DIALECT}` will be completely removed in v1.6.x",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -218,12 +217,12 @@ Target Tables:
         dialects = OrderedDict(
             [
                 (
-                    SqlParseLineageAnalyzer.PARSER_NAME,
-                    SqlParseLineageAnalyzer.SUPPORTED_DIALECTS,
-                ),
-                (
                     SqlFluffLineageAnalyzer.PARSER_NAME,
                     SqlFluffLineageAnalyzer.SUPPORTED_DIALECTS,
+                ),
+                (
+                    SqlParseLineageAnalyzer.PARSER_NAME,
+                    SqlParseLineageAnalyzer.SUPPORTED_DIALECTS,
                 ),
             ]
         )

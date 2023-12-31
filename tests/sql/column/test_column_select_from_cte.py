@@ -87,3 +87,17 @@ WHERE cte1.a = cte2.c"""
             (ColumnQualifierTuple("d", "tab2"), ColumnQualifierTuple("d", "tab3")),
         ],
     )
+
+
+def test_cte_inside_insert_in_parenthesis():
+    sql = """INSERT INTO tab3 (WITH tab1 AS (SELECT * FROM tab2) SELECT * FROM tab1)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("*", "tab2"),
+                ColumnQualifierTuple("*", "tab3"),
+            ),
+        ],
+        test_sqlparse=False,
+    )

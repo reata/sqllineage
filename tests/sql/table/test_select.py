@@ -282,3 +282,13 @@ SELECT sq2.id
 FROM (SELECT id
       FROM tab2) sq2"""
     assert_table_lineage_equal(sql, {"tab1", "tab2"})
+
+
+def test_non_reserved_keyword_as_source():
+    assert_table_lineage_equal(
+        "SELECT col1, col2 FROM segment", {"segment"}, test_sqlparse=False
+    )
+
+
+def test_select_in_parenthesis():
+    assert_table_lineage_equal("(SELECT * FROM tab1)", {"tab1"}, test_sqlparse=False)
