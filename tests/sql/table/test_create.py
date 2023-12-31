@@ -6,7 +6,6 @@ def test_create():
         "CREATE TABLE tab1 (col1 STRING)",
         None,
         {"tab1"},
-        skip_graph_check=True,  # sqlfluff graph includes table to column edge
     )
 
 
@@ -15,7 +14,6 @@ def test_create_if_not_exist():
         "CREATE TABLE IF NOT EXISTS tab1 (col1 STRING)",
         None,
         {"tab1"},
-        skip_graph_check=True,  # sqlfluff graph includes table to column edge
     )
 
 
@@ -42,3 +40,13 @@ col1""",
         {"tab1"},
         {"view1"},
     )
+
+
+def test_create_as_with_parenthesis_around_select_statement():
+    sql = "CREATE TABLE tab1 AS (SELECT * FROM tab2)"
+    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlparse=False)
+
+
+def test_create_as_with_parenthesis_around_both():
+    sql = "CREATE TABLE tab1 AS (SELECT * FROM (tab2))"
+    assert_table_lineage_equal(sql, {"tab2"}, {"tab1"}, test_sqlparse=False)

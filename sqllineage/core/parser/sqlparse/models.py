@@ -16,6 +16,7 @@ from sqlparse.sql import (
 )
 from sqlparse.utils import imt
 
+from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.models import Column, Schema, SubQuery, Table
 from sqllineage.core.parser.sqlparse.utils import get_parameters, is_subquery
 from sqllineage.utils.entities import ColumnQualifierTuple
@@ -107,9 +108,9 @@ class SqlParseColumn(Column):
                 # (SELECT avg(col1) AS col1 FROM tab3), used after WHEN or THEN in CASE clause
                 src_cols = [
                     lineage[0]
-                    for lineage in LineageRunner(token.value).get_column_lineage(
-                        exclude_subquery=False
-                    )
+                    for lineage in LineageRunner(
+                        token.value, dialect=SQLPARSE_DIALECT
+                    ).get_column_lineage(exclude_subquery=False)
                 ]
                 source_columns = [
                     ColumnQualifierTuple(

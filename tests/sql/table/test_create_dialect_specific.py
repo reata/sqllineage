@@ -13,7 +13,6 @@ CLUSTERED BY (Id) INTO 4 buckets""",
         None,
         {"student"},
         dialect,
-        skip_graph_check=True,  # sqlfluff graph includes table to column edge
     )
 
 
@@ -81,5 +80,21 @@ STORED AS TEXTFILE""",  # noqa
         None,
         {"apachelog"},
         dialect=dialect,
-        skip_graph_check=True,  # sqlfluff graph includes table to column edge
+    )
+
+
+@pytest.mark.parametrize("dialect", ["snowflake", "bigquery"])
+def test_create_clone(dialect: str):
+    """
+    Language manual:
+        https://cloud.google.com/bigquery/docs/table-clones-create
+        https://docs.snowflake.com/en/sql-reference/sql/create-clone
+    Note clone is not a keyword in sqlparse, we'll skip testing for it.
+    """
+    assert_table_lineage_equal(
+        "CREATE TABLE tab2 CLONE tab1",
+        {"tab1"},
+        {"tab2"},
+        dialect=dialect,
+        test_sqlparse=False,
     )

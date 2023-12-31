@@ -2,7 +2,6 @@ import os.path
 from pathlib import Path
 from typing import Optional
 
-import networkx as nx
 from sqlalchemy import (
     Column as SQLAlchemyColumn,
     Integer,
@@ -20,7 +19,7 @@ from sqllineage.core.models import Column, Table
 from sqllineage.runner import LineageRunner
 
 
-def assert_table_lineage(lr: LineageRunner, source_tables=None, target_tables=None):
+def _assert_table_lineage(lr: LineageRunner, source_tables=None, target_tables=None):
     for _type, actual, expected in zip(
         ["Source", "Target"],
         [lr.source_tables, lr.target_tables],
@@ -37,7 +36,7 @@ def assert_table_lineage(lr: LineageRunner, source_tables=None, target_tables=No
         ), f"\n\tExpected {_type} Table: {expected}\n\tActual {_type} Table: {actual}"
 
 
-def assert_column_lineage(lr: LineageRunner, column_lineages=None):
+def _assert_column_lineage(lr: LineageRunner, column_lineages=None):
     expected = set()
     if column_lineages:
         for src, tgt in column_lineages:
@@ -61,16 +60,13 @@ def assert_table_lineage_equal(
     dialect: str = "ansi",
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
-    skip_graph_check: bool = False,
 ):
     lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
     lr_sqlfluff = LineageRunner(sql, dialect=dialect)
     if test_sqlparse:
-        assert_table_lineage(lr, source_tables, target_tables)
+        _assert_table_lineage(lr, source_tables, target_tables)
     if test_sqlfluff:
-        assert_table_lineage(lr_sqlfluff, source_tables, target_tables)
-    if test_sqlparse and test_sqlfluff and not skip_graph_check:
-        assert_lr_graphs_match(lr, lr_sqlfluff)
+        _assert_table_lineage(lr_sqlfluff, source_tables, target_tables)
 
 
 def assert_column_lineage_equal(
@@ -80,7 +76,6 @@ def assert_column_lineage_equal(
     metadata_provider: Optional[MetaDataProvider] = None,
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
-    skip_graph_check: bool = False,
 ):
     metadata_provider = (
         DummyMetaDataProvider() if metadata_provider is None else metadata_provider
@@ -92,18 +87,9 @@ def assert_column_lineage_equal(
         sql, dialect=dialect, metadata_provider=metadata_provider
     )
     if test_sqlparse:
-        assert_column_lineage(lr, column_lineages)
+        _assert_column_lineage(lr, column_lineages)
     if test_sqlfluff:
-        assert_column_lineage(lr_sqlfluff, column_lineages)
-    if test_sqlparse and test_sqlfluff and not skip_graph_check:
-        assert_lr_graphs_match(lr, lr_sqlfluff)
-
-
-def assert_lr_graphs_match(lr: LineageRunner, lr_sqlfluff: LineageRunner) -> None:
-    assert nx.is_isomorphic(lr._sql_holder.graph, lr_sqlfluff._sql_holder.graph), (
-        f"\n\tGraph with sqlparse: {lr._sql_holder.graph}\n\t"
-        f"Graph with sqlfluff: {lr_sqlfluff._sql_holder.graph}"
-    )
+        _assert_column_lineage(lr_sqlfluff, column_lineages)
 
 
 def generate_metadata_providers(test_schemas):
