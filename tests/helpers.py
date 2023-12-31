@@ -1,9 +1,20 @@
+import os.path
+from pathlib import Path
 from typing import Optional
 
 import networkx as nx
+from sqlalchemy import (
+    Column as SQLAlchemyColumn,
+    Integer,
+    MetaData,
+    Table as SQLAlchemyTable,
+    inspect,
+    text,
+)
 
 from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.metadata.dummy import DummyMetaDataProvider
+from sqllineage.core.metadata.sqlalchemy import SQLAlchemyMetaDataProvider
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Table
 from sqllineage.runner import LineageRunner
@@ -93,3 +104,29 @@ def assert_lr_graphs_match(lr: LineageRunner, lr_sqlfluff: LineageRunner) -> Non
         f"\n\tGraph with sqlparse: {lr._sql_holder.graph}\n\t"
         f"Graph with sqlfluff: {lr_sqlfluff._sql_holder.graph}"
     )
+
+
+def generate_metadata_providers(test_schemas):
+    dummy_provider = DummyMetaDataProvider(test_schemas)
+
+    sqlite3_sqlalchemy_provider = SQLAlchemyMetaDataProvider("sqlite:///:memory:")
+    metadata = MetaData()
+    for full_table_name, columns_names in test_schemas.items():
+        schema, table = full_table_name.split(".")
+        if schema not in ("main", "temp") and not inspect(
+            sqlite3_sqlalchemy_provider.engine
+        ).has_schema(schema):
+            db_file_path = Path(os.path.dirname(__file__)).parent.joinpath(
+                f"{schema}.db"
+            )
+            with sqlite3_sqlalchemy_provider.engine.connect() as conn:
+                conn.execute(text(f"ATTACH DATABASE '{db_file_path}' AS '{schema}'"))
+        SQLAlchemyTable(
+            table,
+            metadata,
+            *[SQLAlchemyColumn(c, Integer) for c in columns_names],
+            schema=schema,
+        )
+    metadata.create_all(bind=sqlite3_sqlalchemy_provider.engine)
+
+    return [dummy_provider, sqlite3_sqlalchemy_provider]
