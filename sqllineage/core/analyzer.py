@@ -19,9 +19,8 @@ class LineageAnalyzer:
     ) -> StatementLineageHolder:
         """
         to analyze single statement sql and store the result into
-        :class:`sqllineage.core.holders.StatementLineageHolder`
-
         :param sql: single-statement SQL string to be processed
         :param metadata_provider: :class:`sqllineage.core.metadata_provider.MetaDataProvider` provides metadata on
         tables to help lineage analyzing
+        :return: :class:`sqllineage.core.holders.StatementLineageHolder`
         """

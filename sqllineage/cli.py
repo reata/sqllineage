@@ -108,7 +108,7 @@ def main(args=None) -> None:
             silent_mode=args.silent_mode,
         )
         if args.graph_visualization:
-            runner.draw(args.dialect)
+            runner.draw()
         elif args.level == LineageLevel.COLUMN:
             runner.print_column_lineage()
         else:
