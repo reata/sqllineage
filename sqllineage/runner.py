@@ -113,7 +113,7 @@ Target Tables:
         else:
             return to_cytoscape(self._sql_holder.table_lineage_graph)
 
-    def draw(self, dialect: str) -> None:
+    def draw(self) -> None:
         """
         to draw the lineage directed graph
         """
@@ -121,7 +121,7 @@ Target Tables:
         if draw_options.get("f") is None:
             draw_options.pop("f", None)
             draw_options["e"] = self._sql
-            draw_options["dialect"] = dialect
+            draw_options["dialect"] = self._dialect
         return draw_lineage_graph(**draw_options)
 
     @lazy_method
