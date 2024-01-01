@@ -41,9 +41,9 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     """
     SubQuery/Query Level Lineage Result.
 
-    SubQueryLineageHolder will hold attributes like read, write, cte
+    SubQueryLineageHolder will hold attributes like read, write, cte.
 
-    Each of them is a Set[:class:`sqllineage.models.Table`].
+    Each of them is a Set[:class:`sqllineage.core.models.Table`].
 
     This is the most atomic representation of lineage result.
     """
@@ -90,8 +90,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     @property
     def write_columns(self) -> List[Column]:
         """
-        return a list of columns that write table contains
-        it's either manually added via `add_write_column` if specified in DML
+        return a list of columns that write table contains.
+        It's either manually added via `add_write_column` if specified in DML
         or automatic added via `add_column_lineage` after parsing from SELECT
         """
         tgt_cols = []
@@ -109,7 +109,13 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def add_write_column(self, *tgt_cols: Column) -> None:
         """
-        in case of DML with column specified, like INSERT INTO tab1 (col1, col2) SELECT col3, col4
+        in case of DML with column specified, like:
+
+        .. code-block:: sql
+
+            INSERT INTO tab1 (col1, col2)
+            SELECT col3, col4
+
         this method is called to make sure tab1 has column col1 and col2 instead of col3 and col4
         """
         if self.write:
@@ -124,6 +130,9 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                 )
 
     def add_column_lineage(self, src: Column, tgt: Column) -> None:
+        """
+        link source column to target.
+        """
         self.graph.add_edge(src, tgt, type=EdgeType.LINEAGE)
         self.graph.add_edge(tgt.parent, tgt, type=EdgeType.HAS_COLUMN)
         if src.parent is not None:
@@ -205,10 +214,10 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
 
     Based on SubQueryLineageHolder, StatementLineageHolder holds extra attributes like drop and rename
 
-    For drop, it is a Set[:class:`sqllineage.models.Table`].
+    For drop, it is a Set[:class:`sqllineage.core.models.Table`].
 
-    For rename, it a Set[Tuple[:class:`sqllineage.models.Table`, :class:`sqllineage.models.Table`]], with the first
-    table being original table before renaming and the latter after renaming.
+    For rename, it a Set[Tuple[:class:`sqllineage.core.models.Table`, :class:`sqllineage.core.models.Table`]],
+    with the first table being original table before renaming and the latter after renaming.
     """
 
     def __str__(self):
@@ -284,7 +293,7 @@ class SQLLineageHolder(ColumnLineageMixin):
     @property
     def source_tables(self) -> Set[Table]:
         """
-        a list of source :class:`sqllineage.models.Table`
+        a list of source :class:`sqllineage.core.models.Table`
         """
         source_tables = {
             table for table, deg in self.table_lineage_graph.in_degree if deg == 0
@@ -298,7 +307,7 @@ class SQLLineageHolder(ColumnLineageMixin):
     @property
     def target_tables(self) -> Set[Table]:
         """
-        a list of target :class:`sqllineage.models.Table`
+        a list of target :class:`sqllineage.core.models.Table`
         """
         target_tables = {
             table for table, deg in self.table_lineage_graph.out_degree if deg == 0
@@ -312,7 +321,7 @@ class SQLLineageHolder(ColumnLineageMixin):
     @property
     def intermediate_tables(self) -> Set[Table]:
         """
-        a list of intermediate :class:`sqllineage.models.Table`
+        a list of intermediate :class:`sqllineage.core.models.Table`
         """
         intermediate_tables = {
             table for table, deg in self.table_lineage_graph.in_degree if deg > 0
@@ -333,10 +342,6 @@ class SQLLineageHolder(ColumnLineageMixin):
     def _build_digraph(
         metadata_provider: MetaDataProvider, *args: StatementLineageHolder
     ) -> DiGraph:
-        """
-        To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
-        :class:`sqllineage.holders.SQLLineageHolder`
-        """
         g = DiGraph()
         for holder in args:
             g = nx.compose(g, holder.graph)
@@ -414,8 +419,8 @@ class SQLLineageHolder(ColumnLineageMixin):
     @staticmethod
     def of(metadata_provider, *args: StatementLineageHolder) -> "SQLLineageHolder":
         """
-        To assemble multiple :class:`sqllineage.holders.StatementLineageHolder` into
-        :class:`sqllineage.holders.SQLLineageHolder`
+        To assemble multiple :class:`sqllineage.core.holders.StatementLineageHolder` into
+        :class:`sqllineage.core.holders.SQLLineageHolder`
         """
         g = SQLLineageHolder._build_digraph(metadata_provider, *args)
         return SQLLineageHolder(g)

@@ -39,7 +39,6 @@ class LineageRunner(object):
         sql: str,
         dialect: str = DEFAULT_DIALECT,
         metadata_provider: MetaDataProvider = DummyMetaDataProvider(),
-        encoding: Optional[str] = None,
         verbose: bool = False,
         silent_mode: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
@@ -50,8 +49,8 @@ class LineageRunner(object):
         :param sql: a string representation of SQL statements.
         :param dialect: sql dialect
         :param metadata_provider: metadata service object providing table schema
-        :param encoding: the encoding for sql string
-        :param verbose: verbose flag indicate whether statement-wise lineage result will be shown
+        :param verbose: verbose flag indicating whether statement-wise lineage result will be shown
+        :param silent_mode: boolean flag indicating whether to skip lineage analysis for unknown statement types
         """
         if dialect == SQLPARSE_DIALECT:
             warnings.warn(
@@ -60,7 +59,6 @@ class LineageRunner(object):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        self._encoding = encoding
         self._sql = sql
         self._verbose = verbose
         self._draw_options = draw_options if draw_options else {}
@@ -212,7 +210,7 @@ Target Tables:
     def supported_dialects() -> Dict[str, List[str]]:
         """
         an ordered dict (so we can make sure the default parser implementation comes first)
-        with kv as parser_name: dialect list
+        with key, value as parser_name, dialect list respectively
         """
         dialects = OrderedDict(
             [

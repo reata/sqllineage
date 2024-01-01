@@ -1,6 +1,6 @@
-*************
-LineageModels
-*************
+*****
+Model
+*****
 
 Several data classes in this module.
 

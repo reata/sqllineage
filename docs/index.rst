@@ -68,23 +68,26 @@ Basic concepts
    :hidden:
    :caption: Basic concepts
 
-   basic_concepts/lineage_runner
-   basic_concepts/lineage_analyzer
-   basic_concepts/lineage_holder
-   basic_concepts/lineage_model
+   basic_concepts/runner
+   basic_concepts/analyzer
+   basic_concepts/holder
+   basic_concepts/model
+   basic_concepts/metadata_provider
 
-:doc:`basic_concepts/lineage_runner`
+:doc:`basic_concepts/runner`
     LineageRunner: The entry point for SQLLineage
 
-:doc:`basic_concepts/lineage_analyzer`
+:doc:`basic_concepts/analyzer`
     LineageAnalyzer: The core functionality of analyze one SQL statement
 
-:doc:`basic_concepts/lineage_holder`
+:doc:`basic_concepts/holder`
     LineageHolder: To hold lineage result at different level
 
-:doc:`basic_concepts/lineage_model`
+:doc:`basic_concepts/model`
     The data classes for SQLLineage
 
+:doc:`basic_concepts/metadata_provider`
+    MetaDataProvider: provider metadata to assist lineage analysis
 
 Release note
 ============
