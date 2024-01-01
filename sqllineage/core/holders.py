@@ -144,7 +144,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             for column in self.write_columns:
                 if column.raw_name == "*":
                     tgt_wildcard = column
-                    for src_wildcard in self._get_source_columns(tgt_wildcard):
+                    for src_wildcard in self.get_source_columns(tgt_wildcard):
                         if source_table := src_wildcard.parent:
                             src_table_columns = []
                             if isinstance(source_table, SubQuery):
@@ -169,7 +169,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             table = next(iter(write_only))
         return table
 
-    def _get_source_columns(self, node: Column) -> List[Column]:
+    def get_source_columns(self, node: Column) -> List[Column]:
         return [
             src
             for (src, tgt, edge_type) in self.graph.in_edges(nbunch=node, data="type")
