@@ -5,24 +5,30 @@ from sqllineage.core.models import Column, Table
 
 
 class MetaDataProvider:
-    """Base class used to provide metadata service like table schema.
+    """
+    Base class used to provide metadata like table schema.
 
     When parse below sql:
-    Insert into db1.table1
-    select c1
-    from db2.table2 t2
-    join db3.table3 t3 on t2.id = t3.id
 
-    Only by literal analysis, we don't know which table selected column c1 is from, when parsing column lineage.
-    If implement abstract method get_table_columns to provide table schema of table2 and table3,
-    then pass the implementation to :class:`sqllineage.runner.LineageRunner`.
-    It can help parse column lineage correctly.
+    .. code-block:: sql
+
+        INSERT INTO db1.table1
+        SELECT c1
+        FROM db2.table2 t2
+        JOIN db3.table3 t3 ON t2.id = t3.id
+
+    Only by literal analysis, we don't know which table is selected column c1 from.
+    A subclass of MetaDataProvider implementing _get_table_columns passing to :class:`sqllineage.runner.LineageRunner`.
+    can help parse column lineage correctly.
     """
 
     def __init__(self) -> None:
         self._session_metadata: Dict[str, List[str]] = {}
 
     def get_table_columns(self, table: Table, **kwargs) -> List[Column]:
+        """
+        return columns of given table.
+        """
         if (key := str(table)) in self._session_metadata:
             cols = self._session_metadata[key]
         else:

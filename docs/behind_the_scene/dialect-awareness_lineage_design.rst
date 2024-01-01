@@ -6,9 +6,9 @@ Problem Statement
 =================
 As of v1.3.x release, table level lineage is perfectly production-ready. Column level lineage, under the no-metadata
 background, is also as good as it can be. And yet we still have a lot of corner cases that are not yet supported.
-This is really due to the long-tail of SQL language features and fragmentation of various SQL dialect.
+This is really due to the long-tail of SQL language features and fragmentation of various SQL dialects.
 
-Some typical issues:
+Here are some typical issues:
 
 * How to check whether syntax is valid or not?
 
@@ -30,7 +30,7 @@ Some typical issues:
   * Presto UNNEST
   * Snowflake GENERATOR
 
-Over the years, we already have several monkey patches and utils on sqlparse, to tweak the AST generated, either because
+Over the years, we already have several monkey patches and utils on sqlparse to tweak the AST generated, either because
 of incorrect parsing result (e.g. parenthesized query followed by INSERT INTO table parsed as function) or not yet
 supported token grouping (e.g. window function for example). Due to the non-validating nature of sqlparse, that's the
 bitter pill to swallow when we enjoyed tons of convenience.
@@ -75,7 +75,7 @@ From code structure perspective, we refactored the whole code base to introduce 
 * LineageAnalyzer now accepts single statement SQL string, split by LineageRunner, and returns StatementLineageHolder
   as before
 * Each parser implementations sit in folder **sqllineage.core.parser**. They're extending the LineageAnalyzer, common
-  Models, and leverage Holders at different layer.
+  Models, and leverage Holders at different layers.
 
 .. note::
     Dialect-awareness lineage is now released with v1.4.0

@@ -44,25 +44,11 @@ Questions Before Implementation
     JOIN tab3
     ON tab2.col1 = tab3.col1
 
-**Answer**: dd two edges, tab2.col2 -> tab1.col2, tab3.col2 -> tab1.col2. Meanwhile, these two edges should be marked
+**Answer**: Add two edges, tab2.col2 -> tab1.col2, tab3.col2 -> tab1.col2. Meanwhile, these two edges should be marked
 so that later in visualization, they can be drawn differently, like in dot line.
 
 Implementation Plan
 ===================
-
-With `6308b50`_ splitting the logic into different handlers, we now have SourceHandler, TargetHandler and CTEHandler to
-handle table level lineage. They're subclass of NextTokenBaseHandler, an abstract class to address an extract pattern
-when a specified token indicates we should extract something from next token.
-
-A newly introduced ColumnHandler will also be based on NextTokenBaseHandler (column token followed by keyword SELECT)
-plus a end-of-(sub)query hook. Because only until end of query could we know all the source tables. If we don't have
-all the source tables and their alias, we can't assign the column to table correctly.
-
-.. warning::
-    To handle UNION clause, ColumnHandler is now merged into SourceHandler, due to the fact that we need source tables
-    info breaking down into sub-statement level, end of the whole query would be to late.
-
-**Steps for Full Implementation**
 
 1. Atomic column logic handling: alias, case when, function, expression, etc.
 2. Subquery recognition and lineage transition from subquery to statement
@@ -75,4 +61,3 @@ all the source tables and their alias, we can't assign the column to table corre
 
 
 .. _JanusGraph docs: https://docs.janusgraph.org/schema/
-.. _6308b50: https://github.com/reata/sqllineage/commit/6308b50e0b087e1bdab722dd531282a169131f4b

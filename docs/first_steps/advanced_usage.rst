@@ -5,7 +5,7 @@ Advanced Usage
 Multiple SQL Statements
 =======================
 
-Lineage result combined for multiple SQL statements, with intermediate tables identified
+Lineage is combined from multiple SQL statements, with intermediate tables identified
 
 .. code-block:: bash
 
@@ -22,7 +22,7 @@ Lineage result combined for multiple SQL statements, with intermediate tables id
 Verbose Lineage Result
 ======================
 
-And if you want to see lineage result for every SQL statement, just toggle verbose option
+And if you want to see lineage for each SQL statement, just toggle verbose option
 
 .. code-block:: bash
 
@@ -52,32 +52,31 @@ And if you want to see lineage result for every SQL statement, just toggle verbo
 
 Dialect-Awareness Lineage
 =========================
-By default, sqllineage doesn't validate your SQL and could give confusing result in case of invalid SQL syntax.
-In addition, different SQL dialect has different set of keywords, further weakening sqllineage's capabilities when
-keyword used as table name or column name. To reduce the impact, user are strongly encouraged to pass the dialect to
-assist the lineage analyzing.
+By default, sqllineage use `ansi` dialect to validate and parse your SQL. However, some SQL syntax you take for granted
+in daily life might not be in ANSI standard. In addition, different SQL dialects have different set of SQL keywords,
+further weakening sqllineage's capabilities when keyword used as table name or column name. To get the most out of
+sqllineage, we strongly encourage you to pass the dialect to assist the lineage analyzing.
 
-Take below example, `analyze` is a reserved keyword in PostgreSQL. Default non-validating dialect gives incomplete result,
-while ansi dialect gives the correct one and postgres dialect tells you this causes syntax error:
+Take below example, `INSERT OVERWRITE` statement is only supported by big data solutions like Hive/SparkSQL, and `MAP`
+is a reserved keyword in Hive thus can not be used as table name while it is not for SparkSQL. Both ansi and hive dialect
+tell you this causes syntax error and sparksql gives the correct result:
 
 .. code-block:: bash
 
-    $ sqllineage -e "insert into analyze select * from foo;"
-    Statements(#): 1
-    Source Tables:
-        <default>.foo
-    Target Tables:
-
-    $ sqllineage -e "insert into analyze select * from foo;" --dialect=ansi
-    Statements(#): 1
-    Source Tables:
-        <default>.foo
-    Target Tables:
-        <default>.analyze
-
-    $ sqllineage -e "insert into analyze select * from foo;" --dialect=postgres
+    $ sqllineage -e "insert overwrite table map select * from foo"
     ...
     sqllineage.exceptions.InvalidSyntaxException: This SQL statement is unparsable, please check potential syntax error for SQL
+
+    $ sqllineage -e "insert overwrite table map select * from foo" --dialect=hive
+    ...
+    sqllineage.exceptions.InvalidSyntaxException: This SQL statement is unparsable, please check potential syntax error for SQL
+
+    $ sqllineage -e "insert overwrite table map select * from foo" --dialect=sparksql
+    Statements(#): 1
+    Source Tables:
+        <default>.foo
+    Target Tables:
+        <default>.map
 
 
 Use `sqllineage \-\-dialects` to see all available dialects.
@@ -91,7 +90,7 @@ will be printed.
 
 .. code-block:: sql
 
-    INSERT OVERWRITE TABLE foo
+    INSERT INTO foo
     SELECT a.col1,
            b.col1     AS col2,
            c.col3_sum AS col3,
@@ -106,7 +105,7 @@ will be printed.
                        ON a.id = sq.bar_id
              CROSS JOIN quux d;
 
-    INSERT OVERWRITE TABLE corge
+    INSERT INTO corge
     SELECT a.col1,
            a.col2 + b.col2 AS col2
     FROM foo a
@@ -114,11 +113,11 @@ will be printed.
                   ON a.col1 = b.col1;
 
 
-Suppose this sql is stored in a file called foo.sql
+Suppose this sql is stored in a file called test.sql
 
 .. code-block:: bash
 
-    $ sqllineage -f foo.sql -l column
+    $ sqllineage -f test.sql -l column
     <default>.corge.col1 <- <default>.foo.col1 <- <default>.bar.col1
     <default>.corge.col2 <- <default>.foo.col2 <- <default>.baz.col1
     <default>.corge.col2 <- <default>.grault.col2
@@ -136,7 +135,7 @@ Still using the above SQL file:
 
 .. code-block:: bash
 
-    sqllineage -g -f foo.sql
+    sqllineage -g -f test.sql
 
 A webserver will be started, showing DAG representation of the lineage result in browser.
 

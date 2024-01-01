@@ -13,15 +13,10 @@ DOs
 
 DONTs
 =====
-* Column-level lineage will not be 100% accurate because that would require metadata information. However, there's no
-  unified metadata service for all kinds of SQL systems. For the moment, in column-level lineage, column-to-table
-  resolution is conducted in a best-effort way, meaning we only provide possible table candidates for situation like
-  ``select *`` or ``select col from tab1 join tab2``.
-* Likewise for Partition-level lineage. Until we find a way to not involve metadata service, we will not go for this.
-
-.. note::
-    100% accurate Column-level lineage is still do-able if we can provide some kind of a plugin system for user to
-    register their metadata instead of us maintaining it. Let's see what will happen in future versions.
+* Column-level lineage will not be 100% accurate because that would require metadata information. It's optional for user
+  to leverage MetaDataProvider functionality so sqllineage can query metadata when analyzing. If not provided,
+  column-to-table resolution will be conducted in a best-effort way, meaning we only provide possible table candidates
+  for situation like ``select *`` or ``select col from tab1 join tab2``.
 
 Static Code Analysis Approach Explained
 =======================================
@@ -49,5 +44,5 @@ The alternative way is starting the lineage analysis on the abstraction layer of
 ties lineage analysis tightly with the SQL system so it won't function without a live connection to database. But that will
 give user an accurate result and the source code of database can be used to save a lot of coding effort.
 
-To combine the good side of both approaches, in the long term, SQLLineage will introduce an optional resolution phase,
-followed by the current unresolved lineage result, where user can register metadata information in a programmatic way.
+To combine the good side of both approaches, SQLLineage introduces an optional MetaDataProvider, where user can register
+metadata information in a programmatic way to assist column-to-table resolution.

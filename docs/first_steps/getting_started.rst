@@ -19,7 +19,7 @@ If you want the latest development version, you can install directly from GitHub
 
 
 .. note::
-    Installation from GitHub (or source code) requires NodeJS/npm for frontend code building, while for PyPI,
+    Installation from GitHub (or source code) requires **NodeJS/npm** for frontend code building, while for PyPI,
     we already pre-built the frontend code so Python/pip will be enough.
 
 SQLLineage in Command Line
@@ -27,8 +27,8 @@ SQLLineage in Command Line
 
 After installation, you will get a `sqllineage` command. It has two major options:
 
-    - -e option let you pass a quoted query string as SQL command
-    - -f option let you pass a file that contains one or more SQL commands
+    - -e option let you pass a quoted query string as SQL statements
+    - -f option let you pass a file that contains SQL statements
 
 .. code-block:: bash
 
