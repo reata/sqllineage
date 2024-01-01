@@ -25,8 +25,16 @@ class SourceHandlerMixin:
                 if len(holder.write) > 1:
                     raise SQLLineageException
                 tgt_tbl = list(holder.write)[0]
+                lateral_aliases = set()
                 for idx, tgt_col in enumerate(col_grp):
                     tgt_col.parent = tgt_tbl
+                    for lateral_alias_ref in col_grp[idx + 1 :]:  # noqa: E203
+                        if any(
+                            src_col[0] == tgt_col.raw_name
+                            for src_col in lateral_alias_ref.source_columns
+                        ):
+                            lateral_aliases.add(tgt_col.raw_name)
+                            break
                     for src_col in tgt_col.to_source_columns(
                         self.get_alias_mapping_from_table_group(tbl_grp, holder)
                     ):
@@ -37,6 +45,22 @@ class SourceHandlerMixin:
                             # for invalid query: create view test (col3, col4) select col1 as col2 from tab,
                             # when the length doesn't match, we fall back to default behavior
                             tgt_col = write_columns[idx]
+                        is_lateral_alias_ref = False
+                        for wc in holder.write_columns:
+                            if wc.raw_name == "*":
+                                continue
+                            if (
+                                src_col.raw_name == wc.raw_name
+                                and src_col.raw_name in lateral_aliases
+                            ):
+                                is_lateral_alias_ref = True
+                                for lateral_alias_col in holder.get_source_columns(wc):
+                                    holder.add_column_lineage(
+                                        lateral_alias_col, tgt_col
+                                    )
+                                break
+                        if is_lateral_alias_ref:
+                            continue
                         holder.add_column_lineage(src_col, tgt_col)
 
     @classmethod
