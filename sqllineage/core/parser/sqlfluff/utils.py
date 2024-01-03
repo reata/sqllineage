@@ -8,11 +8,14 @@ naming convention:
     extract_x: other pattern
 first parameter of each function must be sqlfluff BaseSegment
 """
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import Path, Table, SubQuery
 from sqllineage.utils.entities import ColumnQualifierTuple, SubQueryTuple
+from sqllineage.utils.helpers import escape_identifier_name
 
 
 def is_negligible(segment: BaseSegment) -> bool:
@@ -212,6 +215,106 @@ def list_child_segments(
             return result
     else:
         return [seg for seg in segment.segments if not is_negligible(seg)]
+
+
+def list_table_from_from_clause_or_join_clause(
+    segment: BaseSegment, holder: SubQueryLineageHolder
+) -> List[Union[Table, SubQuery, Path]]:
+    """
+    Extract table from from_clause or join_clause, join_clause is a child node of from_clause.
+    """
+    tables: List[Union[Table, SubQuery, Path]] = []
+
+    def _add_dataset_from_expression_element(
+        from_expression_element_segment: BaseSegment,
+    ) -> None:
+        """
+        Append tables and subqueries identified in the 'from_expression_element' type segment to the table and
+        holder extra subqueries sets
+        """
+        nonlocal tables, holder
+        from sqllineage.core.parser.sqlfluff.models import (
+            SqlFluffSubQuery,
+            SqlFluffTable,
+        )
+
+        all_segments = [
+            seg
+            for seg in list_child_segments(from_expression_element_segment)
+            if seg.type != "keyword"
+        ]
+        if table_expression := from_expression_element_segment.get_child(
+            "table_expression"
+        ):
+            if table_expression.get_child("function"):
+                # for UNNEST or generator function, no dataset involved
+                return
+        first_segment = all_segments[0]
+        if first_segment.type == "bracketed":
+            if table_expression := first_segment.get_child("table_expression"):
+                if table_expression.get_child("values_clause"):
+                    # (VALUES ...) AS alias, no dataset involved
+                    return
+        subqueries = list_subqueries(from_expression_element_segment)
+        if subqueries:
+            for sq in subqueries:
+                bracketed, alias = sq
+                read_sq = SqlFluffSubQuery.of(bracketed, alias)
+                tables.append(read_sq)
+        else:
+            table_identifier = find_table_identifier(from_expression_element_segment)
+            if table_identifier:
+                subquery_flag = False
+                alias = None
+                if len(all_segments) > 1 and all_segments[1].type == "alias_expression":
+                    all_segments = list_child_segments(all_segments[1])
+                    alias = str(
+                        all_segments[1].raw
+                        if len(all_segments) > 1
+                        else all_segments[0].raw
+                    )
+                if "." not in table_identifier.raw:
+                    cte_dict = {s.alias: s for s in holder.cte}
+                    cte = cte_dict.get(table_identifier.raw)
+                    if cte is not None:
+                        # could reference CTE with or without alias
+                        tables.append(
+                            SqlFluffSubQuery.of(
+                                cte.query,
+                                alias or table_identifier.raw,
+                            )
+                        )
+                        subquery_flag = True
+                if subquery_flag is False:
+                    if table_identifier.type == "file_reference":
+                        tables.append(
+                            Path(
+                                escape_identifier_name(
+                                    table_identifier.segments[-1].raw
+                                )
+                            )
+                        )
+                    else:
+                        tables.append(SqlFluffTable.of(table_identifier, alias=alias))
+
+    if segment.type in ["from_clause", "join_clause"]:
+        from_expressions = segment.get_children("from_expression")
+        if len(from_expressions) > 1:
+            # SQL89 style of join
+            for from_expression in from_expressions:
+                if from_expression_element := find_from_expression_element(
+                    from_expression
+                ):
+                    _add_dataset_from_expression_element(from_expression_element)
+        else:
+            if from_expression_element := find_from_expression_element(segment):
+                _add_dataset_from_expression_element(from_expression_element)
+            for join_clause in list_join_clause(segment):
+                tables += list_table_from_from_clause_or_join_clause(
+                    join_clause, holder
+                )
+
+    return tables
 
 
 def extract_identifier(col_segment: BaseSegment) -> str:
