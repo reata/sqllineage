@@ -13,7 +13,7 @@ from typing import List, Optional, Tuple, Union
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Path, Table, SubQuery
+from sqllineage.core.models import Path, SubQuery, Table
 from sqllineage.utils.entities import ColumnQualifierTuple, SubQueryTuple
 from sqllineage.utils.helpers import escape_identifier_name
 
