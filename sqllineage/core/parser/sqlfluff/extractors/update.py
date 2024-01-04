@@ -13,7 +13,6 @@ from sqllineage.core.parser.sqlfluff.utils import (
     find_table_identifier,
     list_child_segments,
     list_join_clause,
-    list_table_from_from_clause_or_join_clause,
 )
 from sqllineage.utils.entities import AnalyzerContext
 
@@ -73,7 +72,9 @@ class UpdateExtractor(BaseExtractor, SourceHandlerMixin):
                     # so that each handler don't have to worry about what's inside subquery
                     subqueries.append(sq)
 
-                tables += list_table_from_from_clause_or_join_clause(segment, holder)
+                tables += self._list_table_from_from_clause_or_join_clause(
+                    segment, holder
+                )
 
         for table in tables:  # type: ignore
             holder.add_read(table)

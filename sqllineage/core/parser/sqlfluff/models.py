@@ -98,9 +98,9 @@ class SqlFluffColumn(Column):
     @staticmethod
     def of(column: BaseSegment, **kwargs) -> Column:
         """
-        Build a 'SqlFluffSubQuery' object
+        Build a 'Column' object
         :param column: column segment
-        :return:
+        :return: 'Column' object
         """
         if column.type == "select_clause_element":
             source_columns, alias = SqlFluffColumn._get_column_and_alias(column)
