@@ -42,6 +42,7 @@ class LineageRunner(object):
         verbose: bool = False,
         silent_mode: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
+        default_schema: Optional[str] = None,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -67,6 +68,7 @@ class LineageRunner(object):
         self._dialect = dialect
         self._metadata_provider = metadata_provider
         self._silent_mode = silent_mode
+        self._default_schema = default_schema
 
     @lazy_method
     def __str__(self):
@@ -202,7 +204,7 @@ Target Tables:
                 stmt_holders.append(stmt_holder)
             self._stmt_holders = stmt_holders
             self._sql_holder = SQLLineageHolder.of(
-                session.metadata_provider, *self._stmt_holders
+                session.metadata_provider, self._default_schema, *self._stmt_holders
             )
         self._evaluated = True
 

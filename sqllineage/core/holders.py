@@ -340,10 +340,17 @@ class SQLLineageHolder(ColumnLineageMixin):
 
     @staticmethod
     def _build_digraph(
-        metadata_provider: MetaDataProvider, *args: StatementLineageHolder
+        metadata_provider: MetaDataProvider, default_schema:Optional[str], *args: StatementLineageHolder
     ) -> DiGraph:
         g = DiGraph()
         for holder in args:
+            if default_schema:
+                for node_list in (holder.write, holder.read):
+                    for node in node_list:
+                        if isinstance(node, Table) and node.schema.raw_name == Schema.unknown:
+                            node.schema.raw_name = default_schema
+                        if isinstance(node, Column) and node.parent.schema.raw_name == Schema.unknown:
+                            node.parent.schema.raw_name = default_schema
             g = nx.compose(g, holder.graph)
             if holder.drop:
                 for table in holder.drop:
@@ -417,10 +424,10 @@ class SQLLineageHolder(ColumnLineageMixin):
         return g
 
     @staticmethod
-    def of(metadata_provider, *args: StatementLineageHolder) -> "SQLLineageHolder":
+    def of(metadata_provider, default_schema:Optional[str], *args: StatementLineageHolder) -> "SQLLineageHolder":
         """
         To assemble multiple :class:`sqllineage.core.holders.StatementLineageHolder` into
         :class:`sqllineage.core.holders.SQLLineageHolder`
         """
-        g = SQLLineageHolder._build_digraph(metadata_provider, *args)
+        g = SQLLineageHolder._build_digraph(metadata_provider, default_schema, *args)
         return SQLLineageHolder(g)
