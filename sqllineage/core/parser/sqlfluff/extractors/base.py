@@ -22,9 +22,10 @@ class BaseExtractor:
 
     SUPPORTED_STMT_TYPES: List[str] = []
 
-    def __init__(self, dialect: str, metadata_provider: MetaDataProvider):
+    def __init__(self, dialect: str, metadata_provider: MetaDataProvider, default_schema: Optional[str]):
         self.dialect = dialect
         self.metadata_provider = metadata_provider
+        self.default_schema = default_schema
 
     def can_extract(self, statement_type: str) -> bool:
         """
@@ -101,7 +102,7 @@ class BaseExtractor:
         """
         delegate to another type of extractor to extract
         """
-        return extractor_cls(self.dialect, self.metadata_provider).extract(
+        return extractor_cls(self.dialect, self.metadata_provider, self.default_schema,).extract(
             segment, context
         )
 
@@ -120,7 +121,7 @@ class BaseExtractor:
                 if sq.query.get_child("with_compound_statement")
                 else SelectExtractor
             )
-            holder |= extractor_cls(self.dialect, self.metadata_provider).extract(
+            holder |= extractor_cls(self.dialect, self.metadata_provider, self.default_schema).extract(
                 sq.query, AnalyzerContext(cte=holder.cte, write={sq})
             )
 

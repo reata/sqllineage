@@ -76,6 +76,7 @@ def assert_column_lineage_equal(
     metadata_provider: Optional[MetaDataProvider] = None,
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
+    default_schema: Optional[str] = None,
 ):
     metadata_provider = (
         DummyMetaDataProvider() if metadata_provider is None else metadata_provider
@@ -84,7 +85,7 @@ def assert_column_lineage_equal(
         sql, dialect=SQLPARSE_DIALECT, metadata_provider=metadata_provider
     )
     lr_sqlfluff = LineageRunner(
-        sql, dialect=dialect, metadata_provider=metadata_provider
+        sql, dialect=dialect, metadata_provider=metadata_provider, default_schema=default_schema
     )
     if test_sqlparse:
         _assert_column_lineage(lr, column_lineages)
