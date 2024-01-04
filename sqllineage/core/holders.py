@@ -33,7 +33,12 @@ class ColumnLineageMixin:
         for source, target in itertools.product(source_columns, target_columns):
             simple_paths = list(nx.all_simple_paths(self.graph, source, target))
             for path in simple_paths:
-                columns.add(tuple(path))
+                if exclude_subquery:
+                    path = [node for node in path if not isinstance(node.parent, SubQuery)]
+                    if len(path) > 1:
+                        columns.add(tuple(path))
+                else:
+                    columns.add(tuple(path))
         return columns
 
 
