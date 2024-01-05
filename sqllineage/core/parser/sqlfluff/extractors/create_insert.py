@@ -49,7 +49,7 @@ class CreateInsertExtractor(BaseExtractor):
                     col_list = [Column(col.raw_name, source_columns=[ColumnQualifierTuple(column=col.raw_name, qualifier=None)])
                                 for col in self.metadata_provider.get_table_columns(Table(tgt_tab.raw_name, schema))]
                     holder.add_write_column(*col_list)
-                    col_flag = False
+                    col_flag = True
 
                 holder |= self.delegate_to_select(segment, holder)
             elif segment.type == "values_clause":
