@@ -33,7 +33,8 @@ class CreateInsertExtractor(BaseExtractor):
     ) -> SubQueryLineageHolder:
         holder = self._init_holder(context)
         src_flag = tgt_flag = False
-        for segment in list_child_segments(statement):
+        statement = list_child_segments(statement)
+        for seg_idx, segment in enumerate(statement):
             if segment.type == "with_compound_statement":
                 holder |= self.delegate_to_cte(segment, holder)
             elif segment.type == "bracketed" and any(
@@ -111,26 +112,37 @@ class CreateInsertExtractor(BaseExtractor):
                         holder.add_write(Path(escape_identifier_name(segment.raw)))
                 tgt_flag = False
 
-                if statement.segments[0].raw_upper == 'INSERT' and holder.write:
-                    is_find_table_reference = False
-                    for seg in statement.segments:
-                        if seg.type == 'whitespace':
-                            continue
-                        if seg.type == 'table_reference':
-                            is_find_table_reference = True
-                            continue
-                        if is_find_table_reference:
-                            if seg.type != 'bracketed' or not (
-                                    seg.type == 'bracketed' and
-                                    not set([bracketed_seg.type for bracketed_seg in seg.segments]).difference(
-                                        {'symbol', 'indent', 'whitespace', 'column_reference', 'dedent'})):
-                                tgt_tab = list(holder.write)[0]
-                                if isinstance(tgt_tab, Table) and (self.default_schema or tgt_tab.schema.raw_name != Schema.unknown):
-                                    schema = tgt_tab.schema if tgt_tab.schema.raw_name != Schema.unknown else Schema(self.default_schema)
-                                    col_list = [Column(col.raw_name, source_columns=[ColumnQualifierTuple(column=col.raw_name, qualifier=None)])
-                                                for col in self.metadata_provider.get_table_columns(Table(tgt_tab.raw_name, schema))]
-                                    holder.add_write_column(*col_list)
-                            break
+                if statement[0].raw_upper == 'INSERT' and holder.write:
+                    sub_segments = list_child_segments(statement[seg_idx + 1])
+                    if not all(
+                            sub_segment.type in ["column_reference", "column_definition"]
+                            for sub_segment in sub_segments
+                    ):
+                        tgt_tab = list(holder.write)[0]
+                        if isinstance(tgt_tab, Table) and (self.default_schema or tgt_tab.schema.raw_name != Schema.unknown):
+                            schema = tgt_tab.schema if tgt_tab.schema.raw_name != Schema.unknown else Schema(self.default_schema)
+                            col_list = [Column(col.raw_name, source_columns=[ColumnQualifierTuple(column=col.raw_name, qualifier=None)])
+                                        for col in self.metadata_provider.get_table_columns(Table(tgt_tab.raw_name, schema))]
+                            holder.add_write_column(*col_list)
+                    # is_find_table_reference = False
+                    # for seg_idx, seg in enumerate(statement.segments):
+                    #     if seg.type == 'whitespace':
+                    #         continue
+                    #     if seg.type == 'table_reference':
+                    #         is_find_table_reference = True
+                    #         continue
+                    #     if is_find_table_reference:
+                    #         if seg.type != 'bracketed' or not (
+                    #                 seg.type == 'bracketed' and
+                    #                 not set([bracketed_seg.type for bracketed_seg in seg.segments]).difference(
+                    #                     {'symbol', 'indent', 'whitespace', 'column_reference', 'dedent'})):
+                    #             tgt_tab = list(holder.write)[0]
+                    #             if isinstance(tgt_tab, Table) and (self.default_schema or tgt_tab.schema.raw_name != Schema.unknown):
+                    #                 schema = tgt_tab.schema if tgt_tab.schema.raw_name != Schema.unknown else Schema(self.default_schema)
+                    #                 col_list = [Column(col.raw_name, source_columns=[ColumnQualifierTuple(column=col.raw_name, qualifier=None)])
+                    #                             for col in self.metadata_provider.get_table_columns(Table(tgt_tab.raw_name, schema))]
+                    #                 holder.add_write_column(*col_list)
+                    #         break
             if src_flag:
                 if segment.type in ["table_reference", "object_reference"]:
                     holder.add_read(SqlFluffTable.of(segment))
