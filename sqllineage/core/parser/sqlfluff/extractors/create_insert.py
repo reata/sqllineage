@@ -46,8 +46,9 @@ class CreateInsertExtractor(BaseExtractor):
                 tgt_tab = list(holder.write)[0]
                 if isinstance(tgt_tab, Table) and (self.default_schema or tgt_tab.schema.raw_name != Schema.unknown) and not col_flag:
                     schema = tgt_tab.schema if tgt_tab.schema.raw_name != Schema.unknown else Schema(self.default_schema)
-                    for col in self.metadata_provider.get_table_columns(Table(tgt_tab.raw_name, schema)):
-                        holder.add_write_column(Column(col.raw_name, source_columns=[ColumnQualifierTuple(column=col.raw_name, qualifier=None)]))
+                    col_list = [Column(col.raw_name, source_columns=[ColumnQualifierTuple(column=col.raw_name, qualifier=None)])
+                                for col in self.metadata_provider.get_table_columns(Table(tgt_tab.raw_name, schema))]
+                    holder.add_write_column(*col_list)
                     col_flag = False
 
                 holder |= self.delegate_to_select(segment, holder)
