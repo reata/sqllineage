@@ -120,10 +120,10 @@ class CreateInsertExtractor(BaseExtractor):
                             is_find_table_reference = True
                             continue
                         if is_find_table_reference:
-                            if (seg.type != 'bracketed' or
-                                    (seg.type == 'bracketed'
-                                     and not set([bracketed_seg.type for bracketed_seg in seg.segments]).difference(
-                                                {'symbol', 'indent', 'whitespace', 'column_reference', 'dedent'}))):
+                            if seg.type != 'bracketed' or not (
+                                    seg.type == 'bracketed' and
+                                    not set([bracketed_seg.type for bracketed_seg in seg.segments]).difference(
+                                        {'symbol', 'indent', 'whitespace', 'column_reference', 'dedent'})):
                                 tgt_tab = list(holder.write)[0]
                                 if isinstance(tgt_tab, Table) and (self.default_schema or tgt_tab.schema.raw_name != Schema.unknown):
                                     schema = tgt_tab.schema if tgt_tab.schema.raw_name != Schema.unknown else Schema(self.default_schema)
