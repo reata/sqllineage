@@ -4,7 +4,6 @@ from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Column, SubQuery, Table
-from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
@@ -17,7 +16,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
 from sqllineage.utils.entities import AnalyzerContext
 
 
-class UpdateExtractor(BaseExtractor, SourceHandlerMixin):
+class UpdateExtractor(BaseExtractor):
     """
     Update statement lineage extractor
     """
@@ -82,7 +81,7 @@ class UpdateExtractor(BaseExtractor, SourceHandlerMixin):
         for tgt_col in columns:
             tgt_col.parent = list(holder.write)[0]
             for src_col in tgt_col.to_source_columns(
-                self.get_alias_mapping_from_table_group(tables, holder)
+                holder.get_alias_mapping_from_table_group(tables)
             ):
                 holder.add_column_lineage(src_col, tgt_col)
 
