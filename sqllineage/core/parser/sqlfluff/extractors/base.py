@@ -92,9 +92,8 @@ class BaseExtractor:
         Extract table from from_clause or join_clause, join_clause is a child node of from_clause.
         """
         tables = []
-        if segment.type in ["from_clause", "join_clause"]:
-            from_expressions = segment.get_children("from_expression")
-            if len(from_expressions) > 1:
+        if segment.type in ["from_clause", "join_clause", "update_statement"]:
+            if len(from_expressions := segment.get_children("from_expression")) > 1:
                 # SQL89 style of join
                 for from_expression in from_expressions:
                     if from_expression_element := find_from_expression_element(

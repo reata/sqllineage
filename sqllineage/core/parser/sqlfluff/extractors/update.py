@@ -1,17 +1,11 @@
-from typing import Optional, Union
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.core.models import Column
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
-from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
-    find_from_expression_element,
-    find_table_identifier,
     list_child_segments,
-    list_join_clause,
 )
 from sqllineage.utils.entities import AnalyzerContext
 
@@ -34,15 +28,12 @@ class UpdateExtractor(BaseExtractor):
         for segment in list_child_segments(statement):
             if segment.type == "from_expression":
                 # UPDATE with JOIN, mysql only syntax
-                if table := self.find_table_from_from_expression_or_join_clause(
-                    segment, holder
+                if from_join_tables := self._list_table_from_from_clause_or_join_clause(
+                    statement, holder
                 ):
-                    holder.add_write(table)
-                for join_clause in list_join_clause(statement):
-                    if table := self.find_table_from_from_expression_or_join_clause(
-                        join_clause, holder
-                    ):
-                        holder.add_read(table)
+                    holder.add_write(from_join_tables[0])
+                    for join_table in from_join_tables[1:]:
+                        holder.add_read(join_table)
 
             if segment.type == "keyword" and segment.raw_upper == "UPDATE":
                 tgt_flag = True
@@ -88,16 +79,3 @@ class UpdateExtractor(BaseExtractor):
         self.extract_subquery(subqueries, holder)
 
         return holder
-
-    def find_table_from_from_expression_or_join_clause(
-        self, segment, holder
-    ) -> Optional[Union[Table, SubQuery]]:
-        table: Optional[Union[Table, SubQuery]] = None
-        if from_expression_element := find_from_expression_element(segment):
-            if table_identifier := find_table_identifier(from_expression_element):
-                cte_dict = {c.alias: c for c in holder.cte}
-                if cte := cte_dict.get(table_identifier.raw):
-                    table = SqlFluffSubQuery.of(cte.query, table_identifier.raw)
-                else:
-                    table = self.find_table(table_identifier)
-        return table
