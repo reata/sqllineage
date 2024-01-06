@@ -22,12 +22,13 @@ class UpdateExtractor(BaseExtractor):
     ) -> SubQueryLineageHolder:
         holder = self._init_holder(context)
         tgt_flag = False
-        tables = []
         columns = []
         subqueries = []
         for segment in list_child_segments(statement):
             if segment.type == "from_expression":
                 # UPDATE with JOIN, mysql only syntax
+                # from_expression is wrapped directly under update_statement and there's no from_clause in this case
+                # we need to pass update_statement to the function
                 if from_join_tables := self._list_table_from_from_clause_or_join_clause(
                     statement, holder
                 ):
@@ -40,8 +41,8 @@ class UpdateExtractor(BaseExtractor):
                 continue
 
             if tgt_flag:
-                if table := self.find_table(segment):
-                    holder.add_write(table)
+                if write_table := self.find_table(segment):
+                    holder.add_write(write_table)
                 tgt_flag = False
 
             if segment.type == "set_clause_list":
@@ -57,22 +58,18 @@ class UpdateExtractor(BaseExtractor):
 
             if segment.type == "from_clause":
                 # UPDATE FROM, ansi syntax
+                # there can be multiple from items, each may be a table or a subquery
                 for sq in self.list_subquery(segment):
-                    # Collecting subquery on the way, hold on parsing until last
-                    # so that each handler don't have to worry about what's inside subquery
                     subqueries.append(sq)
-
-                tables += self._list_table_from_from_clause_or_join_clause(
+                for read_table in self._list_table_from_from_clause_or_join_clause(
                     segment, holder
-                )
-
-        for table in tables:  # type: ignore
-            holder.add_read(table)
+                ):
+                    holder.add_read(read_table)
 
         for tgt_col in columns:
             tgt_col.parent = list(holder.write)[0]
             for src_col in tgt_col.to_source_columns(
-                holder.get_alias_mapping_from_table_group(tables)
+                holder.get_alias_mapping_from_table_group(list(holder.read))
             ):
                 holder.add_column_lineage(src_col, tgt_col)
 
