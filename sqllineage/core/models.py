@@ -1,6 +1,7 @@
 import warnings
 from typing import Any, Dict, List, Optional, Set, Union
 
+from sqllineage.config import SQLLineageConfig
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.helpers import escape_identifier_name
 
@@ -11,8 +12,9 @@ class Schema:
     """
 
     unknown = "<default>"
+    default = SQLLineageConfig.DEFAULT_SCHEMA or unknown
 
-    def __init__(self, name: str = unknown):
+    def __init__(self, name: str = default):
         """
         :param name: schema name
         """
@@ -31,7 +33,7 @@ class Schema:
         return hash(str(self))
 
     def __bool__(self):
-        return str(self) != self.unknown
+        return str(self) != self.default
 
 
 class Table:

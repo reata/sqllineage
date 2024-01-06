@@ -10,6 +10,8 @@ class _SQLLineageConfigLoader:
     config = {
         # for frontend directory drawer
         "DIRECTORY": (str, os.path.join(os.path.dirname(__file__), "data")),
+        # set default schema/database
+        "DEFAULT_SCHEMA": (str, ""),
         # to enable tsql no semicolon splitter mode
         "TSQL_NO_SEMICOLON": (bool, False),
     }
