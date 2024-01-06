@@ -59,7 +59,7 @@ def find_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
         from_expression/join_clause as parent
     """
     from_expression_element = None
-    if segment.type == "from_clause":
+    if segment.type in ["from_clause", "update_statement"]:
         if from_expression := segment.get_child("from_expression"):
             non_bracket = from_expression
             while bracketed := non_bracket.get_child("bracketed"):
