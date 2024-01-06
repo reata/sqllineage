@@ -31,6 +31,20 @@ First steps
     Using SQLLineage in your Python script
 
 
+Gear Up
+=======
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Gear up
+
+   gear_up/configuration
+
+:doc:`gear_up/configuration`
+    Learn how to configure sqllineage
+
+
 Behind the scene
 ================
 
