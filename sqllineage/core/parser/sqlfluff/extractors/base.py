@@ -22,7 +22,12 @@ class BaseExtractor:
 
     SUPPORTED_STMT_TYPES: List[str] = []
 
-    def __init__(self, dialect: str, metadata_provider: MetaDataProvider, default_schema: Optional[str]):
+    def __init__(
+        self,
+        dialect: str,
+        metadata_provider: MetaDataProvider,
+        default_schema: Optional[str],
+    ):
         self.dialect = dialect
         self.metadata_provider = metadata_provider
         self.default_schema = default_schema
@@ -102,9 +107,11 @@ class BaseExtractor:
         """
         delegate to another type of extractor to extract
         """
-        return extractor_cls(self.dialect, self.metadata_provider, self.default_schema,).extract(
-            segment, context
-        )
+        return extractor_cls(
+            self.dialect,
+            self.metadata_provider,
+            self.default_schema,
+        ).extract(segment, context)
 
     def extract_subquery(
         self, subqueries: List[SubQuery], holder: SubQueryLineageHolder
@@ -121,9 +128,9 @@ class BaseExtractor:
                 if sq.query.get_child("with_compound_statement")
                 else SelectExtractor
             )
-            holder |= extractor_cls(self.dialect, self.metadata_provider, self.default_schema).extract(
-                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
-            )
+            holder |= extractor_cls(
+                self.dialect, self.metadata_provider, self.default_schema
+            ).extract(sq.query, AnalyzerContext(cte=holder.cte, write={sq}))
 
     @staticmethod
     def _init_holder(context: AnalyzerContext) -> SubQueryLineageHolder:

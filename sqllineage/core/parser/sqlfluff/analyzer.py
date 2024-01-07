@@ -21,7 +21,9 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlfluff"
     SUPPORTED_DIALECTS = list(dialect.label for dialect in dialect_readout())
 
-    def __init__(self, dialect: str, default_schema: Optional[str], silent_mode: bool = False):
+    def __init__(
+        self, dialect: str, default_schema: Optional[str], silent_mode: bool = False
+    ):
         self._dialect = dialect
         self._silent_mode = silent_mode
         self.tsql_split_cache: Dict[str, BaseSegment] = {}

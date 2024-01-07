@@ -85,7 +85,10 @@ def assert_column_lineage_equal(
         sql, dialect=SQLPARSE_DIALECT, metadata_provider=metadata_provider
     )
     lr_sqlfluff = LineageRunner(
-        sql, dialect=dialect, metadata_provider=metadata_provider, default_schema=default_schema
+        sql,
+        dialect=dialect,
+        metadata_provider=metadata_provider,
+        default_schema=default_schema,
     )
     if test_sqlparse:
         _assert_column_lineage(lr, column_lineages)

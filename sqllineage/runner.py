@@ -180,7 +180,9 @@ Target Tables:
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT
-            else SqlFluffLineageAnalyzer(self._dialect, self._default_schema, self._silent_mode)
+            else SqlFluffLineageAnalyzer(
+                self._dialect, self._default_schema, self._silent_mode
+            )
         )
         if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
             self._stmt = analyzer.split_tsql(self._sql.strip())

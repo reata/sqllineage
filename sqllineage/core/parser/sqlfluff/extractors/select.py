@@ -31,7 +31,12 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
 
     SUPPORTED_STMT_TYPES = ["select_statement", "set_expression", "bracketed"]
 
-    def __init__(self, dialect: str, metadata_provider: MetaDataProvider, default_schema: Optional[str]):
+    def __init__(
+        self,
+        dialect: str,
+        metadata_provider: MetaDataProvider,
+        default_schema: Optional[str],
+    ):
         super().__init__(dialect, metadata_provider, default_schema)
         self.columns = []
         self.tables = []
