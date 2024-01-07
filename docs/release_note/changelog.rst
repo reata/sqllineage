@@ -2,6 +2,40 @@
 Changelog
 *********
 
+v1.5.0
+======
+:Date: January 7, 2024
+
+Great thanks to liznzn for contributing on MetaData-awareness lineage. Now we're able to generate more accurate
+column lineage result for `select *` or select unqualified columns in case of table join through a unified
+MetaDataProvider interface.
+
+Also a breaking change is made to make ansi the default dialect in v1.5.x release as we target ultimately deprecating
+non-validating dialect in v1.6.x release.
+
+Breaking Change
+---------------
+* Make ansi the Default Dialect (`#518 <https://github.com/reata/sqllineage/issues/518>`_)
+
+Feature
+-------------
+* Metadata Provider to Assist Column Lineage Analysis (`#477 <https://github.com/reata/sqllineage/issues/302>`_)
+
+Enhancement
+-------------
+* Add a Configuration for Default Schema (`#523 <https://github.com/reata/sqllineage/issues/523>`_)
+* Silent Mode Option to Suppress UnsupportedStatementException (`#513 <https://github.com/reata/sqllineage/issues/513>`_)
+* Support Lateral Column Alias Reference Analyzing (`#507 <https://github.com/reata/sqllineage/issues/507>`_)
+* Skip Lineage Analysis for SparkSQL Function Related Statement (`#500 <https://github.com/reata/sqllineage/issues/500>`_)
+* update statement column lineage (`#487 <https://github.com/reata/sqllineage/issues/487>`_)
+
+Bugfix
+-------------
+* subquery mistake alias as table name in visualization (`#512 <https://github.com/reata/sqllineage/issues/512>`_)
+* InvalidSyntaxException When SQL Statement Ends with Multiple Semicolons (`#502 <https://github.com/reata/sqllineage/issues/502>`_)
+* Misidentify Binary Operator * As Wildcard (`#485 <https://github.com/reata/sqllineage/issues/485>`_)
+* adding type cast operator produces different results for redshift dialect (`#455 <https://github.com/reata/sqllineage/issues/455>`_)
+
 v1.4.9
 ======
 :Date: December 10, 2023
