@@ -96,7 +96,7 @@ Intermediate Tables:
 ```
 
 ### Dialect-Awareness Lineage
-By default, sqllineage use `ansi` dialect to validate and parse your SQL. However, some SQL syntax you take for granted
+By default, sqllineage use `ansi` dialect to parse and validate your SQL. However, some SQL syntax you take for granted
 in daily life might not be in ANSI standard. In addition, different SQL dialects have different set of SQL keywords,
 further weakening sqllineage's capabilities when keyword used as table name or column name. To get the most out of
 sqllineage, we strongly encourage you to pass the dialect to assist the lineage analyzing.
@@ -162,6 +162,40 @@ $ sqllineage -f test.sql -l column
 <default>.foo.col3 <- c.col3_sum <- <default>.qux.col3
 <default>.foo.col4 <- col4
 ```
+
+### MetaData-Awareness Lineage
+By observing the column lineage generated from previous step, you'll possibly notice that:
+1. `<default>.foo.* <- <default>.quux.*`: the wildcard is not expanded.
+2. `<default>.foo.col4 <- col4`: col4 is not assigned with source table.
+
+It's not perfect because we don't know the columns encoded in `*` of table `quux`. Likewise, given the context,
+col4 could be coming from `bar`, `baz` or `quux`. Without metadata, this is the best sqllineage can do.
+
+User can optionally provide the metadata information to sqllineage to improve the lineage result.
+
+Suppose all the tables are created in sqlite database with a file called `db.db`. In particular, 
+table `quux` has columns `col5` and `col6` and `baz` has column `col4`. 
+```shell
+sqlite3 db.db 'CREATE TABLE IF NOT EXISTS baz (bar_id int, col1 int, col4 int)';
+sqlite3 db.db 'CREATE TABLE IF NOT EXISTS quux (quux_id int, col5 int, col6 int)';
+```
+
+Now given the same SQL, column lineage is fully resolved.
+```shell
+$ SQLLINEAGE_DEFAULT_SCHEMA=main sqllineage -f test.sql -l column --sqlalchemy_url=sqlite:///db.db
+main.corge.col1 <- main.foo.col1 <- main.bar.col1
+main.corge.col2 <- main.foo.col2 <- main.bar.col1
+main.corge.col2 <- main.grault.col2
+main.foo.col3 <- c.col3_sum <- main.qux.col3
+main.foo.col4 <- main.baz.col4
+main.foo.col5 <- main.quux.col5
+main.foo.col6 <- main.quux.col6
+```
+The default schema name in sqlite is called `main`, we have to specify here because the tables in SQL file are unqualified.
+
+SQLLineage leverages [`sqlalchemy`](https://github.com/sqlalchemy/sqlalchemy) to retrieve metadata from different SQL databases. 
+Check for more details on SQLLineage [MetaData](https://sqllineage.readthedocs.io/en/latest/gear_up/metadata.html).
+
 
 ### Lineage Visualization
 One more cool feature, if you want a graph visualization for the lineage result, toggle graph-visualization option
