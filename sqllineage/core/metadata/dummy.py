@@ -5,10 +5,13 @@ from sqllineage.core.metadata_provider import MetaDataProvider
 
 class DummyMetaDataProvider(MetaDataProvider):
     """
-    A Dummy MetaDataProvider that accept a dict with table name as key and a set of column name as value
+    A Dummy MetaDataProvider that accept metadata as a dict
     """
 
     def __init__(self, metadata: Optional[Dict[str, List[str]]] = None):
+        """
+        :param metadata: a dict with schema.table name as key and a list of unqualified column name as value
+        """
         super().__init__()
         self.metadata = metadata if metadata is not None else {}
 
