@@ -86,9 +86,6 @@ const useStyles = makeStyles((theme) => ({
 let isResizing = null;
 
 const dialects = {
-  "sqlparse": [
-    "non-validating"
-  ],
   "sqlfluff": [
     "ansi",
     "athena",
@@ -112,6 +109,9 @@ const dialects = {
     "teradata",
     "trino",
     "tsql"
+  ],
+  "sqlparse": [
+    "non-validating"
   ]
 }
 
@@ -122,7 +122,7 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = React.useState(true);
   const [drawerWidth, setDrawerWidth] = React.useState(18);
   const [dialectMenuAnchor, setDialectMenuAnchor] = React.useState(null);
-  const [dialectSelected, setDialectSelected] = React.useState("non-validating");
+  const [dialectSelected, setDialectSelected] = React.useState("ansi");
   const classes = useStyles({drawerWidth: drawerWidth});
 
   const height = "90vh";
