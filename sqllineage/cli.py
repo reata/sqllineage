@@ -11,6 +11,8 @@ from sqllineage import (
     NAME as MAIN_NAME,
     VERSION as MAIN_VERSION,
 )
+from sqllineage.core.metadata.dummy import DummyMetaDataProvider
+from sqllineage.core.metadata.sqlalchemy import SQLAlchemyMetaDataProvider
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
@@ -91,6 +93,11 @@ def main(args=None) -> None:
         help="skip unsupported statements",
         action="store_true",
     )
+    parser.add_argument(
+        "--sqlalchemy_url",
+        help="sqlalchemy url to provide metadata for lineage analysis",
+        type=str,
+    )
     args = parser.parse_args(args)
     if args.e and args.f:
         warnings.warn("Both -e and -f options are specified. -e option will be ignored")
@@ -99,6 +106,9 @@ def main(args=None) -> None:
         runner = LineageRunner(
             sql,
             dialect=args.dialect,
+            metadata_provider=SQLAlchemyMetaDataProvider(args.sqlalchemy_url)
+            if args.sqlalchemy_url
+            else DummyMetaDataProvider(),
             verbose=args.verbose,
             draw_options={
                 "host": args.host,
