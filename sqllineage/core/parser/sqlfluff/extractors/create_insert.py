@@ -1,7 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Path, Schema, Table, Column
+from sqllineage.core.models import Column, Path, Schema, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffTable
@@ -113,35 +113,38 @@ class CreateInsertExtractor(BaseExtractor):
                 tgt_flag = False
 
                 if statement.type == "insert_statement" and holder.write:
-                    sub_segments = list_child_segments(statement_child[seg_idx + 1])
+                    sub_segments = list_child_segments(
+                        segment=statement_child[seg_idx + 1]
+                    )
                     if not all(
                         sub_segment.type in ["column_reference", "column_definition"]
                         for sub_segment in sub_segments
                     ):
                         tgt_tab = list(holder.write)[0]
-                        if isinstance(tgt_tab, Table) and (
-                            self.default_schema
-                            or tgt_tab.schema.raw_name != Schema.unknown
-                        ):
-                            schema = (
-                                tgt_tab.schema
-                                if tgt_tab.schema.raw_name != Schema.unknown
-                                else Schema(self.default_schema)
-                            )
-                            col_list = [
-                                Column(
-                                    col.raw_name,
-                                    source_columns=[
-                                        ColumnQualifierTuple(
-                                            column=col.raw_name, qualifier=None
+                        if isinstance(tgt_tab, Table):
+                            schema = None
+                            if tgt_tab.schema.raw_name == Schema.unknown:
+                                if self.default_schema:
+                                    schema = Schema(self.default_schema)
+                            else:
+                                schema = tgt_tab.schema
+                            if schema:
+                                col_list = [
+                                    Column(
+                                        name=col.raw_name,
+                                        source_columns=[
+                                            ColumnQualifierTuple(
+                                                column=col.raw_name, qualifier=None
+                                            )
+                                        ],
+                                    )
+                                    for col in self.metadata_provider.get_table_columns(
+                                        table=Table(
+                                            name=tgt_tab.raw_name, schema=schema
                                         )
-                                    ],
-                                )
-                                for col in self.metadata_provider.get_table_columns(
-                                    Table(tgt_tab.raw_name, schema)
-                                )
-                            ]
-                            holder.add_write_column(*col_list)
+                                    )
+                                ]
+                                holder.add_write_column(*col_list)
             if src_flag:
                 if segment.type in ["table_reference", "object_reference"]:
                     holder.add_read(SqlFluffTable.of(segment))

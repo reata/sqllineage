@@ -417,12 +417,10 @@ class SQLLineageHolder(ColumnLineageMixin):
         return g
 
     @staticmethod
-    def of(
-        metadata_provider, default_schema: Optional[str], *args: StatementLineageHolder
-    ) -> "SQLLineageHolder":
+    def of(metadata_provider, *args: StatementLineageHolder) -> "SQLLineageHolder":
         """
         To assemble multiple :class:`sqllineage.core.holders.StatementLineageHolder` into
         :class:`sqllineage.core.holders.SQLLineageHolder`
         """
-        g = SQLLineageHolder._build_digraph(metadata_provider, default_schema, *args)
+        g = SQLLineageHolder._build_digraph(metadata_provider, *args)
         return SQLLineageHolder(g)
