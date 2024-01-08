@@ -161,6 +161,15 @@ Target Tables:
             key=lambda x: (str(x[-1]), str(x[0])),
         )
 
+    @lazy_method
+    def get_column_lineage_noSubQuery(self) -> List[Tuple[Column , Column]]:
+        """
+        a list of column tuple :class:`sqllineage.models.Column`
+        """
+        # sort by target column, and then source column
+        return  self._sql_holder.get_column_lineage_noSubQuery()
+
+
     def print_column_lineage(self) -> None:
         """
         print column level lineage to stdout

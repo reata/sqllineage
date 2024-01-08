@@ -13,7 +13,36 @@ DATASET_CLASSES = (Path, Table)
 
 
 class ColumnLineageMixin:
-    def get_column_lineage(self, exclude_subquery=True) -> Set[Tuple[Column, ...]]:
+    def get_column_lineage_noSubQuery(self, ) -> List[Tuple[Column, Column]]:
+        self.graph: DiGraph  # For mypy attribute checking
+        # filter all the column node in the graph
+        column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
+        column_graph = self.graph.subgraph(column_nodes)
+        source_columns = {column for column, deg in column_graph.in_degree if deg == 0}
+        # if a column lineage path ends at SubQuery, then it should be pruned
+        target_columns = {
+            node
+            for node, deg in column_graph.out_degree
+            if isinstance(node, Column) and deg == 0 and isinstance(node.parent, Table)
+        }
+
+        a=[]
+        for source, target in itertools.product(source_columns, target_columns):
+            simple_paths = nx.all_simple_paths(self.graph, source, target)
+            # print(list(simple_paths))
+            for path in simple_paths:
+                path_cp = [node for node in path if isinstance(node.parent,Table)]
+                if len(path_cp)>1:
+                    print(path_cp)
+                    for x ,y in itertools.combinations(path_cp, 2):
+                        a.append((x,y))
+
+        return  a
+
+
+
+
+def get_column_lineage(self, exclude_subquery=True) -> Set[Tuple[Column, ...]]:
         self.graph: DiGraph  # For mypy attribute checking
         # filter all the column node in the graph
         column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
@@ -34,7 +63,9 @@ class ColumnLineageMixin:
             simple_paths = list(nx.all_simple_paths(self.graph, source, target))
             for path in simple_paths:
                 if exclude_subquery:
-                    path = [node for node in path if not isinstance(node.parent, SubQuery)]
+                    path = [
+                        node for node in path if not isinstance(node.parent, SubQuery)
+                    ]
                     if len(path) > 1:
                         columns.add(tuple(path))
                 else:
