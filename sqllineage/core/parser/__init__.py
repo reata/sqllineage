@@ -27,17 +27,39 @@ class SourceHandlerMixin:
                 lateral_aliases = set()
                 for idx, tgt_col in enumerate(col_grp):
                     tgt_col.parent = tgt_tbl
-                    for lateral_alias_ref in col_grp[idx + 1 :]:  # noqa: E203
-                        if any(
-                            src_col[0] == tgt_col.raw_name
-                            for src_col in lateral_alias_ref.source_columns
-                        ):
-                            lateral_aliases.add(tgt_col.raw_name)
-                            break
-                    for src_col in tgt_col.to_source_columns(
-                        holder.get_alias_mapping_from_table_group(tbl_grp)
+                    if (
+                        hasattr(self, "metadata_provider")
+                        and hasattr(tgt_col, "has_alias")
+                        and tgt_col.has_alias is True
                     ):
-                        if len(write_columns := holder.write_columns) == len(col_grp):
+                        for lateral_alias_ref in col_grp[idx + 1 :]:  # noqa: E203
+                            if any(
+                                src_col[0] == tgt_col.raw_name
+                                for src_col in lateral_alias_ref.source_columns
+                                if src_col[1] is None
+                                and all(
+                                    src_col[0]
+                                    not in list(
+                                        map(
+                                            lambda x: str(x).rsplit(".", 1)[-1],
+                                            self.metadata_provider.get_table_columns(
+                                                read
+                                            ),
+                                        )
+                                    )
+                                    for read in tbl_grp
+                                    if isinstance(read, Table)
+                                )
+                            ):
+                                lateral_aliases.add(tgt_col.raw_name)
+                                break
+                    for src_col in tgt_col.to_source_columns(
+                        holder.get_alias_mapping_from_table_group(tbl_grp), holder
+                    ):
+                        if (
+                            len(write_columns := holder.write_columns) == len(col_grp)
+                            and tgt_col.raw_name != "*"
+                        ):
                             # example query: create view test (col3) select col1 as col2 from tab
                             # without write_columns = [col3] information, by default src_col = col1 and tgt_col = col2
                             # when write_columns exist and length matches, we want tgt_col = col3 instead of col2
@@ -45,19 +67,27 @@ class SourceHandlerMixin:
                             # when the length doesn't match, we fall back to default behavior
                             tgt_col = write_columns[idx]
                         is_lateral_alias_ref = False
-                        for wc in holder.write_columns:
-                            if wc.raw_name == "*":
-                                continue
-                            if (
-                                src_col.raw_name == wc.raw_name
-                                and src_col.raw_name in lateral_aliases
-                            ):
-                                is_lateral_alias_ref = True
-                                for lateral_alias_col in holder.get_source_columns(wc):
-                                    holder.add_column_lineage(
-                                        lateral_alias_col, tgt_col
-                                    )
-                                break
+                        if idx > 0 and len(lateral_aliases) > 0:
+                            for wc in holder.write_columns:
+                                if (
+                                    hasattr(src_col, "has_qualifier")
+                                    and src_col.has_qualifier is False
+                                    and src_col.raw_name == wc.raw_name
+                                    and src_col.raw_name in lateral_aliases
+                                ):
+                                    for lateral_alias_col in holder.get_source_columns(
+                                        wc
+                                    ):
+                                        is_lateral_alias_ref = True
+                                        holder.add_column_lineage(
+                                            lateral_alias_col, tgt_col
+                                        )
+                                    break
                         if is_lateral_alias_ref:
+                            continue
+                        if tgt_col.raw_name == "*":
+                            expand_tgt_col = Column(src_col.raw_name)
+                            expand_tgt_col.parent = tgt_tbl
+                            holder.add_column_lineage(src_col, expand_tgt_col)
                             continue
                         holder.add_column_lineage(src_col, tgt_col)

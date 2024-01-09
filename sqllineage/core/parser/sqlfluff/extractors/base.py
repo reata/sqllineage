@@ -16,6 +16,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     list_join_clause,
     list_subqueries,
 )
+from sqllineage.utils.constant import NodeTag
 from sqllineage.utils.entities import AnalyzerContext, SubQueryTuple
 from sqllineage.utils.helpers import escape_identifier_name
 
@@ -220,9 +221,13 @@ class BaseExtractor:
                 if sq.query.get_child("with_compound_statement")
                 else SelectExtractor
             )
-            holder |= extractor_cls(self.dialect, self.metadata_provider).extract(
-                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
-            )
+            subquery_holder = extractor_cls(
+                self.dialect, self.metadata_provider
+            ).extract(sq.query, AnalyzerContext(cte=holder.cte, write={sq}))
+
+            subquery_holder.graph.add_node(sq, **{NodeTag.WRITE: False})
+
+            holder |= subquery_holder
 
     @staticmethod
     def _init_holder(context: AnalyzerContext) -> SubQueryLineageHolder:

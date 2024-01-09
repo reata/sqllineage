@@ -105,10 +105,12 @@ class SqlFluffColumn(Column):
         if column.type == "select_clause_element":
             source_columns, alias = SqlFluffColumn._get_column_and_alias(column)
             if alias:
-                return Column(
+                alias_column = Column(
                     alias,
                     source_columns=source_columns,
                 )
+                setattr(alias_column, "has_alias", True)
+                return alias_column
             if source_columns:
                 column_name = None
                 for sub_segment in list_child_segments(column):
