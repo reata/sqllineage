@@ -5,7 +5,7 @@ import pytest
 from ....helpers import assert_table_lineage_equal
 
 
-@patch("os.environ", {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
+# @patch("os.environ", {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
 @pytest.mark.parametrize("dialect", ["tsql"])
 def test_tsql_multi_statement_no_semicolon(dialect: str):
     """
@@ -19,4 +19,6 @@ insert into tab2 select * from bar"""
         {"tab1", "tab2"},
         dialect=dialect,
         test_sqlparse=False,
+        tsql_no_semicolon=True
+
     )
