@@ -5,7 +5,7 @@ import networkx as nx
 from networkx import DiGraph
 
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
+from sqllineage.core.models import Column, Path, schema_unknown, SubQuery, Table
 from sqllineage.exceptions import InvalidSyntaxException
 from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
@@ -432,7 +432,7 @@ class SQLLineageHolder(ColumnLineageMixin):
                 for parent in unresolved_col.parent_candidates:
                     if (
                         isinstance(parent, Table)
-                        and str(parent.schema) != Schema.unknown
+                        and str(parent.schema) != schema_unknown
                     ):
                         columns = metadata_provider.get_table_columns(parent)
                         for src_col in columns:

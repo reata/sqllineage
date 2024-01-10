@@ -60,9 +60,10 @@ def assert_table_lineage_equal(
     dialect: str = "ansi",
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
+    tsql_no_semicolon:bool =False
 ):
-    lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
-    lr_sqlfluff = LineageRunner(sql, dialect=dialect)
+    lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT,tsql_no_semicolon=tsql_no_semicolon)
+    lr_sqlfluff = LineageRunner(sql, dialect=dialect,tsql_no_semicolon=tsql_no_semicolon)
     if test_sqlparse:
         _assert_table_lineage(lr, source_tables, target_tables)
     if test_sqlfluff:

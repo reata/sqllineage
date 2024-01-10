@@ -56,10 +56,10 @@ SELECT * FROM bar""",
         )._eval()
 
 
-@patch("os.environ", {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
+# @patch("os.environ", {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
 def test_user_warning_enable_tsql_no_semicolon_with_other_dialect():
     with pytest.warns(UserWarning):
         LineageRunner(
             """SELECT * FROM foo;
 SELECT * FROM bar""",
-        )._eval()
+        tsql_no_semicolon=True)._eval()

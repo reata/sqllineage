@@ -1,8 +1,6 @@
-import dataclasses
 import os
 from dataclasses import dataclass
-from typing import Union, Any
-
+from typing import Any, Union
 
 @dataclass
 class SQLLineageConfigValue:
@@ -11,16 +9,17 @@ class SQLLineageConfigValue:
 
 
 @dataclass
-class SQLLineageConfigDef:
+class SQLLineageConfigDef():
     DIRECTORY: SQLLineageConfigValue
     DEFAULT_SCHEMA: SQLLineageConfigValue
     TSQL_NO_SEMICOLON: SQLLineageConfigValue
 
 
-class _SQLLineageConfigLoader:
+class _SQLLineageConfigLoader() :
     """
     Load all configurable items from environment variable, otherwise fallback to default
     """
+
     def __init__(self):
         self._config = SQLLineageConfigDef(
             DIRECTORY=SQLLineageConfigValue(
@@ -36,10 +35,13 @@ class _SQLLineageConfigLoader:
 
     @DEFAULT_SCHEMA.setter
     def DEFAULT_SCHEMA(self, value):
-        if isinstance(value, self._config.DEFAULT_SCHEMA.class_type):
-            self._config.DEFAULT_SCHEMA.value = value
-        else:
-            raise
+        if value:
+            if isinstance(value, self._config.DEFAULT_SCHEMA.class_type):
+                self._config.DEFAULT_SCHEMA.value = value
+            else:
+                raise ValueError(
+                    f"DEFAULT_SCHEMA should be {self._config.DEFAULT_SCHEMA.class_type}"
+                )
 
     @property
     def DIRECTORY(self):
@@ -47,10 +49,11 @@ class _SQLLineageConfigLoader:
 
     @DIRECTORY.setter
     def DIRECTORY(self, value):
-        if isinstance(value, self._config.DIRECTORY.class_type):
-            self._config.DIRECTORY.value = value
-        else:
-            raise
+        if value:
+            if isinstance(value, self._config.DEFAULT_SCHEMA.class_type):
+                self._config.DIRECTORY.value = value
+            else:
+                raise ValueError(f"DIRECTORY should be {self._config.DIRECTORY.class_type}")
 
     @property
     def TSQL_NO_SEMICOLON(self):
@@ -58,23 +61,13 @@ class _SQLLineageConfigLoader:
 
     @TSQL_NO_SEMICOLON.setter
     def TSQL_NO_SEMICOLON(self, value):
-        if isinstance(value, self._config.TSQL_NO_SEMICOLON.class_type):
-            self._config.TSQL_NO_SEMICOLON.value = value
-        else:
-            raise
-
-    # def __getattr__(self, item):
-    #     self._config: SQLLineageConfigDef
-    #     a = dataclasses.fields(self._config)
-    #     print(a)
-        # if self._config.
-        #     if item in self.config:
-        #         return
-        #         # type_, default = self.config[item]
-        #         # # require SQLLINEAGE_ prefix from environment variable
-        #         # return type_(os.environ.get("SQLLINEAGE_" + item, default))
-        #     else:
-        #         return super().__getattribute__(item)
+        if value :
+            if isinstance(value, self._config.TSQL_NO_SEMICOLON.class_type):
+                self._config.TSQL_NO_SEMICOLON.value = value
+            else:
+                raise ValueError(
+                    f"TSQL_NO_SEMICOLON should be {self._config.TSQL_NO_SEMICOLON.class_type}"
+                )
 
 
 SQLLineageConfig = _SQLLineageConfigLoader()
@@ -82,7 +75,7 @@ SQLLineageConfig = _SQLLineageConfigLoader()
 if __name__ == "__main__":
     SQLLineageConfig.DIRECTORY = "xxx"
     SQLLineageConfig.DEFAULT_SCHEMA = "ods"
-    SQLLineageConfig.TSQL_NO_SEMICOLON = True
+    SQLLineageConfig.TSQL_NO_SEMICOLON = "xxx"
     print(SQLLineageConfig.DIRECTORY)
     print(SQLLineageConfig.DEFAULT_SCHEMA)
     print(SQLLineageConfig.TSQL_NO_SEMICOLON)

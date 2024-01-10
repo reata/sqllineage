@@ -5,19 +5,20 @@ from sqllineage.config import SQLLineageConfig
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.helpers import escape_identifier_name
 
+schema_unknown = "<default>"
+
 
 class Schema:
     """
     Data Class for Schema
     """
 
-    unknown = "<default>"
-    default = SQLLineageConfig.DEFAULT_SCHEMA or unknown
-
-    def __init__(self, name: str = default):
+    def __init__(self, name: str = schema_unknown):
         """
         :param name: schema name
         """
+        if name == schema_unknown and SQLLineageConfig.DEFAULT_SCHEMA:
+            name = SQLLineageConfig.DEFAULT_SCHEMA
         self.raw_name = escape_identifier_name(name)
 
     def __str__(self):
@@ -33,7 +34,7 @@ class Schema:
         return hash(str(self))
 
     def __bool__(self):
-        return str(self) != self.default
+        return str(self) != schema_unknown
 
 
 class Table:
