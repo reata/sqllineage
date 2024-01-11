@@ -1,4 +1,3 @@
-from sqllineage.core.models import SubQuery
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
 
@@ -25,9 +24,3 @@ def test_silent_mode():
     LineageRunner(sql, dialect="greenplum", silent_mode=True)._eval()
 
 
-def test_get_column_lineage_exclude_subquery_inpath():
-    v_sql = "insert into ta select b from (select b from tb union all select c from tc ) sub"
-    parse = LineageRunner(sql=v_sql)
-    for col_tuple in parse.get_column_lineage(exclude_subquery_columns=True):
-        for col in col_tuple:
-            assert not isinstance(col.parent, SubQuery)

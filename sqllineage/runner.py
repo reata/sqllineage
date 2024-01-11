@@ -183,7 +183,6 @@ Target Tables:
         print(str(self))
 
     def _eval(self):
-
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT

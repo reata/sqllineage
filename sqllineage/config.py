@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Union
 
+
 @dataclass
 class SQLLineageConfigValue:
     class_type: Any
@@ -9,18 +10,18 @@ class SQLLineageConfigValue:
 
 
 @dataclass
-class SQLLineageConfigDef():
+class SQLLineageConfigDef:
     DIRECTORY: SQLLineageConfigValue
     DEFAULT_SCHEMA: SQLLineageConfigValue
     TSQL_NO_SEMICOLON: SQLLineageConfigValue
 
 
-class _SQLLineageConfigLoader() :
+class _SQLLineageConfigLoader:
     """
-    Load all configurable items from environment variable, otherwise fallback to default
+    Load all configurable items from config variable, otherwise fallback to default
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._config = SQLLineageConfigDef(
             DIRECTORY=SQLLineageConfigValue(
                 str, os.path.join(os.path.dirname(__file__), "data")
@@ -53,7 +54,9 @@ class _SQLLineageConfigLoader() :
             if isinstance(value, self._config.DEFAULT_SCHEMA.class_type):
                 self._config.DIRECTORY.value = value
             else:
-                raise ValueError(f"DIRECTORY should be {self._config.DIRECTORY.class_type}")
+                raise ValueError(
+                    f"DIRECTORY should be {self._config.DIRECTORY.class_type}"
+                )
 
     @property
     def TSQL_NO_SEMICOLON(self):
@@ -61,7 +64,7 @@ class _SQLLineageConfigLoader() :
 
     @TSQL_NO_SEMICOLON.setter
     def TSQL_NO_SEMICOLON(self, value):
-        if value :
+        if value:
             if isinstance(value, self._config.TSQL_NO_SEMICOLON.class_type):
                 self._config.TSQL_NO_SEMICOLON.value = value
             else:
