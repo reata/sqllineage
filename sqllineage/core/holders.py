@@ -5,7 +5,7 @@ import networkx as nx
 from networkx import DiGraph
 
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.core.models import Column, Path, schema_unknown, SubQuery, Table
+from sqllineage.core.models import Column, Path, SubQuery, Table, schema_unknown
 from sqllineage.exceptions import InvalidSyntaxException
 from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 

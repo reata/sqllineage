@@ -22,3 +22,5 @@ def test_statements_trim_comment():
 def test_silent_mode():
     sql = "begin; select * from dual;"
     LineageRunner(sql, dialect="greenplum", silent_mode=True)._eval()
+
+
