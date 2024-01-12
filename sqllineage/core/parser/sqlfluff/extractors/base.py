@@ -156,7 +156,7 @@ class BaseExtractor:
                     )
                 if "." not in table_identifier.raw:
                     cte_dict = {s.alias: s for s in holder.cte}
-                    cte = cte_dict.get(table_identifier.raw)
+                    cte = cte_dict.get(escape_identifier_name(table_identifier.raw))
                     if cte is not None:
                         # could reference CTE with or without alias
                         tables.append(

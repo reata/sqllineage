@@ -96,6 +96,30 @@ FROM tab2 AS t"""
     )
 
 
+def test_select_column_with_table_qualifier_case_insensitive():
+    sql = """INSERT INTO tab1
+SELECT TA.col1
+FROM tab2 AS ta"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
+    sql = """INSERT INTO tab1
+SELECT ta.col1
+FROM tab2 AS TA"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
+    sql = """INSERT INTO tab1
+SELECT Ta.col1
+FROM tab2 AS tA"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
+
+
 def test_select_columns():
     sql = """INSERT INTO tab1
 SELECT col1,
