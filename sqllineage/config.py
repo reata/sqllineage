@@ -15,14 +15,36 @@ class _SQLLineageConfigLoader:
         # to enable tsql no semicolon splitter mode
         "TSQL_NO_SEMICOLON": (bool, False),
     }
+    BOOLEAN_TRUE_STRINGS = ("true", "on", "ok", "y", "yes", "1")
 
     def __getattr__(self, item):
         if item in self.config:
             type_, default = self.config[item]
             # require SQLLINEAGE_ prefix from environment variable
-            return type_(os.environ.get("SQLLINEAGE_" + item, default))
+            return self.parse_value(
+                os.environ.get("SQLLINEAGE_" + item, default), type_
+            )
         else:
             return super().__getattribute__(item)
+
+    @classmethod
+    def parse_value(cls, value, cast):
+        """Parse and cast provided value
+
+        :param value: Stringed value.
+        :param cast: Type to cast return value as.
+
+        :returns: Casted value
+        """
+        if cast is bool:
+            try:
+                value = int(value) != 0
+            except ValueError:
+                value = value.lower().strip() in cls.BOOLEAN_TRUE_STRINGS
+        else:
+            value = cast(value)
+
+        return value
 
 
 SQLLineageConfig = _SQLLineageConfigLoader()
