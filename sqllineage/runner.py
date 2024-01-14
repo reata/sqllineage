@@ -42,6 +42,8 @@ class LineageRunner(object):
         verbose: bool = False,
         silent_mode: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
+        default_schema: Optional[str] = None,
+        tsql_no_semicolon: Optional[bool] = False,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -67,6 +69,8 @@ class LineageRunner(object):
         self._dialect = dialect
         self._metadata_provider = metadata_provider
         self._silent_mode = silent_mode
+        SQLLineageConfig.DEFAULT_SCHEMA = default_schema
+        SQLLineageConfig.TSQL_NO_SEMICOLON = tsql_no_semicolon
 
 
     @lazy_method
