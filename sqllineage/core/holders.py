@@ -13,7 +13,16 @@ DATASET_CLASSES = (Path, Table)
 
 
 class ColumnLineageMixin:
-    def get_column_lineage(self, exclude_subquery=True) -> Set[Tuple[Column, ...]]:
+    def get_column_lineage(
+        self, exclude_path_ending_in_subquery=True, exclude_subquery_columns=False
+    ) -> Set[Tuple[Column, ...]]:
+        """
+        :param exclude_path_ending_in_subquery:  exclude_subquery rename to exclude_path_ending_in_subquery
+               exclude column from SubQuery in the ending path
+        :param exclude_subquery_columns: exclude column from SubQuery in the path.
+
+        return a list of column tuple :class:`sqllineage.models.Column`
+        """
         self.graph: DiGraph  # For mypy attribute checking
         # filter all the column node in the graph
         column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
@@ -25,7 +34,7 @@ class ColumnLineageMixin:
             for node, deg in column_graph.out_degree
             if isinstance(node, Column) and deg == 0
         }
-        if exclude_subquery:
+        if exclude_path_ending_in_subquery:
             target_columns = {
                 node for node in target_columns if isinstance(node.parent, Table)
             }
@@ -33,7 +42,14 @@ class ColumnLineageMixin:
         for source, target in itertools.product(source_columns, target_columns):
             simple_paths = list(nx.all_simple_paths(self.graph, source, target))
             for path in simple_paths:
-                columns.add(tuple(path))
+                if exclude_subquery_columns:
+                    path = [
+                        node for node in path if not isinstance(node.parent, SubQuery)
+                    ]
+                    if len(path) > 1:
+                        columns.add(tuple(path))
+                else:
+                    columns.add(tuple(path))
         return columns
 
 
