@@ -196,6 +196,58 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_subquery(
 
 @pytest.mark.parametrize("provider", providers)
 @patch("os.environ", {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
+def test_column_top_level_enable_lateral_ref_with_metadata_from_nested_subquery(
+    provider: MetaDataProvider,
+):
+    sql = """
+    insert into public.tgt_tbl1
+    select
+        a || b || c || id as id,
+        id                as id_original
+    from
+        (
+            select
+                *
+            from
+                (
+                    select
+                       *
+                    from
+                        public.src_tbl1
+                ) as inner_sq
+        ) as outer_sq
+    """
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("a", "public.src_tbl1"),
+                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+            ),
+            (
+                ColumnQualifierTuple("b", "public.src_tbl1"),
+                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+            ),
+            (
+                ColumnQualifierTuple("c", "public.src_tbl1"),
+                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+            ),
+            (
+                ColumnQualifierTuple("id", "public.src_tbl1"),
+                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+            ),
+            (
+                ColumnQualifierTuple("id", "public.src_tbl1"),
+                ColumnQualifierTuple("id_original", "public.tgt_tbl1"),
+            ),
+        ],
+        test_sqlparse=False,
+        metadata_provider=provider,
+    )
+
+
+@pytest.mark.parametrize("provider", providers)
+@patch("os.environ", {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_enable_lateral_ref_within_subquery(
     provider: MetaDataProvider,
 ):
