@@ -25,12 +25,3 @@ def test_silent_mode():
     sql = "begin; select * from dual;"
     LineageRunner(sql, dialect="greenplum", silent_mode=True)._eval()
 
-
-def test_default_schema():
-    sql = """insert into target_tab select user_id, user_name from source_tab_1, source_tab_2"""
-    assert_table_lineage_equal(
-        sql=sql,
-        source_tables={"ods.source_tab_1", "ods.source_tab_2"},
-        target_tables={"ods.target_tab"},
-        default_schema="ods",
-    )

@@ -1,6 +1,5 @@
 import os
 from unittest.mock import patch
-
 from sqllineage.config import SQLLineageConfig
 
 
@@ -13,6 +12,7 @@ from sqllineage.config import SQLLineageConfig
     },
 )
 def test_config():
+    print(os.environ['SQLLINEAGE_DIRECTORY'])
     assert type(SQLLineageConfig.DIRECTORY) is str
     assert SQLLineageConfig.DIRECTORY == os.path.join(os.path.dirname(__file__), "data")
 
@@ -34,5 +34,11 @@ def test_config_reset():
     SQLLineageConfig.TSQL_NO_SEMICOLON = True
     assert type(SQLLineageConfig.TSQL_NO_SEMICOLON) is bool
     assert SQLLineageConfig.TSQL_NO_SEMICOLON is True
+
+    SQLLineageConfig.DIRECTORY=None
+    SQLLineageConfig.DEFAULT_SCHEMA=None
+    SQLLineageConfig.TSQL_NO_SEMICOLON=None
+
+
 
 

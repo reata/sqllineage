@@ -1,12 +1,14 @@
 import pytest
 
 from sqllineage import SQLPARSE_DIALECT
+
 from sqllineage.exceptions import (
     InvalidSyntaxException,
     SQLLineageException,
     UnsupportedStatementException,
 )
 from sqllineage.runner import LineageRunner
+from unittest.mock import patch
 
 
 def test_select_without_table():
@@ -53,11 +55,10 @@ SELECT * FROM bar""",
             dialect="tsql",
         )._eval()
 
-
+@patch("os.environ", {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
 def test_user_warning_enable_tsql_no_semicolon_with_other_dialect():
     with pytest.warns(UserWarning):
-        LineageRunner(
+         LineageRunner(
             """SELECT * FROM foo;
 SELECT * FROM bar""",
-            tsql_no_semicolon=True,
         )._eval()
