@@ -36,9 +36,6 @@ class _SQLLineageConfigLoader:
 
         :returns: Casted value
         """
-        if cast is None:
-            return value
-
         if cast is bool:
             try:
                 value = int(value) != 0

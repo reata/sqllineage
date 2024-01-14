@@ -21,9 +21,3 @@ def test_config():
 
     assert type(SQLLineageConfig.TSQL_NO_SEMICOLON) is bool
     assert SQLLineageConfig.TSQL_NO_SEMICOLON is True
-
-
-def test_config_parse_value_with_cast_none():
-    parse_value_str = SQLLineageConfig.parse_value("str", None)
-    assert type(parse_value_str) is str
-    assert parse_value_str == "str"
