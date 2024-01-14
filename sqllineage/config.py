@@ -64,34 +64,4 @@ class _SQLLineageConfigLoader:
                 raise ValueError(f"{key}:{value} class type incorrect")
 
 
-
 SQLLineageConfig = _SQLLineageConfigLoader()
-
-
-if __name__ == "__main__":
-    #   DIRECTORY: SQLLineageConfigValue
-    #     DEFAULT_SCHEMA: SQLLineageConfigValue
-    #     TSQL_NO_SEMICOLON: SQLLineageConfigValue
-
-
-
-# os.environ[
-#     "SQLLINEAGE_DIRECTORY"
-# ] = "/Users/liuzhou/工作/亚信/工具开发/sqllineage_github/sqllineage"
-# os.environ["SQLLINEAGE_DEFAULT_SCHEMA"] = "lll"
-# os.environ["SQLLINEAGE_TSQL_NO_SEMICOLON"] = "False"
-
-
-    print(SQLLineageConfig.DIRECTORY)
-    print(SQLLineageConfig.DEFAULT_SCHEMA)
-    print(SQLLineageConfig.TSQL_NO_SEMICOLON)
-
-    SQLLineageConfig.DIRECTORY = (
-        "/Users/liuzhou/工作/亚信/工具开发/sqllineage_github/sqllineage/sqllineage/"
-    )
-    SQLLineageConfig.DEFAULT_SCHEMA = "ods"
-    SQLLineageConfig.TSQL_NO_SEMICOLON = True
-
-    print(SQLLineageConfig.DIRECTORY)
-    print(SQLLineageConfig.DEFAULT_SCHEMA)
-    print(SQLLineageConfig.TSQL_NO_SEMICOLON)
