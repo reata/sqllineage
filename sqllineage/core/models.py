@@ -218,32 +218,37 @@ class Column:
         source_columns = set()
         for src_col, qualifier in self.source_columns:
             if qualifier is None:
+                subqueryies = [
+                    sq for sq in alias_mapping.values() if isinstance(sq, SubQuery)
+                ]
                 if src_col == "*":
                     # select *
                     i = 0
-                    if holder is not None:
-                        for table in set(alias_mapping.values()):
-                            if isinstance(table, Table):
-                                continue
-                            columns = holder.get_table_columns(table)
+                    if (
+                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                        and holder is not None
+                    ):
+                        for sq in subqueryies:
+                            columns = holder.get_table_columns(sq)
                             if columns:
                                 i += 1
                             for column in columns:
-                                source_columns.add(_to_src_col(column.raw_name, table))
-                    if i != len(alias_mapping):
+                                source_columns.add(_to_src_col(column.raw_name, sq))
+                    if len(subqueryies) == 0 or i != len(subqueryies):
                         for table in set(alias_mapping.values()):
                             source_columns.add(_to_src_col(src_col, table))
                 else:
                     # select unqualified column
                     source = _to_src_col(src_col, None)
                     is_find = False
-                    if holder is not None:
-                        for table in set(alias_mapping.values()):
-                            if isinstance(table, Table):
-                                continue
-                            for column in holder.get_table_columns(table):
+                    if (
+                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                        and holder is not None
+                    ):
+                        for sq in subqueryies:
+                            for column in holder.get_table_columns(sq):
                                 if column.raw_name == src_col:
-                                    source = _to_src_col(src_col, table)
+                                    source = _to_src_col(src_col, sq)
                                     is_find = True
                                     break
                             if is_find:

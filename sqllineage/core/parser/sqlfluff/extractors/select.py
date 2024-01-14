@@ -1,5 +1,6 @@
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.parser import SourceHandlerMixin
@@ -44,17 +45,23 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         )
         for segment in segments:
             for sq in self.list_subquery(segment):
+                # Collecting subquery on the way, hold on parsing until last
+                # so that each handler don't have to worry about what's inside subquery
                 subqueries.append(sq)
 
             if is_set_expression(segment):
-                for idx, sub_segment in enumerate(
+                for _, sub_segment in enumerate(
                     segment.get_children("select_statement", "bracketed")
                 ):
                     for seg in list_child_segments(sub_segment):
                         for sq in self.list_subquery(seg):
                             subqueries.append(sq)
 
-        self.extract_subquery(subqueries, holder)
+        if (
+            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+            and bool(self.metadata_provider) is True
+        ):
+            self.extract_subquery(subqueries, holder)
 
         for segment in segments:
             self._handle_swap_partition(segment, holder)
@@ -81,6 +88,12 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                         self._handle_column(seg)
 
         self.end_of_query_cleanup(holder)
+
+        if (
+            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE != "1"
+            or bool(self.metadata_provider) is False
+        ):
+            self.extract_subquery(subqueries, holder)
 
         holder.expand_wildcard(self.metadata_provider)
 

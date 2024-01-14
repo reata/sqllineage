@@ -14,6 +14,7 @@ class _SQLLineageConfigLoader:
         "DEFAULT_SCHEMA": (str, ""),
         # to enable tsql no semicolon splitter mode
         "TSQL_NO_SEMICOLON": (bool, False),
+        "LATERAL_COLUMN_ALIAS_REFERENCE": (str, "0"),
     }
     BOOLEAN_TRUE_STRINGS = ("true", "on", "ok", "y", "yes", "1")
 

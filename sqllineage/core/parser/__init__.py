@@ -1,6 +1,8 @@
 from typing import List, Tuple, Union
 
+from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.exceptions import SQLLineageException
 
@@ -13,6 +15,7 @@ class SourceHandlerMixin:
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         for i, tbl in enumerate(self.tables):
             holder.add_read(tbl)
+        metadata_provider = getattr(self, "metadata_provider", DummyMetaDataProvider())
         self.union_barriers.append((len(self.columns), len(self.tables)))
         for i, (col_barrier, tbl_barrier) in enumerate(self.union_barriers):
             prev_col_barrier, prev_tbl_barrier = (
@@ -28,9 +31,9 @@ class SourceHandlerMixin:
                 for idx, tgt_col in enumerate(col_grp):
                     tgt_col.parent = tgt_tbl
                     if (
-                        hasattr(self, "metadata_provider")
-                        and hasattr(tgt_col, "has_alias")
-                        and tgt_col.has_alias is True
+                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                        and bool(metadata_provider) is True
+                        and getattr(tgt_col, "has_alias", False) is True
                     ):
                         for lateral_alias_ref in col_grp[idx + 1 :]:  # noqa: E203
                             if any(
@@ -42,9 +45,7 @@ class SourceHandlerMixin:
                                     not in list(
                                         map(
                                             lambda x: str(x).rsplit(".", 1)[-1],
-                                            self.metadata_provider.get_table_columns(
-                                                read
-                                            ),
+                                            metadata_provider.get_table_columns(read),
                                         )
                                     )
                                     for read in tbl_grp
@@ -67,27 +68,31 @@ class SourceHandlerMixin:
                             # when the length doesn't match, we fall back to default behavior
                             tgt_col = write_columns[idx]
                         is_lateral_alias_ref = False
-                        if idx > 0 and len(lateral_aliases) > 0:
-                            for wc in holder.write_columns:
-                                if (
-                                    hasattr(src_col, "has_qualifier")
-                                    and src_col.has_qualifier is False
-                                    and src_col.raw_name == wc.raw_name
-                                    and src_col.raw_name in lateral_aliases
-                                ):
-                                    for lateral_alias_col in holder.get_source_columns(
-                                        wc
+                        if (
+                            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                            and bool(metadata_provider) is True
+                        ):
+                            if idx > 0 and len(lateral_aliases) > 0:
+                                for wc in holder.write_columns:
+                                    if (
+                                        hasattr(src_col, "has_qualifier")
+                                        and src_col.has_qualifier is False
+                                        and src_col.raw_name == wc.raw_name
+                                        and src_col.raw_name in lateral_aliases
                                     ):
-                                        is_lateral_alias_ref = True
-                                        holder.add_column_lineage(
-                                            lateral_alias_col, tgt_col
-                                        )
-                                    break
+                                        for (
+                                            lateral_alias_col
+                                        ) in holder.get_source_columns(wc):
+                                            is_lateral_alias_ref = True
+                                            holder.add_column_lineage(
+                                                lateral_alias_col, tgt_col
+                                            )
+                                        break
+                            if tgt_col.raw_name == "*":
+                                expand_tgt_col = Column(src_col.raw_name)
+                                expand_tgt_col.parent = tgt_tbl
+                                holder.add_column_lineage(src_col, expand_tgt_col)
+                                continue
                         if is_lateral_alias_ref:
-                            continue
-                        if tgt_col.raw_name == "*":
-                            expand_tgt_col = Column(src_col.raw_name)
-                            expand_tgt_col.parent = tgt_tbl
-                            holder.add_column_lineage(src_col, expand_tgt_col)
                             continue
                         holder.add_column_lineage(src_col, tgt_col)

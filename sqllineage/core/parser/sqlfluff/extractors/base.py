@@ -4,6 +4,7 @@ from typing import List, Optional, Type, Union
 
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Path, SubQuery, Table
@@ -225,7 +226,11 @@ class BaseExtractor:
                 self.dialect, self.metadata_provider
             ).extract(sq.query, AnalyzerContext(cte=holder.cte, write={sq}))
 
-            subquery_holder.graph.add_node(sq, **{NodeTag.WRITE: False})
+            if (
+                SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                and bool(self.metadata_provider) is True
+            ):
+                subquery_holder.graph.add_node(sq, **{NodeTag.WRITE: False})
 
             holder |= subquery_holder
 

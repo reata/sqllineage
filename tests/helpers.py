@@ -92,7 +92,7 @@ def assert_column_lineage_equal(
         _assert_column_lineage(lr_sqlfluff, column_lineages)
 
 
-def generate_metadata_providers(test_schemas):
+def generate_metadata_providers(test_schemas) -> list[MetaDataProvider]:
     dummy_provider = DummyMetaDataProvider(test_schemas)
 
     sqlite3_sqlalchemy_provider = SQLAlchemyMetaDataProvider("sqlite:///:memory:")
