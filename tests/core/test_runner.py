@@ -1,5 +1,3 @@
-from tests.helpers import assert_table_lineage_equal
-
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
 
@@ -24,4 +22,3 @@ def test_statements_trim_comment():
 def test_silent_mode():
     sql = "begin; select * from dual;"
     LineageRunner(sql, dialect="greenplum", silent_mode=True)._eval()
-

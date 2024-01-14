@@ -32,13 +32,6 @@ class _SQLLineageConfigLoader:
         self._len_prefix = len(self._PREFIX)
         self._init = True
 
-        for item in set(
-            [self._PREFIX + key for key in self._config.keys()]
-        ).intersection(set(os.environ.keys())):
-            self._config[item[self._len_prefix :]]["os_env"] = self.parse_value(
-                os.environ[item], self._config[item]["class_type"]
-            )
-
     def parse_value(self, value, cast):
         """Parse and cast provided value
 
@@ -58,17 +51,14 @@ class _SQLLineageConfigLoader:
         return value
 
     def __getattr__(self, item):
-        if not self._init:
-            super().__getattribute__(item)
+        if self._config[item]["additional"] is not None:
+            return self._config[item]["additional"]
+        elif (os_env_item := self._PREFIX + item) in os.environ.keys():
+            return self.parse_value(
+                os.environ[os_env_item], self._config[item]["class_type"]
+            )
         else:
-            if self._config[item]["additional"] is not None:
-                return self._config[item]["additional"]
-            elif (os_env_item := self._PREFIX + item) in os.environ.keys():
-                return self.parse_value(
-                    os.environ[os_env_item], self._config[item]["class_type"]
-                )
-            else:
-                return self._config[item]["default"]
+            return self._config[item]["default"]
 
     def __setattr__(self, key, value):
         if key == "_init" or not self._init:
@@ -77,38 +67,13 @@ class _SQLLineageConfigLoader:
             if key not in [field for field in self._config.keys()]:
                 raise ValueError(f"config {key} is not support")
 
-            if value is None or isinstance(value, self._config[key]["class_type"]):
-                if key == "DIRECTORY" and value and not os.path.isdir(value):
-                    raise NotADirectoryError(f"{value} does not exist")
+            if value is None:
                 self._config[key]["additional"] = value
             else:
-                raise ValueError(f"{key}:{value} class type incorrect")
+                value = self.parse_value(value, self._config[key]["class_type"])
+                if key == "DIRECTORY" and not os.path.isdir(value):
+                    raise NotADirectoryError(f"{value} does not exist")
+                self._config[key]["additional"] = value
 
 
 SQLLineageConfig = _SQLLineageConfigLoader()
-
-
-if __name__ == "__main__":
-    #   DIRECTORY: SQLLineageConfigValue
-    #     DEFAULT_SCHEMA: SQLLineageConfigValue
-    #     TSQL_NO_SEMICOLON: SQLLineageConfigValue
-
-    # os.environ[
-    #     "SQLLINEAGE_DIRECTORY"
-    # ] = "/Users/liuzhou/工作/亚信/工具开发/sqllineage_github/sqllineage"
-    # os.environ["SQLLINEAGE_DEFAULT_SCHEMA"] = "lll"
-    # os.environ["SQLLINEAGE_TSQL_NO_SEMICOLON"] = "False"
-
-    print(SQLLineageConfig.DIRECTORY)
-    print(SQLLineageConfig.DEFAULT_SCHEMA)
-    print(SQLLineageConfig.TSQL_NO_SEMICOLON)
-
-    SQLLineageConfig.DIRECTORY = (
-        "/Users/liuzhou/工作/亚信/工具开发/sqllineage_github/sqllineage/sqllineage/"
-    )
-    SQLLineageConfig.DEFAULT_SCHEMA = "ods"
-    SQLLineageConfig.TSQL_NO_SEMICOLON = True
-
-    print(SQLLineageConfig.DIRECTORY)
-    print(SQLLineageConfig.DEFAULT_SCHEMA)
-    print(SQLLineageConfig.TSQL_NO_SEMICOLON)

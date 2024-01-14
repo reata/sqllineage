@@ -1,6 +1,14 @@
 import os
 from unittest.mock import patch
+
 from sqllineage.config import SQLLineageConfig
+
+
+def test_config_default():
+    assert type(SQLLineageConfig.DIRECTORY) is str
+    assert SQLLineageConfig.DEFAULT_SCHEMA is None
+    assert type(SQLLineageConfig.TSQL_NO_SEMICOLON) is bool
+    assert SQLLineageConfig.TSQL_NO_SEMICOLON is False
 
 
 @patch(
@@ -12,7 +20,6 @@ from sqllineage.config import SQLLineageConfig
     },
 )
 def test_config():
-    print(os.environ['SQLLINEAGE_DIRECTORY'])
     assert type(SQLLineageConfig.DIRECTORY) is str
     assert SQLLineageConfig.DIRECTORY == os.path.join(os.path.dirname(__file__), "data")
 
@@ -22,12 +29,31 @@ def test_config():
     assert type(SQLLineageConfig.TSQL_NO_SEMICOLON) is bool
     assert SQLLineageConfig.TSQL_NO_SEMICOLON is True
 
-def test_config_reset():
-    SQLLineageConfig.DIRECTORY=os.path.join(os.path.dirname(__file__), "")
-    assert type(SQLLineageConfig.DIRECTORY) is str
-    assert SQLLineageConfig.DIRECTORY == os.path.join(os.path.dirname(__file__), "")
 
-    SQLLineageConfig.DEFAULT_SCHEMA="ods"
+def test_config_exception():
+    is_exception = False
+    try:
+        SQLLineageConfig.DIRECTORYxxx = "xxx"
+    except ValueError:
+        is_exception = True
+    assert is_exception
+
+
+def test_config_exception2():
+    is_exception = False
+    try:
+        SQLLineageConfig.DIRECTORY = "xxx"
+    except NotADirectoryError:
+        is_exception = True
+    assert is_exception
+
+
+def test_config_reset():
+    SQLLineageConfig.DIRECTORY = os.path.dirname(__file__)
+    assert type(SQLLineageConfig.DIRECTORY) is str
+    assert SQLLineageConfig.DIRECTORY == os.path.dirname(__file__)
+
+    SQLLineageConfig.DEFAULT_SCHEMA = "ods"
     assert type(SQLLineageConfig.DEFAULT_SCHEMA) is str
     assert SQLLineageConfig.DEFAULT_SCHEMA == "ods"
 
@@ -35,10 +61,6 @@ def test_config_reset():
     assert type(SQLLineageConfig.TSQL_NO_SEMICOLON) is bool
     assert SQLLineageConfig.TSQL_NO_SEMICOLON is True
 
-    SQLLineageConfig.DIRECTORY=None
-    SQLLineageConfig.DEFAULT_SCHEMA=None
-    SQLLineageConfig.TSQL_NO_SEMICOLON=None
-
-
-
-
+    SQLLineageConfig.DIRECTORY = None
+    SQLLineageConfig.DEFAULT_SCHEMA = None
+    SQLLineageConfig.TSQL_NO_SEMICOLON = None
