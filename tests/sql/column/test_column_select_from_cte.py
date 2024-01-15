@@ -101,3 +101,27 @@ def test_cte_inside_insert_in_parenthesis():
         ],
         test_sqlparse=False,
     )
+
+
+def test_select_column_from_cte_case_insensitive():
+    sql = """WITH CTE1 AS (SELECT col1 FROM tab2)
+INSERT INTO tab1
+SELECT col1 FROM cte1"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
+    sql = """WITH cte1 AS (SELECT col1 FROM tab2)
+INSERT INTO tab1
+SELECT col1 FROM CTE1"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )
+    sql = """WITH CTe1 AS (SELECT col1 FROM tab2)
+INSERT INTO tab1
+SELECT col1 FROM cTE1"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )

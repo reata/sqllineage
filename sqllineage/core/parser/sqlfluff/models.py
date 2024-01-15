@@ -98,9 +98,9 @@ class SqlFluffColumn(Column):
     @staticmethod
     def of(column: BaseSegment, **kwargs) -> Column:
         """
-        Build a 'SqlFluffSubQuery' object
+        Build a 'Column' object
         :param column: column segment
-        :return:
+        :return: 'Column' object
         """
         if column.type == "select_clause_element":
             source_columns, alias = SqlFluffColumn._get_column_and_alias(column)
@@ -195,7 +195,7 @@ class SqlFluffColumn(Column):
             lineage[0]
             for lineage in LineageRunner(
                 sub_segment.raw, dialect=SQLPARSE_DIALECT
-            ).get_column_lineage(exclude_subquery=False)
+            ).get_column_lineage(exclude_path_ending_in_subquery=False)
         ]
         source_columns = [
             ColumnQualifierTuple(

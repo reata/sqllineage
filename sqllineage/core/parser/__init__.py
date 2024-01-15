@@ -1,9 +1,8 @@
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.exceptions import SQLLineageException
-from sqllineage.utils.constant import EdgeType
 
 
 class SourceHandlerMixin:
@@ -36,7 +35,7 @@ class SourceHandlerMixin:
                             lateral_aliases.add(tgt_col.raw_name)
                             break
                     for src_col in tgt_col.to_source_columns(
-                        self.get_alias_mapping_from_table_group(tbl_grp, holder)
+                        holder.get_alias_mapping_from_table_group(tbl_grp)
                     ):
                         if len(write_columns := holder.write_columns) == len(col_grp):
                             # example query: create view test (col3) select col1 as col2 from tab
@@ -62,27 +61,3 @@ class SourceHandlerMixin:
                         if is_lateral_alias_ref:
                             continue
                         holder.add_column_lineage(src_col, tgt_col)
-
-    @classmethod
-    def get_alias_mapping_from_table_group(
-        cls,
-        table_group: List[Union[Path, Table, SubQuery]],
-        holder: SubQueryLineageHolder,
-    ) -> Dict[str, Union[Path, Table, SubQuery]]:
-        """
-        A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
-        For SubQuery, it's only alias then.
-        """
-        return {
-            **{
-                tgt: src
-                for src, tgt, attr in holder.graph.edges(data=True)
-                if attr.get("type") == EdgeType.HAS_ALIAS and src in table_group
-            },
-            **{
-                table.raw_name: table
-                for table in table_group
-                if isinstance(table, Table)
-            },
-            **{str(table): table for table in table_group if isinstance(table, Table)},
-        }

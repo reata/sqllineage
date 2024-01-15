@@ -126,3 +126,10 @@ FROM (SELECT col1 FROM tab2) DT"""
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
+    sql = """INSERT INTO tab1
+SELECT Dt.col1
+FROM (SELECT col1 FROM tab2) dT"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )

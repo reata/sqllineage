@@ -27,6 +27,7 @@ from sqllineage.core.parser.sqlparse.utils import (
     is_values_clause,
 )
 from sqllineage.exceptions import SQLLineageException
+from sqllineage.utils.helpers import escape_identifier_name
 
 
 class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
@@ -151,7 +152,9 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
             else:
                 cte_dict = {s.alias: s for s in holder.cte}
                 if "." not in identifier.value:
-                    cte = cte_dict.get(identifier.get_real_name())
+                    cte = cte_dict.get(
+                        escape_identifier_name(identifier.get_real_name())
+                    )
                     if cte is not None:
                         # could reference CTE with or without alias
                         read = SqlParseSubQuery.of(
