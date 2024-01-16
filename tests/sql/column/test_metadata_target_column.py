@@ -39,7 +39,6 @@ def test_metadata_target_column():
             ),
         ],
         metadata_provider=MetaCollect(meta_collect),
-        default_schema="ods",
         test_sqlparse=False,
     )
 
@@ -66,7 +65,6 @@ SELECT acct_id, xxx, yyy FROM cte1"""
             ),
         ],
         metadata_provider=MetaCollect(meta_collect),
-        default_schema="ods",
         test_sqlparse=False,
     )
 
@@ -92,7 +90,6 @@ def test_metadata_target_column_cte2():
             ),
         ],
         metadata_provider=MetaCollect(meta_collect),
-        default_schema="ods",
         test_sqlparse=False,
     )
 
@@ -118,6 +115,5 @@ def test_metadata_target_column_cte3():
             ),
         ],
         metadata_provider=MetaCollect(meta_collect),
-        default_schema="ods",
         test_sqlparse=False,
     )
