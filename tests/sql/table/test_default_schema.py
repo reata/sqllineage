@@ -1,7 +1,9 @@
+import os
 from unittest.mock import patch
 
-from sqllineage.utils.entities import ColumnQualifierTuple
 from tests.helpers import assert_column_lineage_equal
+
+from sqllineage.utils.entities import ColumnQualifierTuple
 
 meta_collect = {
     "ods.source_a": ["day_id", "user_id", "user_name"],
@@ -15,7 +17,7 @@ meta_collect = {
         "SQLLINEAGE_DEFAULT_SCHEMA": "ods",
     },
 )
-def test_metadata_target_column():
+def test_default_schema_env():
     sql = """insert into target_tab select user_name,day_id,user_id from source_a"""
     assert_column_lineage_equal(
         sql=sql,
@@ -34,3 +36,5 @@ def test_metadata_target_column():
             ),
         ],
     )
+    if "SQLLINEAGE_DEFAULT_SCHEMA" in os.environ.keys():
+        os.environ.pop("SQLLINEAGE_DEFAULT_SCHEMA")
