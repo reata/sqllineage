@@ -110,7 +110,7 @@ class SqlFluffColumn(Column):
                     alias,
                     source_columns=source_columns,
                 )
-                if SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1":
+                if SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE:
                     setattr(alias_column, "has_alias", True)
                 return alias_column
             if source_columns:

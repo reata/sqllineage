@@ -225,7 +225,7 @@ class Column:
                     # select *
                     i = 0
                     if (
-                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
                         and holder is not None
                     ):
                         for sq in subqueryies:
@@ -242,7 +242,7 @@ class Column:
                     source = _to_src_col(src_col, None)
                     is_find = False
                     if (
-                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
                         and holder is not None
                     ):
                         for sq in subqueryies:

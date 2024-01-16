@@ -227,7 +227,7 @@ class BaseExtractor:
             ).extract(sq.query, AnalyzerContext(cte=holder.cte, write={sq}))
 
             if (
-                SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
                 and bool(self.metadata_provider) is True
             ):
                 subquery_holder.graph.add_node(sq, **{NodeTag.WRITE: False})

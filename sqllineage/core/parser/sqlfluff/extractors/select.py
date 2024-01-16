@@ -58,7 +58,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                             subqueries.append(sq)
 
         if (
-            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
             and bool(self.metadata_provider) is True
         ):
             self.extract_subquery(subqueries, holder)
@@ -89,9 +89,9 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
 
         self.end_of_query_cleanup(holder)
 
-        if (
-            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE != "1"
-            or bool(self.metadata_provider) is False
+        if not (
+            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
+            and bool(self.metadata_provider)
         ):
             self.extract_subquery(subqueries, holder)
 

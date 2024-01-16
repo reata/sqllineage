@@ -31,7 +31,7 @@ class SourceHandlerMixin:
                 for idx, tgt_col in enumerate(col_grp):
                     tgt_col.parent = tgt_tbl
                     if (
-                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
                         and bool(metadata_provider) is True
                         and getattr(tgt_col, "has_alias", False) is True
                     ):
@@ -69,7 +69,7 @@ class SourceHandlerMixin:
                             tgt_col = write_columns[idx]
                         is_lateral_alias_ref = False
                         if (
-                            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE == "1"
+                            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
                             and bool(metadata_provider) is True
                         ):
                             if idx > 0 and len(lateral_aliases) > 0:
