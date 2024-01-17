@@ -133,10 +133,7 @@ class CreateInsertExtractor(BaseExtractor):
                                     ],
                                 )
                                 for col in self.metadata_provider.get_table_columns(
-                                    table=Table(
-                                        name=tgt_tab.raw_name,
-                                        schema=tgt_tab.schema.raw_name,
-                                    )
+                                    table=tgt_tab
                                 )
                             ]
                             holder.add_write_column(*col_list)
