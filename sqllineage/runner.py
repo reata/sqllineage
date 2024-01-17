@@ -42,6 +42,7 @@ class LineageRunner(object):
         verbose: bool = False,
         silent_mode: bool = False,
         draw_options: Optional[Dict[str, str]] = None,
+        default_schema: Optional[str] = None,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -67,6 +68,7 @@ class LineageRunner(object):
         self._dialect = dialect
         self._metadata_provider = metadata_provider
         self._silent_mode = silent_mode
+        self._default_schema = default_schema
 
     @lazy_method
     def __str__(self):
@@ -182,7 +184,9 @@ Target Tables:
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT
-            else SqlFluffLineageAnalyzer(self._dialect, self._silent_mode)
+            else SqlFluffLineageAnalyzer(
+                self._dialect, self._default_schema, self._silent_mode
+            )
         )
         if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
             self._stmt = analyzer.split_tsql(self._sql.strip())

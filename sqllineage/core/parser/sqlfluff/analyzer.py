@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from sqlfluff.core import Linter, SQLLexError, SQLParseError, dialect_readout
 from sqlfluff.core.parser import BaseSegment
@@ -21,10 +21,13 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlfluff"
     SUPPORTED_DIALECTS = list(dialect.label for dialect in dialect_readout())
 
-    def __init__(self, dialect: str, silent_mode: bool = False):
+    def __init__(
+        self, dialect: str, default_schema: Optional[str], silent_mode: bool = False
+    ):
         self._dialect = dialect
         self._silent_mode = silent_mode
         self.tsql_split_cache: Dict[str, BaseSegment] = {}
+        self._default_schema = default_schema
 
     def split_tsql(self, sql: str) -> List[str]:
         """
@@ -51,7 +54,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         else:
             statement_segment = statement_segments[0]
             for extractor in [
-                extractor_cls(self._dialect, metadata_provider)
+                extractor_cls(self._dialect, metadata_provider, self._default_schema)
                 for extractor_cls in BaseExtractor.__subclasses__()
             ]:
                 if extractor.can_extract(statement_segment.type):

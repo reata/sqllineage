@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
@@ -24,8 +26,13 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
 
     SUPPORTED_STMT_TYPES = ["select_statement", "set_expression", "bracketed"]
 
-    def __init__(self, dialect: str, metadata_provider: MetaDataProvider):
-        super().__init__(dialect, metadata_provider)
+    def __init__(
+        self,
+        dialect: str,
+        metadata_provider: MetaDataProvider,
+        default_schema: Optional[str],
+    ):
+        super().__init__(dialect, metadata_provider, default_schema)
         self.columns = []
         self.tables = []
         self.union_barriers = []
