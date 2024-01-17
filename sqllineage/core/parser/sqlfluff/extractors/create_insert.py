@@ -1,14 +1,14 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Path
+from sqllineage.core.models import Column, Path, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
     list_child_segments,
 )
-from sqllineage.utils.entities import AnalyzerContext
+from sqllineage.utils.entities import AnalyzerContext, ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
 
 
@@ -32,7 +32,8 @@ class CreateInsertExtractor(BaseExtractor):
     ) -> SubQueryLineageHolder:
         holder = self._init_holder(context)
         src_flag = tgt_flag = False
-        for segment in list_child_segments(statement):
+        statement_child = list_child_segments(statement)
+        for seg_idx, segment in enumerate(list_child_segments(statement)):
             if segment.type == "with_compound_statement":
                 holder |= self.delegate_to_cte(segment, holder)
             elif segment.type == "bracketed" and any(
@@ -111,6 +112,34 @@ class CreateInsertExtractor(BaseExtractor):
                     else:
                         holder.add_write(Path(escape_identifier_name(segment.raw)))
                 tgt_flag = False
+
+                if statement.type == "insert_statement" and holder.write:
+                    sub_segments = list_child_segments(
+                        segment=statement_child[seg_idx + 1]
+                    )
+                    if not all(
+                        sub_segment.type in ["column_reference", "column_definition"]
+                        for sub_segment in sub_segments
+                    ):
+                        tgt_tab = list(holder.write)[0]
+                        if isinstance(tgt_tab, Table) and tgt_tab.schema:
+                            col_list = [
+                                Column(
+                                    name=col.raw_name,
+                                    source_columns=[
+                                        ColumnQualifierTuple(
+                                            column=col.raw_name, qualifier=None
+                                        )
+                                    ],
+                                )
+                                for col in self.metadata_provider.get_table_columns(
+                                    table=Table(
+                                        name=tgt_tab.raw_name,
+                                        schema=tgt_tab.schema.raw_name,
+                                    )
+                                )
+                            ]
+                            holder.add_write_column(*col_list)
             if src_flag:
                 if segment.type in ["table_reference", "object_reference"]:
                     holder.add_read(SqlFluffTable.of(segment))
