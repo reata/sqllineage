@@ -4,7 +4,6 @@ from typing import Optional, Tuple
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage import SQLPARSE_DIALECT
-from sqllineage.config import SQLLineageConfig
 from sqllineage.core.models import Column, Schema, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
@@ -110,8 +109,7 @@ class SqlFluffColumn(Column):
                     alias,
                     source_columns=source_columns,
                 )
-                if SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE:
-                    setattr(alias_column, "has_alias", True)
+                setattr(alias_column, "has_alias", True)
                 return alias_column
             if source_columns:
                 column_name = None

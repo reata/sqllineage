@@ -88,11 +88,11 @@ class SourceHandlerMixin:
                                                 lateral_alias_col, tgt_col
                                             )
                                         break
-                            if tgt_col.raw_name == "*":
-                                expand_tgt_col = Column(src_col.raw_name)
-                                expand_tgt_col.parent = tgt_tbl
-                                holder.add_column_lineage(src_col, expand_tgt_col)
-                                continue
+                        if tgt_col.raw_name == "*":
+                            expand_tgt_col = Column(src_col.raw_name)
+                            expand_tgt_col.parent = tgt_tbl
+                            holder.add_column_lineage(src_col, expand_tgt_col)
+                            continue
                         if is_lateral_alias_ref:
                             continue
                         holder.add_column_lineage(src_col, tgt_col)

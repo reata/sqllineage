@@ -1,6 +1,5 @@
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.parser import SourceHandlerMixin
@@ -57,11 +56,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                         for sq in self.list_subquery(seg):
                             subqueries.append(sq)
 
-        if (
-            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
-            and bool(self.metadata_provider) is True
-        ):
-            self.extract_subquery(subqueries, holder)
+        self.extract_subquery(subqueries, holder)
 
         for segment in segments:
             self._handle_swap_partition(segment, holder)
@@ -88,12 +83,6 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                         self._handle_column(seg)
 
         self.end_of_query_cleanup(holder)
-
-        if not (
-            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
-            and bool(self.metadata_provider)
-        ):
-            self.extract_subquery(subqueries, holder)
 
         holder.expand_wildcard(self.metadata_provider)
 

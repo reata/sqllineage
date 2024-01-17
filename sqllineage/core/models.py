@@ -224,10 +224,7 @@ class Column:
                 if src_col == "*":
                     # select *
                     i = 0
-                    if (
-                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
-                        and holder is not None
-                    ):
+                    if holder is not None:
                         for sq in subqueryies:
                             columns = holder.get_table_columns(sq)
                             if columns:
@@ -241,18 +238,14 @@ class Column:
                     # select unqualified column
                     source = _to_src_col(src_col, None)
                     is_find = False
-                    if (
-                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
-                        and holder is not None
-                    ):
-                        for sq in subqueryies:
-                            for column in holder.get_table_columns(sq):
-                                if column.raw_name == src_col:
-                                    source = _to_src_col(src_col, sq)
-                                    is_find = True
-                                    break
-                            if is_find:
+                    for sq in subqueryies:
+                        for column in holder.get_table_columns(sq):
+                            if column.raw_name == src_col:
+                                source = _to_src_col(src_col, sq)
+                                is_find = True
                                 break
+                        if is_find:
+                            break
                     if is_find is False:
                         setattr(source, "has_qualifier", False)
                         for table in set(alias_mapping.values()):
