@@ -140,6 +140,18 @@ CASE WHEN (SELECT count(*) FROM tab1 WHERE col1 = 'tab2') = 1 THEN (SELECT count
 CASE WHEN 1 = (SELECT count(*) FROM tab1 WHERE col1 = 'tab2') THEN (SELECT count(*) FROM tab2) ELSE 0 END AS cnt""",
         {"tab1", "tab2"},
     )
+    assert_table_lineage_equal(
+        """
+        select
+            1,
+            case
+                when 1 = ( select count(*) from tab1 where col1 = 'tab2' )
+                    then ( select count(*) from tab2 )
+                else 0
+            end as cnt
+        """,
+        {"tab1", "tab2"},
+    )
 
 
 def test_select_subquery_without_alias():
