@@ -6,7 +6,6 @@ from networkx import DiGraph
 
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
-from sqllineage.exceptions import InvalidSyntaxException
 from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
 DATASET_CLASSES = (Path, Table)
