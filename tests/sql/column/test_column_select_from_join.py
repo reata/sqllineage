@@ -63,14 +63,22 @@ FROM tab2 a
 
 
 def test_select_column_without_table_qualifier_from_table_join():
-    sql = """INSERT INTO tab1
-SELECT col1
-FROM tab2 a
-         INNER JOIN tab3 b
-                    ON a.id = b.id"""
+    sql = """INSERT INTO tab3
+SELECT f1
+FROM ( SELECT f1 FROM tab1)
+LEFT JOIN ( SELECT f1 FROM tab2) USING (f1)"""
     assert_column_lineage_equal(
         sql,
-        [(ColumnQualifierTuple("col1", None), ColumnQualifierTuple("col1", "tab1"))],
+        [
+            (
+                ColumnQualifierTuple("f1", "tab1"),
+                ColumnQualifierTuple("f1", "tab3"),
+            ),
+            (
+                ColumnQualifierTuple("f1", "tab2"),
+                ColumnQualifierTuple("f1", "tab3"),
+            ),
+        ],
     )
 
 
