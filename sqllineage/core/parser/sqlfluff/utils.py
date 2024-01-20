@@ -131,7 +131,7 @@ def list_expression_from_when_clause(
 def list_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
     subquery = []
     if segment.type == "select_clause":
-        if select_clause_element := segment.get_child("select_clause_element"):
+        for select_clause_element in segment.get_children("select_clause_element"):
             if expression := select_clause_element.get_child("expression"):
                 if case_expression := expression.get_child("case_expression"):
                     for when_clause in case_expression.get_children("when_clause"):
