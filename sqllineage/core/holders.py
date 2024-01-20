@@ -6,7 +6,6 @@ from networkx import DiGraph
 
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
-from sqllineage.exceptions import InvalidSyntaxException
 from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
 DATASET_CLASSES = (Path, Table)
@@ -439,14 +438,12 @@ class SQLLineageHolder(ColumnLineageMixin):
                             if unresolved_col.raw_name == src_col.raw_name:
                                 src_cols.append(src_col)
 
-            if len(src_cols) > 1:
-                raise InvalidSyntaxException(
-                    f"{unresolved_col.raw_name} is not allowed from more than one table or subquery"
-                )
+            # Multiple sources is a correct case for JOIN with USING
+            # It incorrect for JOIN with ON, but sql without specifying an alias in this case will be invalid
+            for src_col in src_cols:
+                g.add_edge(src_col, tgt_col, type=EdgeType.LINEAGE)
+            g.remove_edge(unresolved_col, tgt_col)
 
-            if len(src_cols) == 1:
-                g.add_edge(src_cols[0], tgt_col, type=EdgeType.LINEAGE)
-                g.remove_edge(unresolved_col, tgt_col)
         # when unresolved column got resolved, it will be orphan node, and we can remove it
         for node in [n for n, deg in g.degree if deg == 0]:
             if isinstance(node, Column) and len(node.parent_candidates) > 1:

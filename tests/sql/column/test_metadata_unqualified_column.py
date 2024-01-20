@@ -1,8 +1,6 @@
 import pytest
 
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.exceptions import InvalidSyntaxException
-from sqllineage.runner import LineageRunner
 from sqllineage.utils.entities import ColumnQualifierTuple
 from ...helpers import assert_column_lineage_equal, generate_metadata_providers
 
@@ -274,21 +272,3 @@ left join (select pk, p, q as z from db3.table3) t3 on t2.id = t3.pk
         ],
         metadata_provider=provider,
     )
-
-
-@pytest.mark.parametrize("provider", providers)
-def test_sqlparse_exception(provider: MetaDataProvider):
-    sql = """insert into db.tbl
-select id
-from db1.table1 t1
-join db2.table2 t2 on t1.id = t2.id
-"""
-
-    with pytest.raises(
-        InvalidSyntaxException,
-        match="id is not allowed from more than one table or subquery",
-    ):
-        lr = LineageRunner(sql, metadata_provider=provider)
-        col_lineage = lr.get_column_lineage()
-        for e in col_lineage:
-            print(e)
