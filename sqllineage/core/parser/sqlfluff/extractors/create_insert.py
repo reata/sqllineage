@@ -6,7 +6,6 @@ from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
-    is_set_expression,
     list_child_segments,
 )
 from sqllineage.utils.entities import AnalyzerContext
@@ -56,14 +55,16 @@ class CreateInsertExtractor(BaseExtractor):
                                         select_statement, holder
                                     )
             elif segment.type == "bracketed" and (
-                self.list_subquery(segment) or is_set_expression(segment)
+                subquery_segments := list(
+                    segment.recursive_crawl(
+                        "select_statement", "set_expression", recurse_into=False
+                    )
+                )
             ):
                 # note regular subquery within SELECT statement is handled by SelectExtractor, this is only to handle
                 # top-level subquery in DML like: 1) create table foo as (subquery); 2) insert into foo (subquery)
                 # subquery here isn't added as read source, and it inherits DML-level write_columns if parsed
-                if subquery_segment := segment.get_child(
-                    "select_statement", "set_expression"
-                ):
+                for subquery_segment in subquery_segments:
                     holder |= self.delegate_to_select(subquery_segment, holder)
 
             elif segment.type == "bracketed":

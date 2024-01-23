@@ -46,23 +46,16 @@ class CteExtractor(BaseExtractor):
                     UpdateExtractor, segment, AnalyzerContext(cte=holder.cte)
                 )
             elif segment.type == "common_table_expression":
-                identifier = None
-                segment_has_alias = any(
-                    s for s in segment.get_children("keyword") if s.raw_upper == "AS"
-                )
+                alias = None
                 sub_segments = list_child_segments(segment)
                 for sub_segment in sub_segments:
                     if sub_segment.type == "identifier":
-                        identifier = sub_segment.raw
-                        if not segment_has_alias:
-                            holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
-                    if sub_segment.type == "bracketed":
+                        alias = sub_segment.raw
+                    elif sub_segment.type == "bracketed":
                         for sq in self.list_subquery(sub_segment):
-                            if identifier:
-                                sq.alias = identifier
+                            sq.alias = alias
                             subqueries.append(sq)
-                        if segment_has_alias:
-                            holder.add_cte(SqlFluffSubQuery.of(sub_segment, identifier))
+                        holder.add_cte(SqlFluffSubQuery.of(sub_segment, alias))
 
         self.extract_subquery(subqueries, holder)
 
