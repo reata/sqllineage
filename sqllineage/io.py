@@ -12,9 +12,11 @@ def to_cytoscape(graph: DiGraph, compound=False) -> List[Dict[str, Dict[str, Any
         parents_dict = {
             node.parent: {
                 "name": str(node.parent) if node.parent is not None else "<unknown>",
-                "type": type(node.parent).__name__
-                if node.parent is not None
-                else "Table or SubQuery",
+                "type": (
+                    type(node.parent).__name__
+                    if node.parent is not None
+                    else "Table or SubQuery"
+                ),
             }
             for node in graph.nodes
         }

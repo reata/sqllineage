@@ -109,9 +109,11 @@ class MergeExtractor(BaseExtractor):
                     next_segment = segments[i + 1]
                     direct_source = SqlFluffSubQuery.of(
                         extract_innermost_bracketed(segment),
-                        extract_identifier(next_segment)
-                        if next_segment.type == "alias_expression"
-                        else None,
+                        (
+                            extract_identifier(next_segment)
+                            if next_segment.type == "alias_expression"
+                            else None
+                        ),
                     )
                     holder.add_read(direct_source)
 

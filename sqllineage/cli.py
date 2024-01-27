@@ -106,9 +106,11 @@ def main(args=None) -> None:
         runner = LineageRunner(
             sql,
             dialect=args.dialect,
-            metadata_provider=SQLAlchemyMetaDataProvider(args.sqlalchemy_url)
-            if args.sqlalchemy_url
-            else DummyMetaDataProvider(),
+            metadata_provider=(
+                SQLAlchemyMetaDataProvider(args.sqlalchemy_url)
+                if args.sqlalchemy_url
+                else DummyMetaDataProvider()
+            ),
             verbose=args.verbose,
             draw_options={
                 "host": args.host,

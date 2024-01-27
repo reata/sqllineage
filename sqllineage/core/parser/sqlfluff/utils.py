@@ -8,6 +8,7 @@ naming convention:
     extract_x: other pattern
 first parameter of each function must be sqlfluff BaseSegment
 """
+
 from typing import List, Optional, Tuple
 
 from sqlfluff.core.parser import BaseSegment
@@ -156,9 +157,11 @@ def list_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
         if is_subquery(target):
             subquery = [
                 SubQueryTuple(
-                    extract_innermost_bracketed(target)
-                    if not is_set_expression(target)
-                    else target,
+                    (
+                        extract_innermost_bracketed(target)
+                        if not is_set_expression(target)
+                        else target
+                    ),
                     extract_identifier(as_segment) if as_segment else None,
                 )
             ]
