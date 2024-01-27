@@ -2,6 +2,7 @@ from functools import reduce
 from operator import add
 from typing import List, Optional, Type, Union
 
+import networkx as nx
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
@@ -224,9 +225,8 @@ class BaseExtractor:
             subquery_holder = extractor_cls(
                 self.dialect, self.metadata_provider
             ).extract(sq.query, AnalyzerContext(cte=holder.cte, write={sq}))
-
-            subquery_holder.graph.add_node(sq, **{NodeTag.WRITE: False})
-
+            # remove WRITE tag from subquery so that the combined holder won't have multiple WRITE dataset
+            nx.set_node_attributes(subquery_holder.graph, {sq, False}, NodeTag.WRITE)
             holder |= subquery_holder
 
     @staticmethod

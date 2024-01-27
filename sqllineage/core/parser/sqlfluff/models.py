@@ -106,10 +106,8 @@ class SqlFluffColumn(Column):
             source_columns, alias = SqlFluffColumn._get_column_and_alias(column)
             if alias:
                 alias_column = Column(
-                    alias,
-                    source_columns=source_columns,
+                    alias, source_columns=source_columns, from_alias=True
                 )
-                setattr(alias_column, "has_alias", True)
                 return alias_column
             if source_columns:
                 column_name = None

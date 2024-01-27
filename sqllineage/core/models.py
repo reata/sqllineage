@@ -158,6 +158,7 @@ class Column:
                 "source_columns", ((self.raw_name, None),)
             )
         ]
+        self.from_alias = kwargs.pop("from_alias", False)
 
     def __str__(self):
         return (
@@ -200,9 +201,7 @@ class Column:
         """
         raise NotImplementedError
 
-    def to_source_columns(
-        self, alias_mapping: Dict[str, Union[Path, Table, SubQuery]], holder=None
-    ):
+    def to_source_columns(self, alias_mapping: Dict[str, Union[Path, Table, SubQuery]]):
         """
         Best guess for source table given all the possible table/subquery and their alias.
         """
@@ -218,37 +217,17 @@ class Column:
         source_columns = set()
         for src_col, qualifier in self.source_columns:
             if qualifier is None:
-                subqueryies = [
-                    sq for sq in alias_mapping.values() if isinstance(sq, SubQuery)
-                ]
                 if src_col == "*":
                     # select *
-                    i = 0
-                    if holder is not None:
-                        for sq in subqueryies:
-                            columns = holder.get_table_columns(sq)
-                            if columns:
-                                i += 1
-                            for column in columns:
-                                source_columns.add(_to_src_col(column.raw_name, sq))
-                    if len(subqueryies) == 0 or i != len(subqueryies):
-                        for table in set(alias_mapping.values()):
-                            source_columns.add(_to_src_col(src_col, table))
+                    for table in set(alias_mapping.values()):
+                        source_columns.add(_to_src_col(src_col, table))
                 else:
                     # select unqualified column
                     source = _to_src_col(src_col, None)
-                    is_find = False
-                    for sq in subqueryies:
-                        for column in holder.get_table_columns(sq):
-                            if column.raw_name == src_col:
-                                source.parent = sq
-                                is_find = True
-                    if is_find is False:
-                        setattr(source, "has_qualifier", False)
-                        for table in set(alias_mapping.values()):
-                            # in case of only one table, we get the right answer
-                            # in case of multiple tables, a bunch of possible tables are set
-                            source.parent = table
+                    for table in set(alias_mapping.values()):
+                        # in case of only one table, we get the right answer
+                        # in case of multiple tables, a bunch of possible tables are set
+                        source.parent = table
                     source_columns.add(source)
             else:
                 if alias_mapping.get(qualifier):

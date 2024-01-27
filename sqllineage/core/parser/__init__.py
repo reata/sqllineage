@@ -1,8 +1,7 @@
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.exceptions import SQLLineageException
 
@@ -15,7 +14,6 @@ class SourceHandlerMixin:
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         for i, tbl in enumerate(self.tables):
             holder.add_read(tbl)
-        metadata_provider = getattr(self, "metadata_provider", DummyMetaDataProvider())
         self.union_barriers.append((len(self.columns), len(self.tables)))
         for i, (col_barrier, tbl_barrier) in enumerate(self.union_barriers):
             prev_col_barrier, prev_tbl_barrier = (
@@ -26,73 +24,58 @@ class SourceHandlerMixin:
             if holder.write:
                 if len(holder.write) > 1:
                     raise SQLLineageException
-                tgt_tbl = list(holder.write)[0]
-                lateral_aliases = set()
-                for idx, tgt_col in enumerate(col_grp):
-                    tgt_col.parent = tgt_tbl
-                    if (
-                        SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
-                        and bool(metadata_provider) is True
-                        and getattr(tgt_col, "has_alias", False) is True
+                tgt_tbl = next(iter(holder.write))
+                lateral_column_aliases: Dict[str, List[Column]] = {}
+                for idx, tgt_col_from_query in enumerate(col_grp):
+                    tgt_col_from_query.parent = tgt_tbl
+                    tgt_col_resolved = tgt_col_from_query
+                    src_cols_resolved = []
+                    for src_col in tgt_col_from_query.to_source_columns(
+                        holder.get_alias_mapping_from_table_group(tbl_grp),
                     ):
-                        for lateral_alias_ref in col_grp[idx + 1 :]:  # noqa: E203
-                            if any(
-                                src_col[0] == tgt_col.raw_name
-                                for src_col in lateral_alias_ref.source_columns
-                                if src_col[1] is None
-                                and all(
-                                    src_col[0]
-                                    not in list(
-                                        map(
-                                            lambda x: str(x).rsplit(".", 1)[-1],
-                                            metadata_provider.get_table_columns(read),
-                                        )
-                                    )
-                                    for read in tbl_grp
-                                    if isinstance(read, Table)
-                                )
-                            ):
-                                lateral_aliases.add(tgt_col.raw_name)
-                                break
-                    for src_col in tgt_col.to_source_columns(
-                        holder.get_alias_mapping_from_table_group(tbl_grp), holder
-                    ):
-                        if (
-                            len(write_columns := holder.write_columns) == len(col_grp)
-                            and tgt_col.raw_name != "*"
-                        ):
+                        if len(write_columns := holder.write_columns) == len(col_grp):
                             # example query: create view test (col3) select col1 as col2 from tab
                             # without write_columns = [col3] information, by default src_col = col1 and tgt_col = col2
                             # when write_columns exist and length matches, we want tgt_col = col3 instead of col2
                             # for invalid query: create view test (col3, col4) select col1 as col2 from tab,
                             # when the length doesn't match, we fall back to default behavior
-                            tgt_col = write_columns[idx]
-                        is_lateral_alias_ref = False
+                            tgt_col_resolved = write_columns[idx]
+                        # lateral column alias handling
+                        lca_flag = False
+                        if SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE:
+                            if metadata_provider := getattr(
+                                self, "metadata_provider", None
+                            ):
+                                from_dataset = False
+                                for parent_candidate in src_col.parent_candidates:
+                                    if isinstance(
+                                        parent_candidate, Table
+                                    ) and src_col in metadata_provider.get_table_columns(
+                                        parent_candidate
+                                    ):
+                                        from_dataset = True
+                                    elif isinstance(
+                                        parent_candidate, SubQuery
+                                    ) and src_col in holder.get_table_columns(
+                                        parent_candidate
+                                    ):
+                                        from_dataset = True
+                                if not from_dataset and (
+                                    lca_cols_resolved := lateral_column_aliases.get(
+                                        src_col.raw_name, []
+                                    )
+                                ):
+                                    src_cols_resolved.extend(lca_cols_resolved)
+                                    lca_flag = True
+                        if not lca_flag:
+                            src_cols_resolved.append(src_col)
+
+                    for src_col_resolved in src_cols_resolved:
+                        holder.add_column_lineage(src_col_resolved, tgt_col_resolved)
                         if (
                             SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
-                            and bool(metadata_provider) is True
+                            and tgt_col_from_query.from_alias
                         ):
-                            if idx > 0 and len(lateral_aliases) > 0:
-                                for wc in holder.write_columns:
-                                    if (
-                                        hasattr(src_col, "has_qualifier")
-                                        and src_col.has_qualifier is False
-                                        and src_col.raw_name == wc.raw_name
-                                        and src_col.raw_name in lateral_aliases
-                                    ):
-                                        for (
-                                            lateral_alias_col
-                                        ) in holder.get_source_columns(wc):
-                                            is_lateral_alias_ref = True
-                                            holder.add_column_lineage(
-                                                lateral_alias_col, tgt_col
-                                            )
-                                        break
-                        if tgt_col.raw_name == "*":
-                            expand_tgt_col = Column(src_col.raw_name)
-                            expand_tgt_col.parent = tgt_tbl
-                            holder.add_column_lineage(src_col, expand_tgt_col)
-                            continue
-                        if is_lateral_alias_ref:
-                            continue
-                        holder.add_column_lineage(src_col, tgt_col)
+                            lateral_column_aliases[
+                                tgt_col_from_query.raw_name
+                            ] = src_cols_resolved
