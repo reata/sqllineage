@@ -15,12 +15,16 @@ default schema name.
 
 Default: ``""``
 
+Since: 1.5.0
+
 DIRECTORY
 =========
 Frontend app SQL directory. By default the frontend app is showing the data directory packaged with sqllineage,
 which includes tpcds queries for demo purposes. User can customize with this key.
 
 Default: ``sqllineage/data``
+
+Since: 1.2.1
 
 LATERAL_COLUMN_ALIAS_REFERENCE
 ==============================
@@ -50,19 +54,23 @@ Enable lateral column alias reference. This is a syntax feature supported by som
 
 Default: ``False``
 
+Since: 1.5.1
+
 TSQL_NO_SEMICOLON
 =================
-Enable tsql no semicolon splitter mode.
+Enable tsql no semicolon splitter mode. Transact-SQL offers this feature that even when SQL statements are not delimited
+by semicolon, it can still be parsed and executed.
 
 .. warning::
-     Transact-SQL offers this feature that even when SQL statements are not delimited by semicolon, it can still be
-     parsed and executed. But quoting `Transact-SQL syntax conventions (Transact-SQL)`_, "although the semicolon isn't
-     required for most statements in this version (v16) of SQL Server, it will be required in a future version".
+     Quoting `Transact-SQL syntax conventions (Transact-SQL)`_, "although the semicolon isn't required for most
+     statements in this version (v16) of SQL Server, it will be required in a future version".
 
      So with SQLLineage, this config key is kept mostly for backward-compatible purposes. We may drop the support any
      time without warning. Bear this in mind when using this feature.
 
 Default: ``False``
+
+Since: 1.4.8
 
 
 .. _Amazon Redshift announces support for lateral column alias reference: https://aws.amazon.com/about-aws/whats-new/2018/08/amazon-redshift-announces-support-for-lateral-column-alias-reference/
