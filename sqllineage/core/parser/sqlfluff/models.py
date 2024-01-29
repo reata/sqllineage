@@ -105,10 +105,7 @@ class SqlFluffColumn(Column):
         if column.type == "select_clause_element":
             source_columns, alias = SqlFluffColumn._get_column_and_alias(column)
             if alias:
-                return Column(
-                    alias,
-                    source_columns=source_columns,
-                )
+                return Column(alias, source_columns=source_columns, from_alias=True)
             if source_columns:
                 column_name = None
                 for sub_segment in list_child_segments(column):
@@ -145,10 +142,7 @@ class SqlFluffColumn(Column):
 
         # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
         source_columns = SqlFluffColumn._extract_source_columns(column)
-        return Column(
-            column.raw,
-            source_columns=source_columns,
-        )
+        return Column(column.raw, source_columns=source_columns)
 
     @staticmethod
     def _extract_source_columns(segment: BaseSegment) -> List[ColumnQualifierTuple]:

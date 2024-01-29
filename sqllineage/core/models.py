@@ -158,6 +158,7 @@ class Column:
                 "source_columns", ((self.raw_name, None),)
             )
         ]
+        self.from_alias = kwargs.pop("from_alias", False)
 
     def __str__(self):
         return (

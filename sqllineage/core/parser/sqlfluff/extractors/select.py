@@ -48,6 +48,17 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                 # so that each handler don't have to worry about what's inside subquery
                 subqueries.append(sq)
 
+            if is_set_expression(segment):
+                for _, sub_segment in enumerate(
+                    segment.get_children("select_statement", "bracketed")
+                ):
+                    for seg in list_child_segments(sub_segment):
+                        for sq in self.list_subquery(seg):
+                            subqueries.append(sq)
+
+        self.extract_subquery(subqueries, holder)
+
+        for segment in segments:
             self._handle_swap_partition(segment, holder)
             self._handle_select_into(segment, holder)
             self.tables.extend(
@@ -64,17 +75,14 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                             (len(self.columns), len(self.tables))
                         )
                     for seg in list_child_segments(sub_segment):
-                        for sq in self.list_subquery(seg):
-                            subqueries.append(sq)
                         self.tables.extend(
                             self._list_table_from_from_clause_or_join_clause(
                                 seg, holder
                             )
                         )
                         self._handle_column(seg)
-        self.end_of_query_cleanup(holder)
 
-        self.extract_subquery(subqueries, holder)
+        self.end_of_query_cleanup(holder)
 
         holder.expand_wildcard(self.metadata_provider)
 

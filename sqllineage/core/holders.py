@@ -420,7 +420,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         for unresolved_col, tgt_col in unresolved_cols:
             # check if there's only one parent candidate contains the column with same name
             src_cols = []
-            # check if source column exists in graph
+            # check if source column exists in graph (either from subquery or from table created in prev statement)
             for parent in unresolved_col.parent_candidates:
                 src_col = Column(unresolved_col.raw_name)
                 src_col.parent = parent
@@ -442,7 +442,9 @@ class SQLLineageHolder(ColumnLineageMixin):
             # It incorrect for JOIN with ON, but sql without specifying an alias in this case will be invalid
             for src_col in src_cols:
                 g.add_edge(src_col, tgt_col, type=EdgeType.LINEAGE)
-            g.remove_edge(unresolved_col, tgt_col)
+            if len(src_cols) > 0:
+                # only delete unresolved column when it's resolved
+                g.remove_edge(unresolved_col, tgt_col)
 
         # when unresolved column got resolved, it will be orphan node, and we can remove it
         for node in [n for n, deg in g.degree if deg == 0]:

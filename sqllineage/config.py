@@ -14,6 +14,8 @@ class _SQLLineageConfigLoader:
         "DEFAULT_SCHEMA": (str, ""),
         # to enable tsql no semicolon splitter mode
         "TSQL_NO_SEMICOLON": (bool, False),
+        # lateral column alias reference supported by some dialect (redshift, spark 3.4+, etc)
+        "LATERAL_COLUMN_ALIAS_REFERENCE": (bool, False),
     }
     BOOLEAN_TRUE_STRINGS = ("true", "on", "ok", "y", "yes", "1")
 
