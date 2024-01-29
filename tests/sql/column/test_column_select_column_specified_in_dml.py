@@ -24,6 +24,36 @@ def test_view_with_subquery_custom_columns():
         ],
         test_sqlparse=False,
     )
+    sql = "CREATE VIEW my_view (random1,random2) AS ((SELECT col1,col2 FROM tbl))"
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tbl"),
+                ColumnQualifierTuple("random1", "my_view"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tbl"),
+                ColumnQualifierTuple("random2", "my_view"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
+    sql = "CREATE VIEW my_view (random1,random2) AS (((SELECT col1,col2 FROM tbl)))"
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tbl"),
+                ColumnQualifierTuple("random1", "my_view"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tbl"),
+                ColumnQualifierTuple("random2", "my_view"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
     sql = "CREATE VIEW my_view (random1,random2) AS SELECT col1,col2 FROM tbl"
     assert_column_lineage_equal(
         sql,
@@ -78,6 +108,18 @@ def test_insert_into_with_columns_and_select_union():
     )
     assert_table_lineage_equal(
         "INSERT INTO tab1 (col1, col2) (SELECT * FROM tab2 UNION SELECT * FROM tab3)",
+        {"tab2", "tab3"},
+        {"tab1"},
+        test_sqlparse=False,
+    )
+    assert_table_lineage_equal(
+        "INSERT INTO tab1 (col1, col2) ((SELECT * FROM tab2 UNION SELECT * FROM tab3))",
+        {"tab2", "tab3"},
+        {"tab1"},
+        test_sqlparse=False,
+    )
+    assert_table_lineage_equal(
+        "INSERT INTO tab1 (col1, col2) (((SELECT * FROM tab2 UNION SELECT * FROM tab3)))",
         {"tab2", "tab3"},
         {"tab1"},
         test_sqlparse=False,
