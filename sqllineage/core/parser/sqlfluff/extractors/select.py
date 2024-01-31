@@ -59,12 +59,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         self.extract_subquery(subqueries, holder)
 
         for segment in segments:
-            self._handle_swap_partition(segment, holder)
-            self._handle_select_into(segment, holder)
-            self.tables.extend(
-                self._list_table_from_from_clause_or_join_clause(segment, holder)
-            )
-            self._handle_column(segment)
+            self._handle_select_statement_child_segments(segment, holder)
 
             if is_set_expression(segment):
                 for idx, sub_segment in enumerate(
@@ -75,18 +70,23 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                             (len(self.columns), len(self.tables))
                         )
                     for seg in list_child_segments(sub_segment):
-                        self.tables.extend(
-                            self._list_table_from_from_clause_or_join_clause(
-                                seg, holder
-                            )
-                        )
-                        self._handle_column(seg)
+                        self._handle_select_statement_child_segments(seg, holder)
 
         self.end_of_query_cleanup(holder)
 
         holder.expand_wildcard(self.metadata_provider)
 
         return holder
+
+    def _handle_select_statement_child_segments(
+        self, segment: BaseSegment, holder: SubQueryLineageHolder
+    ):
+        self._handle_swap_partition(segment, holder)
+        self._handle_select_into(segment, holder)
+        self.tables.extend(
+            self._list_table_from_from_clause_or_join_clause(segment, holder)
+        )
+        self._handle_column(segment)
 
     @staticmethod
     def _handle_swap_partition(segment: BaseSegment, holder: SubQueryLineageHolder):
