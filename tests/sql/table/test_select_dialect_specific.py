@@ -60,6 +60,14 @@ def test_select_into(dialect: str):
     assert_table_lineage_equal(sql, {"films"}, {"films_recent"}, dialect=dialect)
 
 
+@pytest.mark.parametrize("dialect", ["postgres", "tsql"])
+def test_select_into_with_union(dialect: str):
+    sql = "SELECT * INTO films_all FROM films UNION ALL SELECT * FROM films_backup"
+    assert_table_lineage_equal(
+        sql, {"films", "films_backup"}, {"films_all"}, dialect=dialect
+    )
+
+
 @pytest.mark.parametrize("dialect", ["athena"])
 def test_select_from_unnest_with_ordinality(dialect: str):
     """
