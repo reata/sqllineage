@@ -2,6 +2,24 @@
 Changelog
 *********
 
+v1.5.1
+======
+:Date: February 4, 2024
+
+Enhancement
+-------------
+* Allow unambiguous column reference for JOIN with USING clause (`#558 <https://github.com/reata/sqllineage/issues/558>`_)
+* Make Lateral Column Alias Reference Configurable (`#539 <https://github.com/reata/sqllineage/issues/539>`_)
+* Add an Argument to Exclude SubQuery Column Node in Column Lineage Path (`#526 <https://github.com/reata/sqllineage/issues/526>`_)
+
+Bugfix
+-------------
+* Not fully processed top-level subquery in DML (`#564 <https://github.com/reata/sqllineage/issues/564>`_)
+* Missing target table with tsql parsing into statements with union (`#562 <https://github.com/reata/sqllineage/issues/562>`_)
+* The second and subsequent case when subqueries in the select_clause are not correctly recognized (`#559 <https://github.com/reata/sqllineage/issues/559>`_)
+* SQLLineageConfig boolean value returns True for all non-empty strings (`#551 <https://github.com/reata/sqllineage/issues/551>`_)
+* Column lineage does not traverse through CTE containing uppercase letters (`#531 <https://github.com/reata/sqllineage/issues/531>`_)
+
 v1.5.0
 ======
 :Date: January 7, 2024
