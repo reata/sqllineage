@@ -199,10 +199,10 @@ Target Tables:
                 stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
                 if write := stmt_holder.write:
                     tgt_table = next(iter(write))
-                    if isinstance(tgt_table, Table):
-                        session.register_session_metadata(
-                            tgt_table, stmt_holder.get_table_columns(tgt_table)
-                        )
+                    if isinstance(tgt_table, Table) and (
+                        tgt_columns := stmt_holder.get_table_columns(tgt_table)
+                    ):
+                        session.register_session_metadata(tgt_table, tgt_columns)
                 stmt_holders.append(stmt_holder)
             self._stmt_holders = stmt_holders
             self._sql_holder = SQLLineageHolder.of(
