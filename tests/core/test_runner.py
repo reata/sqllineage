@@ -1,6 +1,10 @@
+import os
+import tempfile
+
 from sqllineage.core.models import SubQuery
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
+from ..helpers import assert_table_lineage_equal
 
 
 def test_runner_dummy():
@@ -31,3 +35,19 @@ def test_get_column_lineage_exclude_subquery_inpath():
     for col_tuple in parse.get_column_lineage(exclude_subquery_columns=True):
         for col in col_tuple:
             assert not isinstance(col.parent, SubQuery)
+
+
+def test_respect_sqlfluff_configuration_file():
+    sqlfluff_config = """[sqlfluff:templater:jinja:context]
+num_things=456
+tbl_name=my_table"""
+    cwd = os.getcwd()
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        try:
+            os.chdir(tmpdirname)
+            with open(".sqlfluff", "w") as f:
+                f.write(sqlfluff_config)
+            sql = "SELECT {{ num_things }} FROM {{ tbl_name }} WHERE id > 10 LIMIT 5"
+            assert_table_lineage_equal(sql, {"my_table"}, test_sqlparse=False)
+        finally:
+            os.chdir(cwd)
