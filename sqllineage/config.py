@@ -1,10 +1,14 @@
 import os
+import threading
+from typing import Any
 
 
 class _SQLLineageConfigLoader:
     """
     Load all configurable items from environment variable, otherwise fallback to default
     """
+
+    thread_config: dict[int, dict[str, Any]] = {}
 
     # inspired by https://github.com/joke2k/django-environ
     config = {
@@ -19,8 +23,14 @@ class _SQLLineageConfigLoader:
     }
     BOOLEAN_TRUE_STRINGS = ("true", "on", "ok", "y", "yes", "1")
 
-    def __getattr__(self, item):
-        if item in self.config:
+    def __getattr__(self, item: str):
+        if item in self.config.keys():
+            if (
+                threading.get_ident() in self.thread_config.keys()
+                and item in self.thread_config[threading.get_ident()]
+            ):
+                return self.thread_config[threading.get_ident()][item]
+
             type_, default = self.config[item]
             # require SQLLINEAGE_ prefix from environment variable
             return self.parse_value(
@@ -30,7 +40,7 @@ class _SQLLineageConfigLoader:
             return super().__getattribute__(item)
 
     @classmethod
-    def parse_value(cls, value, cast):
+    def parse_value(cls, value, cast) -> Any:
         """Parse and cast provided value
 
         :param value: Stringed value.
@@ -47,6 +57,21 @@ class _SQLLineageConfigLoader:
             value = cast(value)
 
         return value
+
+    def __setattr__(self, key, value):
+        if key in self.config.keys():
+            self.thread_config[threading.get_ident()][key] = self.parse_value(
+                key, self.config[key][0]
+            )
+        else:
+            super().__setattr__(key, value)
+
+    def __enter__(self):
+        self.thread_config[threading.get_ident()] = {}
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if threading.get_ident() in self.thread_config.keys():
+            self.thread_config.pop(threading.get_ident())
 
 
 SQLLineageConfig = _SQLLineageConfigLoader()
