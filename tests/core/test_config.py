@@ -27,11 +27,20 @@ def test_config():
 def test_config_threading():
     schema_list = ("stg", "ods", "dwd", "dw", "dwa", "dwv")
 
-    def check_schema(default_schema: str):
+    def check_schema(schema: str):
         with SQLLineageConfig:
-            SQLLineageConfig["DEFAULT_SCHEMA"] = default_schema
-            assert SQLLineageConfig.DEFAULT_SCHEMA == default_schema
+            SQLLineageConfig.DEFAULT_SCHEMA = schema
+            return SQLLineageConfig.DEFAULT_SCHEMA
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        for default_schema in schema_list:
-            executor.submit(check_schema, default_schema)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        executor_dict = {
+            executor.submit(check_schema, schema): schema for schema in schema_list
+        }
+        for executor_work in concurrent.futures.as_completed(executor_dict):
+            assert executor_work.result() == executor_dict[executor_work]
+
+
+def test_config_other():
+    with SQLLineageConfig:
+        SQLLineageConfig.other = "xxx"
+        assert SQLLineageConfig.other == "xxx"

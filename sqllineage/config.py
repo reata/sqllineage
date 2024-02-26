@@ -61,7 +61,7 @@ class _SQLLineageConfigLoader:
     def __setattr__(self, key, value):
         if key in self.config.keys():
             self.thread_config[threading.get_ident()][key] = self.parse_value(
-                key, self.config[key][0]
+                value, self.config[key][0]
             )
         else:
             super().__setattr__(key, value)
