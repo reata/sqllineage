@@ -1,6 +1,6 @@
 import os
 import threading
-from typing import Any
+from typing import Any, Dict
 
 
 class _SQLLineageConfigLoader:
@@ -8,7 +8,7 @@ class _SQLLineageConfigLoader:
     Load all configurable items from environment variable, otherwise fallback to default
     """
 
-    thread_config: dict[int, dict[str, Any]] = {}
+    thread_config: Dict[int, Dict[str, Any]] = {}
 
     # inspired by https://github.com/joke2k/django-environ
     config = {
