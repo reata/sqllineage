@@ -1,5 +1,6 @@
 import os
 import threading
+import warnings
 from typing import Any, Dict
 
 
@@ -8,7 +9,7 @@ class _SQLLineageConfigLoader:
     Load all configurable items from environment variable, otherwise fallback to default
     """
 
-    thread_config: Dict[int, Dict[str, Any]] = {}
+    _thread_config: Dict[int, Dict[str, Any]] = {}
 
     # inspired by https://github.com/joke2k/django-environ
     config = {
@@ -26,10 +27,10 @@ class _SQLLineageConfigLoader:
     def __getattr__(self, item: str):
         if item in self.config.keys():
             if (
-                threading.get_ident() in self.thread_config.keys()
-                and item in self.thread_config[threading.get_ident()]
+                threading.get_ident() in self._thread_config.keys()
+                and item in self._thread_config[threading.get_ident()]
             ):
-                return self.thread_config[threading.get_ident()][item]
+                return self._thread_config[threading.get_ident()][item]
 
             type_, default = self.config[item]
             # require SQLLINEAGE_ prefix from environment variable
@@ -58,20 +59,25 @@ class _SQLLineageConfigLoader:
 
         return value
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: str, value: Any):
         if key in self.config.keys():
-            self.thread_config[threading.get_ident()][key] = self.parse_value(
+            if threading.get_ident() not in self._thread_config.keys():
+                warnings.warn(
+                    "Please use the with syntax, refer to /sqllineage/tests/core/test_config.py"
+                )
+                self._thread_config[threading.get_ident()] = {}
+            self._thread_config[threading.get_ident()][key] = self.parse_value(
                 value, self.config[key][0]
             )
         else:
             super().__setattr__(key, value)
 
     def __enter__(self):
-        self.thread_config[threading.get_ident()] = {}
+        self._thread_config[threading.get_ident()] = {}
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if threading.get_ident() in self.thread_config.keys():
-            self.thread_config.pop(threading.get_ident())
+        if threading.get_ident() in self._thread_config.keys():
+            self._thread_config.pop(threading.get_ident())
 
 
 SQLLineageConfig = _SQLLineageConfigLoader()
