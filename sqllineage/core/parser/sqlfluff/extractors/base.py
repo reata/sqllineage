@@ -226,7 +226,7 @@ class BaseExtractor:
                 self.dialect, self.metadata_provider
             ).extract(sq.query, AnalyzerContext(cte=holder.cte, write={sq}))
             # remove WRITE tag from subquery so that the combined holder won't have multiple WRITE dataset
-            nx.set_node_attributes(subquery_holder.graph, {sq, False}, NodeTag.WRITE)
+            nx.set_node_attributes(subquery_holder.graph, {sq: False}, NodeTag.WRITE)
             holder |= subquery_holder
 
     @staticmethod
