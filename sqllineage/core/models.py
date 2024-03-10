@@ -12,13 +12,17 @@ class Schema:
     """
 
     unknown = "<default>"
-    default = SQLLineageConfig.DEFAULT_SCHEMA or unknown
 
-    def __init__(self, name: str = default):
+    def __init__(self, name: Optional[str] = None):
         """
         :param name: schema name
         """
-        self.raw_name = escape_identifier_name(name)
+        if name:
+            self.raw_name = escape_identifier_name(name)
+        elif SQLLineageConfig.DEFAULT_SCHEMA:
+            self.raw_name = escape_identifier_name(SQLLineageConfig.DEFAULT_SCHEMA)
+        else:
+            self.raw_name = escape_identifier_name(Schema.unknown)
 
     def __str__(self):
         return self.raw_name
@@ -33,7 +37,7 @@ class Schema:
         return hash(str(self))
 
     def __bool__(self):
-        return str(self) != self.default
+        return str(self) != self.unknown
 
 
 class Table:
