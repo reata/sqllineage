@@ -1,4 +1,6 @@
+import concurrent.futures
 import os
+from multiprocessing import Pool
 from unittest.mock import patch
 
 from sqllineage.config import SQLLineageConfig
@@ -21,3 +23,32 @@ def test_config():
 
     assert type(SQLLineageConfig.TSQL_NO_SEMICOLON) is bool
     assert SQLLineageConfig.TSQL_NO_SEMICOLON is True
+
+
+schema_list = ("stg", "ods", "dwd", "dw", "dwa", "dwv")
+
+
+def check_schema(schema: str):
+    with SQLLineageConfig.set(DEFAULT_SCHEMA=schema):
+        # SQLLineageConfig.DEFAULT_SCHEMA = schema
+        return SQLLineageConfig.DEFAULT_SCHEMA, schema
+
+
+def test_config_threading():
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        execute_list = [executor.submit(check_schema, schema) for schema in schema_list]
+        for executor_work in concurrent.futures.as_completed(execute_list):
+            target, source = executor_work.result()
+            assert target == source
+
+
+def test_config_proecess():
+    with Pool(6) as p:
+        for work_result in p.imap_unordered(check_schema, schema_list):
+            target, source = work_result
+            assert target == source
+
+
+def test_config_other():
+    with SQLLineageConfig.set(other="xxx"):
+        assert SQLLineageConfig.other == "xxx"
