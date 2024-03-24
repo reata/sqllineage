@@ -59,20 +59,12 @@ def find_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
         from_clause as grandparent
         from_expression/join_clause as parent
     """
-    from_expression_element = None
-    if segment.type in ["from_clause", "update_statement"]:
-        if from_expression := segment.get_child("from_expression"):
-            non_bracket = from_expression
-            while bracketed := non_bracket.get_child("bracketed"):
-                non_bracket = bracketed
-            if seg := non_bracket.get_child("from_expression_element"):
-                from_expression_element = seg
-            elif seg := non_bracket.get_child("from_expression"):
-                if sub_seg := seg.get_child("from_expression_element"):
-                    from_expression_element = sub_seg
-    elif segment.type in ("from_expression", "join_clause"):
-        if seg := segment.get_child("from_expression_element"):
-            from_expression_element = seg
+    try:
+        from_expression_element = next(
+            segment.recursive_crawl("from_expression_element")
+        )
+    except StopIteration:
+        from_expression_element = None
     return from_expression_element
 
 
@@ -94,14 +86,8 @@ def list_join_clause(segment: BaseSegment) -> List[BaseSegment]:
     """
     traverse from_clause, recursively goes into bracket by default
     """
-    if from_expression := segment.get_child("from_expression"):
-        if bracketed := from_expression.get_child("bracketed"):
-            join_clauses = bracketed.get_children("join_clause")
-            if inner_bracket := bracketed.get_child("bracketed"):
-                join_clauses = list_join_clause(inner_bracket) + join_clauses
-            return join_clauses
-        else:
-            return from_expression.get_children("join_clause")
+    if segment.type in ["from_clause", "update_statement"]:
+        return list(segment.recursive_crawl("join_clause"))
     return []
 
 
