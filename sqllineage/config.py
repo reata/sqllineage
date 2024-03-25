@@ -2,6 +2,8 @@ import os
 import threading
 from typing import Any, Dict
 
+from sqllineage.exceptions import ConfigException
+
 
 class _SQLLineageConfigLoader:
     """
@@ -36,6 +38,14 @@ class _SQLLineageConfigLoader:
         else:
             return super().__getattribute__(item)
 
+    def __setattr__(self, key, value) -> None:
+        if key in self.config:
+            raise ConfigException(
+                "SQLLineageConfig is read-only. Use context manager to update thread level config."
+            )
+        else:
+            super().__setattr__(key, value)
+
     @classmethod
     def get_ident(cls) -> int:
         return threading.get_ident()
@@ -59,7 +69,7 @@ class _SQLLineageConfigLoader:
 
         return value
 
-    def set(self, **kwargs):
+    def __call__(self, *args, **kwargs):
         self.__enter__()
         for key, value in kwargs.items():
             if key in self.config.keys():
@@ -73,6 +83,7 @@ class _SQLLineageConfigLoader:
     def __enter__(self):
         if self.get_ident() not in self._thread_config.keys():
             self._thread_config[self.get_ident()] = {}
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.get_ident() in self._thread_config.keys():

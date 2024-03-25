@@ -12,3 +12,7 @@ class InvalidSyntaxException(SQLLineageException):
 
 class MetaDataProviderException(SQLLineageException):
     """Raised for MetaDataProvider errors"""
+
+
+class ConfigException(SQLLineageException):
+    """Raised for configuration errors"""

@@ -3,7 +3,10 @@ import os
 from multiprocessing import Pool
 from unittest.mock import patch
 
+import pytest
+
 from sqllineage.config import SQLLineageConfig
+from sqllineage.exceptions import ConfigException
 
 
 @patch(
@@ -25,11 +28,26 @@ def test_config():
     assert SQLLineageConfig.TSQL_NO_SEMICOLON is True
 
 
+def test_disable_direct_update_config():
+    with pytest.raises(ConfigException):
+        SQLLineageConfig.DEFAULT_SCHEMA = "ods"
+
+
+def test_update_config_using_context_manager():
+    with SQLLineageConfig(LATERAL_COLUMN_ALIAS_REFERENCE=True) as config:
+        assert config.LATERAL_COLUMN_ALIAS_REFERENCE is True
+    assert SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE is False
+
+    with SQLLineageConfig(DEFAULT_SCHEMA="ods") as config:
+        assert config.DEFAULT_SCHEMA == "ods"
+    assert SQLLineageConfig.DEFAULT_SCHEMA == ""
+
+
 schema_list = ("stg", "ods", "dwd", "dw", "dwa", "dwv")
 
 
 def check_schema(schema: str):
-    with SQLLineageConfig.set(DEFAULT_SCHEMA=schema):
+    with SQLLineageConfig(DEFAULT_SCHEMA=schema):
         # SQLLineageConfig.DEFAULT_SCHEMA = schema
         return SQLLineageConfig.DEFAULT_SCHEMA, schema
 
@@ -50,5 +68,5 @@ def test_config_proecess():
 
 
 def test_config_other():
-    with SQLLineageConfig.set(other="xxx"):
+    with SQLLineageConfig(other="xxx"):
         assert SQLLineageConfig.other == "xxx"
