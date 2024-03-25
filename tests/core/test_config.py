@@ -43,6 +43,13 @@ def test_update_config_using_context_manager():
     assert SQLLineageConfig.DEFAULT_SCHEMA == ""
 
 
+def test_update_config_context_manager_non_reentrant():
+    with SQLLineageConfig(DEFAULT_SCHEMA="ods"):
+        with pytest.raises(ConfigException):
+            with SQLLineageConfig(DEFAULT_SCHEMA="dwd"):
+                pass
+
+
 schema_list = ("stg", "ods", "dwd", "dw", "dwa", "dwv")
 
 

@@ -25,6 +25,9 @@ class _SQLLineageConfigLoader:
     }
     BOOLEAN_TRUE_STRINGS = ("true", "on", "ok", "y", "yes", "1")
 
+    def __init__(self) -> None:
+        self._in_context_manager = False
+
     def __getattr__(self, item: str):
         if item in self.config.keys():
             if value := self._thread_config.get(self.get_ident(), {}).get(item, None):
@@ -70,7 +73,8 @@ class _SQLLineageConfigLoader:
         return value
 
     def __call__(self, *args, **kwargs):
-        self.__enter__()
+        if self.get_ident() not in self._thread_config.keys():
+            self._thread_config[self.get_ident()] = {}
         for key, value in kwargs.items():
             if key in self.config.keys():
                 self._thread_config[self.get_ident()][key] = self.parse_value(
@@ -81,13 +85,15 @@ class _SQLLineageConfigLoader:
         return self
 
     def __enter__(self):
-        if self.get_ident() not in self._thread_config.keys():
-            self._thread_config[self.get_ident()] = {}
+        if self._in_context_manager:
+            raise ConfigException("SQLLineageConfig context manager is not reentrant")
+        self._in_context_manager = True
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.get_ident() in self._thread_config.keys():
+        if self.get_ident() in self._thread_config:
             self._thread_config.pop(self.get_ident())
+        self._in_context_manager = False
 
 
 SQLLineageConfig = _SQLLineageConfigLoader()
