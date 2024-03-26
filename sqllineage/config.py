@@ -30,7 +30,9 @@ class _SQLLineageConfigLoader:
 
     def __getattr__(self, item: str):
         if item in self.config.keys():
-            if value := self._thread_config.get(self.get_ident(), {}).get(item, None):
+            if (
+                value := self._thread_config.get(self.get_ident(), {}).get(item)
+            ) is not None:
                 return value
 
             type_, default = self.config[item]
@@ -81,14 +83,13 @@ class _SQLLineageConfigLoader:
                     value, self.config[key][0]
                 )
             else:
-                super().__setattr__(key, value)
+                raise ConfigException(f"Invalid config key: {key}")
         return self
 
     def __enter__(self):
         if self._in_context_manager:
             raise ConfigException("SQLLineageConfig context manager is not reentrant")
         self._in_context_manager = True
-        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.get_ident() in self._thread_config:

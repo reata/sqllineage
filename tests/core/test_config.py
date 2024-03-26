@@ -34,20 +34,30 @@ def test_disable_direct_update_config():
 
 
 def test_update_config_using_context_manager():
-    with SQLLineageConfig(LATERAL_COLUMN_ALIAS_REFERENCE=True) as config:
-        assert config.LATERAL_COLUMN_ALIAS_REFERENCE is True
+    with SQLLineageConfig(LATERAL_COLUMN_ALIAS_REFERENCE=True):
+        assert SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE is True
     assert SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE is False
 
-    with SQLLineageConfig(DEFAULT_SCHEMA="ods") as config:
-        assert config.DEFAULT_SCHEMA == "ods"
+    with SQLLineageConfig(DEFAULT_SCHEMA="ods"):
+        assert SQLLineageConfig.DEFAULT_SCHEMA == "ods"
     assert SQLLineageConfig.DEFAULT_SCHEMA == ""
+
+    with SQLLineageConfig(DIRECTORY=""):
+        assert SQLLineageConfig.DIRECTORY == ""
+    assert SQLLineageConfig.DIRECTORY != ""
 
 
 def test_update_config_context_manager_non_reentrant():
-    with SQLLineageConfig(DEFAULT_SCHEMA="ods"):
-        with pytest.raises(ConfigException):
+    with pytest.raises(ConfigException):
+        with SQLLineageConfig(DEFAULT_SCHEMA="ods"):
             with SQLLineageConfig(DEFAULT_SCHEMA="dwd"):
                 pass
+
+
+def test_disable_update_unknown_config():
+    with pytest.raises(ConfigException):
+        with SQLLineageConfig(UNKNOWN_KEY="value"):
+            pass
 
 
 schema_list = ("stg", "ods", "dwd", "dw", "dwa", "dwv")
@@ -72,8 +82,3 @@ def test_config_proecess():
         for work_result in p.imap_unordered(check_schema, schema_list):
             target, source = work_result
             assert target == source
-
-
-def test_config_other():
-    with SQLLineageConfig(other="xxx"):
-        assert SQLLineageConfig.other == "xxx"
