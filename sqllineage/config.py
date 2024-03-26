@@ -1,10 +1,16 @@
 import os
+import threading
+from typing import Any, Dict
+
+from sqllineage.exceptions import ConfigException
 
 
 class _SQLLineageConfigLoader:
     """
     Load all configurable items from environment variable, otherwise fallback to default
     """
+
+    _thread_config: Dict[int, Dict[str, Any]] = {}
 
     # inspired by https://github.com/joke2k/django-environ
     config = {
@@ -19,8 +25,16 @@ class _SQLLineageConfigLoader:
     }
     BOOLEAN_TRUE_STRINGS = ("true", "on", "ok", "y", "yes", "1")
 
-    def __getattr__(self, item):
-        if item in self.config:
+    def __init__(self) -> None:
+        self._in_context_manager = False
+
+    def __getattr__(self, item: str):
+        if item in self.config.keys():
+            if (
+                value := self._thread_config.get(self.get_ident(), {}).get(item)
+            ) is not None:
+                return value
+
             type_, default = self.config[item]
             # require SQLLINEAGE_ prefix from environment variable
             return self.parse_value(
@@ -29,8 +43,20 @@ class _SQLLineageConfigLoader:
         else:
             return super().__getattribute__(item)
 
+    def __setattr__(self, key, value) -> None:
+        if key in self.config:
+            raise ConfigException(
+                "SQLLineageConfig is read-only. Use context manager to update thread level config."
+            )
+        else:
+            super().__setattr__(key, value)
+
     @classmethod
-    def parse_value(cls, value, cast):
+    def get_ident(cls) -> int:
+        return threading.get_ident()
+
+    @classmethod
+    def parse_value(cls, value, cast) -> Any:
         """Parse and cast provided value
 
         :param value: Stringed value.
@@ -47,6 +73,28 @@ class _SQLLineageConfigLoader:
             value = cast(value)
 
         return value
+
+    def __call__(self, *args, **kwargs):
+        if self.get_ident() not in self._thread_config.keys():
+            self._thread_config[self.get_ident()] = {}
+        for key, value in kwargs.items():
+            if key in self.config.keys():
+                self._thread_config[self.get_ident()][key] = self.parse_value(
+                    value, self.config[key][0]
+                )
+            else:
+                raise ConfigException(f"Invalid config key: {key}")
+        return self
+
+    def __enter__(self):
+        if self._in_context_manager:
+            raise ConfigException("SQLLineageConfig context manager is not reentrant")
+        self._in_context_manager = True
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.get_ident() in self._thread_config:
+            self._thread_config.pop(self.get_ident())
+        self._in_context_manager = False
 
 
 SQLLineageConfig = _SQLLineageConfigLoader()
