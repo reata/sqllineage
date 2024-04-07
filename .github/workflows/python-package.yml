@@ -29,6 +29,9 @@ jobs:
         node-version: '16'
     - name: Install
       run: pip install tox codecov
+    - name: Echo home
+      run:
+        python -c "import os; print(os.path.expanduser('~')); print(os.environ.get('USERPROFILE')); print(os.environ.get('HOMEPATH')); print(os.environ.get('HOMEDRIVE')); print(os.environ.get('HOME'))"
     - name: Script
       run: tox -e py
     - name: After Success
