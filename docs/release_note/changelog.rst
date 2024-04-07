@@ -2,9 +2,27 @@
 Changelog
 *********
 
+v1.5.2
+======
+:Date: April 7, 2024
+
+Enhancement
+-------------
+* Enable support of sqlfluff context (`#548 <https://github.com/reata/sqllineage/issues/548>`_)
+* Support Change Configure Default Schema At Runtime (`#536 <https://github.com/reata/sqllineage/issues/536>`_)
+
+Bugfix
+-------------
+* Parse column level lineage incorrect (`#584 <https://github.com/reata/sqllineage/issues/584>`_)
+* Metadata Masked When Table was in a previous UPDATE statement (`#577 <https://github.com/reata/sqllineage/issues/577>`_)
+* Clickhouse SQL 'GLOBAL IN' not support (`#554 <https://github.com/reata/sqllineage/issues/554>`_)
+* Support json_tuple in SELECT clause in Hive (`#483 <https://github.com/reata/sqllineage/issues/483>`_)
+
 v1.5.1
 ======
 :Date: February 4, 2024
+
+This is a bugfix release mostly driven by community contributors. Thanks everyone for making SQLLineage better.
 
 Enhancement
 -------------
