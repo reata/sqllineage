@@ -1,6 +1,7 @@
 import concurrent.futures
 import os
-from multiprocessing import Pool
+import random
+import time
 from unittest.mock import patch
 
 import pytest
@@ -60,25 +61,19 @@ def test_disable_update_unknown_config():
             pass
 
 
-schema_list = ("stg", "ods", "dwd", "dw", "dwa", "dwv")
-
-
-def check_schema(schema: str):
+def _check_schema(schema: str):
+    # used by test_config_parallel, must be a global function so that it can be pickled between processes
     with SQLLineageConfig(DEFAULT_SCHEMA=schema):
-        # SQLLineageConfig.DEFAULT_SCHEMA = schema
-        return SQLLineageConfig.DEFAULT_SCHEMA, schema
+        # randomly sleep [0, 0.1) second to simulate real parsing scenario
+        time.sleep(random.random() * 0.1)
+        return SQLLineageConfig.DEFAULT_SCHEMA
 
 
-def test_config_threading():
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-        execute_list = [executor.submit(check_schema, schema) for schema in schema_list]
-        for executor_work in concurrent.futures.as_completed(execute_list):
-            target, source = executor_work.result()
-            assert target == source
-
-
-def test_config_proecess():
-    with Pool(6) as p:
-        for work_result in p.imap_unordered(check_schema, schema_list):
-            target, source = work_result
-            assert target == source
+@pytest.mark.parametrize("pool", ["ThreadPoolExecutor", "ProcessPoolExecutor"])
+def test_config_parallel(pool: str):
+    executor_class = getattr(concurrent.futures, pool)
+    schemas = [f"db{i}" for i in range(100)]
+    with executor_class() as executor:
+        futures = [executor.submit(_check_schema, schema) for schema in schemas]
+        for i, future in enumerate(futures):
+            assert future.result() == schemas[i]

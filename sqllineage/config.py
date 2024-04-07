@@ -1,6 +1,6 @@
 import os
 import threading
-from typing import Any, Dict
+from typing import Any, Dict, Set
 
 from sqllineage.exceptions import ConfigException
 
@@ -26,7 +26,7 @@ class _SQLLineageConfigLoader:
     BOOLEAN_TRUE_STRINGS = ("true", "on", "ok", "y", "yes", "1")
 
     def __init__(self) -> None:
-        self._in_context_manager = False
+        self._thread_in_context_manager: Set[int] = set()
 
     def __getattr__(self, item: str):
         if item in self.config.keys():
@@ -87,14 +87,17 @@ class _SQLLineageConfigLoader:
         return self
 
     def __enter__(self):
-        if self._in_context_manager:
+        if (thread_id := self.get_ident()) not in self._thread_in_context_manager:
+            self._thread_in_context_manager.add(thread_id)
+        else:
             raise ConfigException("SQLLineageConfig context manager is not reentrant")
-        self._in_context_manager = True
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.get_ident() in self._thread_config:
+        thread_id = self.get_ident()
+        if thread_id in self._thread_config:
             self._thread_config.pop(self.get_ident())
-        self._in_context_manager = False
+        if thread_id in self._thread_in_context_manager:
+            self._thread_in_context_manager.remove(thread_id)
 
 
 SQLLineageConfig = _SQLLineageConfigLoader()
