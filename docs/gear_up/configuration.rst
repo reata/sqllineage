@@ -7,6 +7,24 @@ The SQLLineage configuration allows user to customize the behaviour of sqllineag
 We adopt environment variable approach for global key-value mapping. The keys listed in this section should start with
 `"SQLLINEAGE_"` to be a valid config. For example, to use DEFAULT_SCHEMA, use ``SQLLINEAGE_DEFAULT_SCHEMA=default``.
 
+.. note::
+     Starting v1.5.2, we also support changing config at runtime. A local config is kept for each thread that will mask
+     global config. Local configuration must be set using context manager:
+
+     .. code-block:: python
+
+        >>> from sqllineage.config import SQLLineageConfig
+        >>> from sqllineage.runner import LineageRunner
+
+        >>> with SQLLineageConfig(DEFAULT_SCHEMA="ods"):
+        >>>     print(LineageRunner("select * from test").source_tables)
+        [Table: ods.test]
+        >>> with SQLLineageConfig(DEFAULT_SCHEMA="dwd"):
+        >>>     print(LineageRunner("select * from test").source_tables)
+        [Table: dwd.test]
+
+     Note when setting local config, the key does not start with `"SQLLINEAGE_"`.
+
 DEFAULT_SCHEMA
 ==============
 Default schema, or interchangeably called database. Tables without schema qualifier parsed from SQL is set with a schema
