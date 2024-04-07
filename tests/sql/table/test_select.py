@@ -107,8 +107,33 @@ def test_select_parenthesized_from_table_join_recursive():
     sql = """SELECT tab1.id
 FROM ((tab1
     LEFT JOIN tab2 ON tab1.id = tab2.id)
-    LEFT JOIN tab3 ON tab1.id = tab3.id)"""
+    LEFT JOIN tab3 ON tab1.id = tab3.id)
+    """
     assert_table_lineage_equal(sql, {"tab1", "tab2", "tab3"})
+    sql = """SELECT tab1.id
+FROM (((tab1
+    LEFT JOIN tab2 ON tab1.id = tab2.id)
+    LEFT JOIN tab3 ON tab1.id = tab3.id)
+    LEFT JOIN tab4 ON tab1.id = tab4.id)
+    """
+    assert_table_lineage_equal(sql, {"tab1", "tab2", "tab3", "tab4"})
+    sql = """SELECT tab1.id
+FROM ((((tab1
+    LEFT JOIN tab2 ON tab1.id = tab2.id)
+    LEFT JOIN tab3 ON tab1.id = tab3.id)
+    LEFT JOIN tab4 ON tab1.id = tab4.id)
+    LEFT JOIN tab5 ON tab1.id = tab5.id)
+    """
+    assert_table_lineage_equal(sql, {"tab1", "tab2", "tab3", "tab4", "tab5"})
+    sql = """SELECT tab1.id
+FROM (((((tab1
+    LEFT JOIN tab2 ON tab1.id = tab2.id)
+    LEFT JOIN tab3 ON tab1.id = tab3.id)
+    LEFT JOIN tab4 ON tab1.id = tab4.id)
+    LEFT JOIN tab5 ON tab1.id = tab5.id)
+    LEFT JOIN tab6 ON tab1.id = tab6.id)
+        """
+    assert_table_lineage_equal(sql, {"tab1", "tab2", "tab3", "tab4", "tab5", "tab6"})
 
 
 def test_select_subquery():
