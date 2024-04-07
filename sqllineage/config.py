@@ -10,8 +10,6 @@ class _SQLLineageConfigLoader:
     Load all configurable items from environment variable, otherwise fallback to default
     """
 
-    _thread_config: Dict[int, Dict[str, Any]] = {}
-
     # inspired by https://github.com/joke2k/django-environ
     config = {
         # for frontend directory drawer
@@ -23,9 +21,9 @@ class _SQLLineageConfigLoader:
         # lateral column alias reference supported by some dialect (redshift, spark 3.4+, etc)
         "LATERAL_COLUMN_ALIAS_REFERENCE": (bool, False),
     }
-    BOOLEAN_TRUE_STRINGS = ("true", "on", "ok", "y", "yes", "1")
 
     def __init__(self) -> None:
+        self._thread_config: Dict[int, Dict[str, Any]] = {}
         self._thread_in_context_manager: Set[int] = set()
 
     def __getattr__(self, item: str):
@@ -51,29 +49,6 @@ class _SQLLineageConfigLoader:
         else:
             super().__setattr__(key, value)
 
-    @classmethod
-    def get_ident(cls) -> int:
-        return threading.get_ident()
-
-    @classmethod
-    def parse_value(cls, value, cast) -> Any:
-        """Parse and cast provided value
-
-        :param value: Stringed value.
-        :param cast: Type to cast return value as.
-
-        :returns: Casted value
-        """
-        if cast is bool:
-            try:
-                value = int(value) != 0
-            except ValueError:
-                value = value.lower().strip() in cls.BOOLEAN_TRUE_STRINGS
-        else:
-            value = cast(value)
-
-        return value
-
     def __call__(self, *args, **kwargs):
         if self.get_ident() not in self._thread_config.keys():
             self._thread_config[self.get_ident()] = {}
@@ -98,6 +73,26 @@ class _SQLLineageConfigLoader:
             self._thread_config.pop(self.get_ident())
         if thread_id in self._thread_in_context_manager:
             self._thread_in_context_manager.remove(thread_id)
+
+    @staticmethod
+    def get_ident() -> int:
+        return threading.get_ident()
+
+    @staticmethod
+    def parse_value(value, cast) -> Any:
+        """Parse and cast provided value
+        :param value: Stringed value.
+        :param cast: Type to cast return value as.
+        :returns: cast value
+        """
+        if cast is bool:
+            try:
+                value = int(value) != 0
+            except ValueError:
+                value = value.lower().strip() in ("true", "on", "ok", "y", "yes", "1")
+        else:
+            value = cast(value)
+        return value
 
 
 SQLLineageConfig = _SQLLineageConfigLoader()
