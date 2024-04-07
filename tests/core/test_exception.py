@@ -1,3 +1,4 @@
+import os
 from unittest.mock import patch
 
 import pytest
@@ -56,7 +57,7 @@ SELECT * FROM bar""",
         )._eval()
 
 
-@patch("os.environ", {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
+@patch.dict(os.environ, {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
 def test_user_warning_enable_tsql_no_semicolon_with_other_dialect():
     with pytest.warns(UserWarning):
         LineageRunner(

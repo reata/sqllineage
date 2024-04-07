@@ -11,8 +11,8 @@ from sqllineage.exceptions import ConfigException
 from sqllineage.runner import LineageRunner
 
 
-@patch(
-    "os.environ",
+@patch.dict(
+    os.environ,
     {
         "SQLLINEAGE_DIRECTORY": os.path.join(os.path.dirname(__file__), "data"),
         "SQLLINEAGE_DEFAULT_SCHEMA": "<default>",
