@@ -1,3 +1,4 @@
+import os
 from unittest.mock import patch
 
 import pytest
@@ -14,7 +15,7 @@ providers = generate_metadata_providers(
 
 
 @pytest.mark.parametrize("provider", providers)
-@patch("os.environ", {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
+@patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_top_level_enable_lateral_ref(
     provider: MetaDataProvider,
 ):
@@ -106,7 +107,7 @@ def test_column_top_level_enable_lateral_ref(
 
 
 @pytest.mark.parametrize("provider", providers)
-@patch("os.environ", {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
+@patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_top_level_enable_lateral_ref_with_metadata_from_table(
     provider: MetaDataProvider,
 ):
@@ -148,7 +149,7 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_table(
 
 
 @pytest.mark.parametrize("provider", providers)
-@patch("os.environ", {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
+@patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_top_level_enable_lateral_ref_with_metadata_from_subquery(
     provider: MetaDataProvider,
 ):
@@ -195,7 +196,7 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_subquery(
 
 
 @pytest.mark.parametrize("provider", providers)
-@patch("os.environ", {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
+@patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_top_level_enable_lateral_ref_with_metadata_from_nested_subquery(
     provider: MetaDataProvider,
 ):
@@ -247,7 +248,7 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_nested_subquery(
 
 
 @pytest.mark.parametrize("provider", providers)
-@patch("os.environ", {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
+@patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_enable_lateral_ref_within_subquery(
     provider: MetaDataProvider,
 ):

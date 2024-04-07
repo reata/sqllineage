@@ -1,7 +1,13 @@
 import warnings
 from typing import Dict, List
 
-from sqlfluff.core import Linter, SQLLexError, SQLParseError, dialect_readout
+from sqlfluff.core import (
+    FluffConfig,
+    Linter,
+    SQLLexError,
+    SQLParseError,
+    dialect_readout,
+)
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.analyzer import LineageAnalyzer
@@ -73,7 +79,9 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                     )
 
     def _list_specific_statement_segment(self, sql: str):
-        parsed = Linter(dialect=self._dialect).parse_string(sql)
+        parsed = Linter(
+            config=FluffConfig.from_root(overrides={"dialect": self._dialect})
+        ).parse_string(sql)
         violations = [
             str(e)
             for e in parsed.violations

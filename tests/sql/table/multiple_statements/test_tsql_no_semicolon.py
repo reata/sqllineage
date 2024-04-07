@@ -1,3 +1,4 @@
+import os
 from unittest.mock import patch
 
 import pytest
@@ -5,7 +6,7 @@ import pytest
 from ....helpers import assert_table_lineage_equal
 
 
-@patch("os.environ", {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
+@patch.dict(os.environ, {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
 @pytest.mark.parametrize("dialect", ["tsql"])
 def test_tsql_multi_statement_no_semicolon(dialect: str):
     """
