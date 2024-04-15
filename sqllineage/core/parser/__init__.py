@@ -76,6 +76,6 @@ class SourceHandlerMixin:
                             SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
                             and tgt_col_from_query.from_alias
                         ):
-                            lateral_column_aliases[tgt_col_from_query.raw_name] = (
-                                src_cols_resolved
-                            )
+                            lateral_column_aliases[
+                                tgt_col_from_query.raw_name
+                            ] = src_cols_resolved
