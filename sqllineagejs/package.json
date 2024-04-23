@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "gh-pages": "^4.0.0",
+    "gh-pages": "^5.0.0",
     "react-app-rewired": "^2.1.8",
     "react-scripts": "^5.0.0"
   }
