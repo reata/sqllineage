@@ -1,14 +1,7 @@
 import re
 
 from sqlparse import tokens
-from sqlparse.engine import grouping
 from sqlparse.keywords import KEYWORDS, SQL_REGEX
-
-from sqllineage.core.parser.sqlparse.utils import group_function_with_window
-
-
-def _patch_adding_window_function_token() -> None:
-    grouping.group_functions = group_function_with_window
 
 
 def _patch_adding_builtin_type() -> None:
@@ -26,7 +19,6 @@ def _patch_updating_lateral_view_lexeme() -> None:
 
 
 def _monkey_patch() -> None:
-    _patch_adding_window_function_token()
     _patch_adding_builtin_type()
     _patch_updating_lateral_view_lexeme()
 

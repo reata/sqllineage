@@ -66,7 +66,7 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "sqlparse==0.4.4",
+        "sqlparse==0.5.0",
         "networkx>=2.4",
         "sqlfluff==3.0.3",
         "sqlalchemy>=2.0.0",
