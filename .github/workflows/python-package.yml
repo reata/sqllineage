@@ -32,4 +32,7 @@ jobs:
     - name: Script
       run: tox -e py
     - name: After Success
-      run: codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        verbose: true
