@@ -1,20 +1,18 @@
-import itertools
-from typing import Iterator, List, Union
+from typing import List, Union
 
-from sqlparse.engine.grouping import _group, group_functions
 from sqlparse.sql import (
     Case,
     Comment,
     Comparison,
     Function,
     Identifier,
+    Over,
     Parenthesis,
     TokenList,
     Values,
     Where,
 )
-from sqlparse.tokens import DML, Keyword, Name, Wildcard
-from sqlparse.utils import recurse
+from sqlparse.tokens import DML, Keyword, Wildcard
 
 from sqllineage.utils.entities import SubQueryTuple
 
@@ -151,82 +149,12 @@ def get_parameters(token: Function):
         if(col1 = 'foo' AND col2 = 'bar', 1, 0)
     This implementation ignores the constant parameter as we don't need them for column lineage for now
     """
-    if isinstance(token, Window):
-        return token.get_parameters()
-    else:
-        return [
-            tk for tk in token.tokens[-1].tokens if tk.is_group or tk.ttype == Wildcard
-        ]
-
-
-class Window(Function):
-    """window function + OVER keyword + window defn"""
-
-    def get_parameters(self) -> Iterator[TokenList]:
-        return itertools.chain(
-            get_parameters(self.get_window_function()),
-            self.get_window_defn().get_sublists(),
-        )
-
-    def get_window_function(self) -> Function:
-        return self.tokens[0]
-
-    def get_window_defn(self) -> Parenthesis:
-        return self.tokens[-1]
-
-
-@recurse(Window)
-def group_window(tlist):
-    def match(token):
-        return token.is_keyword and token.normalized == "OVER"
-
-    def valid_prev(token):
-        return isinstance(token, Function)
-
-    def valid_next(token):
-        return isinstance(token, Parenthesis)
-
-    def post(tlist, pidx, tidx, nidx):
-        return pidx, nidx
-
-    _group(
-        tlist, Window, match, valid_prev, valid_next, post, extend=False, recurse=False
-    )
-
-
-@recurse(Function)
-def group_functions_as(tlist):
-    """
-    This function is to allow parsing columns in functions with CTAS syntax like:
-        CREATE TABLE tbl1 AS SELECT coalesce(t1.col1, 0) AS col1 FROM t1;
-    The code is mostly taken from original sqlparse.sql.group_functions by
-    replacing with one condition.
-
-    This is no longer needed if this PR get merged:
-    https://github.com/andialbrecht/sqlparse/pull/662
-    """
-    has_create = False
-    has_table = False
-    has_as = False
-    for tmp_token in tlist.tokens:
-        if tmp_token.value == "CREATE":
-            has_create = True
-        if tmp_token.value == "TABLE":
-            has_table = True
-        if tmp_token.value == "AS":
-            has_as = True
-    if not has_create or not has_table or not has_as:
-        return
-
-    tidx, token = tlist.token_next_by(t=Name)
-    while token:
-        nidx, next_ = tlist.token_next(tidx)
-        if isinstance(next_, Parenthesis):
-            tlist.group_tokens(Function, tidx, nidx)
-        tidx, token = tlist.token_next_by(t=Name, idx=tidx)
-
-
-def group_function_with_window(tlist):
-    group_functions(tlist)
-    group_functions_as(tlist)
-    group_window(tlist)
+    last_token = token.tokens[-1]
+    parameters = []
+    if isinstance(last_token, Over):
+        # special handling for window function
+        parameters = token.get_parameters()
+    parameters += [
+        tk for tk in last_token.tokens if tk.is_group or tk.ttype == Wildcard
+    ]
+    return parameters
