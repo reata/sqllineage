@@ -1,7 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Path
+from sqllineage.core.models import Path, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffTable
@@ -104,6 +104,15 @@ class CreateInsertExtractor(BaseExtractor):
                 if segment.type in ["table_reference", "object_reference"]:
                     write_obj = SqlFluffTable.of(segment)
                     holder.add_write(write_obj)
+                    # get target table columns from metadata if available
+                    if (
+                        isinstance(write_obj, Table)
+                        and self.metadata_provider
+                        and statement.type == "insert_statement"
+                    ):
+                        holder.add_write_column(
+                            *self.metadata_provider.get_table_columns(table=write_obj)
+                        )
                 elif segment.type == "literal":
                     if segment.raw.isnumeric():
                         # Special Handling for Spark Bucket Table DDL
