@@ -1,26 +1,20 @@
-from typing import Dict, List, Optional
+import pytest
 
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
-from ...helpers import assert_column_lineage_equal
+from ...helpers import assert_column_lineage_equal, generate_metadata_providers
 
 
-class MetaCollect(MetaDataProvider):
-    def __init__(self, metadata: Optional[Dict[str, List[str]]]):
-        super().__init__()
-        self.metadata = metadata if metadata else {}
-
-    def _get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
-        return self.metadata.get(f"{schema}.{table}", [])
-
-
-meta_collect = {
-    "ods.source_tab": ["day_id", "user_id", "name"],
-    "ods.target_tab": ["day_no", "user_code", "user_name"],
-}
+providers = generate_metadata_providers(
+    {
+        "ods.source_tab": ["day_id", "user_id", "name"],
+        "ods.target_tab": ["day_no", "user_code", "user_name"],
+    }
+)
 
 
-def test_metadata_target_column():
+@pytest.mark.parametrize("provider", providers)
+def test_metadata_target_column(provider: MetaDataProvider):
     sql = """insert into ods.target_tab select day_id as acct_id, user_id as xxx, name as yyy from ods.source_tab"""
     assert_column_lineage_equal(
         sql=sql,
@@ -38,12 +32,13 @@ def test_metadata_target_column():
                 ColumnQualifierTuple("user_code", "ods.target_tab"),
             ),
         ],
-        metadata_provider=MetaCollect(meta_collect),
+        metadata_provider=provider,
         test_sqlparse=False,
     )
 
 
-def test_metadata_target_column_cte():
+@pytest.mark.parametrize("provider", providers)
+def test_metadata_target_column_cte(provider: MetaDataProvider):
     sql = """
 INSERT INTO ods.target_tab
 WITH cte_table AS (SELECT day_id as acct_id, user_id as xxx, name as yyy FROM ods.source_tab)
@@ -64,6 +59,6 @@ SELECT acct_id, xxx, yyy FROM cte_table"""
                 ColumnQualifierTuple("user_name", "ods.target_tab"),
             ),
         ],
-        metadata_provider=MetaCollect(meta_collect),
+        metadata_provider=provider,
         test_sqlparse=False,
     )
