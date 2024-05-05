@@ -2,6 +2,19 @@
 Changelog
 *********
 
+v1.5.3
+======
+:Date: May 5, 2024
+
+This is a security release to upgrade some dependencies to latest version as we receive vulnerability alerts.
+We strongly recommend that all sqllineage installations be upgraded to this version immediately.
+
+This release also includes an improvement regarding metadata provider.
+
+Enhancement
+-------------
+* set target table column name from MetaDataProvider (`#528 <https://github.com/reata/sqllineage/issues/528>`_)
+
 v1.5.2
 ======
 :Date: April 7, 2024
