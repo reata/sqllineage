@@ -138,6 +138,10 @@ def list_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
                                 else None
                             )
                             subquery.append(SubQueryTuple(bracketed_segment, alias))
+            elif function := select_clause_element.get_child("function"):
+                for bracketed in function.recursive_crawl("bracketed"):
+                    if is_subquery(bracketed):
+                        subquery.append(SubQueryTuple(bracketed, None))
     elif segment.type == "from_expression_element":
         as_segment, target = extract_as_and_target_segment(segment)
         if is_subquery(target):

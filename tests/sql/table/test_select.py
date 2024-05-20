@@ -193,6 +193,31 @@ WHERE col1 IN (SELECT max(col1) FROM tab2)""",
     )
 
 
+def test_select_subquery_in_function():
+    assert_table_lineage_equal(
+        "SELECT TO_DATE((SELECT MIN(dt) FROM tab1))",
+        {"tab1"},
+    )
+
+
+def test_select_multiple_subquery_in_function():
+    assert_table_lineage_equal(
+        "SELECT LEAST((SELECT MIN(dt) FROM tab1), (SELECT MIN(dt) FROM tab2))",
+        {"tab1", "tab2"},
+    )
+
+
+def test_select_subquery_in_function_nested():
+    assert_table_lineage_equal(
+        """SELECT EXPLODE(SEQUENCE(
+        TO_DATE((SELECT MIN(dt) FROM tab1)),
+        TO_DATE((SELECT MAX(dt) FROM tab2)),
+        INTERVAL 1 DAY
+)) AS result""",
+        {"tab1", "tab2"},
+    )
+
+
 def test_select_inner_join():
     assert_table_lineage_equal("SELECT * FROM tab1 INNER JOIN tab2", {"tab1", "tab2"})
 
