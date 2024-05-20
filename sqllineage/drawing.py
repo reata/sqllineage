@@ -19,6 +19,7 @@ from wsgiref.simple_server import make_server
 
 from sqllineage import DEFAULT_DIALECT, DEFAULT_HOST, DEFAULT_PORT, STATIC_FOLDER
 from sqllineage.config import SQLLineageConfig
+from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import extract_sql_from_args
@@ -30,6 +31,7 @@ class SQLLineageApp:
     def __init__(self) -> None:
         self.routes: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {}
         self.root_path = Path(SQLLineageConfig.DIRECTORY)
+        self.metadata_provider = DummyMetaDataProvider()
 
     def route(self, path: str):
         def wrapper(handler):
@@ -165,7 +167,9 @@ def lineage(payload):
     req_args = Namespace(**payload)
     sql = extract_sql_from_args(req_args)
     dialect = getattr(req_args, "dialect", DEFAULT_DIALECT)
-    lr = LineageRunner(sql, dialect=dialect, verbose=True)
+    lr = LineageRunner(
+        sql, dialect=dialect, verbose=True, metadata_provider=app.metadata_provider
+    )
     data = {
         "verbose": str(lr),
         "dag": lr.to_cytoscape(),
@@ -206,8 +210,10 @@ def draw_lineage_graph(**kwargs) -> None:
     port = kwargs.pop("port", DEFAULT_PORT)
     querystring = urlencode({k: v for k, v in kwargs.items() if v})
     path = f"/?{querystring}" if querystring else "/"
-    if "f" in kwargs:
-        app.root_path = Path(kwargs["f"]).parent
+    if f := kwargs.get("f"):
+        app.root_path = Path(f).parent
+    if metadata_provider := kwargs.get("metadata_provider"):
+        app.metadata_provider = metadata_provider
     with make_server(host, port, app) as httpd:
         print(f" * SQLLineage Running on http://{host}:{port}{path}")
         httpd.serve_forever()

@@ -21,6 +21,7 @@ def test_cli_dummy(_):
             main(["-f", sql_file, "-g"])
             main(["-f", sql_file, "--silent_mode"])
             main(["-f", sql_file, "--sqlalchemy_url=sqlite:///:memory:"])
+            main(["--sqlalchemy_url=sqlite:///:memory:", "-g"])
             break
     main(["-g"])
     main(["-ds"])
