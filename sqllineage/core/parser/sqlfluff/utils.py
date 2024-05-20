@@ -214,8 +214,11 @@ def extract_as_and_target_segment(
 ) -> Tuple[Optional[BaseSegment], BaseSegment]:
     as_segment = segment.get_child("alias_expression")
     sublist = list_child_segments(segment, False)
-    target = sublist[0] if is_subquery(sublist[0]) else sublist[0].segments[0]
-    return as_segment, target
+    target = sublist[0]
+    if target.type == "keyword" and target.raw_upper == "LATERAL":
+        target = sublist[1]
+    table_expr = target if is_subquery(target) else target.segments[0]
+    return as_segment, table_expr
 
 
 def extract_column_qualifier(segment: BaseSegment) -> Optional[ColumnQualifierTuple]:
