@@ -83,3 +83,28 @@ def test_select_from_unnest_with_ordinality(dialect: str):
     CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);
     """
     assert_table_lineage_equal(sql, dialect=dialect)
+
+
+@pytest.mark.parametrize(
+    "dialect",
+    ["db2", "duckdb", "greenplum", "materialize", "oracle", "postgres", "snowflake"],
+)
+def test_select_from_lateral_subqueries(dialect: str):
+    """
+    db2: https://www.ibm.com/docs/en/informix-servers/12.10?topic=clause-lateral-derived-tables
+    duckdb: https://duckdb.org/docs/sql/query_syntax/from.html#lateral-joins
+    greenplum: https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-sql_commands-SELECT.html
+    materialize: https://materialize.com/docs/transform-data/join/#lateral-subqueries
+    oracle: https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/SELECT.html#GUID-CFA006CA-6FF1-4972-821E-6996142A51C6__BABFDGIJ  # noqa
+    postgres: https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-LATERAL
+    snowflake: https://docs.snowflake.com/en/sql-reference/constructs/join-lateral
+    """
+    sql = """SELECT *
+FROM foo,
+     LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) ss"""
+    assert_table_lineage_equal(sql, {"foo", "bar"}, dialect=dialect)
+
+    sql = """SELECT m.name
+FROM manufacturers m LEFT JOIN LATERAL get_product_names(m.id) pname ON true
+WHERE pname IS NULL;"""
+    assert_table_lineage_equal(sql, {"manufacturers"}, dialect=dialect)
