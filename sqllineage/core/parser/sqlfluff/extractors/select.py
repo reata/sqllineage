@@ -88,12 +88,13 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         )
         self._handle_column(segment)
 
-    @staticmethod
-    def _handle_swap_partition(segment: BaseSegment, holder: SubQueryLineageHolder):
+    def _handle_swap_partition(
+        self, segment: BaseSegment, holder: SubQueryLineageHolder
+    ):
         """
-        A handler for swap_partitions_between_tables function
+        A handler for swap_partitions_between_tables function supported by vertica
         """
-        if segment.type == "select_clause":
+        if self.dialect == "vertica" and segment.type == "select_clause":
             if select_clause_element := segment.get_child("select_clause_element"):
                 if function := select_clause_element.get_child("function"):
                     if (

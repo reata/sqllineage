@@ -29,3 +29,17 @@ def test_alter_table_swap_partition(dialect: str):
         dialect=dialect,
         test_sqlparse=False,
     )
+
+
+@pytest.mark.parametrize("dialect", ["vertica"])
+def test_swapping_partitions(dialect: str):
+    """
+    See https://www.vertica.com/docs/10.0.x/HTML/Content/Authoring/AdministratorsGuide/Partitions/SwappingPartitions.htm
+    for language specification
+    """
+    assert_table_lineage_equal(
+        "SELECT swap_partitions_between_tables('staging', 'min-range-value', 'max-range-value', 'target')",
+        {"staging"},
+        {"target"},
+        dialect=dialect,
+    )
