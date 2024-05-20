@@ -99,6 +99,11 @@ def main(args=None) -> None:
         type=str,
     )
     args = parser.parse_args(args)
+    metadata_provider = (
+        SQLAlchemyMetaDataProvider(args.sqlalchemy_url)
+        if args.sqlalchemy_url
+        else DummyMetaDataProvider()
+    )
     if args.e and args.f:
         warnings.warn("Both -e and -f options are specified. -e option will be ignored")
     if args.f or args.e:
@@ -106,11 +111,7 @@ def main(args=None) -> None:
         runner = LineageRunner(
             sql,
             dialect=args.dialect,
-            metadata_provider=(
-                SQLAlchemyMetaDataProvider(args.sqlalchemy_url)
-                if args.sqlalchemy_url
-                else DummyMetaDataProvider()
-            ),
+            metadata_provider=metadata_provider,
             verbose=args.verbose,
             draw_options={
                 "host": args.host,
@@ -126,7 +127,13 @@ def main(args=None) -> None:
         else:
             runner.print_table_lineage()
     elif args.graph_visualization:
-        return draw_lineage_graph(**{"host": args.host, "port": args.port})
+        return draw_lineage_graph(
+            **{
+                "host": args.host,
+                "port": args.port,
+                "metadata_provider": metadata_provider,
+            }
+        )
     elif args.dialects:
         dialects = []
         for _, supported_dialects in LineageRunner.supported_dialects().items():

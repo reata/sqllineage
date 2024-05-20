@@ -1,7 +1,7 @@
 import logging
 import warnings
 from collections import OrderedDict
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
 from sqllineage.config import SQLLineageConfig
@@ -41,7 +41,7 @@ class LineageRunner(object):
         metadata_provider: MetaDataProvider = DummyMetaDataProvider(),
         verbose: bool = False,
         silent_mode: bool = False,
-        draw_options: Optional[Dict[str, str]] = None,
+        draw_options: Optional[Dict[str, Any]] = None,
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -120,6 +120,7 @@ Target Tables:
             draw_options.pop("f", None)
             draw_options["e"] = self._sql
             draw_options["dialect"] = self._dialect
+            draw_options["metadata_provider"] = self._metadata_provider
         return draw_lineage_graph(**draw_options)
 
     @lazy_method
