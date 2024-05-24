@@ -17,6 +17,10 @@ def escape_identifier_name(name: str):
         for quote_char in quote_chars:
             name = name.strip(quote_char)
         return name
+    elif name.startswith("[") and name.endswith("]"):
+        # tsql allows quoted identifier with square brackets, see reference
+        # https://learn.microsoft.com/en-us/sql/relational-databases/databases/database-identifiers?view=sql-server-ver16#classes-of-identifiers
+        return name.strip("[]")
     else:
         return name.lower()
 

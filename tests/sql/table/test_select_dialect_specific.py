@@ -24,6 +24,18 @@ def test_select_with_schema_in_backtick(dialect: str):
     )
 
 
+@pytest.mark.parametrize("dialect", ["tsql"])
+def test_select_with_table_name_in_bracket(dialect: str):
+    assert_table_lineage_equal("SELECT * FROM [tab1]", {"tab1"}, dialect=dialect)
+
+
+@pytest.mark.parametrize("dialect", ["tsql"])
+def test_select_with_schema_in_bracket(dialect: str):
+    assert_table_lineage_equal(
+        "SELECT * FROM [schema1].[tab1]", {"schema1.tab1"}, dialect=dialect
+    )
+
+
 @pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_select_left_semi_join(dialect: str):
     assert_table_lineage_equal(
