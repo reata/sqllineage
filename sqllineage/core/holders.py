@@ -450,6 +450,50 @@ class SQLLineageHolder(ColumnLineageMixin):
         for node in [n for n, deg in g.degree if deg == 0]:
             if isinstance(node, Column) and len(node.parent_candidates) > 1:
                 g.remove_node(node)
+        nodes_list = {}
+        tmp_node_list = {}
+        for node, attr in g.nodes(data=True):
+            nodes_list[str(node)] = node
+            if 'tmp' in str(node) or 'temp' in str(node):
+                tmp_node_list[str(node)] = node
+        tmp_out_degree = {}
+        tmp_in_degree = {}
+        for u, v, data in g.edges(data=True):
+            if ('tmp' in str(u) or 'temp' in str(u)) and ('tmp' in str(v) or 'temp' in str(v)) and (str(
+                    dict(data)['type']) == 'has_column' or str(dict(data)['type']) == 'has_alias'):
+                continue
+            if ("tmp" not in str(u) and "temp" not in str(u)) and ("tmp" not in str(v) and "temp" not in str(v)):
+                g1.add_edge(u, v, type=MetaDataProvider.str2enum(str(dict(data)['type'])))
+            if "tmp" in str(u) or "temp" in str(u):
+                if u in tmp_out_degree:
+                    tmp_out_degree[u].append((u, v, data))
+                else:
+                    tmp_out_degree[u] = []
+                    tmp_out_degree[u].append((u, v, data))
+            if "tmp" in str(v) or "temp" in str(v):
+                if u in tmp_in_degree:
+                    tmp_in_degree[u].append((u, v, data))
+                else:
+                    tmp_in_degree[u] = []
+                    tmp_in_degree[u].append((u, v, data))
+        for key, values in tmp_in_degree.items():
+            for u, v, data in values:
+                start_cols = u
+                src_cols = v
+                for key1, values1 in tmp_out_degree.items():
+                    for u1, v1, data1 in values1:
+                        target_cols = u1
+                        end_cols = v1
+                        if ("tmp" in str(u) or "temp" in str(u)) and \
+                                ("tmp" in str(v) or "temp" in str(v)) and \
+                                ("tmp" in str(u1) or "temp" in str(u1)) and \
+                                ("tmp" in str(v1) or "temp" in str(v1)):
+                            continue
+                        if src_cols == target_cols:
+                            g1.add_edge(start_cols, end_cols, type=MetaDataProvider.str2enum(str(dict(data)['type'])))
+                        else:
+                            continue
+        g = g1
         return g
 
     @staticmethod
