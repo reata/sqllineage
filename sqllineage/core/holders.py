@@ -379,6 +379,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         metadata_provider: MetaDataProvider, *args: StatementLineageHolder
     ) -> DiGraph:
         g = DiGraph()
+        g1 = DiGraph()
         for holder in args:
             g = nx.compose(g, holder.graph)
             if holder.drop:
