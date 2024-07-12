@@ -37,22 +37,22 @@ class LineageRunner(object):
     def __init__(
         self,
         sql: str,
-        file_path: str = ".",
         dialect: str = DEFAULT_DIALECT,
         metadata_provider: MetaDataProvider = DummyMetaDataProvider(),
         verbose: bool = False,
         silent_mode: bool = False,
         draw_options: Optional[Dict[str, Any]] = None,
+        file_path: str = ".",
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
 
         :param sql: a string representation of SQL statements.
-        :param file_path: path of the SQL file.
         :param dialect: sql dialect
         :param metadata_provider: metadata service object providing table schema
         :param verbose: verbose flag indicating whether statement-wise lineage result will be shown
         :param silent_mode: boolean flag indicating whether to skip lineage analysis for unknown statement types
+        :param file_path: path of the SQL file.
         """
         if dialect == SQLPARSE_DIALECT:
             warnings.warn(
