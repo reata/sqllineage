@@ -1,6 +1,6 @@
 import logging
 from argparse import Namespace
-from typing import List
+from typing import List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +25,13 @@ def escape_identifier_name(name: str):
         return name.lower()
 
 
-def extract_sql_from_args(args: Namespace) -> str:
+def extract_sql_from_args(args: Namespace) -> Tuple[str, str]:
     sql = ""
+    file_path = "."
     if getattr(args, "f", None):
         try:
             with open(args.f) as f:
+                file_path = args.f
                 sql = f.read()
         except IsADirectoryError:
             logger.exception("%s is a directory", args.f)
@@ -43,7 +45,7 @@ def extract_sql_from_args(args: Namespace) -> str:
             exit(1)
     elif getattr(args, "e", None):
         sql = args.e
-    return sql
+    return sql, file_path
 
 
 def split(sql: str) -> List[str]:

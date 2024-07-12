@@ -37,6 +37,7 @@ class LineageRunner(object):
     def __init__(
         self,
         sql: str,
+        file_path: str = ".",
         dialect: str = DEFAULT_DIALECT,
         metadata_provider: MetaDataProvider = DummyMetaDataProvider(),
         verbose: bool = False,
@@ -47,6 +48,7 @@ class LineageRunner(object):
         The entry point of SQLLineage after command line options are parsed.
 
         :param sql: a string representation of SQL statements.
+        :param file_path: path of the SQL file.
         :param dialect: sql dialect
         :param metadata_provider: metadata service object providing table schema
         :param verbose: verbose flag indicating whether statement-wise lineage result will be shown
@@ -60,6 +62,7 @@ class LineageRunner(object):
                 stacklevel=2,
             )
         self._sql = sql
+        self._file_path = file_path
         self._verbose = verbose
         self._draw_options = draw_options if draw_options else {}
         self._evaluated = False
@@ -183,7 +186,9 @@ Target Tables:
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT
-            else SqlFluffLineageAnalyzer(self._dialect, self._silent_mode)
+            else SqlFluffLineageAnalyzer(
+                self._file_path, self._dialect, self._silent_mode
+            )
         )
         if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
             self._stmt = analyzer.split_tsql(self._sql.strip())
