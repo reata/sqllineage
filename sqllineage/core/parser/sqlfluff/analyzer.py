@@ -27,10 +27,13 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlfluff"
     SUPPORTED_DIALECTS = list(dialect.label for dialect in dialect_readout())
 
-    def __init__(self, dialect: str, silent_mode: bool = False):
+    def __init__(self, file_path: str, dialect: str, silent_mode: bool = False):
         self._dialect = dialect
         self._silent_mode = silent_mode
         self.tsql_split_cache: Dict[str, BaseSegment] = {}
+        self.sqlfluff_config = FluffConfig.from_path(
+            path=file_path, overrides={"dialect": self._dialect}
+        )
 
     def split_tsql(self, sql: str) -> List[str]:
         """
@@ -79,9 +82,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                     )
 
     def _list_specific_statement_segment(self, sql: str):
-        parsed = Linter(
-            config=FluffConfig.from_root(overrides={"dialect": self._dialect})
-        ).parse_string(sql)
+        parsed = Linter(config=self.sqlfluff_config).parse_string(sql)
         violations = [
             str(e)
             for e in parsed.violations

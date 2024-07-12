@@ -107,9 +107,10 @@ def main(args=None) -> None:
     if args.e and args.f:
         warnings.warn("Both -e and -f options are specified. -e option will be ignored")
     if args.f or args.e:
-        sql = extract_sql_from_args(args)
+        sql, file_path = extract_sql_from_args(args)
         runner = LineageRunner(
             sql,
+            file_path=file_path,
             dialect=args.dialect,
             metadata_provider=metadata_provider,
             verbose=args.verbose,
