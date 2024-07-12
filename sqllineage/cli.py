@@ -16,7 +16,7 @@ from sqllineage.core.metadata.sqlalchemy import SQLAlchemyMetaDataProvider
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
-from sqllineage.utils.helpers import extract_sql_from_args, extract_file_path_from_args
+from sqllineage.utils.helpers import extract_file_path_from_args, extract_sql_from_args
 
 logger = logging.getLogger(__name__)
 
