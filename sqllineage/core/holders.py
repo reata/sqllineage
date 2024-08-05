@@ -185,6 +185,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                                     src_table_columns,
                                     tgt_wildcard,
                                     src_wildcard,
+                                    metadata_provider,
                                 )
 
     def get_alias_mapping_from_table_group(
@@ -227,6 +228,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         src_table_columns: List[Column],
         tgt_wildcard: Column,
         src_wildcard: Column,
+        metadata_provider: MetaDataProvider,
     ) -> None:
         target_columns = self.get_table_columns(tgt_table)
         for src_col in src_table_columns:
@@ -238,9 +240,9 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             self.graph.add_edge(src_col.parent, src_col, type=EdgeType.HAS_COLUMN)
             self.graph.add_edge(src_col, new_column, type=EdgeType.LINEAGE)
         # remove wildcard
-        if self.graph.has_node(tgt_wildcard):
+        if metadata_provider and self.graph.has_node(tgt_wildcard):
             self.graph.remove_node(tgt_wildcard)
-        if self.graph.has_node(src_wildcard):
+        if metadata_provider and self.graph.has_node(src_wildcard):
             self.graph.remove_node(src_wildcard)
 
 
