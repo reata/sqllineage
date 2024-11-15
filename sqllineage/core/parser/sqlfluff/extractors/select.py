@@ -101,7 +101,8 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                         function.first_non_whitespace_segment_raw_upper
                         == "SWAP_PARTITIONS_BETWEEN_TABLES"
                     ):
-                        if bracketed := function.get_child("bracketed"):
+                        if function_contents := function.get_child("function_contents"):
+                            bracketed = function_contents.segments[0]
                             expressions = bracketed.get_children("expression")
                             holder.add_read(
                                 SqlFluffTable(

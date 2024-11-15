@@ -158,7 +158,7 @@ class SqlFluffColumn(Column):
             sub_segments = list_child_segments(segment)
             col_list = []
             for sub_segment in sub_segments:
-                if sub_segment.type == "bracketed":
+                if sub_segment.type in ("bracketed", "function_contents"):
                     if is_subquery(sub_segment):
                         col_list += SqlFluffColumn._get_column_from_subquery(
                             sub_segment
@@ -206,6 +206,8 @@ class SqlFluffColumn(Column):
         # windows function has an extra layer, get rid of it so that it can be handled as regular functions
         if window_specification := sub_segment.get_child("window_specification"):
             sub_segment = window_specification
+        elif sub_segment.type == "function_contents":
+            sub_segment = sub_segment.segments[0]
         col, _ = SqlFluffColumn._get_column_and_alias(sub_segment, False)
         return col if col else []
 
@@ -221,6 +223,12 @@ class SqlFluffColumn(Column):
         columns = []
         sub_segments = list_child_segments(segment, check_bracketed)
         for sub_segment in sub_segments:
+            # if sub_segment.type == "function":
+            #     function_content = sub_segment.segments[1]
+            #     for child in list_child_segments(function_content.segments[0]):
+            #         res, alias = SqlFluffColumn._get_column_and_alias(child)
+            #         columns += res if res else []
+            # el
             if sub_segment.type == "alias_expression":
                 alias = extract_identifier(sub_segment)
             elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
