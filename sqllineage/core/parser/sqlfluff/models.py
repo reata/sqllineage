@@ -223,12 +223,6 @@ class SqlFluffColumn(Column):
         columns = []
         sub_segments = list_child_segments(segment, check_bracketed)
         for sub_segment in sub_segments:
-            # if sub_segment.type == "function":
-            #     function_content = sub_segment.segments[1]
-            #     for child in list_child_segments(function_content.segments[0]):
-            #         res, alias = SqlFluffColumn._get_column_and_alias(child)
-            #         columns += res if res else []
-            # el
             if sub_segment.type == "alias_expression":
                 alias = extract_identifier(sub_segment)
             elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
