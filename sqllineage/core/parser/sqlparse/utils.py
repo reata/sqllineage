@@ -99,7 +99,7 @@ def is_values_clause(token: Parenthesis) -> bool:
 
 
 def get_subquery_parentheses(
-    token: Union[Identifier, Function, Values, Where]
+    token: Union[Identifier, Function, Values, Where],
 ) -> List[SubQueryTuple]:
     """
     Retrieve subquery list
