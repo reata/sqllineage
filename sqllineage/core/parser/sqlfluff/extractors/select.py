@@ -97,23 +97,25 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         if self.dialect == "vertica" and segment.type == "select_clause":
             if select_clause_element := segment.get_child("select_clause_element"):
                 if function := select_clause_element.get_child("function"):
-                    if (
-                        function.first_non_whitespace_segment_raw_upper
-                        == "SWAP_PARTITIONS_BETWEEN_TABLES"
-                    ):
-                        if function_contents := function.get_child("function_contents"):
-                            bracketed = function_contents.segments[0]
-                            expressions = bracketed.get_children("expression")
-                            holder.add_read(
-                                SqlFluffTable(
-                                    escape_identifier_name(expressions[0].raw)
-                                )
-                            )
-                            holder.add_write(
-                                SqlFluffTable(
-                                    escape_identifier_name(expressions[3].raw)
-                                )
-                            )
+                    if function_name := function.get_child("function_name"):
+                        if function_name.raw_upper == "SWAP_PARTITIONS_BETWEEN_TABLES":
+                            if function_contents := function.get_child(
+                                "function_contents"
+                            ):
+                                if bracketed := function_contents.get_child(
+                                    "bracketed"
+                                ):
+                                    expressions = bracketed.get_children("expression")
+                                    holder.add_read(
+                                        SqlFluffTable(
+                                            escape_identifier_name(expressions[0].raw)
+                                        )
+                                    )
+                                    holder.add_write(
+                                        SqlFluffTable(
+                                            escape_identifier_name(expressions[3].raw)
+                                        )
+                                    )
 
     def _handle_select_into(self, segment: BaseSegment, holder: SubQueryLineageHolder):
         """

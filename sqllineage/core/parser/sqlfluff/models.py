@@ -16,8 +16,6 @@ from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
 
 NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
-    "function",
-    "over_clause",
     "partitionby_clause",
     "orderby_clause",
     "expression",
@@ -28,10 +26,13 @@ NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
     "cast_expression",
 ]
 
-SOURCE_COLUMN_SEGMENT_TYPE = NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + [
-    "identifier",
-    "column_reference",
-]
+FUNCTION_SEGMENT_TYPE = ["function"]
+
+COLUMN_SEGMENT_TYPE = ["identifier", "column_reference"]
+
+SOURCE_COLUMN_SEGMENT_TYPE = (
+    NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + FUNCTION_SEGMENT_TYPE + COLUMN_SEGMENT_TYPE
+)
 
 
 class SqlFluffTable(Table):
@@ -151,14 +152,18 @@ class SqlFluffColumn(Column):
         :return: list of extracted source columns
         """
         col_list = []
-        if segment.type in ("identifier", "column_reference") or is_wildcard(segment):
+        if segment.type in COLUMN_SEGMENT_TYPE or is_wildcard(segment):
             if cqt := extract_column_qualifier(segment):
                 col_list = [cqt]
+        elif segment.type in FUNCTION_SEGMENT_TYPE:
+            for bracketed in segment.recursive_crawl("bracketed"):
+                # the bracketed could be in function_contents or over_clause in case of window function
+                col_list += SqlFluffColumn._get_column_from_parenthesis(bracketed)
         elif segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
             sub_segments = list_child_segments(segment)
             col_list = []
             for sub_segment in sub_segments:
-                if sub_segment.type in ("bracketed", "function_contents"):
+                if sub_segment.type == "bracketed":
                     if is_subquery(sub_segment):
                         col_list += SqlFluffColumn._get_column_from_subquery(
                             sub_segment
@@ -206,8 +211,6 @@ class SqlFluffColumn(Column):
         # windows function has an extra layer, get rid of it so that it can be handled as regular functions
         if window_specification := sub_segment.get_child("window_specification"):
             sub_segment = window_specification
-        elif sub_segment.type == "function_contents":
-            sub_segment = sub_segment.segments[0]
         col, _ = SqlFluffColumn._get_column_and_alias(sub_segment, False)
         return col if col else []
 
