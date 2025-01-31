@@ -16,8 +16,6 @@ from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
 
 NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
-    "function",
-    "over_clause",
     "partitionby_clause",
     "orderby_clause",
     "expression",
@@ -28,10 +26,13 @@ NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
     "cast_expression",
 ]
 
-SOURCE_COLUMN_SEGMENT_TYPE = NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + [
-    "identifier",
-    "column_reference",
-]
+FUNCTION_SEGMENT_TYPE = ["function"]
+
+COLUMN_SEGMENT_TYPE = ["identifier", "column_reference"]
+
+SOURCE_COLUMN_SEGMENT_TYPE = (
+    NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + FUNCTION_SEGMENT_TYPE + COLUMN_SEGMENT_TYPE
+)
 
 
 class SqlFluffTable(Table):
@@ -151,9 +152,13 @@ class SqlFluffColumn(Column):
         :return: list of extracted source columns
         """
         col_list = []
-        if segment.type in ("identifier", "column_reference") or is_wildcard(segment):
+        if segment.type in COLUMN_SEGMENT_TYPE or is_wildcard(segment):
             if cqt := extract_column_qualifier(segment):
                 col_list = [cqt]
+        elif segment.type in FUNCTION_SEGMENT_TYPE:
+            for bracketed in segment.recursive_crawl("bracketed"):
+                # the bracketed could be in function_contents or over_clause in case of window function
+                col_list += SqlFluffColumn._get_column_from_parenthesis(bracketed)
         elif segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
             sub_segments = list_child_segments(segment)
             col_list = []
