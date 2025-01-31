@@ -46,6 +46,13 @@ def extract_sql_from_args(args: Namespace) -> str:
     return sql
 
 
+def extract_file_path_from_args(args: Namespace) -> str:
+    file_path = "."
+    if getattr(args, "f", None):
+        file_path = args.f
+    return file_path
+
+
 def split(sql: str) -> List[str]:
     # TODO: we need a parser independent split function
     import sqlparse
