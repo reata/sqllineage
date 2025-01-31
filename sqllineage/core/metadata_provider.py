@@ -60,6 +60,17 @@ class MetaDataProvider:
         bool value tells whether this provider is ready to provide metadata
         """
         return True
+        
+    @classmethod
+    def str2enum(cls, name):
+        if name == "lineage":
+            return EdgeType.LINEAGE
+        if name == "rename":
+            return EdgeType.RENAME
+        if name == "has_column":
+            return EdgeType.HAS_COLUMN
+        if name == "has_alias":
+            return EdgeType.HAS_ALIAS
 
 
 class MetaDataSession:
