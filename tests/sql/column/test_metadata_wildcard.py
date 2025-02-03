@@ -336,3 +336,21 @@ def test_wildcard_reference_from_previous_statements(provider: MetaDataProvider)
         ],
         metadata_provider=provider,
     )
+
+
+def test_output_consistency():
+    sql = """INSERT INTO tab_c
+SELECT *,
+       1 AS event_time
+FROM (SELECT tab_b.col_b AS col_a
+      FROM tab_b
+               JOIN tab_a) AS base"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col_b", "tab_b"),
+                ColumnQualifierTuple("col_a", "tab_c"),
+            ),
+        ],
+    )

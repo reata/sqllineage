@@ -87,6 +87,18 @@ def list_join_clause(segment: BaseSegment) -> List[BaseSegment]:
     traverse from_clause, recursively goes into bracket by default
     """
     if segment.type in ["from_clause", "update_statement"]:
+        # for select from subquery, do not recursively go into subquery
+        if from_expression := segment.get_child("from_expression"):
+            join_clause = from_expression.get_child("join_clause")
+            if not join_clause:
+                try:
+                    next(from_expression.recursive_crawl("select_clause"))
+                except StopIteration:
+                    pass
+                else:
+                    # no join at top level, and there is select statement in from_clause
+                    return []
+        # otherwise, recursively find join_clause
         return list(segment.recursive_crawl("join_clause"))
     return []
 
