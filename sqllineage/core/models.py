@@ -240,8 +240,4 @@ class Column:
                     )
                 else:
                     source_columns.add(_to_src_col(src_col, Table(qualifier)))
-
-        # this function returns the best guess when resolving wildcards.
-        # we sort the resolved columns so results are at least consistent.
-        source_columns = sorted(source_columns, key=lambda x: str(x))
         return source_columns
