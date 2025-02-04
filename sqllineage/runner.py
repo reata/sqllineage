@@ -42,6 +42,7 @@ class LineageRunner(object):
         verbose: bool = False,
         silent_mode: bool = False,
         draw_options: Optional[Dict[str, Any]] = None,
+        file_path: str = ".",
     ):
         """
         The entry point of SQLLineage after command line options are parsed.
@@ -51,6 +52,7 @@ class LineageRunner(object):
         :param metadata_provider: metadata service object providing table schema
         :param verbose: verbose flag indicating whether statement-wise lineage result will be shown
         :param silent_mode: boolean flag indicating whether to skip lineage analysis for unknown statement types
+        :param file_path: path of the SQL file.
         """
         if dialect == SQLPARSE_DIALECT:
             warnings.warn(
@@ -60,6 +62,7 @@ class LineageRunner(object):
                 stacklevel=2,
             )
         self._sql = sql
+        self._file_path = file_path
         self._verbose = verbose
         self._draw_options = draw_options if draw_options else {}
         self._evaluated = False
@@ -183,7 +186,9 @@ Target Tables:
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT
-            else SqlFluffLineageAnalyzer(self._dialect, self._silent_mode)
+            else SqlFluffLineageAnalyzer(
+                self._file_path, self._dialect, self._silent_mode
+            )
         )
         if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
             self._stmt = analyzer.split_tsql(self._sql.strip())

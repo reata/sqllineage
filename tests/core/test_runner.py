@@ -1,6 +1,7 @@
 import os
 import tempfile
 
+from sqllineage.cli import main
 from sqllineage.core.models import SubQuery
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
@@ -49,5 +50,26 @@ tbl_name=my_table"""
                 f.write(sqlfluff_config)
             sql = "SELECT {{ num_things }} FROM {{ tbl_name }} WHERE id > 10 LIMIT 5"
             assert_table_lineage_equal(sql, {"my_table"}, test_sqlparse=False)
+        finally:
+            os.chdir(cwd)
+
+
+def test_respect_nested_sqlfluff_configuration_file():
+    sqlfluff_config = """[sqlfluff:templater:jinja:context]
+num_things=456
+tbl_name=my_table"""
+    cwd = os.getcwd()
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        try:
+            os.chdir(tmpdirname)
+            nested_dir = os.path.join(tmpdirname, "nested_dir")
+            os.mkdir(nested_dir)
+            with open(os.path.join(nested_dir, ".sqlfluff"), "w") as f:
+                f.write(sqlfluff_config)
+            with open(os.path.join(nested_dir, "nested.sql"), "w") as f:
+                f.write(
+                    "SELECT {{ num_things }} FROM {{ tbl_name }} WHERE id > 10 LIMIT 5"
+                )
+            main(["-f", nested_dir + "/nested.sql"])
         finally:
             os.chdir(cwd)
