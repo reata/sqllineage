@@ -3,6 +3,8 @@ import warnings
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple
 
+import networkx as nx
+
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SQLLineageHolder
@@ -153,6 +155,13 @@ Target Tables:
         a list of intermediate :class:`sqllineage.models.Table`
         """
         return sorted(self._sql_holder.intermediate_tables, key=lambda x: str(x))
+
+    @lazy_property
+    def graph(self) -> nx.DiGraph:
+        """
+        the fully parsed lineage graph :class:`networkx.DiGraph`
+        """
+        return self._sql_holder.graph.copy()
 
     @lazy_method
     def get_column_lineage(
