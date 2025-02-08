@@ -2,6 +2,33 @@
 Changelog
 *********
 
+v1.5.4
+======
+:Date: Feb 8, 2025
+
+In this release, we deprecated Python 3.8 and added support for Python 3.13 based on Python end-of-life schedule.
+
+The most notable enhancement is upgrading sqlfluff to 3.3.1. As a result, we can now support Impala dialect and
+StarRocks dialect. Many parser issues are also fixed automatically by sqlfluff upgrade.
+
+Enhancement
+-------------
+* Add Support for Python 3.13 (`#682 <https://github.com/reata/sqllineage/issues/682>`_)
+* Drop Support for Python 3.8 (`#677 <https://github.com/reata/sqllineage/issues/677>`_)
+* Support for Impala Dialect (`#645 <https://github.com/reata/sqllineage/issues/645>`_)
+* Upgrade sqlfluff dependency to 3.3.1 (`#644 <https://github.com/reata/sqllineage/issues/644>`_)
+* support Doris or StarRocks (`#498 <https://github.com/reata/sqllineage/issues/498>`_)
+
+Bugfix
+-------------
+* Inconsistent order of lineage tuples (`#652 <https://github.com/reata/sqllineage/issues/652>`_)
+* Metadata wrongly used in INSERT INTO statement column lineage (`#648 <https://github.com/reata/sqllineage/issues/648>`_)
+* clickhouse <rename> not handled (`#642 <https://github.com/reata/sqllineage/issues/642>`_)
+* Not read SQLfluff nested configs (`#628 <https://github.com/reata/sqllineage/issues/628>`_)
+* False negative for Scalar Subquery used in Function (`#614 <https://github.com/reata/sqllineage/issues/614>`_)
+* Column level lineage not drawn properly when metadata is provided (`#597 <https://github.com/reata/sqllineage/issues/597>`_)
+* Tsql table names with square brackets are not resolved correctly (`#583 <https://github.com/reata/sqllineage/issues/583>`_)
+
 v1.5.3
 ======
 :Date: May 5, 2024
