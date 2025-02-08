@@ -17,6 +17,7 @@ insert into tab3 select * from tab2""",
     assert str(runner)
     assert runner.to_cytoscape() is not None
     assert runner.to_cytoscape(level=LineageLevel.COLUMN) is not None
+    assert runner.graph is not None
 
 
 def test_statements_trim_comment():
