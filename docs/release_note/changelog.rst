@@ -26,7 +26,6 @@ Bugfix
 * clickhouse <rename> not handled (`#642 <https://github.com/reata/sqllineage/issues/642>`_)
 * Not read SQLfluff nested configs (`#628 <https://github.com/reata/sqllineage/issues/628>`_)
 * False negative for Scalar Subquery used in Function (`#614 <https://github.com/reata/sqllineage/issues/614>`_)
-* Subquery Partial Wildcard expansion breaks the column lineage path (`#612 <https://github.com/reata/sqllineage/issues/612>`_)
 * Column level lineage not drawn properly when metadata is provided (`#597 <https://github.com/reata/sqllineage/issues/597>`_)
 * Tsql table names with square brackets are not resolved correctly (`#583 <https://github.com/reata/sqllineage/issues/583>`_)
 
