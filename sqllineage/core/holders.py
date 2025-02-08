@@ -2,8 +2,8 @@ import itertools
 from typing import Dict, List, Optional, Set, Tuple, Union, cast
 
 import networkx as nx
-from networkx import DiGraph
 import rustworkx as rx
+from networkx import DiGraph
 
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
