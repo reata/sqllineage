@@ -1,8 +1,9 @@
 import itertools
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union, cast
 
 import networkx as nx
 from networkx import DiGraph
+import rustworkx as rx
 
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
@@ -13,7 +14,9 @@ DATASET_CLASSES = (Path, Table)
 
 class ColumnLineageMixin:
     def get_column_lineage(
-        self, exclude_path_ending_in_subquery=True, exclude_subquery_columns=False
+        self,
+        exclude_path_ending_in_subquery: bool = True,
+        exclude_subquery_columns: bool = False,
     ) -> Set[Tuple[Column, ...]]:
         """
         :param exclude_path_ending_in_subquery:  exclude_subquery rename to exclude_path_ending_in_subquery
@@ -38,9 +41,27 @@ class ColumnLineageMixin:
                 node for node in target_columns if isinstance(node.parent, Table)
             }
         columns = set()
+
+        # Computing on networkx graph can be slow for very large graphs.
+        # We convert the graph to rustworkx which is significantly faster.
+        rx_graph = cast(rx.PyDiGraph, rx.networkx_converter(self.graph))
+
+        # rustworkx is based on indices only, meaning we have to keep a mapping
+        # between indices and actual nodes for both ways.
+        rx_mapping: Dict[Column, int] = {
+            node: index for index, node in enumerate(rx_graph.nodes())
+        }
+        rx_mapping_inv: Dict[int, Column] = {v: k for k, v in rx_mapping.items()}
+
         for source, target in itertools.product(source_columns, target_columns):
-            simple_paths = list(nx.all_simple_paths(self.graph, source, target))
-            for path in simple_paths:
+            simple_paths = list(
+                rx.digraph_all_simple_paths(
+                    rx_graph, rx_mapping[source], rx_mapping[target]
+                )
+            )
+            for rx_path in simple_paths:
+                path = [rx_mapping_inv[p] for p in rx_path]
+
                 if exclude_subquery_columns:
                     path = [
                         node for node in path if not isinstance(node.parent, SubQuery)

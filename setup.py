@@ -68,6 +68,7 @@ setup(
     install_requires=[
         "sqlparse==0.5.3",
         "networkx>=2.4",
+        "rustworkx>=0.16.0",
         "sqlfluff==3.3.1",
         "sqlalchemy>=2.0.0",
     ],
