@@ -48,6 +48,32 @@ FROM tab2 a
     )
 
 
+# TODO
+# Expected Lineage: {(Column: <default>.t2.f1, Column: <default>.result_table.f1), ...}
+# Actual Lineage: {(Column: t2.f1, Column: <default>.result_table.f1), ...}
+
+# def test_select_column_wildcard_with_fields():
+#     sql = """
+#         WITH t2 AS (SELECT * FROM t1),
+#              t3 AS (SELECT f1, * FROM t2)
+#         INSERT INTO result_table
+#         SELECT *
+#         FROM t3;"""
+#     assert_column_lineage_equal(
+#         sql,
+#         [
+#             (
+#                 ColumnQualifierTuple("f1", "t2"),
+#                 ColumnQualifierTuple("f1", "result_table"),
+#             ),
+#             (
+#                 ColumnQualifierTuple("*", "t1"),
+#                 ColumnQualifierTuple("*", "result_table"),
+#             ),
+#         ],
+#     )
+
+
 def test_select_column_wildcard_with_qualifier():
     sql = """INSERT INTO tab1
 SELECT tab2.*
