@@ -1,4 +1,5 @@
-from typing import Any, List, NamedTuple, Optional, Set, Union
+from typing import Any, NamedTuple, Optional, Union
+
 
 from sqllineage.core.models import Column, SubQuery, Table
 
@@ -15,8 +16,8 @@ class ColumnQualifierTuple(NamedTuple):
 
 class AnalyzerContext(NamedTuple):
     # CTE queries that can be select from in current query context
-    cte: Optional[Set[SubQuery]] = None
+    cte: Optional[set[SubQuery]] = None
     # table that current top-level query is writing to, subquery in case of subquery context
-    write: Optional[Set[Union[SubQuery, Table]]] = None
+    write: Optional[set[Union[SubQuery, Table]]] = None
     # columns that write table specifies, used for `INSERT INTO x (col1, col2) SELECT` syntax
-    write_columns: Optional[List[Column]] = None
+    write_columns: Optional[list[Column]] = None

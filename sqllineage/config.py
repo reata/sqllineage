@@ -1,6 +1,6 @@
 import os
 import threading
-from typing import Any, Dict, Set
+from typing import Any
 
 from sqllineage.exceptions import ConfigException
 
@@ -23,8 +23,8 @@ class _SQLLineageConfigLoader:
     }
 
     def __init__(self) -> None:
-        self._thread_config: Dict[int, Dict[str, Any]] = {}
-        self._thread_in_context_manager: Set[int] = set()
+        self._thread_config: dict[int, dict[str, Any]] = {}
+        self._thread_in_context_manager: set[int] = set()
 
     def __getattr__(self, item: str):
         if item in self.config.keys():

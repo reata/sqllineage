@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Optional, Union
 
 import networkx as nx
 from networkx import DiGraph
@@ -8,13 +8,13 @@ from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
 from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
-DATASET_CLASSES = (Path, Table)
+DATAset_CLASSES = (Path, Table)
 
 
 class ColumnLineageMixin:
     def get_column_lineage(
         self, exclude_path_ending_in_subquery=True, exclude_subquery_columns=False
-    ) -> Set[Tuple[Column, ...]]:
+    ) -> set[tuple[Column, ...]]:
         """
         :param exclude_path_ending_in_subquery:  exclude_subquery rename to exclude_path_ending_in_subquery
                exclude column from SubQuery in the ending path
@@ -58,7 +58,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     SubQueryLineageHolder will hold attributes like read, write, cte.
 
-    Each of them is a Set[:class:`sqllineage.core.models.Table`].
+    Each of them is a set[:class:`sqllineage.core.models.Table`].
 
     This is the most atomic representation of lineage result.
     """
@@ -70,14 +70,14 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         self.graph = nx.compose(self.graph, other.graph)
         return self
 
-    def _property_getter(self, prop) -> Set[Union[SubQuery, Table]]:
+    def _property_getter(self, prop) -> set[Union[SubQuery, Table]]:
         return {t for t, attr in self.graph.nodes(data=True) if attr.get(prop) is True}
 
     def _property_setter(self, value, prop) -> None:
         self.graph.add_node(value, **{prop: True})
 
     @property
-    def read(self) -> Set[Union[SubQuery, Table]]:
+    def read(self) -> set[Union[SubQuery, Table]]:
         return self._property_getter(NodeTag.READ)
 
     def add_read(self, value) -> None:
@@ -87,7 +87,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             self.graph.add_edge(value, value.alias, type=EdgeType.HAS_ALIAS)
 
     @property
-    def write(self) -> Set[Union[SubQuery, Table]]:
+    def write(self) -> set[Union[SubQuery, Table]]:
         # SubQueryLineageHolder.write can return a single SubQuery or Table, or both when __or__ together.
         # This is different from StatementLineageHolder.write, where Table is the only possibility.
         return self._property_getter(NodeTag.WRITE)
@@ -96,14 +96,14 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         self._property_setter(value, NodeTag.WRITE)
 
     @property
-    def cte(self) -> Set[SubQuery]:
+    def cte(self) -> set[SubQuery]:
         return self._property_getter(NodeTag.CTE)  # type: ignore
 
     def add_cte(self, value) -> None:
         self._property_setter(value, NodeTag.CTE)
 
     @property
-    def write_columns(self) -> List[Column]:
+    def write_columns(self) -> list[Column]:
         """
         return a list of columns that write table contains.
         It's either manually added via `add_write_column` if specified in DML
@@ -111,7 +111,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         """
         tgt_cols = []
         if tgt_tbl := self._get_target_table():
-            tgt_col_with_idx: List[Tuple[Column, int]] = sorted(
+            tgt_col_with_idx: list[tuple[Column, int]] = sorted(
                 [
                     (col, attr.get(EdgeTag.INDEX, 0))
                     for tbl, col, attr in self.graph.out_edges(tgt_tbl, data=True)
@@ -151,7 +151,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
             self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
 
-    def get_table_columns(self, table: Union[Table, SubQuery]) -> List[Column]:
+    def get_table_columns(self, table: Union[Table, SubQuery]) -> list[Column]:
         return [
             tgt
             for (src, tgt, edge_type) in self.graph.out_edges(nbunch=table, data="type")
@@ -185,8 +185,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                                 )
 
     def get_alias_mapping_from_table_group(
-        self, table_group: List[Union[Path, Table, SubQuery]]
-    ) -> Dict[str, Union[Path, Table, SubQuery]]:
+        self, table_group: list[Union[Path, Table, SubQuery]]
+    ) -> dict[str, Union[Path, Table, SubQuery]]:
         """
         A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
         For SubQuery, it's only alias then.
@@ -210,7 +210,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             table = next(iter(write_only))
         return table
 
-    def get_source_columns(self, node: Column) -> List[Column]:
+    def get_source_columns(self, node: Column) -> list[Column]:
         return [
             src
             for (src, tgt, edge_type) in self.graph.in_edges(nbunch=node, data="type")
@@ -220,7 +220,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     def _replace_wildcard(
         self,
         tgt_table: Union[Table, SubQuery],
-        src_table_columns: List[Column],
+        src_table_columns: list[Column],
         tgt_wildcard: Column,
         src_wildcard: Column,
     ) -> None:
@@ -246,9 +246,9 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
 
     Based on SubQueryLineageHolder, StatementLineageHolder holds extra attributes like drop and rename
 
-    For drop, it is a Set[:class:`sqllineage.core.models.Table`].
+    For drop, it is a set[:class:`sqllineage.core.models.Table`].
 
-    For rename, it a Set[Tuple[:class:`sqllineage.core.models.Table`, :class:`sqllineage.core.models.Table`]],
+    For rename, it a set[tuple[:class:`sqllineage.core.models.Table`, :class:`sqllineage.core.models.Table`]],
     with the first table being original table before renaming and the latter after renaming.
     """
 
@@ -262,22 +262,22 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
         return str(self)
 
     @property
-    def read(self) -> Set[Table]:  # type: ignore
-        return {t for t in super().read if isinstance(t, DATASET_CLASSES)}
+    def read(self) -> set[Table]:  # type: ignore
+        return {t for t in super().read if isinstance(t, DATAset_CLASSES)}
 
     @property
-    def write(self) -> Set[Table]:  # type: ignore
-        return {t for t in super().write if isinstance(t, DATASET_CLASSES)}
+    def write(self) -> set[Table]:  # type: ignore
+        return {t for t in super().write if isinstance(t, DATAset_CLASSES)}
 
     @property
-    def drop(self) -> Set[Table]:
+    def drop(self) -> set[Table]:
         return self._property_getter(NodeTag.DROP)  # type: ignore
 
     def add_drop(self, value) -> None:
         self._property_setter(value, NodeTag.DROP)
 
     @property
-    def rename(self) -> Set[Tuple[Table, Table]]:
+    def rename(self) -> set[tuple[Table, Table]]:
         return {
             (src, tgt)
             for src, tgt, attr in self.graph.edges(data=True)
@@ -311,7 +311,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         """
         The table level DiGraph held by SQLLineageHolder
         """
-        table_nodes = [n for n in self.graph.nodes if isinstance(n, DATASET_CLASSES)]
+        table_nodes = [n for n in self.graph.nodes if isinstance(n, DATAset_CLASSES)]
         return self.graph.subgraph(table_nodes)
 
     @property
@@ -323,7 +323,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return self.graph.subgraph(column_nodes)
 
     @property
-    def source_tables(self) -> Set[Table]:
+    def source_tables(self) -> set[Table]:
         """
         a list of source :class:`sqllineage.core.models.Table`
         """
@@ -337,7 +337,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return source_tables
 
     @property
-    def target_tables(self) -> Set[Table]:
+    def target_tables(self) -> set[Table]:
         """
         a list of target :class:`sqllineage.core.models.Table`
         """
@@ -351,7 +351,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return target_tables
 
     @property
-    def intermediate_tables(self) -> Set[Table]:
+    def intermediate_tables(self) -> set[Table]:
         """
         a list of intermediate :class:`sqllineage.core.models.Table`
         """
@@ -363,11 +363,11 @@ class SQLLineageHolder(ColumnLineageMixin):
         intermediate_tables -= self.__retrieve_tag_tables(NodeTag.SELFLOOP)
         return intermediate_tables
 
-    def __retrieve_tag_tables(self, tag) -> Set[Union[Path, Table]]:
+    def __retrieve_tag_tables(self, tag) -> set[Union[Path, Table]]:
         return {
             table
             for table, attr in self.graph.nodes(data=True)
-            if attr.get(tag) is True and isinstance(table, DATASET_CLASSES)
+            if attr.get(tag) is True and isinstance(table, DATAset_CLASSES)
         }
 
     @staticmethod

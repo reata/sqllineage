@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Optional, Union
 
 from sqllineage.config import SQLLineageConfig
 from sqllineage.exceptions import SQLLineageException
@@ -151,7 +151,7 @@ class Column:
         :param parent: :class:`Table` or :class:`SubQuery`
         :param kwargs:
         """
-        self._parent: Set[Union[Path, Table, SubQuery]] = set()
+        self._parent: set[Union[Path, Table, SubQuery]] = set()
         self.raw_name = escape_identifier_name(name)
         self.source_columns = [
             (
@@ -193,7 +193,7 @@ class Column:
         self._parent.add(value)
 
     @property
-    def parent_candidates(self) -> List[Union[Path, Table, SubQuery]]:
+    def parent_candidates(self) -> list[Union[Path, Table, SubQuery]]:
         return sorted(self._parent, key=lambda p: str(p))
 
     @staticmethod
@@ -205,7 +205,7 @@ class Column:
         """
         raise NotImplementedError
 
-    def to_source_columns(self, alias_mapping: Dict[str, Union[Path, Table, SubQuery]]):
+    def to_source_columns(self, alias_mapping: dict[str, Union[Path, Table, SubQuery]]):
         """
         Best guess for source table given all the possible table/subquery and their alias.
         """
