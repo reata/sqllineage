@@ -191,19 +191,18 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
         For SubQuery, it's only alias then.
         """
-        return {
-            **{
-                tgt: src
-                for src, tgt, attr in self.graph.edges(data=True)
-                if attr.get("type") == EdgeType.HAS_ALIAS and src in table_group
-            },
-            **{
-                table.raw_name: table
-                for table in table_group
-                if isinstance(table, Table)
-            },
-            **{str(table): table for table in table_group if isinstance(table, Table)},
+        alias_map = {
+            tgt: src
+            for src, tgt, attr in self.graph.edges(data=True)
+            if attr.get("type") == EdgeType.HAS_ALIAS and src in table_group
         }
+        unqualified_map = {
+            table.raw_name: table for table in table_group if isinstance(table, Table)
+        }
+        qualified_map = {
+            str(table): table for table in table_group if isinstance(table, Table)
+        }
+        return alias_map | unqualified_map | qualified_map
 
     def _get_target_table(self) -> Optional[Union[SubQuery, Table]]:
         table = None
