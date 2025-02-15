@@ -8,7 +8,7 @@ from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
 from sqllineage.utils.constant import EdgeTag, EdgeType, NodeTag
 
-DATAset_CLASSES = (Path, Table)
+DATASET_CLASSES = (Path, Table)
 
 
 class ColumnLineageMixin:
@@ -263,11 +263,11 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
 
     @property
     def read(self) -> set[Table]:  # type: ignore
-        return {t for t in super().read if isinstance(t, DATAset_CLASSES)}
+        return {t for t in super().read if isinstance(t, DATASET_CLASSES)}
 
     @property
     def write(self) -> set[Table]:  # type: ignore
-        return {t for t in super().write if isinstance(t, DATAset_CLASSES)}
+        return {t for t in super().write if isinstance(t, DATASET_CLASSES)}
 
     @property
     def drop(self) -> set[Table]:
@@ -311,7 +311,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         """
         The table level DiGraph held by SQLLineageHolder
         """
-        table_nodes = [n for n in self.graph.nodes if isinstance(n, DATAset_CLASSES)]
+        table_nodes = [n for n in self.graph.nodes if isinstance(n, DATASET_CLASSES)]
         return self.graph.subgraph(table_nodes)
 
     @property
@@ -367,7 +367,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return {
             table
             for table, attr in self.graph.nodes(data=True)
-            if attr.get(tag) is True and isinstance(table, DATAset_CLASSES)
+            if attr.get(tag) is True and isinstance(table, DATASET_CLASSES)
         }
 
     @staticmethod
