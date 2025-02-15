@@ -4,12 +4,12 @@ Utils class to deal with the sqlfluff segments manipulations
 naming convention:
     is_x: BaseSegment -> bool
     find_x: BaseSegment -> Optional[BaseSegment]
-    list_x: BaseSegment -> List[BaseSegment]
+    list_x: BaseSegment -> list[BaseSegment]
     extract_x: other pattern
 first parameter of each function must be sqlfluff BaseSegment
 """
 
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from sqlfluff.core.parser import BaseSegment
 
@@ -82,7 +82,7 @@ def find_table_identifier(segment: BaseSegment) -> Optional[BaseSegment]:
     return table_identifier
 
 
-def list_join_clause(segment: BaseSegment) -> List[BaseSegment]:
+def list_join_clause(segment: BaseSegment) -> list[BaseSegment]:
     """
     traverse from_clause, recursively goes into bracket by default
     """
@@ -105,7 +105,7 @@ def list_join_clause(segment: BaseSegment) -> List[BaseSegment]:
 
 def list_expression_from_when_clause(
     when_clause: BaseSegment, sub_type: str
-) -> List[BaseSegment]:
+) -> list[BaseSegment]:
     """
     sub_type can be either WHEN or THEN, this is to extract subquery for case when (SELECT ...) then (SELECT ...)
     """
@@ -127,7 +127,7 @@ def list_expression_from_when_clause(
     return segments
 
 
-def list_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
+def list_subqueries(segment: BaseSegment) -> list[SubQueryTuple]:
     subquery = []
     if segment.type == "select_clause":
         for select_clause_element in segment.get_children("select_clause_element"):
@@ -196,7 +196,7 @@ def list_subqueries(segment: BaseSegment) -> List[SubQueryTuple]:
 
 def list_child_segments(
     segment: BaseSegment, check_bracketed: bool = True
-) -> List[BaseSegment]:
+) -> list[BaseSegment]:
     """
     Filter segments for a given segment's children, recursive goes into bracket by default
     """
@@ -227,7 +227,7 @@ def extract_identifier(col_segment: BaseSegment) -> str:
 
 def extract_as_and_target_segment(
     segment: BaseSegment,
-) -> Tuple[Optional[BaseSegment], BaseSegment]:
+) -> tuple[Optional[BaseSegment], BaseSegment]:
     as_segment = segment.get_child("alias_expression")
     sublist = list_child_segments(segment, False)
     target = sublist[0]

@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union
+from typing import Union
 
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SubQueryLineageHolder
@@ -7,9 +7,9 @@ from sqllineage.exceptions import SQLLineageException
 
 
 class SourceHandlerMixin:
-    tables: List[Union[Path, SubQuery, Table]]
-    columns: List[Column]
-    union_barriers: List[Tuple[int, int]]
+    tables: list[Union[Path, SubQuery, Table]]
+    columns: list[Column]
+    union_barriers: list[tuple[int, int]]
 
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
         for i, tbl in enumerate(self.tables):
@@ -25,7 +25,7 @@ class SourceHandlerMixin:
                 if len(holder.write) > 1:
                     raise SQLLineageException
                 tgt_tbl = next(iter(holder.write))
-                lateral_column_aliases: Dict[str, List[Column]] = {}
+                lateral_column_aliases: dict[str, list[Column]] = {}
                 for idx, tgt_col_from_query in enumerate(col_grp):
                     tgt_col_from_query.parent = tgt_tbl
                     tgt_col_resolved = tgt_col_from_query
