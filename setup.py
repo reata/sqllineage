@@ -64,7 +64,7 @@ setup(
         "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     install_requires=[
         "sqlparse==0.5.3",
         "networkx>=2.4",
