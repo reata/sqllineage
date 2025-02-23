@@ -1,0 +1,138 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqllineage"
+dependencies = [
+    "sqlparse==0.5.3",
+    "networkx>=2.4",
+    "sqlfluff==3.3.1",
+    "sqlalchemy>=2.0.0",
+]
+requires-python = ">=3.9"
+authors = [
+    { name = "Reata", email = "reddevil.hjw@gmail.com" },
+]
+maintainers = [
+    { name = "Reata", email = "reddevil.hjw@gmail.com" },
+]
+description = "SQL Lineage Analysis Tool powered by Python"
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = [
+    "metadata",
+    "sql",
+    "data-discovery",
+    "lineage",
+    "data-governance",
+    "data-lineage",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+ci = [
+    "bandit",
+    "black",
+    "flake8",
+    "flake8-blind-except",
+    "flake8-builtins",
+    "flake8-import-order",
+    "flake8-logging-format",
+    "flake8-pyproject",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "tox",
+    "twine",
+    "wheel",
+]
+docs = [
+    "Sphinx>=3.2.0",
+    "sphinx_rtd_theme>=0.5.0",
+]
+
+[project.scripts]
+sqllineage = "sqllineage.cli:main"
+
+[project.gui-scripts]
+sqllineage = "sqllineage.cli:main"
+
+[project.urls]
+Homepage = "https://reata.github.io/sqllineage/"
+Documentation = "https://sqllineage.readthedocs.io/en/latest/"
+Repository = "https://github.com/reata/sqllineage.git"
+Issues = "https://github.com/reata/sqllineage/issues"
+Changelog = "https://github.com/reata/sqllineage/releases"
+
+[tool.setuptools.packages.find]
+include = ["sqllineage*"]
+
+[tool.setuptools.package-data]
+"sqllineage.build" = [
+    "*",
+    "**/**/*"
+]
+"sqllineage.data" = [
+    "**/*",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "sqllineage.VERSION" }
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+[tool.tox.env_run_base]
+deps = [".[ci]"]
+commands = [
+    ["black", ".", "--check", "--diff"],
+    ["flake8"],
+    ["bandit", "-r", "sqllineage"],
+    ["mypy"],
+    ["pytest", "--cov"],
+]
+
+[tool.flake8]
+exclude = [
+    ".tox",
+    ".git",
+    "__pycache__",
+    "build",
+    "sqllineagejs",
+    "venv",
+    "env"
+]
+max-line-length = 120
+ignore = [
+    "A005",
+    "W503"
+]
+show-source = true
+enable-extensions = "G"
+application-import-names = "sqllineage"
+import-order-style = "pycharm"
+
+[tool.mypy]
+files = "sqllineage"
+ignore_missing_imports = true
+disallow_untyped_calls = true
+warn_return_any = true
+strict_optional = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
