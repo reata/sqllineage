@@ -136,3 +136,6 @@ warn_no_return = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 disallow_any_generics = true
+
+[tool.coverage.run]
+source = ["sqllineage"]
