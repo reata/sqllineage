@@ -85,6 +85,7 @@ setup(
             "mypy",
             "pytest",
             "pytest-cov",
+            "pytest-benchmark",
             "tox",
             "twine",
             "wheel",
