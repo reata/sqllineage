@@ -1,5 +1,4 @@
-from typing import List
-from typing import Optional, Tuple
+from typing import Optional
 
 from sqlfluff.core.parser import BaseSegment
 
@@ -146,7 +145,7 @@ class SqlFluffColumn(Column):
         return Column(column.raw, source_columns=source_columns)
 
     @staticmethod
-    def _extract_source_columns(segment: BaseSegment) -> List[ColumnQualifierTuple]:
+    def _extract_source_columns(segment: BaseSegment) -> list[ColumnQualifierTuple]:
         """
         :param segment: segment to be processed
         :return: list of extracted source columns
@@ -182,7 +181,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_from_subquery(
         sub_segment: BaseSegment,
-    ) -> List[ColumnQualifierTuple]:
+    ) -> list[ColumnQualifierTuple]:
         """
         :param sub_segment: segment to be processed
         :return: A list of source columns from a segment
@@ -207,7 +206,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_from_parenthesis(
         sub_segment: BaseSegment,
-    ) -> List[ColumnQualifierTuple]:
+    ) -> list[ColumnQualifierTuple]:
         # windows function has an extra layer, get rid of it so that it can be handled as regular functions
         if window_specification := sub_segment.get_child("window_specification"):
             sub_segment = window_specification
@@ -217,7 +216,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_and_alias(
         segment: BaseSegment, check_bracketed: bool = True
-    ) -> Tuple[List[ColumnQualifierTuple], Optional[str]]:
+    ) -> tuple[list[ColumnQualifierTuple], Optional[str]]:
         """
         check_bracketed is True for top-level column definition, like (col1 + col2) as col3
         set to False for bracket in function call, like coalesce(col1, col2) as col3

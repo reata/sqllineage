@@ -1,9 +1,9 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from networkx import DiGraph
 
 
-def to_cytoscape(graph: DiGraph, compound=False) -> List[Dict[str, Dict[str, Any]]]:
+def to_cytoscape(graph: DiGraph, compound=False) -> list[dict[str, dict[str, Any]]]:
     """
     compound nodes is used to group nodes together to their parent.
     See https://js.cytoscape.org/#notation/compound-nodes for reference.
@@ -40,7 +40,7 @@ def to_cytoscape(graph: DiGraph, compound=False) -> List[Dict[str, Dict[str, Any
         ]
     else:
         nodes = [{"data": {"id": str(node)}} for node in graph.nodes]
-    edges: List[Dict[str, Dict[str, Any]]] = [
+    edges: list[dict[str, dict[str, Any]]] = [
         {"data": {"id": f"e{i}", "source": str(edge[0]), "target": str(edge[1])}}
         for i, edge in enumerate(graph.edges)
     ]

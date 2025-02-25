@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from typing import Dict, List
 
 from sqllineage.core.models import Column, Table
 
@@ -23,9 +22,9 @@ class MetaDataProvider:
     """
 
     def __init__(self) -> None:
-        self._session_metadata: Dict[str, List[str]] = {}
+        self._session_metadata: dict[str, list[str]] = {}
 
-    def get_table_columns(self, table: Table, **kwargs) -> List[Column]:
+    def get_table_columns(self, table: Table, **kwargs) -> list[Column]:
         """
         return columns of given table.
         """
@@ -41,10 +40,10 @@ class MetaDataProvider:
         return columns
 
     @abstractmethod
-    def _get_table_columns(self, schema: str, table: str, **kwargs) -> List[str]:
+    def _get_table_columns(self, schema: str, table: str, **kwargs) -> list[str]:
         """To be implemented by subclasses."""
 
-    def register_session_metadata(self, table: Table, columns: List[Column]) -> None:
+    def register_session_metadata(self, table: Table, columns: list[Column]) -> None:
         """Register session-level metadata, like temporary table or view created."""
         self._session_metadata[str(table)] = [c.raw_name for c in columns]
 
@@ -78,5 +77,5 @@ class MetaDataSession:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.metadata_provider.deregister_session_metadata()
 
-    def register_session_metadata(self, table: Table, columns: List[Column]) -> None:
+    def register_session_metadata(self, table: Table, columns: list[Column]) -> None:
         self.metadata_provider.register_session_metadata(table, columns)

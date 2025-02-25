@@ -1,5 +1,4 @@
 import warnings
-from typing import Dict, List
 
 from sqlfluff.core import (
     FluffConfig,
@@ -32,9 +31,9 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             path=file_path, overrides={"dialect": dialect}
         )
         self._silent_mode = silent_mode
-        self.tsql_split_cache: Dict[str, BaseSegment] = {}
+        self.tsql_split_cache: dict[str, BaseSegment] = {}
 
-    def split_tsql(self, sql: str) -> List[str]:
+    def split_tsql(self, sql: str) -> list[str]:
         """
         use sqlfluff parse to split tsql statements. This is in particular for semicolon not present cases.
         The result is cached so that later analyze method doesn't have to parse regarding single statement sql.
