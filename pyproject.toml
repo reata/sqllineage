@@ -54,6 +54,7 @@ ci = [
     "flake8-pyproject",
     "mypy",
     "pytest",
+    "pytest-benchmark",
     "pytest-cov",
     "tox",
     "twine",
