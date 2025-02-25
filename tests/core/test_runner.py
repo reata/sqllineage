@@ -17,7 +17,6 @@ insert into tab3 select * from tab2""",
     assert str(runner)
     assert runner.to_cytoscape() is not None
     assert runner.to_cytoscape(level=LineageLevel.COLUMN) is not None
-    assert runner.graph is not None
 
 
 def test_statements_trim_comment():
@@ -74,3 +73,23 @@ tbl_name=my_table"""
             main(["-f", nested_dir + "/nested.sql"])
         finally:
             os.chdir(cwd)
+
+
+def test_performance(benchmark):
+    sql = """
+CREATE TABLE database_b.table_b AS
+  SELECT col_a,
+         col_b,
+         col_c,
+         col_d,
+         col_e,
+         col_f,
+         col_g,
+         col_i,
+         col_j,
+         col_k
+  FROM   database_a.table_a
+    """
+    runner = LineageRunner(sql=sql, dialect="ansi")
+    assert runner.graph is not None  # trigger SQL evaluation and graph generation
+    benchmark(runner.get_column_lineage)
