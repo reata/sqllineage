@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Dict, Optional, Set, Tuple, Union, cast
 
 import networkx as nx
 import rustworkx as rx
