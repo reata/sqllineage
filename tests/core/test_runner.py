@@ -5,6 +5,7 @@ from sqllineage.cli import main
 from sqllineage.core.models import SubQuery
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
+
 from ..helpers import assert_table_lineage_equal
 
 

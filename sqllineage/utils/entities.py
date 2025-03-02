@@ -1,6 +1,5 @@
 from typing import Any, NamedTuple, Optional, Union
 
-
 from sqllineage.core.models import Column, SubQuery, Table
 
 

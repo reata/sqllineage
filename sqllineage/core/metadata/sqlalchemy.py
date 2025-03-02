@@ -7,7 +7,6 @@ from sqlalchemy.exc import NoSuchModuleError, NoSuchTableError, OperationalError
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.exceptions import MetaDataProviderException
 
-
 logger = logging.getLogger(__name__)
 
 

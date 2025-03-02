@@ -9,7 +9,7 @@ with CI tools.
 #### Table of Contents
   * [Style Guide](#Style Guide)
     - [black](#black)
-    - [flake8](#flake8)
+    - [ruff](#ruff)
     - [mypy](#mypy)
     - [pytest](#pytest)
   * [Set up Local Development Environment](#Set up Local Development Environment)
@@ -29,26 +29,20 @@ with CI tools.
 ### black
 Make sure you follow [black](https://github.com/psf/black) code format.
 
-### flake8
-We're enforcing [flake8](https://gitlab.com/pycqa/flake8), together with plugins including flake8-blind-except, 
-flake8-builtins, flake8-import-order, flake8-logging-format to keep bad code smell away.
+### ruff
+We're enforcing [ruff](https://github.com/astral-sh/ruff) to keep bad code smell away.
 
 ### mypy
-Since we're writing a library which requires Python 3, type annotation is heavily used to ensure a more static typed
-style of code. So [mypy](https://github.com/python/mypy) as a static type checker is our choice to detect possible 
-type issues.
+Type annotation is heavily used to ensure a more static typed style of code. 
+[mypy](https://github.com/python/mypy) as a static type checker is our choice to detect possible type issues.
 
 ### pytest
-SQLLineage is based on sqlparser, which itself is a non validating sql parser, supporting a variety of SQL dialects. 
-This at the same time means sqlparser won't be 100% correct in recognizing each dialect. So unit test is particularly
-important in the success of SQLLineage. We have a comprehensive test suite, orchestrated by 
-[pytest](https://github.com/pytest-dev/pytest) with [coveragepy](https://github.com/nedbat/coveragepy) to validate 
-each test case.
+Unit test is particularly important in the success of SQLLineage. We have a comprehensive test suite, orchestrated by 
+[pytest](https://github.com/pytest-dev/pytest) with [coveragepy](https://github.com/nedbat/coveragepy) to validate each test case.
 
 ## Set up Local Development Environment
-All the style guidelines are enforced by [GitHub Actions](https://github.com/reata/sqllineage/actions), so each time you 
-submit a PR or push a new commit, these server side checks will be triggered, but you can also set up local CI for 
-rapid validation of your code change.
+All the style guidelines are enforced by [GitHub Actions](https://github.com/reata/sqllineage/actions), so each time you submit a PR, 
+these server side checks will be triggered, but you can also set up local CI for rapid validation of your code change.
 
 ### Running CI in Local
 The entrypoint for CI in GitHub Actions is simply [tox](https://github.com/tox-dev/tox). Install tox and run it in local, 
@@ -56,7 +50,7 @@ all the style check will be triggered.
 
 Change the python version accordingly to your local env.
 ```bash
-tox -e py36
+tox -e py39
 ```
 
 ### Multi Python Version
@@ -66,15 +60,15 @@ However, in case you would also like to test against multiple Python versions lo
 versions of Python, possibly with [pyenv](https://github.com/pyenv/pyenv) in local env,
 and run tox without specifying Python version.
 
-In this case, all Python versions defined in [tox.ini](https://github.com/reata/sqllineage/blob/master/tox.ini) will 
-be tested.
+In this case, all Python versions defined in [pyproject.toml](https://github.com/reata/sqllineage/blob/master/pyproject.toml)
+[tool.tox] section will be tested.
 ```bash
 tox
 ```
 
 ### Pre-commit
-[Pre-commit](https://github.com/pre-commit/pre-commit) is yet another way to do some checks in client side. We offer
-this [.pre-commit-config.yaml](https://github.com/reata/sqllineage/blob/master/.pre-commit-config.yaml) for black, flake8
+[Pre-commit](https://github.com/pre-commit/pre-commit) is another way to do some checks on client side. We offer
+this [.pre-commit-config.yaml](https://github.com/reata/sqllineage/blob/master/.pre-commit-config.yaml) for black, ruff
 and mypy check. You can set it up with
 ```bash
 pip install pre-commit

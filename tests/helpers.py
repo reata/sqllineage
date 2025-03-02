@@ -4,11 +4,15 @@ from typing import Optional
 
 from sqlalchemy import (
     Column as SQLAlchemyColumn,
+)
+from sqlalchemy import (
     Integer,
     MetaData,
-    Table as SQLAlchemyTable,
     inspect,
     text,
+)
+from sqlalchemy import (
+    Table as SQLAlchemyTable,
 )
 
 from sqllineage import SQLPARSE_DIALECT
