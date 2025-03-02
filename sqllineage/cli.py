@@ -8,7 +8,11 @@ from sqllineage import (
     DEFAULT_HOST,
     DEFAULT_LOGGING,
     DEFAULT_PORT,
+)
+from sqllineage import (
     NAME as MAIN_NAME,
+)
+from sqllineage import (
     VERSION as MAIN_VERSION,
 )
 from sqllineage.core.metadata.dummy import DummyMetaDataProvider

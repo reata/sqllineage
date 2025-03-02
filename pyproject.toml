@@ -46,15 +46,10 @@ dynamic = ["version"]
 ci = [
     "bandit",
     "black",
-    "flake8",
-    "flake8-blind-except",
-    "flake8-builtins",
-    "flake8-import-order",
-    "flake8-logging-format",
-    "flake8-pyproject",
     "mypy",
     "pytest",
     "pytest-cov",
+    "ruff",
     "tox",
     "twine",
     "wheel",
@@ -100,31 +95,28 @@ env_list = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 deps = [".[ci]"]
 commands = [
     ["black", ".", "--check", "--diff"],
-    ["flake8"],
+    ["ruff", "check", "."],
     ["bandit", "-r", "sqllineage"],
     ["mypy"],
     ["pytest", "--cov"],
 ]
 
-[tool.flake8]
-exclude = [
-    ".tox",
-    ".git",
-    "__pycache__",
-    "build",
-    "sqllineagejs",
-    "venv",
-    "env"
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "A", # builtins
+    "G", # logging format
+    "I", # import order
 ]
-max-line-length = 120
 ignore = [
-    "A005",
-    "W503"
+    "A005", # stdlib-module-shadowing, we have modules like parser, copy, select, io violating this rule
 ]
-show-source = true
-enable-extensions = "G"
-application-import-names = "sqllineage"
-import-order-style = "pycharm"
 
 [tool.mypy]
 files = "sqllineage"

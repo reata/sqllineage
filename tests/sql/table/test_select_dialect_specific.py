@@ -2,7 +2,6 @@ import pytest
 
 from ...helpers import assert_table_lineage_equal
 
-
 """
 This test class will contain all the tests for testing 'Select Queries' where the dialect is not ANSI.
 """
@@ -107,10 +106,10 @@ def test_select_from_lateral_subqueries(dialect: str):
     duckdb: https://duckdb.org/docs/sql/query_syntax/from.html#lateral-joins
     greenplum: https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-sql_commands-SELECT.html
     materialize: https://materialize.com/docs/transform-data/join/#lateral-subqueries
-    oracle: https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/SELECT.html#GUID-CFA006CA-6FF1-4972-821E-6996142A51C6__BABFDGIJ  # noqa
+    oracle: https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/SELECT.html#GUID-CFA006CA-6FF1-4972-821E-6996142A51C6__BABFDGIJ
     postgres: https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-LATERAL
     snowflake: https://docs.snowflake.com/en/sql-reference/constructs/join-lateral
-    """
+    """  # noqa: E501
     sql = """SELECT *
 FROM foo,
      LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) ss"""
