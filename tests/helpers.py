@@ -30,14 +30,8 @@ def _assert_table_lineage(lr: LineageRunner, source_tables=None, target_tables=N
         [source_tables, target_tables],
     ):
         actual = set(actual)
-        expected = (
-            set()
-            if expected is None
-            else {Table(t) if isinstance(t, str) else t for t in expected}
-        )
-        assert (
-            actual == expected
-        ), f"\n\tExpected {_type} Table: {expected}\n\tActual {_type} Table: {actual}"
+        expected = set() if expected is None else {Table(t) if isinstance(t, str) else t for t in expected}
+        assert actual == expected, f"\n\tExpected {_type} Table: {expected}\n\tActual {_type} Table: {actual}"
 
 
 def _assert_column_lineage(lr: LineageRunner, column_lineages=None):
@@ -52,9 +46,7 @@ def _assert_column_lineage(lr: LineageRunner, column_lineages=None):
             expected.add((src_col, tgt_col))
     actual = {(lineage[0], lineage[-1]) for lineage in set(lr.get_column_lineage())}
 
-    assert (
-        set(actual) == expected
-    ), f"\n\tExpected Lineage: {expected}\n\tActual Lineage: {actual}"
+    assert set(actual) == expected, f"\n\tExpected Lineage: {expected}\n\tActual Lineage: {actual}"
 
 
 def assert_table_lineage_equal(
@@ -81,15 +73,9 @@ def assert_column_lineage_equal(
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
 ):
-    metadata_provider = (
-        DummyMetaDataProvider() if metadata_provider is None else metadata_provider
-    )
-    lr = LineageRunner(
-        sql, dialect=SQLPARSE_DIALECT, metadata_provider=metadata_provider
-    )
-    lr_sqlfluff = LineageRunner(
-        sql, dialect=dialect, metadata_provider=metadata_provider
-    )
+    metadata_provider = DummyMetaDataProvider() if metadata_provider is None else metadata_provider
+    lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT, metadata_provider=metadata_provider)
+    lr_sqlfluff = LineageRunner(sql, dialect=dialect, metadata_provider=metadata_provider)
     if test_sqlparse:
         _assert_column_lineage(lr, column_lineages)
     if test_sqlfluff:
@@ -103,12 +89,8 @@ def generate_metadata_providers(test_schemas) -> list[MetaDataProvider]:
     metadata = MetaData()
     for full_table_name, columns_names in test_schemas.items():
         schema, table = full_table_name.split(".")
-        if schema not in ("main", "temp") and not inspect(
-            sqlite3_sqlalchemy_provider.engine
-        ).has_schema(schema):
-            db_file_path = Path(os.path.dirname(__file__)).parent.joinpath(
-                f"{schema}.db"
-            )
+        if schema not in ("main", "temp") and not inspect(sqlite3_sqlalchemy_provider.engine).has_schema(schema):
+            db_file_path = Path(os.path.dirname(__file__)).parent.joinpath(f"{schema}.db")
             with sqlite3_sqlalchemy_provider.engine.connect() as conn:
                 conn.execute(text(f"ATTACH DATABASE '{db_file_path}' AS '{schema}'"))
         SQLAlchemyTable(

@@ -36,18 +36,10 @@ class MergeExtractor(BaseExtractor):
         for i, segment in enumerate(segments):
             if segment.type == "merge_match":
                 merge_match = segment
-                for merge_when_matched_clause in merge_match.get_children(
-                    "merge_when_matched_clause"
-                ):
-                    if merge_update_clause := merge_when_matched_clause.get_child(
-                        "merge_update_clause"
-                    ):
-                        if set_clause_list := merge_update_clause.get_child(
-                            "set_clause_list"
-                        ):
-                            for set_clause in set_clause_list.get_children(
-                                "set_clause"
-                            ):
+                for merge_when_matched_clause in merge_match.get_children("merge_when_matched_clause"):
+                    if merge_update_clause := merge_when_matched_clause.get_child("merge_update_clause"):
+                        if set_clause_list := merge_update_clause.get_child("set_clause_list"):
+                            for set_clause in set_clause_list.get_children("set_clause"):
                                 columns = set_clause.get_children("column_reference")
                                 if len(columns) == 2:
                                     src_col = tgt_col = None
@@ -59,37 +51,23 @@ class MergeExtractor(BaseExtractor):
                                         tgt_col.parent = list(holder.write)[0]
                                     if src_col is not None and tgt_col is not None:
                                         holder.add_column_lineage(src_col, tgt_col)
-                for merge_when_not_matched_clause in merge_match.get_children(
-                    "merge_when_not_matched_clause"
-                ):
-                    if merge_insert := merge_when_not_matched_clause.get_child(
-                        "merge_insert_clause"
-                    ):
+                for merge_when_not_matched_clause in merge_match.get_children("merge_when_not_matched_clause"):
+                    if merge_insert := merge_when_not_matched_clause.get_child("merge_insert_clause"):
                         insert_columns = []
                         if bracketed := merge_insert.get_child("bracketed"):
-                            for column_reference in bracketed.get_children(
-                                "column_reference"
-                            ):
+                            for column_reference in bracketed.get_children("column_reference"):
                                 if cqt := extract_column_qualifier(column_reference):
                                     tgt_col = Column(cqt.column)
                                     tgt_col.parent = list(holder.write)[0]
                                     insert_columns.append(tgt_col)
                             if values_clause := merge_insert.get_child("values_clause"):
                                 if bracketed := values_clause.get_child("bracketed"):
-                                    for j, e in enumerate(
-                                        bracketed.get_children("literal", "expression")
-                                    ):
-                                        if column_reference_optional := e.get_child(
-                                            "column_reference"
-                                        ):
-                                            if cqt := extract_column_qualifier(
-                                                column_reference_optional
-                                            ):
+                                    for j, e in enumerate(bracketed.get_children("literal", "expression")):
+                                        if column_reference_optional := e.get_child("column_reference"):
+                                            if cqt := extract_column_qualifier(column_reference_optional):
                                                 src_col = Column(cqt.column)
                                                 src_col.parent = direct_source
-                                                holder.add_column_lineage(
-                                                    src_col, insert_columns[j]
-                                                )
+                                                holder.add_column_lineage(src_col, insert_columns[j])
             elif segment.type == "keyword":
                 if segment.raw_upper in ["MERGE", "INTO"]:
                     tgt_flag = True
@@ -109,11 +87,7 @@ class MergeExtractor(BaseExtractor):
                     next_segment = segments[i + 1]
                     direct_source = SqlFluffSubQuery.of(
                         extract_innermost_bracketed(segment),
-                        (
-                            extract_identifier(next_segment)
-                            if next_segment.type == "alias_expression"
-                            else None
-                        ),
+                        (extract_identifier(next_segment) if next_segment.type == "alias_expression" else None),
                     )
                     holder.add_read(direct_source)
 

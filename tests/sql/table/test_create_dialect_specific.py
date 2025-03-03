@@ -33,9 +33,7 @@ AS SELECT * FROM foo""",
 
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_create_select_without_as(dialect: str):
-    assert_table_lineage_equal(
-        "CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}, dialect
-    )
+    assert_table_lineage_equal("CREATE TABLE tab1 SELECT * FROM tab2", {"tab2"}, {"tab1"}, dialect)
 
 
 @pytest.mark.parametrize("dialect", ["duckdb", "greenplum", "postgres", "redshift"])

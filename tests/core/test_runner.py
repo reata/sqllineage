@@ -1,5 +1,7 @@
 import os
+import statistics
 import tempfile
+from timeit import repeat
 
 from sqllineage.cli import main
 from sqllineage.core.models import SubQuery
@@ -68,9 +70,38 @@ tbl_name=my_table"""
             with open(os.path.join(nested_dir, ".sqlfluff"), "w") as f:
                 f.write(sqlfluff_config)
             with open(os.path.join(nested_dir, "nested.sql"), "w") as f:
-                f.write(
-                    "SELECT {{ num_things }} FROM {{ tbl_name }} WHERE id > 10 LIMIT 5"
-                )
+                f.write("SELECT {{ num_things }} FROM {{ tbl_name }} WHERE id > 10 LIMIT 5")
             main(["-f", nested_dir + "/nested.sql"])
         finally:
             os.chdir(cwd)
+
+
+def test_performance_multiple_tables():
+    sql = "\n".join([f"insert into tab{i + 1} select col from tab{i};" for i in range(10)])
+
+    runner = LineageRunner(sql=sql, dialect="ansi")
+    assert runner.graph is not None  # trigger SQL evaluation and graph generation
+    performance = statistics.mean(repeat(runner.get_column_lineage, repeat=10, number=100))
+    assert performance < 0.5
+
+
+def test_performance_single_table():
+    sql = """
+CREATE TABLE database_b.table_b AS
+  SELECT col_a,
+         col_b,
+         col_c,
+         col_d,
+         col_e,
+         col_f,
+         col_g,
+         col_i,
+         col_j,
+         col_k
+  FROM   database_a.table_a
+        """
+
+    runner = LineageRunner(sql=sql, dialect="ansi")
+    assert runner.graph is not None  # trigger SQL evaluation and graph generation
+    performance = statistics.mean(repeat(runner.get_column_lineage, repeat=10, number=100))
+    assert performance < 0.2

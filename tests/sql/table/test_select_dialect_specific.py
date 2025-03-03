@@ -7,20 +7,14 @@ This test class will contain all the tests for testing 'Select Queries' where th
 """
 
 
-@pytest.mark.parametrize(
-    "dialect", ["athena", "bigquery", "databricks", "hive", "mysql", "sparksql"]
-)
+@pytest.mark.parametrize("dialect", ["athena", "bigquery", "databricks", "hive", "mysql", "sparksql"])
 def test_select_with_table_name_in_backtick(dialect: str):
     assert_table_lineage_equal("SELECT * FROM `tab1`", {"tab1"}, dialect=dialect)
 
 
-@pytest.mark.parametrize(
-    "dialect", ["athena", "bigquery", "databricks", "hive", "mysql", "sparksql"]
-)
+@pytest.mark.parametrize("dialect", ["athena", "bigquery", "databricks", "hive", "mysql", "sparksql"])
 def test_select_with_schema_in_backtick(dialect: str):
-    assert_table_lineage_equal(
-        "SELECT col1 FROM `schema1`.`tab1`", {"schema1.tab1"}, dialect=dialect
-    )
+    assert_table_lineage_equal("SELECT col1 FROM `schema1`.`tab1`", {"schema1.tab1"}, dialect=dialect)
 
 
 @pytest.mark.parametrize("dialect", ["tsql"])
@@ -30,16 +24,12 @@ def test_select_with_table_name_in_bracket(dialect: str):
 
 @pytest.mark.parametrize("dialect", ["tsql"])
 def test_select_with_schema_in_bracket(dialect: str):
-    assert_table_lineage_equal(
-        "SELECT * FROM [schema1].[tab1]", {"schema1.tab1"}, dialect=dialect
-    )
+    assert_table_lineage_equal("SELECT * FROM [schema1].[tab1]", {"schema1.tab1"}, dialect=dialect)
 
 
 @pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_select_left_semi_join(dialect: str):
-    assert_table_lineage_equal(
-        "SELECT * FROM tab1 LEFT SEMI JOIN tab2", {"tab1", "tab2"}, dialect=dialect
-    )
+    assert_table_lineage_equal("SELECT * FROM tab1 LEFT SEMI JOIN tab2", {"tab1", "tab2"}, dialect=dialect)
 
 
 @pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
@@ -74,9 +64,7 @@ def test_select_into(dialect: str):
 @pytest.mark.parametrize("dialect", ["postgres", "tsql"])
 def test_select_into_with_union(dialect: str):
     sql = "SELECT * INTO films_all FROM films UNION ALL SELECT * FROM films_backup"
-    assert_table_lineage_equal(
-        sql, {"films", "films_backup"}, {"films_all"}, dialect=dialect
-    )
+    assert_table_lineage_equal(sql, {"films", "films_backup"}, {"films_all"}, dialect=dialect)
 
 
 @pytest.mark.parametrize("dialect", ["athena"])

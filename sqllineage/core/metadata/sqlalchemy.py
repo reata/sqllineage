@@ -39,9 +39,7 @@ class SQLAlchemyMetaDataProvider(MetaDataProvider):
     def _get_table_columns(self, schema: str, table: str, **kwargs) -> list[str]:
         columns = []
         try:
-            sqlalchemy_table = Table(
-                table, self.metadata_obj, schema=schema, autoload_with=self.engine
-            )
+            sqlalchemy_table = Table(table, self.metadata_obj, schema=schema, autoload_with=self.engine)
             columns = [c.name for c in sqlalchemy_table.columns]
         except (NoSuchTableError, OperationalError):
             logger.warning(

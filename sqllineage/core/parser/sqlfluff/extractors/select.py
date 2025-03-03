@@ -37,11 +37,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
     ) -> SubQueryLineageHolder:
         holder = self._init_holder(context)
         subqueries = []
-        segments = (
-            [statement]
-            if statement.type == "set_expression"
-            else list_child_segments(statement)
-        )
+        segments = [statement] if statement.type == "set_expression" else list_child_segments(statement)
         for segment in segments:
             for sq in self.list_subquery(segment):
                 # Collecting subquery on the way, hold on parsing until last
@@ -49,9 +45,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                 subqueries.append(sq)
 
             if is_set_expression(segment):
-                for _, sub_segment in enumerate(
-                    segment.get_children("select_statement", "bracketed")
-                ):
+                for _, sub_segment in enumerate(segment.get_children("select_statement", "bracketed")):
                     for seg in list_child_segments(sub_segment):
                         for sq in self.list_subquery(seg):
                             subqueries.append(sq)
@@ -62,13 +56,9 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             self._handle_select_statement_child_segments(segment, holder)
 
             if is_set_expression(segment):
-                for idx, sub_segment in enumerate(
-                    segment.get_children("select_statement", "bracketed")
-                ):
+                for idx, sub_segment in enumerate(segment.get_children("select_statement", "bracketed")):
                     if idx != 0:
-                        self.union_barriers.append(
-                            (len(self.columns), len(self.tables))
-                        )
+                        self.union_barriers.append((len(self.columns), len(self.tables)))
                     for seg in list_child_segments(sub_segment):
                         self._handle_select_statement_child_segments(seg, holder)
 
@@ -78,19 +68,13 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
 
         return holder
 
-    def _handle_select_statement_child_segments(
-        self, segment: BaseSegment, holder: SubQueryLineageHolder
-    ):
+    def _handle_select_statement_child_segments(self, segment: BaseSegment, holder: SubQueryLineageHolder):
         self._handle_swap_partition(segment, holder)
         self._handle_select_into(segment, holder)
-        self.tables.extend(
-            self._list_table_from_from_clause_or_join_clause(segment, holder)
-        )
+        self.tables.extend(self._list_table_from_from_clause_or_join_clause(segment, holder))
         self._handle_column(segment)
 
-    def _handle_swap_partition(
-        self, segment: BaseSegment, holder: SubQueryLineageHolder
-    ):
+    def _handle_swap_partition(self, segment: BaseSegment, holder: SubQueryLineageHolder):
         """
         A handler for swap_partitions_between_tables function supported by vertica
         """
@@ -99,23 +83,11 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                 if function := select_clause_element.get_child("function"):
                     if function_name := function.get_child("function_name"):
                         if function_name.raw_upper == "SWAP_PARTITIONS_BETWEEN_TABLES":
-                            if function_contents := function.get_child(
-                                "function_contents"
-                            ):
-                                if bracketed := function_contents.get_child(
-                                    "bracketed"
-                                ):
+                            if function_contents := function.get_child("function_contents"):
+                                if bracketed := function_contents.get_child("bracketed"):
                                     expressions = bracketed.get_children("expression")
-                                    holder.add_read(
-                                        SqlFluffTable(
-                                            escape_identifier_name(expressions[0].raw)
-                                        )
-                                    )
-                                    holder.add_write(
-                                        SqlFluffTable(
-                                            escape_identifier_name(expressions[3].raw)
-                                        )
-                                    )
+                                    holder.add_read(SqlFluffTable(escape_identifier_name(expressions[0].raw)))
+                                    holder.add_write(SqlFluffTable(escape_identifier_name(expressions[3].raw)))
 
     def _handle_select_into(self, segment: BaseSegment, holder: SubQueryLineageHolder):
         """

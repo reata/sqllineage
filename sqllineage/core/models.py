@@ -117,11 +117,7 @@ class SubQuery:
         """
         self.query = subquery
         self.query_raw = subquery_raw
-        self.alias = (
-            escape_identifier_name(alias)
-            if alias is not None
-            else f"subquery_{hash(self)}"
-        )
+        self.alias = escape_identifier_name(alias) if alias is not None else f"subquery_{hash(self)}"
 
     def __str__(self):
         return self.alias
@@ -158,9 +154,7 @@ class Column:
                 escape_identifier_name(raw_name),
                 escape_identifier_name(qualifier) if qualifier is not None else None,
             )
-            for raw_name, qualifier in kwargs.pop(
-                "source_columns", ((self.raw_name, None),)
-            )
+            for raw_name, qualifier in kwargs.pop("source_columns", ((self.raw_name, None),))
         ]
         self.from_alias = kwargs.pop("from_alias", False)
 
@@ -175,11 +169,7 @@ class Column:
         return "Column: " + str(self)
 
     def __eq__(self, other):
-        return (
-            isinstance(other, Column)
-            and str(self) == str(other)
-            and self.parent == other.parent
-        )
+        return isinstance(other, Column) and str(self) == str(other) and self.parent == other.parent
 
     def __hash__(self):
         return hash(str(self))
@@ -210,9 +200,7 @@ class Column:
         Best guess for source table given all the possible table/subquery and their alias.
         """
 
-        def _to_src_col(
-            name: str, parent: Optional[Union[Path, Table, SubQuery]] = None
-        ) -> Column:
+        def _to_src_col(name: str, parent: Optional[Union[Path, Table, SubQuery]] = None) -> Column:
             col = Column(name)
             if parent:
                 col.parent = parent
@@ -235,9 +223,7 @@ class Column:
                     source_columns.add(source)
             else:
                 if alias_mapping.get(qualifier):
-                    source_columns.add(
-                        _to_src_col(src_col, alias_mapping.get(qualifier))
-                    )
+                    source_columns.add(_to_src_col(src_col, alias_mapping.get(qualifier)))
                 else:
                     source_columns.add(_to_src_col(src_col, Table(qualifier)))
         return source_columns

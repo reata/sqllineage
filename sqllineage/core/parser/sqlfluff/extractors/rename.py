@@ -30,10 +30,7 @@ class RenameExtractor(BaseExtractor):
         if any(k.raw_upper == "RENAME" for k in keywords) and len(tables) % 2 == 0:
             for i in range(0, len(tables), 2):
                 holder.add_rename(tables[i], tables[i + 1])
-        elif (
-            any(k.raw_upper in ["EXCHANGE", "SWAP"] for k in keywords)
-            and len(tables) == 2
-        ):
+        elif any(k.raw_upper in ["EXCHANGE", "SWAP"] for k in keywords) and len(tables) == 2:
             # ALTER TABLE EXCHANGE PARTITION/SWAP
             holder.add_write(tables[0])
             holder.add_read(tables[1])
