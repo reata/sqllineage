@@ -1,7 +1,7 @@
 import os
+import statistics
 import tempfile
 from timeit import repeat
-import statistics
 
 from sqllineage.cli import main
 from sqllineage.core.models import SubQuery
