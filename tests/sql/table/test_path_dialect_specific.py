@@ -1,6 +1,7 @@
 import pytest
 
 from sqllineage.core.models import Path
+
 from ...helpers import assert_table_lineage_equal
 
 
@@ -29,8 +30,8 @@ def test_copy_into_path(dialect: str, path: str):
     """
     check following link for syntax reference:
         Snowflake: https://docs.snowflake.com/en/sql-reference/sql/copy-into-table.html
-        Microsoft T-SQL: https://docs.microsoft.com/en-us/sql/t-sql/statements/copy-into-transact-sql?view=azure-sqldw-latest   # noqa
-    """
+        Microsoft T-SQL: https://docs.microsoft.com/en-us/sql/t-sql/statements/copy-into-transact-sql?view=azure-sqldw-latest
+    """  # noqa: E501
     assert_table_lineage_equal(
         f"COPY INTO tab1 FROM '{path}'",
         {Path(path)},

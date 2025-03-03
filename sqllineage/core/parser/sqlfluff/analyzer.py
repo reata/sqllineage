@@ -53,7 +53,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             statement_segments = self._list_specific_statement_segment(sql)
         if len(statement_segments) == 0:
             raise UnsupportedStatementException(
-                f"SQLLineage cannot parse SQL:" f"{sql}"
+                f"SQLLineage cannot parse SQL:{sql}"
             )  # pragma: no cover
         else:
             statement_segment = statement_segments[0]
@@ -69,14 +69,12 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             else:
                 if self._silent_mode:
                     warnings.warn(
-                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:"
-                        f"{sql}"
+                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:{sql}"
                     )
                     return StatementLineageHolder()
                 else:
                     raise UnsupportedStatementException(
-                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:"
-                        f"{sql}"
+                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:{sql}"
                     )
 
     def _list_specific_statement_segment(self, sql: str):
