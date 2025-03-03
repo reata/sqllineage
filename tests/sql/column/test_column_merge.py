@@ -30,15 +30,11 @@ def test_merge_into_update_multiple_columns_with_constant():
     sql = """MERGE INTO target
 USING src ON target.k = src.k
 WHEN MATCHED THEN UPDATE SET target.v = src.v, target.v1 = 1"""
-    assert_column_lineage_equal(
-        sql, [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))]
-    )
+    assert_column_lineage_equal(sql, [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))])
     sql = """MERGE INTO target
 USING src ON target.k = src.k
 WHEN MATCHED THEN UPDATE SET target.v1 = 1, target.v = src.v"""
-    assert_column_lineage_equal(
-        sql, [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))]
-    )
+    assert_column_lineage_equal(sql, [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))])
 
 
 def test_merge_into_update_multiple_match():
@@ -72,15 +68,11 @@ def test_merge_into_insert_with_constant():
     sql = """MERGE INTO target
 USING src ON target.k = src.k
 WHEN NOT MATCHED THEN INSERT (k, v) VALUES (src.k, 1)"""
-    assert_column_lineage_equal(
-        sql, [(ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target"))]
-    )
+    assert_column_lineage_equal(sql, [(ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target"))])
     sql = """MERGE INTO target
 USING src ON target.k = src.k
 WHEN NOT MATCHED THEN INSERT (v, k) VALUES (1, src.k)"""
-    assert_column_lineage_equal(
-        sql, [(ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target"))]
-    )
+    assert_column_lineage_equal(sql, [(ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target"))])
 
 
 def test_merge_into_insert_one_column():

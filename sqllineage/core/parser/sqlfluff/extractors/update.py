@@ -17,9 +17,7 @@ class UpdateExtractor(BaseExtractor):
 
     SUPPORTED_STMT_TYPES = ["update_statement"]
 
-    def extract(
-        self, statement: BaseSegment, context: AnalyzerContext
-    ) -> SubQueryLineageHolder:
+    def extract(self, statement: BaseSegment, context: AnalyzerContext) -> SubQueryLineageHolder:
         holder = self._init_holder(context)
         tgt_flag = False
         columns = []
@@ -29,9 +27,7 @@ class UpdateExtractor(BaseExtractor):
                 # UPDATE with JOIN, mysql only syntax
                 # from_expression is wrapped directly under update_statement and there's no from_clause in this case
                 # we need to pass update_statement to the function
-                if from_join_tables := self._list_table_from_from_clause_or_join_clause(
-                    statement, holder
-                ):
+                if from_join_tables := self._list_table_from_from_clause_or_join_clause(statement, holder):
                     holder.add_write(from_join_tables[0])
                     for join_table in from_join_tables[1:]:
                         holder.add_read(join_table)
@@ -52,25 +48,19 @@ class UpdateExtractor(BaseExtractor):
                         tgt_cqt = extract_column_qualifier(column_references[0])
                         src_cqt = extract_column_qualifier(column_references[1])
                         if tgt_cqt is not None and src_cqt is not None:
-                            columns.append(
-                                Column(tgt_cqt.column, source_columns=[src_cqt])
-                            )
+                            columns.append(Column(tgt_cqt.column, source_columns=[src_cqt]))
 
             if segment.type == "from_clause":
                 # UPDATE FROM, ansi syntax
                 # there can be multiple from items, each may be a table or a subquery
                 for sq in self.list_subquery(segment):
                     subqueries.append(sq)
-                for read_table in self._list_table_from_from_clause_or_join_clause(
-                    segment, holder
-                ):
+                for read_table in self._list_table_from_from_clause_or_join_clause(segment, holder):
                     holder.add_read(read_table)
 
         for tgt_col in columns:
             tgt_col.parent = list(holder.write)[0]
-            for src_col in tgt_col.to_source_columns(
-                holder.get_alias_mapping_from_table_group(list(holder.read))
-            ):
+            for src_col in tgt_col.to_source_columns(holder.get_alias_mapping_from_table_group(list(holder.read))):
                 holder.add_column_lineage(src_col, tgt_col)
 
         self.extract_subquery(subqueries, holder)

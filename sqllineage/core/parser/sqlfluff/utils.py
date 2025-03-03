@@ -26,20 +26,14 @@ def is_negligible(segment: BaseSegment) -> bool:
 
 
 def is_set_expression(segment: BaseSegment) -> bool:
-    return segment.type == "set_expression" or any(
-        seg.type == "set_expression" for seg in segment.segments
-    )
+    return segment.type == "set_expression" or any(seg.type == "set_expression" for seg in segment.segments)
 
 
 def is_subquery(segment: BaseSegment) -> bool:
     if segment.type == "from_expression_element" or segment.type == "bracketed":
-        token = extract_innermost_bracketed(
-            segment if segment.type == "bracketed" else segment.segments[0]
-        )
+        token = extract_innermost_bracketed(segment if segment.type == "bracketed" else segment.segments[0])
         # check if innermost parenthesis contains SELECT
-        if token.get_child(
-            "select_statement", "set_expression", "with_compound_statement"
-        ):
+        if token.get_child("select_statement", "set_expression", "with_compound_statement"):
             return True
         elif expression := token.get_child("expression"):
             if expression.get_child("select_statement"):
@@ -60,9 +54,7 @@ def find_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
         from_expression/join_clause as parent
     """
     try:
-        from_expression_element = next(
-            segment.recursive_crawl("from_expression_element")
-        )
+        from_expression_element = next(segment.recursive_crawl("from_expression_element"))
     except StopIteration:
         from_expression_element = None
     return from_expression_element
@@ -103,9 +95,7 @@ def list_join_clause(segment: BaseSegment) -> list[BaseSegment]:
     return []
 
 
-def list_expression_from_when_clause(
-    when_clause: BaseSegment, sub_type: str
-) -> list[BaseSegment]:
+def list_expression_from_when_clause(when_clause: BaseSegment, sub_type: str) -> list[BaseSegment]:
     """
     sub_type can be either WHEN or THEN, this is to extract subquery for case when (SELECT ...) then (SELECT ...)
     """
@@ -116,11 +106,7 @@ def list_expression_from_when_clause(
         if segment.type == "keyword" and segment.raw_upper == from_keyword:
             start_flag = True
             continue
-        if (
-            end_keyword is not None
-            and segment.type == "keyword"
-            and segment.raw_upper == end_keyword
-        ):
+        if end_keyword is not None and segment.type == "keyword" and segment.raw_upper == end_keyword:
             break
         if start_flag and segment.type == "expression":
             segments = segment.get_children("bracketed")
@@ -134,21 +120,11 @@ def list_subqueries(segment: BaseSegment) -> list[SubQueryTuple]:
             if expression := select_clause_element.get_child("expression"):
                 if case_expression := expression.get_child("case_expression"):
                     for when_clause in case_expression.get_children("when_clause"):
-                        for bracketed_segment in list_expression_from_when_clause(
-                            when_clause, sub_type="WHEN"
-                        ):
+                        for bracketed_segment in list_expression_from_when_clause(when_clause, sub_type="WHEN"):
                             subquery.append(SubQueryTuple(bracketed_segment, None))
-                        for bracketed_segment in list_expression_from_when_clause(
-                            when_clause, sub_type="THEN"
-                        ):
-                            alias_expression = select_clause_element.get_child(
-                                "alias_expression"
-                            )
-                            alias = (
-                                extract_identifier(alias_expression)
-                                if alias_expression
-                                else None
-                            )
+                        for bracketed_segment in list_expression_from_when_clause(when_clause, sub_type="THEN"):
+                            alias_expression = select_clause_element.get_child("alias_expression")
+                            alias = extract_identifier(alias_expression) if alias_expression else None
                             subquery.append(SubQueryTuple(bracketed_segment, alias))
             elif function := select_clause_element.get_child("function"):
                 for bracketed in function.recursive_crawl("bracketed"):
@@ -159,11 +135,7 @@ def list_subqueries(segment: BaseSegment) -> list[SubQueryTuple]:
         if is_subquery(target):
             subquery = [
                 SubQueryTuple(
-                    (
-                        extract_innermost_bracketed(target)
-                        if not is_set_expression(target)
-                        else target
-                    ),
+                    (extract_innermost_bracketed(target) if not is_set_expression(target) else target),
                     extract_identifier(as_segment) if as_segment else None,
                 )
             ]
@@ -194,9 +166,7 @@ def list_subqueries(segment: BaseSegment) -> list[SubQueryTuple]:
     return subquery
 
 
-def list_child_segments(
-    segment: BaseSegment, check_bracketed: bool = True
-) -> list[BaseSegment]:
+def list_child_segments(segment: BaseSegment, check_bracketed: bool = True) -> list[BaseSegment]:
     """
     Filter segments for a given segment's children, recursive goes into bracket by default
     """
@@ -205,9 +175,7 @@ def list_child_segments(
             return [seg for seg in segment.segments if seg.type == "set_expression"]
         else:
             result = []
-            for seg in segment.iter_segments(
-                expanding=["expression"], pass_through=True
-            ):
+            for seg in segment.iter_segments(expanding=["expression"], pass_through=True):
                 if seg.type in ["column_reference", "column_definition"]:
                     result.append(seg)
                 else:
@@ -258,9 +226,7 @@ def extract_innermost_bracketed(bracketed_segment: BaseSegment) -> BaseSegment:
     # in case of subquery in nested parenthesis like: `SELECT * FROM ((table))`, find the innermost one first
     while True:
         sub_bracketed_segments = [
-            bs.get_child("bracketed")
-            for bs in bracketed_segment.segments
-            if bs.get_child("bracketed")
+            bs.get_child("bracketed") for bs in bracketed_segment.segments if bs.get_child("bracketed")
         ]
         sub_paren = bracketed_segment.get_child("bracketed") or (
             sub_bracketed_segments[0] if sub_bracketed_segments else None

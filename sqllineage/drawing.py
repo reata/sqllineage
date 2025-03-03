@@ -58,11 +58,7 @@ class SQLLineageApp:
                     if static_file.exists():
                         static_fname = str(static_file)
                         optional_mimetype = mimetypes.guess_type(path_info)[0]
-                        mimetype = (
-                            optional_mimetype
-                            if optional_mimetype is not None
-                            else mimetype
-                        )
+                        mimetype = optional_mimetype if optional_mimetype is not None else mimetype
                     else:
                         return self.handle_404(start_response)
                 with open(static_fname, "rb") as f:
@@ -74,9 +70,9 @@ class SQLLineageApp:
                     request_body = environ["wsgi.input"].read(request_body_size)
                     payload = json.loads(request_body)
                     for param in ["d", "f"]:
-                        if param in payload and not str(
-                            Path(payload[param]).absolute()
-                        ).startswith(str(Path(self.root_path).absolute())):
+                        if param in payload and not str(Path(payload[param]).absolute()).startswith(
+                            str(Path(self.root_path).absolute())
+                        ):
                             return self.handle_403(start_response)
                     data = self.routes[path_info](payload)
                     return self.handle_200_json(start_response, data)
@@ -108,40 +104,28 @@ class SQLLineageApp:
     @staticmethod
     def handle_200_text(start_response, mimetype, text) -> list[bytes]:
         status_code = HTTPStatus.OK
-        start_response(
-            f"{status_code.value} {status_code.phrase}", [("Content-type", mimetype)]
-        )
+        start_response(f"{status_code.value} {status_code.phrase}", [("Content-type", mimetype)])
         return [text]
 
     def handle_200_json(self, start_response, data) -> list[bytes]:
         return self.handle_json_response(start_response, HTTPStatus.OK, data)
 
     def handle_400(self, start_response, message) -> list[bytes]:
-        return self.handle_client_error_response(
-            start_response, HTTPStatus.BAD_REQUEST, message
-        )
+        return self.handle_client_error_response(start_response, HTTPStatus.BAD_REQUEST, message)
 
     def handle_403(self, start_response) -> list[bytes]:
         message = "File Not Allowed For Accessing"
-        return self.handle_client_error_response(
-            start_response, HTTPStatus.FORBIDDEN, message
-        )
+        return self.handle_client_error_response(start_response, HTTPStatus.FORBIDDEN, message)
 
     def handle_404(self, start_response) -> list[bytes]:
         message = "File Not Found"
-        return self.handle_client_error_response(
-            start_response, HTTPStatus.NOT_FOUND, message
-        )
+        return self.handle_client_error_response(start_response, HTTPStatus.NOT_FOUND, message)
 
     def handle_405(self, start_response) -> list[bytes]:
         message = "Method Not Allowed"
-        return self.handle_client_error_response(
-            start_response, HTTPStatus.METHOD_NOT_ALLOWED, message
-        )
+        return self.handle_client_error_response(start_response, HTTPStatus.METHOD_NOT_ALLOWED, message)
 
-    def handle_client_error_response(
-        self, start_response, status_code, message
-    ) -> list[bytes]:
+    def handle_client_error_response(self, start_response, status_code, message) -> list[bytes]:
         data = {"message": message}
         return self.handle_json_response(start_response, status_code, data)
 
@@ -168,9 +152,7 @@ def lineage(payload):
     req_args = Namespace(**payload)
     sql = extract_sql_from_args(req_args)
     dialect = getattr(req_args, "dialect", DEFAULT_DIALECT)
-    lr = LineageRunner(
-        sql, dialect=dialect, verbose=True, metadata_provider=app.metadata_provider
-    )
+    lr = LineageRunner(sql, dialect=dialect, verbose=True, metadata_provider=app.metadata_provider)
     data = {
         "verbose": str(lr),
         "dag": lr.to_cytoscape(),

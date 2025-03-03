@@ -27,9 +27,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
     SUPPORTED_DIALECTS = list(dialect.label for dialect in dialect_readout())
 
     def __init__(self, file_path: str, dialect: str, silent_mode: bool = False):
-        self._sqlfluff_config = FluffConfig.from_path(
-            path=file_path, overrides={"dialect": dialect}
-        )
+        self._sqlfluff_config = FluffConfig.from_path(path=file_path, overrides={"dialect": dialect})
         self._silent_mode = silent_mode
         self.tsql_split_cache: dict[str, BaseSegment] = {}
 
@@ -44,17 +42,13 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             sqls.append(segment.raw)
         return sqls
 
-    def analyze(
-        self, sql: str, metadata_provider: MetaDataProvider
-    ) -> StatementLineageHolder:
+    def analyze(self, sql: str, metadata_provider: MetaDataProvider) -> StatementLineageHolder:
         if sql in self.tsql_split_cache:
             statement_segments = [self.tsql_split_cache[sql]]
         else:
             statement_segments = self._list_specific_statement_segment(sql)
         if len(statement_segments) == 0:
-            raise UnsupportedStatementException(
-                f"SQLLineage cannot parse SQL:{sql}"
-            )  # pragma: no cover
+            raise UnsupportedStatementException(f"SQLLineage cannot parse SQL:{sql}")  # pragma: no cover
         else:
             statement_segment = statement_segments[0]
             for extractor in [
@@ -62,9 +56,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                 for extractor_cls in BaseExtractor.__subclasses__()
             ]:
                 if extractor.can_extract(statement_segment.type):
-                    lineage_holder = extractor.extract(
-                        statement_segment, AnalyzerContext()
-                    )
+                    lineage_holder = extractor.extract(statement_segment, AnalyzerContext())
                     return StatementLineageHolder.of(lineage_holder)
             else:
                 if self._silent_mode:
@@ -79,11 +71,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
 
     def _list_specific_statement_segment(self, sql: str):
         parsed = Linter(config=self._sqlfluff_config).parse_string(sql)
-        violations = [
-            str(e)
-            for e in parsed.violations
-            if isinstance(e, (SQLLexError, SQLParseError))
-        ]
+        violations = [str(e) for e in parsed.violations if isinstance(e, (SQLLexError, SQLParseError))]
         if violations:
             violation_msg = "\n".join(violations)
             raise InvalidSyntaxException(

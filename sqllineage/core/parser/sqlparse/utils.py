@@ -33,9 +33,7 @@ def remove_parenthesis_between_union(token: Parenthesis) -> Parenthesis:
     # pre-compute the idx of UNION/UNION ALL
     offsets = [-1]
     while True:
-        offset, _ = token.token_next_by(
-            m=[(Keyword, "UNION ALL"), (Keyword, "UNION")], idx=offsets[-1]
-        )
+        offset, _ = token.token_next_by(m=[(Keyword, "UNION ALL"), (Keyword, "UNION")], idx=offsets[-1])
         if offset is not None:
             offsets.append(offset)
         else:
@@ -68,8 +66,7 @@ def get_innermost_parenthesis(token: Parenthesis) -> Parenthesis:
     while True:
         idx, sub_paren = token.token_next_by(i=Parenthesis)
         if sub_paren is not None and (
-            idx == 1
-            or (idx > 1 and all(is_token_negligible(t) for t in token.tokens[1:idx]))
+            idx == 1 or (idx > 1 and all(is_token_negligible(t) for t in token.tokens[1:idx]))
         ):
             # either the subsequent parenthesis is closely followed or there is only whitespace/comment in between
             token = sub_paren
@@ -150,9 +147,7 @@ def get_subquery_parentheses(
                     subquery.append(SubQueryTuple(col, col.get_real_name()))
     elif is_subquery(target):
         target = remove_parenthesis_between_union(target)
-        subquery = [
-            SubQueryTuple(get_innermost_parenthesis(target), token.get_real_name())
-        ]
+        subquery = [SubQueryTuple(get_innermost_parenthesis(target), token.get_real_name())]
     return subquery
 
 

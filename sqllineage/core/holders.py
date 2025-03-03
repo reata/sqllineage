@@ -31,15 +31,9 @@ class ColumnLineageMixin:
         column_graph = self.graph.subgraph(column_nodes)
         source_columns = {column for column, deg in column_graph.in_degree if deg == 0}
         # if a column lineage path ends at SubQuery, then it should be pruned
-        target_columns = {
-            node
-            for node, deg in column_graph.out_degree
-            if isinstance(node, Column) and deg == 0
-        }
+        target_columns = {node for node, deg in column_graph.out_degree if isinstance(node, Column) and deg == 0}
         if exclude_path_ending_in_subquery:
-            target_columns = {
-                node for node in target_columns if isinstance(node.parent, Table)
-            }
+            target_columns = {node for node in target_columns if isinstance(node.parent, Table)}
         columns = set()
 
         # Computing on networkx graph can be slow for very large graphs.
@@ -48,24 +42,16 @@ class ColumnLineageMixin:
 
         # rustworkx is based on indices only, meaning we have to keep a mapping
         # between indices and actual nodes for both ways.
-        rx_mapping: Dict[Column, int] = {
-            node: index for index, node in enumerate(rx_graph.nodes())
-        }
+        rx_mapping: Dict[Column, int] = {node: index for index, node in enumerate(rx_graph.nodes())}
         rx_mapping_inv: Dict[int, Column] = {v: k for k, v in rx_mapping.items()}
 
         for source, target in itertools.product(source_columns, target_columns):
-            simple_paths = list(
-                rx.digraph_all_simple_paths(
-                    rx_graph, rx_mapping[source], rx_mapping[target]
-                )
-            )
+            simple_paths = list(rx.digraph_all_simple_paths(rx_graph, rx_mapping[source], rx_mapping[target]))
             for rx_path in simple_paths:
                 path = [rx_mapping_inv[p] for p in rx_path]
 
                 if exclude_subquery_columns:
-                    path = [
-                        node for node in path if not isinstance(node.parent, SubQuery)
-                    ]
+                    path = [node for node in path if not isinstance(node.parent, SubQuery)]
                     if len(path) > 1:
                         columns.add(tuple(path))
                 else:
@@ -158,9 +144,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             tgt_tbl = list(self.write)[0]
             for idx, tgt_col in enumerate(tgt_cols):
                 tgt_col.parent = tgt_tbl
-                self.graph.add_edge(
-                    tgt_tbl, tgt_col, type=EdgeType.HAS_COLUMN, **{EdgeTag.INDEX: idx}
-                )
+                self.graph.add_edge(tgt_tbl, tgt_col, type=EdgeType.HAS_COLUMN, **{EdgeTag.INDEX: idx})
 
     def add_column_lineage(self, src: Column, tgt: Column) -> None:
         """
@@ -176,9 +160,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         return [
             tgt
             for (src, tgt, edge_type) in self.graph.out_edges(nbunch=table, data="type")
-            if edge_type == EdgeType.HAS_COLUMN
-            and isinstance(tgt, Column)
-            and tgt.raw_name != "*"
+            if edge_type == EdgeType.HAS_COLUMN and isinstance(tgt, Column) and tgt.raw_name != "*"
         ]
 
     def expand_wildcard(self, metadata_provider: MetaDataProvider) -> None:
@@ -194,9 +176,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                                 src_table_columns = self.get_table_columns(source_table)
                             elif isinstance(source_table, Table) and metadata_provider:
                                 # search by metadata service
-                                src_table_columns = metadata_provider.get_table_columns(
-                                    source_table
-                                )
+                                src_table_columns = metadata_provider.get_table_columns(source_table)
                             if src_table_columns:
                                 self._replace_wildcard(
                                     tgt_table,
@@ -217,12 +197,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             for src, tgt, attr in self.graph.edges(data=True)
             if attr.get("type") == EdgeType.HAS_ALIAS and src in table_group
         }
-        unqualified_map = {
-            table.raw_name: table for table in table_group if isinstance(table, Table)
-        }
-        qualified_map = {
-            str(table): table for table in table_group if isinstance(table, Table)
-        }
+        unqualified_map = {table.raw_name: table for table in table_group if isinstance(table, Table)}
+        qualified_map = {str(table): table for table in table_group if isinstance(table, Table)}
         return alias_map | unqualified_map | qualified_map
 
     def _get_target_table(self) -> Optional[Union[SubQuery, Table]]:
@@ -299,11 +275,7 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
 
     @property
     def rename(self) -> set[tuple[Table, Table]]:
-        return {
-            (src, tgt)
-            for src, tgt, attr in self.graph.edges(data=True)
-            if attr.get("type") == EdgeType.RENAME
-        }
+        return {(src, tgt) for src, tgt, attr in self.graph.edges(data=True) if attr.get("type") == EdgeType.RENAME}
 
     def add_rename(self, src: Table, tgt: Table) -> None:
         self.graph.add_edge(src, tgt, type=EdgeType.RENAME)
@@ -348,9 +320,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         """
         a list of source :class:`sqllineage.core.models.Table`
         """
-        source_tables = {
-            table for table, deg in self.table_lineage_graph.in_degree if deg == 0
-        }.intersection(
+        source_tables = {table for table, deg in self.table_lineage_graph.in_degree if deg == 0}.intersection(
             {table for table, deg in self.table_lineage_graph.out_degree if deg > 0}
         )
         source_tables |= self._selfloop_tables
@@ -362,9 +332,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         """
         a list of target :class:`sqllineage.core.models.Table`
         """
-        target_tables = {
-            table for table, deg in self.table_lineage_graph.out_degree if deg == 0
-        }.intersection(
+        target_tables = {table for table, deg in self.table_lineage_graph.out_degree if deg == 0}.intersection(
             {table for table, deg in self.table_lineage_graph.in_degree if deg > 0}
         )
         target_tables |= self._selfloop_tables
@@ -376,9 +344,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         """
         a list of intermediate :class:`sqllineage.core.models.Table`
         """
-        intermediate_tables = {
-            table for table, deg in self.table_lineage_graph.in_degree if deg > 0
-        }.intersection(
+        intermediate_tables = {table for table, deg in self.table_lineage_graph.in_degree if deg > 0}.intersection(
             {table for table, deg in self.table_lineage_graph.out_degree if deg > 0}
         )
         intermediate_tables -= self.__retrieve_tag_tables(NodeTag.SELFLOOP)
@@ -392,9 +358,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         }
 
     @staticmethod
-    def _build_digraph(
-        metadata_provider: MetaDataProvider, *args: StatementLineageHolder
-    ) -> DiGraph:
+    def _build_digraph(metadata_provider: MetaDataProvider, *args: StatementLineageHolder) -> DiGraph:
         g = DiGraph()
         for holder in args:
             g = nx.compose(g, holder.graph)
@@ -412,14 +376,10 @@ class SQLLineageHolder(ColumnLineageMixin):
                 read, write = holder.read, holder.write
                 if len(read) > 0 and len(write) == 0:
                     # source only table comes from SELECT statement
-                    nx.set_node_attributes(
-                        g, {table: True for table in read}, NodeTag.SOURCE_ONLY
-                    )
+                    nx.set_node_attributes(g, {table: True for table in read}, NodeTag.SOURCE_ONLY)
                 elif len(read) == 0 and len(write) > 0:
                     # target only table comes from case like: 1) INSERT/UPDATE constant values; 2) CREATE TABLE
-                    nx.set_node_attributes(
-                        g, {table: True for table in write}, NodeTag.TARGET_ONLY
-                    )
+                    nx.set_node_attributes(g, {table: True for table in write}, NodeTag.TARGET_ONLY)
                 else:
                     for source, target in itertools.product(read, write):
                         g.add_edge(source, target, type=EdgeType.LINEAGE)
@@ -429,11 +389,7 @@ class SQLLineageHolder(ColumnLineageMixin):
             NodeTag.SELFLOOP,
         )
         # find all the columns that we can't assign accurately to a parent table (with multiple parent candidates)
-        unresolved_cols = [
-            (s, t)
-            for s, t in g.edges
-            if isinstance(s, Column) and len(s.parent_candidates) > 1
-        ]
+        unresolved_cols = [(s, t) for s, t in g.edges if isinstance(s, Column) and len(s.parent_candidates) > 1]
         for unresolved_col, tgt_col in unresolved_cols:
             # check if there's only one parent candidate contains the column with same name
             src_cols = []
@@ -446,10 +402,7 @@ class SQLLineageHolder(ColumnLineageMixin):
             # if not in graph, check if defined in table schema by metadata service
             if len(src_cols) == 0 and bool(metadata_provider):
                 for parent in unresolved_col.parent_candidates:
-                    if (
-                        isinstance(parent, Table)
-                        and str(parent.schema) != Schema.unknown
-                    ):
+                    if isinstance(parent, Table) and str(parent.schema) != Schema.unknown:
                         columns = metadata_provider.get_table_columns(parent)
                         for src_col in columns:
                             if unresolved_col.raw_name == src_col.raw_name:

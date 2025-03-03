@@ -38,13 +38,9 @@ class CteExtractor(BaseExtractor):
                     ),
                 )
             elif segment.type == "insert_statement":
-                holder |= self.delegate_to(
-                    CreateInsertExtractor, segment, AnalyzerContext(cte=holder.cte)
-                )
+                holder |= self.delegate_to(CreateInsertExtractor, segment, AnalyzerContext(cte=holder.cte))
             elif segment.type == "update_statement":
-                holder |= self.delegate_to(
-                    UpdateExtractor, segment, AnalyzerContext(cte=holder.cte)
-                )
+                holder |= self.delegate_to(UpdateExtractor, segment, AnalyzerContext(cte=holder.cte))
             elif segment.type == "common_table_expression":
                 alias = None
                 sub_segments = list_child_segments(segment)

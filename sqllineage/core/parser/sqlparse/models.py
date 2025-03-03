@@ -36,14 +36,7 @@ class SqlParseTable(Table):
         real_name = table._get_first_name(dot_idx, real_name=True)
         # rewrite identifier's get_parent_name accordingly
         parent_name = (
-            "".join(
-                [
-                    escape_identifier_name(token.value)
-                    for token in table.tokens[:dot_idx]
-                ]
-            )
-            if dot_idx
-            else None
+            "".join([escape_identifier_name(token.value) for token in table.tokens[:dot_idx]]) if dot_idx else None
         )
         schema = Schema(parent_name) if parent_name is not None else Schema()
         alias = table.get_alias()
@@ -79,9 +72,7 @@ class SqlParseColumn(Column):
                 # select column name directly without alias
                 return Column(
                     column.get_real_name(),
-                    source_columns=(
-                        (column.get_real_name(), column.get_parent_name()),
-                    ),
+                    source_columns=((column.get_real_name(), column.get_parent_name()),),
                 )
         else:
             # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
@@ -95,11 +86,7 @@ class SqlParseColumn(Column):
     def _extract_source_columns(token: Token) -> list[ColumnQualifierTuple]:
         if isinstance(token, Function):
             # max(col1) AS col2
-            source_columns = [
-                cqt
-                for tk in get_parameters(token)
-                for cqt in SqlParseColumn._extract_source_columns(tk)
-            ]
+            source_columns = [cqt for tk in get_parameters(token) for cqt in SqlParseColumn._extract_source_columns(tk)]
         elif isinstance(token, Parenthesis):
             if is_subquery(token):
                 # This is to avoid circular import
@@ -108,9 +95,9 @@ class SqlParseColumn(Column):
                 # (SELECT avg(col1) AS col1 FROM tab3), used after WHEN or THEN in CASE clause
                 src_cols = [
                     lineage[0]
-                    for lineage in LineageRunner(
-                        token.value, dialect=SQLPARSE_DIALECT
-                    ).get_column_lineage(exclude_path_ending_in_subquery=False)
+                    for lineage in LineageRunner(token.value, dialect=SQLPARSE_DIALECT).get_column_lineage(
+                        exclude_path_ending_in_subquery=False
+                    )
                 ]
                 source_columns = [
                     ColumnQualifierTuple(
@@ -122,47 +109,26 @@ class SqlParseColumn(Column):
             else:
                 # (col1 + col2) AS col3
                 source_columns = [
-                    cqt
-                    for tk in token.tokens[1:-1]
-                    for cqt in SqlParseColumn._extract_source_columns(tk)
+                    cqt for tk in token.tokens[1:-1] for cqt in SqlParseColumn._extract_source_columns(tk)
                 ]
         elif isinstance(token, Operation):
             # col1 + col2 AS col3
-            source_columns = [
-                cqt
-                for tk in token.get_sublists()
-                for cqt in SqlParseColumn._extract_source_columns(tk)
-            ]
+            source_columns = [cqt for tk in token.get_sublists() for cqt in SqlParseColumn._extract_source_columns(tk)]
         elif isinstance(token, Case):
             # CASE WHEN col1 = 2 THEN "V1" WHEN col1 = "2" THEN "V2" END AS col2
-            source_columns = [
-                cqt
-                for tk in token.get_sublists()
-                for cqt in SqlParseColumn._extract_source_columns(tk)
-            ]
+            source_columns = [cqt for tk in token.get_sublists() for cqt in SqlParseColumn._extract_source_columns(tk)]
         elif isinstance(token, Comparison):
             source_columns = SqlParseColumn._extract_source_columns(
                 token.left
             ) + SqlParseColumn._extract_source_columns(token.right)
         elif isinstance(token, IdentifierList):
-            source_columns = [
-                cqt
-                for tk in token.get_sublists()
-                for cqt in SqlParseColumn._extract_source_columns(tk)
-            ]
+            source_columns = [cqt for tk in token.get_sublists() for cqt in SqlParseColumn._extract_source_columns(tk)]
         elif isinstance(token, Identifier):
             real_name = token.get_real_name()
             # ignore function dtypes that don't need to check for extract column
             FUNC_DTYPE = ["decimal", "numeric", "varchar"]
-            has_function = any(
-                isinstance(t, Function) and t.get_real_name() not in FUNC_DTYPE
-                for t in token.tokens
-            )
-            is_kw = (
-                Lexer.get_default_instance().is_keyword(real_name)
-                if real_name is not None
-                else False
-            )
+            has_function = any(isinstance(t, Function) and t.get_real_name() not in FUNC_DTYPE for t in token.tokens)
+            is_kw = Lexer.get_default_instance().is_keyword(real_name) if real_name is not None else False
             if (
                 # real name is None: col1=1 AS int
                 real_name is None
@@ -171,15 +137,11 @@ class SqlParseColumn(Column):
                 or (is_kw and has_function)
             ):
                 source_columns = [
-                    cqt
-                    for tk in token.get_sublists()
-                    for cqt in SqlParseColumn._extract_source_columns(tk)
+                    cqt for tk in token.get_sublists() for cqt in SqlParseColumn._extract_source_columns(tk)
                 ]
             else:
                 # col1 AS col2
-                source_columns = [
-                    ColumnQualifierTuple(token.get_real_name(), token.get_parent_name())
-                ]
+                source_columns = [ColumnQualifierTuple(token.get_real_name(), token.get_parent_name())]
         else:
             if token.ttype == T.Wildcard:
                 # select *

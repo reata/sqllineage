@@ -13,9 +13,7 @@ class LineageAnalyzer:
     SUPPORTED_DIALECTS: list[str] = []
 
     @abstractmethod
-    def analyze(
-        self, sql: str, metadata_provider: MetaDataProvider
-    ) -> StatementLineageHolder:
+    def analyze(self, sql: str, metadata_provider: MetaDataProvider) -> StatementLineageHolder:
         """
         to analyze single statement sql and store the result into StatementLineageHolder.
 

@@ -35,9 +35,7 @@ class CreateInsertExtractor(BaseExtractor):
         for segment in list_child_segments(statement):
             if segment.type == "with_compound_statement":
                 holder |= self.delegate_to_cte(segment, holder)
-            elif segment.type == "bracketed" and any(
-                s.type == "with_compound_statement" for s in segment.segments
-            ):
+            elif segment.type == "bracketed" and any(s.type == "with_compound_statement" for s in segment.segments):
                 for sgmt in segment.segments:
                     if sgmt.type == "with_compound_statement":
                         holder |= self.delegate_to_cte(segment, holder)
@@ -48,17 +46,11 @@ class CreateInsertExtractor(BaseExtractor):
                     for expression in bracketed.get_children("expression"):
                         if sub_bracketed := expression.get_child("bracketed"):
                             if sub_expression := sub_bracketed.get_child("expression"):
-                                if select_statement := sub_expression.get_child(
-                                    "select_statement"
-                                ):
-                                    holder |= self.delegate_to_select(
-                                        select_statement, holder
-                                    )
+                                if select_statement := sub_expression.get_child("select_statement"):
+                                    holder |= self.delegate_to_select(select_statement, holder)
             elif segment.type == "bracketed" and (
                 subquery_segments := list(
-                    segment.recursive_crawl(
-                        "select_statement", "set_expression", recurse_into=False
-                    )
+                    segment.recursive_crawl("select_statement", "set_expression", recurse_into=False)
                 )
             ):
                 # note regular subquery within SELECT statement is handled by SelectExtractor, this is only to handle
@@ -72,10 +64,7 @@ class CreateInsertExtractor(BaseExtractor):
                 # so that when we compute the column level lineage
                 # we keep these columns into consideration
                 sub_segments = list_child_segments(segment)
-                if all(
-                    sub_segment.type in ["column_reference", "column_definition"]
-                    for sub_segment in sub_segments
-                ):
+                if all(sub_segment.type in ["column_reference", "column_definition"] for sub_segment in sub_segments):
                     # target columns only apply to bracketed column_reference and column_definition
                     columns = []
                     for sub_segment in sub_segments:
@@ -92,9 +81,7 @@ class CreateInsertExtractor(BaseExtractor):
                     "TABLE",
                     "VIEW",
                     "DIRECTORY",
-                ] or (
-                    tgt_flag is True and segment.raw_upper in ["IF", "NOT", "EXISTS"]
-                ):
+                ] or (tgt_flag is True and segment.raw_upper in ["IF", "NOT", "EXISTS"]):
                     tgt_flag = True
                 elif segment.raw_upper in ["LIKE", "CLONE"]:
                     src_flag = True
@@ -105,14 +92,8 @@ class CreateInsertExtractor(BaseExtractor):
                     write_obj = SqlFluffTable.of(segment)
                     holder.add_write(write_obj)
                     # get target table columns from metadata if available
-                    if (
-                        isinstance(write_obj, Table)
-                        and self.metadata_provider
-                        and statement.type == "insert_statement"
-                    ):
-                        holder.add_write_column(
-                            *self.metadata_provider.get_table_columns(table=write_obj)
-                        )
+                    if isinstance(write_obj, Table) and self.metadata_provider and statement.type == "insert_statement":
+                        holder.add_write_column(*self.metadata_provider.get_table_columns(table=write_obj))
                 elif segment.type == "literal":
                     if segment.raw.isnumeric():
                         # Special Handling for Spark Bucket Table DDL
@@ -126,17 +107,13 @@ class CreateInsertExtractor(BaseExtractor):
                 src_flag = False
         return holder
 
-    def delegate_to_cte(
-        self, segment: BaseSegment, holder: SubQueryLineageHolder
-    ) -> SubQueryLineageHolder:
+    def delegate_to_cte(self, segment: BaseSegment, holder: SubQueryLineageHolder) -> SubQueryLineageHolder:
         from .cte import CteExtractor
 
         return self.delegate_to(
             CteExtractor,
             segment,
-            AnalyzerContext(
-                cte=holder.cte, write=holder.write, write_columns=holder.write_columns
-            ),
+            AnalyzerContext(cte=holder.cte, write=holder.write, write_columns=holder.write_columns),
         )
 
     def delegate_to_select(

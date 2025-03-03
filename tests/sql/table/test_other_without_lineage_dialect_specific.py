@@ -15,9 +15,7 @@ def test_rename_table(dialect: str):
 
 @pytest.mark.parametrize("dialect", ["mysql"])
 def test_rename_tables(dialect: str):
-    assert_table_lineage_equal(
-        "rename table tab1 to tab2, tab3 to tab4", dialect=dialect
-    )
+    assert_table_lineage_equal("rename table tab1 to tab2, tab3 to tab4", dialect=dialect)
 
 
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
@@ -103,9 +101,7 @@ def test_drop_function(dialect: str):
 
 @pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_set_command(dialect: str):
-    assert_table_lineage_equal(
-        "SET spark.sql.variable.substitute=false", dialect=dialect
-    )
+    assert_table_lineage_equal("SET spark.sql.variable.substitute=false", dialect=dialect)
 
 
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])

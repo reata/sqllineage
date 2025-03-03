@@ -20,7 +20,5 @@ def test_sqlalchemy_metadata_provider_driver_not_install():
 
 def test_sqlalchemy_metadata_provider_query_fail():
     provider = SQLAlchemyMetaDataProvider("sqlite:///:memory:")
-    assert (
-        provider._get_table_columns("non_existing_schema", "non_existing_table") == []
-    )
+    assert provider._get_table_columns("non_existing_schema", "non_existing_table") == []
     assert provider._get_table_columns("main", "non_existing_table") == []

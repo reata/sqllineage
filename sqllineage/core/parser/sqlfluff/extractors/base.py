@@ -74,10 +74,7 @@ class BaseExtractor:
             # for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
             return reduce(
                 add,
-                [
-                    cls._parse_subquery(list_subqueries(identifier))
-                    for identifier in identifiers
-                ],
+                [cls._parse_subquery(list_subqueries(identifier)) for identifier in identifiers],
                 [],
             )
         if segment.type in ["select_clause", "from_clause", "where_clause"]:
@@ -98,21 +95,13 @@ class BaseExtractor:
             if len(from_expressions := segment.get_children("from_expression")) > 1:
                 # SQL89 style of join
                 for from_expression in from_expressions:
-                    if from_expression_element := find_from_expression_element(
-                        from_expression
-                    ):
-                        tables += self._add_dataset_from_expression_element(
-                            from_expression_element, holder
-                        )
+                    if from_expression_element := find_from_expression_element(from_expression):
+                        tables += self._add_dataset_from_expression_element(from_expression_element, holder)
             else:
                 if from_expression_element := find_from_expression_element(segment):
-                    tables += self._add_dataset_from_expression_element(
-                        from_expression_element, holder
-                    )
+                    tables += self._add_dataset_from_expression_element(from_expression_element, holder)
                 for join_clause in list_join_clause(segment):
-                    tables += self._list_table_from_from_clause_or_join_clause(
-                        join_clause, holder
-                    )
+                    tables += self._list_table_from_from_clause_or_join_clause(join_clause, holder)
 
         return tables
 
@@ -125,9 +114,7 @@ class BaseExtractor:
         holder extra subqueries sets
         """
         tables: list[Union[Table, SubQuery, Path]] = []
-        all_segments = [
-            seg for seg in list_child_segments(segment) if seg.type != "keyword"
-        ]
+        all_segments = [seg for seg in list_child_segments(segment) if seg.type != "keyword"]
         if table_expression := segment.get_child("table_expression"):
             if table_expression.get_child("function"):
                 # for UNNEST or generator function, no dataset involved
@@ -151,11 +138,7 @@ class BaseExtractor:
                 alias = None
                 if len(all_segments) > 1 and all_segments[1].type == "alias_expression":
                     all_segments = list_child_segments(all_segments[1])
-                    alias = str(
-                        all_segments[1].raw
-                        if len(all_segments) > 1
-                        else all_segments[0].raw
-                    )
+                    alias = str(all_segments[1].raw if len(all_segments) > 1 else all_segments[0].raw)
                 if "." not in table_identifier.raw:
                     cte_dict = {s.alias: s for s in holder.cte}
                     cte = cte_dict.get(escape_identifier_name(table_identifier.raw))
@@ -170,13 +153,7 @@ class BaseExtractor:
                         subquery_flag = True
                 if subquery_flag is False:
                     if table_identifier.type == "file_reference":
-                        tables.append(
-                            Path(
-                                escape_identifier_name(
-                                    table_identifier.segments[-1].raw
-                                )
-                            )
-                        )
+                        tables.append(Path(escape_identifier_name(table_identifier.segments[-1].raw)))
                     else:
                         tables.append(SqlFluffTable.of(table_identifier, alias=alias))
 
@@ -189,10 +166,7 @@ class BaseExtractor:
         :param subqueries:  a list of 'SqlFluffSubQueryTuple'
         :return:  a list of 'SqlFluffSubQuery'
         """
-        return [
-            SqlFluffSubQuery.of(bracketed_segment, alias)
-            for bracketed_segment, alias in subqueries
-        ]
+        return [SqlFluffSubQuery.of(bracketed_segment, alias) for bracketed_segment, alias in subqueries]
 
     def delegate_to(
         self,
@@ -203,13 +177,9 @@ class BaseExtractor:
         """
         delegate to another type of extractor to extract
         """
-        return extractor_cls(self.dialect, self.metadata_provider).extract(
-            segment, context
-        )
+        return extractor_cls(self.dialect, self.metadata_provider).extract(segment, context)
 
-    def extract_subquery(
-        self, subqueries: list[SubQuery], holder: SubQueryLineageHolder
-    ):
+    def extract_subquery(self, subqueries: list[SubQuery], holder: SubQueryLineageHolder):
         """
         extract subqueries collected from statement-level segment
         """
@@ -217,14 +187,10 @@ class BaseExtractor:
         from .select import SelectExtractor
 
         for sq in subqueries:
-            extractor_cls = (
-                CteExtractor
-                if sq.query.get_child("with_compound_statement")
-                else SelectExtractor
+            extractor_cls = CteExtractor if sq.query.get_child("with_compound_statement") else SelectExtractor
+            subquery_holder = extractor_cls(self.dialect, self.metadata_provider).extract(
+                sq.query, AnalyzerContext(cte=holder.cte, write={sq})
             )
-            subquery_holder = extractor_cls(
-                self.dialect, self.metadata_provider
-            ).extract(sq.query, AnalyzerContext(cte=holder.cte, write={sq}))
             # remove WRITE tag from subquery so that the combined holder won't have multiple WRITE dataset
             nx.set_node_attributes(subquery_holder.graph, {sq: False}, NodeTag.WRITE)
             holder |= subquery_holder
