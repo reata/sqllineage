@@ -87,8 +87,9 @@ class CreateInsertExtractor(BaseExtractor):
 
             elif segment.type == "keyword":
                 if segment.raw_upper in [
+                    "INSERT",  # bigquery supports INTO as optional keyword so INSERT is the indicator
                     "INTO",
-                    "OVERWRITE",
+                    "OVERWRITE",  # sparksql supports INSERT OVERWRITE with TABLE as optional keyword
                     "TABLE",
                     "VIEW",
                     "DIRECTORY",

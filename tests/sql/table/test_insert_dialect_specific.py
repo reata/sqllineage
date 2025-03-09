@@ -59,6 +59,23 @@ def test_insert_into_with_keyword_table(dialect: str):
     )
 
 
+@pytest.mark.parametrize("dialect", ["bigquery", "mariadb", "mysql", "tsql"])
+def test_insert_without_into_keyword(dialect: str):
+    """
+    INTO is optional in INSERT statement of the following dialects:
+        bigquery: https://cloud.google.com/bigquery/docs/reference/standard-sql/dml-syntax#insert_statement
+        mariadb: https://mariadb.com/kb/en/insert/
+        mysql: https://dev.mysql.com/doc/refman/8.4/en/insert.html
+        tsql: https://learn.microsoft.com/en-us/sql/t-sql/statements/insert-transact-sql?view=sql-server-ver16
+    """
+    assert_table_lineage_equal(
+        "INSERT tab1 SELECT * FROM tab2",
+        {"tab2"},
+        {"tab1"},
+        dialect=dialect,
+    )
+
+
 @pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_insert_into_partitions(dialect: str):
     assert_table_lineage_equal(
