@@ -12,9 +12,7 @@ FROM tab2"""
         [
             (
                 ColumnQualifierTuple("col1", "tab2"),
-                ColumnQualifierTuple(
-                    "CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END", "tab1"
-                ),
+                ColumnQualifierTuple("CASE WHEN col1 = 1 THEN 'V1' WHEN col1 = 2 THEN 'V2' END", "tab1"),
             ),
         ],
     )

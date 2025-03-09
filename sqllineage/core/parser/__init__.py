@@ -16,9 +16,7 @@ class SourceHandlerMixin:
             holder.add_read(tbl)
         self.union_barriers.append((len(self.columns), len(self.tables)))
         for i, (col_barrier, tbl_barrier) in enumerate(self.union_barriers):
-            prev_col_barrier, prev_tbl_barrier = (
-                (0, 0) if i == 0 else self.union_barriers[i - 1]
-            )
+            prev_col_barrier, prev_tbl_barrier = (0, 0) if i == 0 else self.union_barriers[i - 1]
             col_grp = self.columns[prev_col_barrier:col_barrier]
             tbl_grp = self.tables[prev_tbl_barrier:tbl_barrier]
             if holder.write:
@@ -43,27 +41,19 @@ class SourceHandlerMixin:
                         # lateral column alias handling
                         lca_flag = False
                         if SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE:
-                            if metadata_provider := getattr(
-                                self, "metadata_provider", None
-                            ):
+                            if metadata_provider := getattr(self, "metadata_provider", None):
                                 from_dataset = False
                                 for parent_candidate in src_col.parent_candidates:
                                     if isinstance(
                                         parent_candidate, Table
-                                    ) and src_col in metadata_provider.get_table_columns(
-                                        parent_candidate
-                                    ):
+                                    ) and src_col in metadata_provider.get_table_columns(parent_candidate):
                                         from_dataset = True
-                                    elif isinstance(
-                                        parent_candidate, SubQuery
-                                    ) and src_col in holder.get_table_columns(
+                                    elif isinstance(parent_candidate, SubQuery) and src_col in holder.get_table_columns(
                                         parent_candidate
                                     ):
                                         from_dataset = True
                                 if not from_dataset and (
-                                    lca_cols_resolved := lateral_column_aliases.get(
-                                        src_col.raw_name, []
-                                    )
+                                    lca_cols_resolved := lateral_column_aliases.get(src_col.raw_name, [])
                                 ):
                                     src_cols_resolved.extend(lca_cols_resolved)
                                     lca_flag = True
@@ -72,10 +62,5 @@ class SourceHandlerMixin:
 
                     for src_col_resolved in src_cols_resolved:
                         holder.add_column_lineage(src_col_resolved, tgt_col_resolved)
-                        if (
-                            SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE
-                            and tgt_col_from_query.from_alias
-                        ):
-                            lateral_column_aliases[tgt_col_from_query.raw_name] = (
-                                src_cols_resolved
-                            )
+                        if SQLLineageConfig.LATERAL_COLUMN_ALIAS_REFERENCE and tgt_col_from_query.from_alias:
+                            lateral_column_aliases[tgt_col_from_query.raw_name] = src_cols_resolved

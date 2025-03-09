@@ -33,15 +33,9 @@ def main(args=None) -> None:
     """
     logging.config.dictConfig(DEFAULT_LOGGING)
 
-    parser = argparse.ArgumentParser(
-        prog="sqllineage", description="SQL Lineage Parser."
-    )
-    parser.add_argument(
-        "--version", action="version", version="%s %s" % (MAIN_NAME, MAIN_VERSION)
-    )
-    parser.add_argument(
-        "-e", metavar="<quoted-query-string>", help="SQL from command line"
-    )
+    parser = argparse.ArgumentParser(prog="sqllineage", description="SQL Lineage Parser.")
+    parser.add_argument("--version", action="version", version="%s %s" % (MAIN_NAME, MAIN_VERSION))
+    parser.add_argument("-e", metavar="<quoted-query-string>", help="SQL from command line")
     parser.add_argument("-f", metavar="<filename>", help="SQL from files")
     parser.add_argument(
         "-v",
@@ -104,9 +98,7 @@ def main(args=None) -> None:
     )
     args = parser.parse_args(args)
     metadata_provider = (
-        SQLAlchemyMetaDataProvider(args.sqlalchemy_url)
-        if args.sqlalchemy_url
-        else DummyMetaDataProvider()
+        SQLAlchemyMetaDataProvider(args.sqlalchemy_url) if args.sqlalchemy_url else DummyMetaDataProvider()
     )
     if args.e and args.f:
         warnings.warn("Both -e and -f options are specified. -e option will be ignored")

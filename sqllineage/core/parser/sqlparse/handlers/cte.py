@@ -19,9 +19,7 @@ class CTEHandler(NextTokenBaseHandler):
         if isinstance(token, cte_token_types):
             cte = [token]
         elif isinstance(token, IdentifierList):
-            cte = [
-                token for token in token.tokens if isinstance(token, cte_token_types)
-            ]
+            cte = [token for token in token.tokens if isinstance(token, cte_token_types)]
         else:
             # CREATE TABLE tbl1 (col1 VARCHAR) WITH (bucketed_by = ARRAY['col1'], bucket_count = 256).
             # This syntax is valid for bucketing in Trino and not the CTE, token will be Parenthesis here

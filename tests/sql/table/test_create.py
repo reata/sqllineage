@@ -18,9 +18,7 @@ def test_create_if_not_exist():
 
 
 def test_create_as():
-    assert_table_lineage_equal(
-        "CREATE TABLE tab1 AS SELECT * FROM tab2", {"tab2"}, {"tab1"}
-    )
+    assert_table_lineage_equal("CREATE TABLE tab1 AS SELECT * FROM tab2", {"tab2"}, {"tab1"})
 
 
 def test_create_like():

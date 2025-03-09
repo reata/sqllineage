@@ -3,6 +3,8 @@ import warnings
 from collections import OrderedDict
 from typing import Any, Optional
 
+import networkx as nx
+
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SQLLineageHolder
@@ -86,9 +88,7 @@ Target Tables:
     {target_tables}
 """
         if self.intermediate_tables:
-            intermediate_tables = "\n    ".join(
-                str(t) for t in self.intermediate_tables
-            )
+            intermediate_tables = "\n    ".join(str(t) for t in self.intermediate_tables)
             combined += f"""Intermediate Tables:
     {intermediate_tables}"""
         if self._verbose:
@@ -154,6 +154,13 @@ Target Tables:
         """
         return sorted(self._sql_holder.intermediate_tables, key=lambda x: str(x))
 
+    @lazy_property
+    def graph(self) -> nx.DiGraph:
+        """
+        the fully parsed lineage graph :class:`networkx.DiGraph`
+        """
+        return self._sql_holder.graph.copy()
+
     @lazy_method
     def get_column_lineage(
         self, exclude_path_ending_in_subquery=True, exclude_subquery_columns=False
@@ -163,9 +170,7 @@ Target Tables:
         """
         # sort by target column, and then source column
         return sorted(
-            self._sql_holder.get_column_lineage(
-                exclude_path_ending_in_subquery, exclude_subquery_columns
-            ),
+            self._sql_holder.get_column_lineage(exclude_path_ending_in_subquery, exclude_subquery_columns),
             key=lambda x: (str(x[-1]), str(x[0])),
         )
 
@@ -186,17 +191,13 @@ Target Tables:
         analyzer = (
             SqlParseLineageAnalyzer()
             if self._dialect == SQLPARSE_DIALECT
-            else SqlFluffLineageAnalyzer(
-                self._file_path, self._dialect, self._silent_mode
-            )
+            else SqlFluffLineageAnalyzer(self._file_path, self._dialect, self._silent_mode)
         )
         if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
             self._stmt = analyzer.split_tsql(self._sql.strip())
         else:
             if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect != "tsql":
-                warnings.warn(
-                    f"Dialect={self._dialect}, TSQL_NO_SEMICOLON will be ignored unless dialect is tsql"
-                )
+                warnings.warn(f"Dialect={self._dialect}, TSQL_NO_SEMICOLON will be ignored unless dialect is tsql")
             self._stmt = split(self._sql.strip())
 
         with self._metadata_provider.session() as session:
@@ -205,15 +206,11 @@ Target Tables:
                 stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
                 if write := stmt_holder.write:
                     tgt_table = next(iter(write))
-                    if isinstance(tgt_table, Table) and (
-                        tgt_columns := stmt_holder.get_table_columns(tgt_table)
-                    ):
+                    if isinstance(tgt_table, Table) and (tgt_columns := stmt_holder.get_table_columns(tgt_table)):
                         session.register_session_metadata(tgt_table, tgt_columns)
                 stmt_holders.append(stmt_holder)
             self._stmt_holders = stmt_holders
-            self._sql_holder = SQLLineageHolder.of(
-                session.metadata_provider, *self._stmt_holders
-            )
+            self._sql_holder = SQLLineageHolder.of(session.metadata_provider, *self._stmt_holders)
         self._evaluated = True
 
     @staticmethod

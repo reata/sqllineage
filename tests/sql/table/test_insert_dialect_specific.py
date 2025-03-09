@@ -54,9 +54,7 @@ def test_insert_overwrite_values(dialect: str):
 
 @pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_insert_into_with_keyword_table(dialect: str):
-    assert_table_lineage_equal(
-        "INSERT INTO TABLE tab1 VALUES (1, 2)", set(), {"tab1"}, dialect=dialect
-    )
+    assert_table_lineage_equal("INSERT INTO TABLE tab1 VALUES (1, 2)", set(), {"tab1"}, dialect=dialect)
 
 
 @pytest.mark.parametrize("dialect", ["bigquery", "mariadb", "mysql", "tsql"])

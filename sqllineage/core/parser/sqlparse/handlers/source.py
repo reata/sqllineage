@@ -90,9 +90,7 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
                 for t in token.tokens:
                     if t.is_keyword and t.normalized == "USING":
                         using_flag = True
-                    if isinstance(t, Identifier) or (
-                        isinstance(t, Parenthesis) and using_flag is False
-                    ):
+                    if isinstance(t, Identifier) or (isinstance(t, Parenthesis) and using_flag is False):
                         self._handle(t, holder)
         elif token.ttype == Literal.String.Single:
             self.tables.append(Path(token.value))
@@ -101,8 +99,7 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
             pass
         else:
             raise SQLLineageException(
-                "An Identifier is expected, got %s[value: %s] instead."
-                % (type(token).__name__, token)
+                "An Identifier is expected, got %s[value: %s] instead." % (type(token).__name__, token)
             )
 
     def _handle_column(self, token: Token) -> None:
@@ -115,9 +112,7 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
                 for sub_token in token.tokens
                 if (
                     isinstance(sub_token, column_token_types)
-                    and not sub_token.value.startswith(
-                        "@"
-                    )  # ignore tsql variable column starts with @
+                    and not sub_token.value.startswith("@")  # ignore tsql variable column starts with @
                 )
                 or sub_token.ttype is Wildcard  # For case like: select a.col, b.*
             ]
@@ -127,9 +122,7 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
         for token in column_tokens:
             self.columns.append(SqlParseColumn.of(token))
 
-    def _add_dataset_from_identifier(
-        self, identifier: Identifier, holder: SubQueryLineageHolder
-    ) -> None:
+    def _add_dataset_from_identifier(self, identifier: Identifier, holder: SubQueryLineageHolder) -> None:
         first_token = identifier.token_first(skip_cm=True)
         if isinstance(first_token, Function):
             # function() as alias, no dataset involved
@@ -152,9 +145,7 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
             else:
                 cte_dict = {s.alias: s for s in holder.cte}
                 if "." not in identifier.value:
-                    cte = cte_dict.get(
-                        escape_identifier_name(identifier.get_real_name())
-                    )
+                    cte = cte_dict.get(escape_identifier_name(identifier.get_real_name()))
                     if cte is not None:
                         # could reference CTE with or without alias
                         read = SqlParseSubQuery.of(

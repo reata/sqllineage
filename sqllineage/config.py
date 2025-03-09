@@ -28,24 +28,18 @@ class _SQLLineageConfigLoader:
 
     def __getattr__(self, item: str):
         if item in self.config.keys():
-            if (
-                value := self._thread_config.get(self.get_ident(), {}).get(item)
-            ) is not None:
+            if (value := self._thread_config.get(self.get_ident(), {}).get(item)) is not None:
                 return value
 
             type_, default = self.config[item]
             # require SQLLINEAGE_ prefix from environment variable
-            return self.parse_value(
-                os.environ.get("SQLLINEAGE_" + item, default), type_
-            )
+            return self.parse_value(os.environ.get("SQLLINEAGE_" + item, default), type_)
         else:
             return super().__getattribute__(item)
 
     def __setattr__(self, key, value) -> None:
         if key in self.config:
-            raise ConfigException(
-                "SQLLineageConfig is read-only. Use context manager to update thread level config."
-            )
+            raise ConfigException("SQLLineageConfig is read-only. Use context manager to update thread level config.")
         else:
             super().__setattr__(key, value)
 
@@ -54,9 +48,7 @@ class _SQLLineageConfigLoader:
             self._thread_config[self.get_ident()] = {}
         for key, value in kwargs.items():
             if key in self.config.keys():
-                self._thread_config[self.get_ident()][key] = self.parse_value(
-                    value, self.config[key][0]
-                )
+                self._thread_config[self.get_ident()][key] = self.parse_value(value, self.config[key][0])
             else:
                 raise ConfigException(f"Invalid config key: {key}")
         return self

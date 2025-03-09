@@ -10,9 +10,7 @@ def test_select_with_schema():
 
 
 def test_select_with_schema_and_database():
-    assert_table_lineage_equal(
-        "SELECT col1 FROM db1.schema1.tbl1", {"db1.schema1.tbl1"}
-    )
+    assert_table_lineage_equal("SELECT col1 FROM db1.schema1.tbl1", {"db1.schema1.tbl1"})
 
 
 def test_select_multi_line():
@@ -44,15 +42,11 @@ def test_select_trim_function_with_from_keyword_from_source_table():
 
 
 def test_select_with_where():
-    assert_table_lineage_equal(
-        "SELECT * FROM tab1 WHERE col1 > val1 AND col2 = 'val2'", {"tab1"}
-    )
+    assert_table_lineage_equal("SELECT * FROM tab1 WHERE col1 > val1 AND col2 = 'val2'", {"tab1"})
 
 
 def test_select_with_parenthesized_where():
-    assert_table_lineage_equal(
-        "SELECT * FROM tab1 WHERE (col1 > val1 AND col2 = 'val2')", {"tab1"}
-    )
+    assert_table_lineage_equal("SELECT * FROM tab1 WHERE (col1 > val1 AND col2 = 'val2')", {"tab1"})
 
 
 def test_select_with_comment():
@@ -64,9 +58,7 @@ def test_select_with_comment_after_from():
 
 
 def test_select_with_comment_after_join():
-    assert_table_lineage_equal(
-        "SELECT * FROM tab1 JOIN --comment\ntab2 ON tab1.x = tab2.x", {"tab1", "tab2"}
-    )
+    assert_table_lineage_equal("SELECT * FROM tab1 JOIN --comment\ntab2 ON tab1.x = tab2.x", {"tab1", "tab2"})
 
 
 def test_select_keyword_as_column_alias():
@@ -143,15 +135,11 @@ def test_select_subquery():
 
 
 def test_select_subquery_with_two_parenthesis():
-    assert_table_lineage_equal(
-        "SELECT col1 FROM ((SELECT col1 FROM tab1)) dt", {"tab1"}
-    )
+    assert_table_lineage_equal("SELECT col1 FROM ((SELECT col1 FROM tab1)) dt", {"tab1"})
 
 
 def test_select_subquery_with_more_parenthesis():
-    assert_table_lineage_equal(
-        "SELECT col1 FROM (((((((SELECT col1 FROM tab1))))))) dt", {"tab1"}
-    )
+    assert_table_lineage_equal("SELECT col1 FROM (((((((SELECT col1 FROM tab1))))))) dt", {"tab1"})
 
 
 def test_select_subquery_in_case():
@@ -239,9 +227,7 @@ def test_select_right_join():
 
 
 def test_select_full_outer_join():
-    assert_table_lineage_equal(
-        "SELECT * FROM tab1 FULL OUTER JOIN tab2", {"tab1", "tab2"}
-    )
+    assert_table_lineage_equal("SELECT * FROM tab1 FULL OUTER JOIN tab2", {"tab1", "tab2"})
 
 
 def test_select_cross_join():
@@ -249,9 +235,7 @@ def test_select_cross_join():
 
 
 def test_select_cross_join_with_on():
-    assert_table_lineage_equal(
-        "SELECT * FROM tab1 CROSS JOIN tab2 ON tab1.col1 = tab2.col2", {"tab1", "tab2"}
-    )
+    assert_table_lineage_equal("SELECT * FROM tab1 CROSS JOIN tab2 ON tab1.col1 = tab2.col2", {"tab1", "tab2"})
 
 
 def test_select_join_with_subquery():
@@ -267,15 +251,11 @@ def test_select_join_in_ansi89_syntax():
 
 
 def test_select_join_in_ansi89_syntax_with_subquery():
-    assert_table_lineage_equal(
-        "SELECT * FROM (SELECT * FROM tab1) a, (SELECT * FROM tab2) b", {"tab1", "tab2"}
-    )
+    assert_table_lineage_equal("SELECT * FROM (SELECT * FROM tab1) a, (SELECT * FROM tab2) b", {"tab1", "tab2"})
 
 
 def test_select_group_by():
-    assert_table_lineage_equal(
-        "SELECT col1, col2 FROM tab1 GROUP BY col1, col2", {"tab1"}
-    )
+    assert_table_lineage_equal("SELECT col1, col2 FROM tab1 GROUP BY col1, col2", {"tab1"})
 
 
 def test_select_group_by_ordinal():
@@ -347,9 +327,7 @@ FROM (SELECT id
 
 
 def test_non_reserved_keyword_as_source():
-    assert_table_lineage_equal(
-        "SELECT col1, col2 FROM segment", {"segment"}, test_sqlparse=False
-    )
+    assert_table_lineage_equal("SELECT col1, col2 FROM segment", {"segment"}, test_sqlparse=False)
 
 
 def test_select_in_parenthesis():

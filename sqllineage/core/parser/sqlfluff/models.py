@@ -29,9 +29,7 @@ FUNCTION_SEGMENT_TYPE = ["function"]
 
 COLUMN_SEGMENT_TYPE = ["identifier", "column_reference"]
 
-SOURCE_COLUMN_SEGMENT_TYPE = (
-    NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + FUNCTION_SEGMENT_TYPE + COLUMN_SEGMENT_TYPE
-)
+SOURCE_COLUMN_SEGMENT_TYPE = NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + FUNCTION_SEGMENT_TYPE + COLUMN_SEGMENT_TYPE
 
 
 class SqlFluffTable(Table):
@@ -60,14 +58,7 @@ class SqlFluffTable(Table):
         )
         # rewrite identifier's get_parent_name accordingly
         parent_name = (
-            "".join(
-                [
-                    escape_identifier_name(segment.raw)
-                    for segment in table.segments[:dot_idx]
-                ]
-            )
-            if dot_idx
-            else None
+            "".join([escape_identifier_name(segment.raw) for segment in table.segments[:dot_idx]]) if dot_idx else None
         )
         schema = Schema(parent_name) if parent_name is not None else Schema()
         kwargs = {"alias": alias} if alias else {}
@@ -109,31 +100,16 @@ class SqlFluffColumn(Column):
             if source_columns:
                 column_name = None
                 for sub_segment in list_child_segments(column):
-                    if sub_segment.type == "column_reference" or is_wildcard(
-                        sub_segment
-                    ):
+                    if sub_segment.type == "column_reference" or is_wildcard(sub_segment):
                         if cqt := extract_column_qualifier(sub_segment):
                             column_name = cqt.column
                     elif sub_segment.type == "expression":
                         # special handling for postgres style type cast, col as target column name instead of col::type
                         if len(sub2_segments := list_child_segments(sub_segment)) == 1:
-                            if (
-                                sub2_segment := sub2_segments[0]
-                            ).type == "cast_expression":
-                                if (
-                                    len(
-                                        sub3_segments := list_child_segments(
-                                            sub2_segment
-                                        )
-                                    )
-                                    == 2
-                                ):
-                                    if (
-                                        sub3_segment := sub3_segments[0]
-                                    ).type == "column_reference":
-                                        if cqt := extract_column_qualifier(
-                                            sub3_segment
-                                        ):
+                            if (sub2_segment := sub2_segments[0]).type == "cast_expression":
+                                if len(sub3_segments := list_child_segments(sub2_segment)) == 2:
+                                    if (sub3_segment := sub3_segments[0]).type == "column_reference":
+                                        if cqt := extract_column_qualifier(sub3_segment):
                                             column_name = cqt.column
                 return Column(
                     column.raw if column_name is None else column_name,
@@ -164,16 +140,10 @@ class SqlFluffColumn(Column):
             for sub_segment in sub_segments:
                 if sub_segment.type == "bracketed":
                     if is_subquery(sub_segment):
-                        col_list += SqlFluffColumn._get_column_from_subquery(
-                            sub_segment
-                        )
+                        col_list += SqlFluffColumn._get_column_from_subquery(sub_segment)
                     else:
-                        col_list += SqlFluffColumn._get_column_from_parenthesis(
-                            sub_segment
-                        )
-                elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
-                    sub_segment
-                ):
+                        col_list += SqlFluffColumn._get_column_from_parenthesis(sub_segment)
+                elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(sub_segment):
                     res = SqlFluffColumn._extract_source_columns(sub_segment)
                     col_list.extend(res)
         return col_list
@@ -191,14 +161,12 @@ class SqlFluffColumn(Column):
 
         src_cols = [
             lineage[0]
-            for lineage in LineageRunner(
-                sub_segment.raw, dialect=SQLPARSE_DIALECT
-            ).get_column_lineage(exclude_path_ending_in_subquery=False)
+            for lineage in LineageRunner(sub_segment.raw, dialect=SQLPARSE_DIALECT).get_column_lineage(
+                exclude_path_ending_in_subquery=False
+            )
         ]
         source_columns = [
-            ColumnQualifierTuple(
-                src_col.raw_name, src_col.parent.raw_name if src_col.parent else None
-            )
+            ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name if src_col.parent else None)
             for src_col in src_cols
         ]
         return source_columns
@@ -227,9 +195,7 @@ class SqlFluffColumn(Column):
         for sub_segment in sub_segments:
             if sub_segment.type == "alias_expression":
                 alias = extract_identifier(sub_segment)
-            elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
-                sub_segment
-            ):
+            elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(sub_segment):
                 res = SqlFluffColumn._extract_source_columns(sub_segment)
                 columns += res if res else []
         return columns, alias

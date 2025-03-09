@@ -21,20 +21,14 @@ class CopyExtractor(BaseExtractor):
         "copy_into_table_statement",
     ]
 
-    def extract(
-        self, statement: BaseSegment, context: AnalyzerContext
-    ) -> StatementLineageHolder:
+    def extract(self, statement: BaseSegment, context: AnalyzerContext) -> StatementLineageHolder:
         holder = StatementLineageHolder()
         src_flag = tgt_flag = False
         for segment in list_child_segments(statement):
             if segment.type == "from_clause":
                 if from_expression_element := find_from_expression_element(segment):
-                    for table_expression in from_expression_element.get_children(
-                        "table_expression"
-                    ):
-                        if storage_location := table_expression.get_child(
-                            "storage_location"
-                        ):
+                    for table_expression in from_expression_element.get_children("table_expression"):
+                        if storage_location := table_expression.get_child("storage_location"):
                             holder.add_read(Path(storage_location.raw))
             elif segment.type == "keyword":
                 if segment.raw_upper in ["COPY", "INTO"]:

@@ -40,9 +40,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlparse"
     SUPPORTED_DIALECTS = [SQLPARSE_DIALECT]
 
-    def analyze(
-        self, sql: str, metadata_provider: MetaDataProvider
-    ) -> StatementLineageHolder:
+    def analyze(self, sql: str, metadata_provider: MetaDataProvider) -> StatementLineageHolder:
         # get rid of comments, which cause inconsistencies in sqlparse output
         stmt = sqlparse.parse(trim_comment(sql))[0]
         if (
@@ -56,26 +54,19 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             holder = StatementLineageHolder()
         elif stmt.get_type() == "DROP":
             holder = self._extract_from_ddl_drop(stmt)
-        elif (
-            stmt.get_type() == "ALTER"
-            or stmt.token_first(skip_cm=True).normalized == "RENAME"
-        ):
+        elif stmt.get_type() == "ALTER" or stmt.token_first(skip_cm=True).normalized == "RENAME":
             holder = self._extract_from_ddl_alter(stmt)
         elif stmt.get_type() == "MERGE":
             holder = self._extract_from_dml_merge(stmt, metadata_provider)
         else:
             # DML parsing logic also applies to CREATE DDL
-            holder = StatementLineageHolder.of(
-                self._extract_from_dml(stmt, AnalyzerContext(), metadata_provider)
-            )
+            holder = StatementLineageHolder.of(self._extract_from_dml(stmt, AnalyzerContext(), metadata_provider))
         return holder
 
     @classmethod
     def _extract_from_ddl_drop(cls, stmt: Statement) -> StatementLineageHolder:
         holder = StatementLineageHolder()
-        for table in {
-            SqlParseTable.of(t) for t in stmt.tokens if isinstance(t, Identifier)
-        }:
+        for table in {SqlParseTable.of(t) for t in stmt.tokens if isinstance(t, Identifier)}:
             holder.add_drop(table)
         return holder
 
@@ -93,10 +84,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         if any(k.normalized == "RENAME" for k in keywords):
             if stmt.get_type() == "ALTER" and len(tables) == 2:
                 holder.add_rename(tables[0], tables[1])
-            elif (
-                stmt.token_first(skip_cm=True).normalized == "RENAME"
-                and len(tables) % 2 == 0
-            ):
+            elif stmt.token_first(skip_cm=True).normalized == "RENAME" and len(tables) % 2 == 0:
                 for i in range(0, len(tables), 2):
                     holder.add_rename(tables[i], tables[i + 1])
         if any(k.normalized == "EXCHANGE" for k in keywords) and len(tables) == 2:
@@ -153,9 +141,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 if isinstance(token, Comparison):
                     comparisons = [token]
                 elif isinstance(token, IdentifierList):
-                    comparisons = [
-                        t for t in token.get_identifiers() if isinstance(t, Comparison)
-                    ]
+                    comparisons = [t for t in token.get_identifiers() if isinstance(t, Comparison)]
                 for c in comparisons:
                     if isinstance(right := c.right, Identifier):
                         src_col = Column(right.get_real_name())
@@ -188,9 +174,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                                 if isinstance(identifier, Identifier):
                                     src_col = Column(identifier.get_real_name())
                                     src_col.parent = direct_source
-                                    holder.add_column_lineage(
-                                        src_col, insert_columns[i]
-                                    )
+                                    holder.add_column_lineage(src_col, insert_columns[i])
                     insert_flag = False
         return holder
 
@@ -210,12 +194,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             # If within subquery, then manually add subquery as target table
             for write in context.write:
                 holder.add_write(write)
-        current_handlers = [
-            handler_cls() for handler_cls in CurrentTokenBaseHandler.__subclasses__()
-        ]
-        next_handlers = [
-            handler_cls() for handler_cls in NextTokenBaseHandler.__subclasses__()
-        ]
+        current_handlers = [handler_cls() for handler_cls in CurrentTokenBaseHandler.__subclasses__()]
+        next_handlers = [handler_cls() for handler_cls in NextTokenBaseHandler.__subclasses__()]
 
         subqueries = []
         for sub_token in token.tokens:
@@ -264,10 +244,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             # IdentifierList for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
             result = reduce(
                 add,
-                [
-                    cls._parse_subquery(identifier)
-                    for identifier in token.get_sublists()
-                ],
+                [cls._parse_subquery(identifier) for identifier in token.get_sublists()],
                 [],
             )
         elif is_subquery(token):
@@ -276,13 +253,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         return result
 
     @classmethod
-    def _parse_subquery(
-        cls, token: Union[Identifier, Function, Where]
-    ) -> list[SubQuery]:
+    def _parse_subquery(cls, token: Union[Identifier, Function, Where]) -> list[SubQuery]:
         """
         convert SubQueryTuple to sqllineage.core.models.SubQuery
         """
-        return [
-            SqlParseSubQuery.of(parenthesis, alias)
-            for parenthesis, alias in get_subquery_parentheses(token)
-        ]
+        return [SqlParseSubQuery.of(parenthesis, alias) for parenthesis, alias in get_subquery_parentheses(token)]
