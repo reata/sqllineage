@@ -119,3 +119,12 @@ FROM foo,
 FROM manufacturers m LEFT JOIN LATERAL get_product_names(m.id) pname ON true
 WHERE pname IS NULL;"""
     assert_table_lineage_equal(sql, {"manufacturers"}, dialect=dialect)
+
+
+@pytest.mark.parametrize("dialect", ["tsql"])
+def test_tsql_table_hints(dialect: str):
+    """
+    https://learn.microsoft.com/en-us/sql/t-sql/queries/hints-transact-sql-table?view=sql-server-ver16
+    """
+    sql = "select * from dbname.dto.tablename(NOLOCK)"
+    assert_table_lineage_equal(sql, {"dbname.dto.tablename"}, dialect=dialect)
