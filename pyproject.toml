@@ -48,6 +48,7 @@ ci = [
     "black",
     "mypy",
     "pytest",
+    "pytest-benchmark",
     "pytest-cov",
     "ruff",
     "tox",
@@ -98,7 +99,7 @@ commands = [
     ["ruff", "check", "."],
     ["bandit", "-r", "sqllineage"],
     ["mypy"],
-    ["pytest", "--cov"],
+    ["pytest", "--cov", "--benchmark-save=networkx"],
 ]
 
 [tool.ruff]
