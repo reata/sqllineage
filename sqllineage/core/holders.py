@@ -1,8 +1,10 @@
 import itertools
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
 import networkx as nx
+import rustworkx as rx
 from networkx import DiGraph
+from rustworkx import PyDiGraph
 
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
@@ -12,23 +14,30 @@ DATASET_CLASSES = (Path, Table)
 
 
 class ColumnLineageMixin:
+    graph: DiGraph  # For mypy attribute checking
+
     def get_column_lineage(
-        self, exclude_path_ending_in_subquery=True, exclude_subquery_columns=False
+        self,
+        exclude_path_ending_in_subquery: bool = True,
+        exclude_subquery_columns: bool = False,
+        use_rustworkx: bool = True,
     ) -> set[tuple[Column, ...]]:
         """
         :param exclude_path_ending_in_subquery:  exclude_subquery rename to exclude_path_ending_in_subquery
                exclude column from SubQuery in the ending path
         :param exclude_subquery_columns: exclude column from SubQuery in the path.
+        :param use_rustworkx: tbd.
 
         return a list of column tuple :class:`sqllineage.models.Column`
         """
-        self.graph: DiGraph  # For mypy attribute checking
         # filter all the column node in the graph
         column_nodes = [n for n in self.graph.nodes if isinstance(n, Column)]
         column_graph = self.graph.subgraph(column_nodes)
-        source_columns = {column for column, deg in column_graph.in_degree if deg == 0}
+        source_columns: set[Column] = {
+            column for column, deg in column_graph.in_degree if deg == 0
+        }
         # if a column lineage path ends at SubQuery, then it should be pruned
-        target_columns = {
+        target_columns: set[Column] = {
             node
             for node, deg in column_graph.out_degree
             if isinstance(node, Column) and deg == 0
@@ -37,10 +46,80 @@ class ColumnLineageMixin:
             target_columns = {
                 node for node in target_columns if isinstance(node.parent, Table)
             }
+
+        if use_rustworkx:
+            return self._get_column_lineage_rustworkx(
+                source_columns, target_columns, exclude_subquery_columns
+            )
+        else:
+            return self._get_column_lineage_networkx(
+                source_columns, target_columns, exclude_subquery_columns
+            )
+
+    def _get_column_lineage_networkx(
+        self,
+        source_columns: set[Column],
+        target_columns: set[Column],
+        exclude_subquery_columns: bool = False,
+    ) -> set[tuple[Column, ...]]:
+        """
+        :param source_columns: tbd
+        :param target_columns: tbd
+        :param exclude_subquery_columns: exclude column from SubQuery in the path.
+
+        return a list of column tuple :class:`sqllineage.models.Column`
+        """
+
         columns = set()
         for source, target in itertools.product(source_columns, target_columns):
             simple_paths = list(nx.all_simple_paths(self.graph, source, target))
             for path in simple_paths:
+                if exclude_subquery_columns:
+                    path = [
+                        node for node in path if not isinstance(node.parent, SubQuery)
+                    ]
+                    if len(path) > 1:
+                        columns.add(tuple(path))
+                else:
+                    columns.add(tuple(path))
+        return columns
+
+    def _get_column_lineage_rustworkx(
+        self,
+        source_columns: set[Column],
+        target_columns: set[Column],
+        exclude_subquery_columns: bool = False,
+    ) -> set[tuple[Column, ...]]:
+        """
+        :param source_columns: tbd
+        :param target_columns: tbd
+        :param exclude_subquery_columns: exclude column from SubQuery in the path.
+
+        return a list of column tuple :class:`sqllineage.models.Column`
+        """
+        columns = set()
+
+        # Computing on networkx graph can be slow for very large graphs.
+        # We convert the graph to rustworkx which is significantly faster.
+        rx_graph: PyDiGraph = cast(rx.PyDiGraph, rx.networkx_converter(self.graph))
+
+        # rustworkx is based on indices only, meaning we have to keep a mapping
+        # between indices and actual nodes for both ways.
+        rx_mapping: dict[Column, int] = {
+            node: index for index, node in enumerate(rx_graph.nodes())
+        }
+        rx_mapping_inv: dict[int, Column] = {v: k for k, v in rx_mapping.items()}
+
+        for source, target in itertools.product(source_columns, target_columns):
+            simple_paths = list(
+                rx.digraph_all_simple_paths(
+                    rx_graph, rx_mapping[source], rx_mapping[target]
+                )
+            )
+
+            for rx_path in simple_paths:
+                path = [rx_mapping_inv[p] for p in rx_path]
+
                 if exclude_subquery_columns:
                     path = [
                         node for node in path if not isinstance(node.parent, SubQuery)
