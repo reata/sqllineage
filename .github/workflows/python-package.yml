@@ -33,14 +33,14 @@ jobs:
       id: restore-cached-benchmark
       uses: actions/cache/restore@v4
       with:
-        path: output.json
+        path: .benchmark
         key: ${{ matrix.os }}-${{ matrix.python-version }}-benchmark
     - name: Script
       run: tox -e py
     - name: Save benchmark
       uses: actions/cache/save@v4
       with:
-        path: output.json
+        path: .benchmark
         key: ${{ steps.restore-cached-benchmark.outputs.cache-primary-key }}
     - name: After Success
       uses: codecov/codecov-action@v4
