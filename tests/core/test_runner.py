@@ -83,7 +83,7 @@ def test_performance_multiple_tables(benchmark):
 
     runner = LineageRunner(sql=sql, dialect="ansi")
     runner._eval()  # trigger SQL evaluation and graph generation
-    benchmark.predantic(runner.get_column_lineage, rounds=3000)
+    benchmark.pedantic(runner.get_column_lineage, rounds=3000)
 
 
 def test_performance_single_table(benchmark):
