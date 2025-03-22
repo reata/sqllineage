@@ -99,7 +99,7 @@ commands = [
     ["ruff", "check", "."],
     ["bandit", "-r", "sqllineage"],
     ["mypy"],
-    ["pytest", "--cov", "--benchmark-autosave"],
+    ["pytest", "--cov", "--benchmark-autosave", "--benchmark-compare", "--benchmark-compare-fail", "mean:5%"],
 ]
 
 [tool.ruff]
