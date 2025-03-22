@@ -29,8 +29,20 @@ jobs:
         node-version: '16'
     - name: Install
       run: pip install tox codecov
+    - name: Restore cached benchmark
+      id: restore-cached-benchmark
+      uses: actions/cache/restore@v4
+      with:
+        path: .benchmarks
+        key: ${{ matrix.os }}-${{ matrix.python-version }}-benchmarks
     - name: Script
       run: tox -e py
+    - name: Save benchmark
+      id: save-benchmark
+      uses: actions/cache/save@v4
+      with:
+        path: .benchmarks
+        key: ${{ matrix.os }}-${{ matrix.python-version }}-benchmarks
     - name: After Success
       uses: codecov/codecov-action@v4
       with:
