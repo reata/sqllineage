@@ -99,7 +99,8 @@ commands = [
     ["ruff", "check", "."],
     ["bandit", "-r", "sqllineage"],
     ["mypy"],
-    ["pytest", "--cov", "--benchmark-save=networkx"],
+    ["pytest", "--cov"],
+    ["pytest", "--benchmark-json", "output.json"],
 ]
 
 [tool.ruff]

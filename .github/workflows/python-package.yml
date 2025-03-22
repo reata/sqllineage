@@ -31,6 +31,11 @@ jobs:
       run: pip install tox codecov
     - name: Script
       run: tox -e py
+    - name: Store benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'pytest'
+        output-file-path: output.json
     - name: After Success
       uses: codecov/codecov-action@v4
       with:
