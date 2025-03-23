@@ -132,8 +132,8 @@ def test_performance_comparison(benchmark_collection, benchmark):
     benchmark_collection.config.ideal_rounds = 50
     benchmark_collection.config.max_time_ns = 6e10  # 60 sec
 
-    nx = benchmark(runner.get_column_lineage, True, False, False, name="networkx")
-    rx = benchmark(runner.get_column_lineage, True, False, True, name="rustworkx")
+    nx = benchmark(runner.get_column_lineage, True, True, False, name="networkx")
+    rx = benchmark(runner.get_column_lineage, True, True, True, name="rustworkx")
     assert (
         rx.best_ns * 2 < nx.best_ns
     ), f"rustworkx {rx.mean_ns} SHOULD BE at least 100% better than networkx {nx.mean_ns}"
