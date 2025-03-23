@@ -3,6 +3,8 @@ import warnings
 from collections import OrderedDict
 from typing import Any, Optional
 
+import networkx as nx
+
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SQLLineageHolder
@@ -70,6 +72,13 @@ class LineageRunner(object):
         self._dialect = dialect
         self._metadata_provider = metadata_provider
         self._silent_mode = silent_mode
+
+    @lazy_property
+    def graph(self) -> nx.DiGraph:
+        """
+        the fully parsed lineage graph :class:`networkx.DiGraph`
+        """
+        return self._sql_holder.graph.copy()
 
     @lazy_method
     def __str__(self):
@@ -156,7 +165,10 @@ Target Tables:
 
     @lazy_method
     def get_column_lineage(
-        self, exclude_path_ending_in_subquery=True, exclude_subquery_columns=False
+        self,
+        exclude_path_ending_in_subquery=True,
+        exclude_subquery_columns=False,
+        use_rustworkx=False,
     ) -> list[tuple[Column, Column]]:
         """
         a list of column tuple :class:`sqllineage.models.Column`
@@ -164,7 +176,7 @@ Target Tables:
         # sort by target column, and then source column
         return sorted(
             self._sql_holder.get_column_lineage(
-                exclude_path_ending_in_subquery, exclude_subquery_columns
+                exclude_path_ending_in_subquery, exclude_subquery_columns, use_rustworkx
             ),
             key=lambda x: (str(x[-1]), str(x[0])),
         )

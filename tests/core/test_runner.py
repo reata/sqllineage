@@ -74,3 +74,80 @@ tbl_name=my_table"""
             main(["-f", nested_dir + "/nested.sql"])
         finally:
             os.chdir(cwd)
+
+
+def test_lineage_equality():
+    sql = "insert into ta select b from (select b from tb union all select c from tc ) sub"
+    runner = LineageRunner(sql=sql)
+    runner.graph
+
+    nx = runner.get_column_lineage()
+    rx = runner.get_column_lineage(use_rustworkx=True)
+    assert nx == rx
+
+    nx = runner.get_column_lineage(exclude_subquery_columns=True)
+    rx = runner.get_column_lineage(exclude_subquery_columns=True, use_rustworkx=True)
+    assert nx == rx
+
+
+def test_performance_comparison(benchmark_collection, benchmark):
+    """This test simulates a rather complex SQL, spanning multiple tables and columns.
+
+    NetworkX, the default way and package to generate all paths, is in this case rather
+    slow. According to this benchmark and test, it takes at least twice the time than
+    using rustworkX.
+
+    The benchmark fixture only allows comparing best, mean/average, and worst. Better
+    would be median due to large outliers.
+    """
+
+    def create_sql(num, sources=None) -> str:
+        if sources:
+            return ", ".join(
+                [f"{s}.col_{i} AS col_{s}{i}" for i in range(num) for s in sources]
+            )
+        else:
+            return ", ".join([f"col_{i} AS col_{i}" for i in range(num)])
+
+    sql = ""
+
+    for from_, to_ in [
+        ("database_a.table_a", "database_b.table_a"),
+        ("database_a.table_a", "database_b.table_b"),
+        ("database_a.table_b", "database_b.table_c"),
+        ("database_a.table_b", "database_b.table_d"),
+        ("database_b.table_a", "database_c.table_a"),
+        ("database_b.table_c", "database_c.table_b"),
+    ]:
+        sql += f"""
+        CREATE TABLE {to_} AS
+          SELECT {create_sql(10)}
+          FROM {from_};
+        """
+
+    sql += f"""
+    CREATE TABLE database_d.table_a AS
+      SELECT {create_sql(10)}
+      FROM database_a.table_a as x, database_b.table_b as y 
+      WHERE x.col_0 = y.col_0;
+    """
+
+    sql += f"""
+    CREATE TABLE database_d.table_b AS
+      SELECT {create_sql(num=10, sources=["x", "y"])}
+      FROM database_c.table_b as x, database_d.table_a as y 
+      WHERE x.col_0 = y.col_0;
+    """
+
+    runner = LineageRunner(sql=sql, dialect="ansi")
+    runner.graph  # trigger SQL evaluation and graph generation
+
+    # the normal runtime for our test is pretty long. Updating settings to cater for it.
+    benchmark_collection.config.ideal_rounds = 50
+    benchmark_collection.config.max_time_ns = 6e10  # 60 sec
+
+    nx = benchmark(runner.get_column_lineage, True, False, False, name="networkx")
+    rx = benchmark(runner.get_column_lineage, True, False, True, name="rustworkx")
+    assert (
+        rx.best_ns * 2 < nx.best_ns
+    ), f"rustworkx {rx.mean_ns} SHOULD BE at least 100% better than networkx {nx.mean_ns}"
