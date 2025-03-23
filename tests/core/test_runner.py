@@ -76,6 +76,20 @@ tbl_name=my_table"""
             os.chdir(cwd)
 
 
+def test_lineage_equality():
+    sql = "insert into ta select b from (select b from tb union all select c from tc ) sub"
+    runner = LineageRunner(sql=sql)
+    runner.graph
+
+    nx = runner.get_column_lineage()
+    rx = runner.get_column_lineage(use_rustworkx=True)
+    assert nx == rx
+
+    nx = runner.get_column_lineage(exclude_subquery_columns=True)
+    rx = runner.get_column_lineage(exclude_subquery_columns=True, use_rustworkx=True)
+    assert nx == rx
+
+
 def test_performance_comparison(benchmark_collection, benchmark):
     """This test simulates a rather complex SQL, spanning multiple tables and columns.
 
@@ -132,8 +146,8 @@ def test_performance_comparison(benchmark_collection, benchmark):
     benchmark_collection.config.ideal_rounds = 50
     benchmark_collection.config.max_time_ns = 6e10  # 60 sec
 
-    nx = benchmark(runner.get_column_lineage, True, True, False, name="networkx")
-    rx = benchmark(runner.get_column_lineage, True, True, True, name="rustworkx")
+    nx = benchmark(runner.get_column_lineage, True, False, False, name="networkx")
+    rx = benchmark(runner.get_column_lineage, True, False, True, name="rustworkx")
     assert (
         rx.best_ns * 2 < nx.best_ns
     ), f"rustworkx {rx.mean_ns} SHOULD BE at least 100% better than networkx {nx.mean_ns}"
