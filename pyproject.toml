@@ -7,7 +7,7 @@ name = "sqllineage"
 dependencies = [
     "sqlparse==0.5.3",
     "networkx>=2.4",
-    "sqlfluff==3.3.1",
+    "sqlfluff==3.4.0",
     "sqlalchemy>=2.0.0",
 ]
 requires-python = ">=3.9"
