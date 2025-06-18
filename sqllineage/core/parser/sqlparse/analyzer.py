@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import add
-from typing import Optional, Union
+from typing import Union
 
 import sqlparse
 from sqlparse.sql import (
