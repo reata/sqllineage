@@ -1,5 +1,4 @@
-from typing import List
-from typing import Optional, Tuple
+from typing import Optional
 
 from sqlfluff.core.parser import BaseSegment
 
@@ -16,8 +15,6 @@ from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
 
 NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
-    "function",
-    "over_clause",
     "partitionby_clause",
     "orderby_clause",
     "expression",
@@ -28,10 +25,13 @@ NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
     "cast_expression",
 ]
 
-SOURCE_COLUMN_SEGMENT_TYPE = NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + [
-    "identifier",
-    "column_reference",
-]
+FUNCTION_SEGMENT_TYPE = ["function"]
+
+COLUMN_SEGMENT_TYPE = ["identifier", "column_reference"]
+
+SOURCE_COLUMN_SEGMENT_TYPE = (
+    NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + FUNCTION_SEGMENT_TYPE + COLUMN_SEGMENT_TYPE
+)
 
 
 class SqlFluffTable(Table):
@@ -145,15 +145,19 @@ class SqlFluffColumn(Column):
         return Column(column.raw, source_columns=source_columns)
 
     @staticmethod
-    def _extract_source_columns(segment: BaseSegment) -> List[ColumnQualifierTuple]:
+    def _extract_source_columns(segment: BaseSegment) -> list[ColumnQualifierTuple]:
         """
         :param segment: segment to be processed
         :return: list of extracted source columns
         """
         col_list = []
-        if segment.type in ("identifier", "column_reference") or is_wildcard(segment):
+        if segment.type in COLUMN_SEGMENT_TYPE or is_wildcard(segment):
             if cqt := extract_column_qualifier(segment):
                 col_list = [cqt]
+        elif segment.type in FUNCTION_SEGMENT_TYPE:
+            for bracketed in segment.recursive_crawl("bracketed"):
+                # the bracketed could be in function_contents or over_clause in case of window function
+                col_list += SqlFluffColumn._get_column_from_parenthesis(bracketed)
         elif segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
             sub_segments = list_child_segments(segment)
             col_list = []
@@ -177,7 +181,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_from_subquery(
         sub_segment: BaseSegment,
-    ) -> List[ColumnQualifierTuple]:
+    ) -> list[ColumnQualifierTuple]:
         """
         :param sub_segment: segment to be processed
         :return: A list of source columns from a segment
@@ -202,7 +206,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_from_parenthesis(
         sub_segment: BaseSegment,
-    ) -> List[ColumnQualifierTuple]:
+    ) -> list[ColumnQualifierTuple]:
         # windows function has an extra layer, get rid of it so that it can be handled as regular functions
         if window_specification := sub_segment.get_child("window_specification"):
             sub_segment = window_specification
@@ -212,7 +216,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_and_alias(
         segment: BaseSegment, check_bracketed: bool = True
-    ) -> Tuple[List[ColumnQualifierTuple], Optional[str]]:
+    ) -> tuple[list[ColumnQualifierTuple], Optional[str]]:
         """
         check_bracketed is True for top-level column definition, like (col1 + col2) as col3
         set to False for bracket in function call, like coalesce(col1, col2) as col3

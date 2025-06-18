@@ -12,6 +12,7 @@ class TargetHandler(NextTokenBaseHandler):
     """Target Table Handler."""
 
     TARGET_TABLE_TOKENS = (
+        "INSERT",
         "INTO",
         "OVERWRITE",
         "TABLE",

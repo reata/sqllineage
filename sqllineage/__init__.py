@@ -1,5 +1,5 @@
 NAME = "sqllineage"
-VERSION = "1.5.3"
+VERSION = "1.5.4"
 DEFAULT_LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

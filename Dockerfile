@@ -4,12 +4,11 @@ FROM nikolaik/python-nodejs:python3.10-nodejs18-slim
 ARG CWD=/mnt/sqllineage
 ADD sqllineage/ ${CWD}/sqllineage
 ADD sqllineagejs/ ${CWD}/sqllineagejs
-COPY setup.py README.md ${CWD}/
+COPY pyproject.toml setup.py README.md ${CWD}/
 WORKDIR ${CWD}
 
-# build wheel package, install and remove all source code
-RUN python setup.py bdist_wheel  \
-    && pip install dist/*.whl  \
+# install and remove all source code
+RUN pip install ${CWD}  \
     && rm -rf ${CWD}/*
 
 # Run the image as a non-root user

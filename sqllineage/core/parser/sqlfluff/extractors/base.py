@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import add
-from typing import List, Optional, Type, Union
+from typing import Optional, Union
 
 import networkx as nx
 from sqlfluff.core.parser import BaseSegment
@@ -27,7 +27,7 @@ class BaseExtractor:
     Abstract class implementation for extract 'SubQueryLineageHolder' from different statement types
     """
 
-    SUPPORTED_STMT_TYPES: List[str] = []
+    SUPPORTED_STMT_TYPES: list[str] = []
 
     def __init__(self, dialect: str, metadata_provider: MetaDataProvider):
         self.dialect = dialect
@@ -61,14 +61,14 @@ class BaseExtractor:
         return table
 
     @classmethod
-    def list_subquery(cls, segment: BaseSegment) -> List[SubQuery]:
+    def list_subquery(cls, segment: BaseSegment) -> list[SubQuery]:
         """
         The parse_subquery function takes a segment as an argument.
         :param segment: segment to determine if it is a subquery
         :return: A list of `SqlFluffSubQuery` objects, otherwise, if the segment is not matching any of the expected
         types it returns an empty list.
         """
-        result: List[SubQuery] = []
+        result: list[SubQuery] = []
         identifiers = segment.get_children("from_expression")
         if identifiers and len(identifiers) > 1:
             # for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
@@ -89,7 +89,7 @@ class BaseExtractor:
 
     def _list_table_from_from_clause_or_join_clause(
         self, segment: BaseSegment, holder: SubQueryLineageHolder
-    ) -> List[Union[Table, SubQuery, Path]]:
+    ) -> list[Union[Table, SubQuery, Path]]:
         """
         Extract table from from_clause or join_clause, join_clause is a child node of from_clause.
         """
@@ -119,12 +119,12 @@ class BaseExtractor:
     @staticmethod
     def _add_dataset_from_expression_element(
         segment: BaseSegment, holder: SubQueryLineageHolder
-    ) -> List[Union[Table, SubQuery, Path]]:
+    ) -> list[Union[Table, SubQuery, Path]]:
         """
         Append tables and subqueries identified in the 'from_expression_element' type segment to the table and
         holder extra subqueries sets
         """
-        tables: List[Union[Table, SubQuery, Path]] = []
+        tables: list[Union[Table, SubQuery, Path]] = []
         all_segments = [
             seg for seg in list_child_segments(segment) if seg.type != "keyword"
         ]
@@ -183,7 +183,7 @@ class BaseExtractor:
         return tables
 
     @classmethod
-    def _parse_subquery(cls, subqueries: List[SubQueryTuple]) -> List[SubQuery]:
+    def _parse_subquery(cls, subqueries: list[SubQueryTuple]) -> list[SubQuery]:
         """
         Convert a list of 'SqlFluffSubQueryTuple' to 'SqlFluffSubQuery'
         :param subqueries:  a list of 'SqlFluffSubQueryTuple'
@@ -196,7 +196,7 @@ class BaseExtractor:
 
     def delegate_to(
         self,
-        extractor_cls: "Type[BaseExtractor]",
+        extractor_cls: "type[BaseExtractor]",
         segment: BaseSegment,
         context: AnalyzerContext,
     ) -> SubQueryLineageHolder:
@@ -208,7 +208,7 @@ class BaseExtractor:
         )
 
     def extract_subquery(
-        self, subqueries: List[SubQuery], holder: SubQueryLineageHolder
+        self, subqueries: list[SubQuery], holder: SubQueryLineageHolder
     ):
         """
         extract subqueries collected from statement-level segment

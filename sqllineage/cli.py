@@ -8,7 +8,11 @@ from sqllineage import (
     DEFAULT_HOST,
     DEFAULT_LOGGING,
     DEFAULT_PORT,
+)
+from sqllineage import (
     NAME as MAIN_NAME,
+)
+from sqllineage import (
     VERSION as MAIN_VERSION,
 )
 from sqllineage.core.metadata.dummy import DummyMetaDataProvider
@@ -16,7 +20,7 @@ from sqllineage.core.metadata.sqlalchemy import SQLAlchemyMetaDataProvider
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
-from sqllineage.utils.helpers import extract_sql_from_args
+from sqllineage.utils.helpers import extract_file_path_from_args, extract_sql_from_args
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +112,10 @@ def main(args=None) -> None:
         warnings.warn("Both -e and -f options are specified. -e option will be ignored")
     if args.f or args.e:
         sql = extract_sql_from_args(args)
+        file_path = extract_file_path_from_args(args)
         runner = LineageRunner(
             sql,
+            file_path=file_path,
             dialect=args.dialect,
             metadata_provider=metadata_provider,
             verbose=args.verbose,

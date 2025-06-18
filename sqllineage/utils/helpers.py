@@ -1,6 +1,5 @@
 import logging
 from argparse import Namespace
-from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +45,14 @@ def extract_sql_from_args(args: Namespace) -> str:
     return sql
 
 
-def split(sql: str) -> List[str]:
+def extract_file_path_from_args(args: Namespace) -> str:
+    file_path = "."
+    if getattr(args, "f", None):
+        file_path = args.f
+    return file_path
+
+
+def split(sql: str) -> list[str]:
     # TODO: we need a parser independent split function
     import sqlparse
     from sqlparse.tokens import Punctuation

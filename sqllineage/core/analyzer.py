@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from typing import List
 
 from sqllineage.core.holders import StatementLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
@@ -11,7 +10,7 @@ class LineageAnalyzer:
     """
 
     PARSER_NAME: str = ""
-    SUPPORTED_DIALECTS: List[str] = []
+    SUPPORTED_DIALECTS: list[str] = []
 
     @abstractmethod
     def analyze(

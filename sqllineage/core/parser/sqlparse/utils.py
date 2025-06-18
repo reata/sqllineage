@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Union
 
 from sqlparse.sql import (
     Case,
@@ -99,8 +99,8 @@ def is_values_clause(token: Parenthesis) -> bool:
 
 
 def get_subquery_parentheses(
-    token: Union[Identifier, Function, Values, Where]
-) -> List[SubQueryTuple]:
+    token: Union[Identifier, Function, Values, Where],
+) -> list[SubQueryTuple]:
     """
     Retrieve subquery list
     the returned list is either empty when no subquery parsed or list of [parenthesis, alias] tuple

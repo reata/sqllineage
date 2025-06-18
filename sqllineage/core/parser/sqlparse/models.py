@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from sqlparse import tokens as T
 from sqlparse.engine import grouping
@@ -92,7 +92,7 @@ class SqlParseColumn(Column):
             )
 
     @staticmethod
-    def _extract_source_columns(token: Token) -> List[ColumnQualifierTuple]:
+    def _extract_source_columns(token: Token) -> list[ColumnQualifierTuple]:
         if isinstance(token, Function):
             # max(col1) AS col2
             source_columns = [

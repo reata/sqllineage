@@ -1,14 +1,18 @@
 import os.path
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy import (
     Column as SQLAlchemyColumn,
+)
+from sqlalchemy import (
     Integer,
     MetaData,
-    Table as SQLAlchemyTable,
     inspect,
     text,
+)
+from sqlalchemy import (
+    Table as SQLAlchemyTable,
 )
 
 from sqllineage import SQLPARSE_DIALECT
@@ -92,7 +96,7 @@ def assert_column_lineage_equal(
         _assert_column_lineage(lr_sqlfluff, column_lineages)
 
 
-def generate_metadata_providers(test_schemas) -> List[MetaDataProvider]:
+def generate_metadata_providers(test_schemas) -> list[MetaDataProvider]:
     dummy_provider = DummyMetaDataProvider(test_schemas)
 
     sqlite3_sqlalchemy_provider = SQLAlchemyMetaDataProvider("sqlite:///:memory:")
