@@ -19,7 +19,7 @@ from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.core.models import Column, SubQuery, Table, Path
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
@@ -159,7 +159,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 for c in comparisons:
                     if isinstance(right := c.right, Identifier):
                         src_col = Column(right.get_real_name())
-                        src_col.parent = direct_source
+                        # TODO
+                        src_col.parent = direct_source or Path('unknown')
                         tgt_col = Column(c.left.get_real_name())
                         tgt_col.parent = list(holder.write)[0]
                         holder.add_column_lineage(src_col, tgt_col)
@@ -187,7 +188,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                             for i, identifier in enumerate(identifiers):
                                 if isinstance(identifier, Identifier):
                                     src_col = Column(identifier.get_real_name())
-                                    src_col.parent = direct_source
+                                    # TODO
+                                    src_col.parent = direct_source or Path('unknown')
                                     holder.add_column_lineage(
                                         src_col, insert_columns[i]
                                     )

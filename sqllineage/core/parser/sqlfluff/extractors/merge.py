@@ -3,7 +3,7 @@ from typing import Optional, Union
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import StatementLineageHolder
-from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.core.models import Column, SubQuery, Table, Path
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.cte import CteExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
@@ -53,7 +53,8 @@ class MergeExtractor(BaseExtractor):
                                     src_col = tgt_col = None
                                     if src_cqt := extract_column_qualifier(columns[1]):
                                         src_col = Column(src_cqt.column)
-                                        src_col.parent = direct_source
+                                        # TODO
+                                        src_col.parent = direct_source or Path('unknown')
                                     if tgt_cqt := extract_column_qualifier(columns[0]):
                                         tgt_col = Column(tgt_cqt.column)
                                         tgt_col.parent = list(holder.write)[0]
@@ -86,7 +87,8 @@ class MergeExtractor(BaseExtractor):
                                                 column_reference_optional
                                             ):
                                                 src_col = Column(cqt.column)
-                                                src_col.parent = direct_source
+                                                # TODO
+                                                src_col.parent = direct_source or Path('unknown')
                                                 holder.add_column_lineage(
                                                     src_col, insert_columns[j]
                                                 )
