@@ -19,7 +19,7 @@ from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.core.models import Column, SubQuery, Table, Path
+from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,

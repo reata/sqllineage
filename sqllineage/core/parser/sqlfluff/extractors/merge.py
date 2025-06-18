@@ -3,7 +3,7 @@ from typing import Optional, Union
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import StatementLineageHolder
-from sqllineage.core.models import Column, SubQuery, Table, Path
+from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.cte import CteExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
