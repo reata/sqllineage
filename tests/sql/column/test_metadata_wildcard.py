@@ -337,10 +337,10 @@ def test_wildcard_reference_from_previous_statements(provider: MetaDataProvider)
         metadata_provider=provider,
     )
 
+
 # TODO
 # Expected Lineage: {(Column: <default>.tab_b.col_b, Column: <default>.tab_c.col_a), (Column: <default>.base.*, Column: <default>.tab_c.*)}
 # Actual Lineage: {(Column: <default>.tab_b.col_b, Column: <default>.tab_c.col_a), (Column: base.*, Column: <default>.tab_c.*)}
-
 # def test_output_consistency():
 #     sql = """INSERT INTO tab_c
 # SELECT *,
