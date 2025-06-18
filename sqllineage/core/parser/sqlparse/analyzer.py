@@ -113,7 +113,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         holder = StatementLineageHolder()
         src_flag = tgt_flag = update_flag = insert_flag = False
         insert_columns = []
-        direct_source: Optional[Union[Table, SubQuery]] = None
+        # TODO
+        direct_source: Union[Table, SubQuery, Path] = Path("unknown")
         for token in stmt.tokens:
             if is_token_negligible(token):
                 continue
@@ -159,8 +160,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 for c in comparisons:
                     if isinstance(right := c.right, Identifier):
                         src_col = Column(right.get_real_name())
-                        # TODO
-                        src_col.parent = direct_source or Path("unknown")
+                        src_col.parent = direct_source
                         tgt_col = Column(c.left.get_real_name())
                         tgt_col.parent = list(holder.write)[0]
                         holder.add_column_lineage(src_col, tgt_col)
@@ -188,8 +188,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                             for i, identifier in enumerate(identifiers):
                                 if isinstance(identifier, Identifier):
                                     src_col = Column(identifier.get_real_name())
-                                    # TODO
-                                    src_col.parent = direct_source or Path("unknown")
+                                    src_col.parent = direct_source
                                     holder.add_column_lineage(
                                         src_col, insert_columns[i]
                                     )
