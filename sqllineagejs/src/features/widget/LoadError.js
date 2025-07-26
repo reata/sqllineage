@@ -1,7 +1,7 @@
 import React from 'react';
-import {Box} from "@material-ui/core";
-import EmojiPeopleOutlinedIcon from '@material-ui/icons/EmojiPeopleOutlined';
-import ErrorOutlinedIcon from "@material-ui/icons/Error";
+import {Box} from "@mui/material";
+import EmojiPeopleOutlinedIcon from '@mui/icons-material/EmojiPeopleOutlined';
+import ErrorOutlinedIcon from "@mui/icons-material/Error";
 
 
 export function LoadError(props) {

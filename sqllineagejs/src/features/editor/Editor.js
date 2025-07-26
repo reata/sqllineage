@@ -13,7 +13,7 @@ import {
 import MonacoEditor from "react-monaco-editor";
 import {Loading} from "../widget/Loading";
 import {LoadError} from "../widget/LoadError";
-import {useHistory, useLocation} from "react-router-dom";
+import {useNavigate, useLocation} from "react-router-dom";
 
 const useQueryParam = () => {
   return new URLSearchParams(useLocation().search)
@@ -24,13 +24,13 @@ export function Editor(props) {
   const dispatch = useDispatch();
   const editorState = useSelector(selectEditor);
   const queryParam = useQueryParam();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let query = queryParam.get("e");
     if (query !== null) {
       dispatch(setContentComposed(query));
-      history.push("/");
+      navigate("/");
     } else {
       let file = queryParam.get("f");
       if (editorState.file !== file || editorState.dialect !== dialect) {

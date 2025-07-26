@@ -22,18 +22,16 @@ export const directorySlice = createSlice({
       state.openNonSQLWarning = action.payload
     }
   },
-  extraReducers: {
-    [fetchRootDirectory.pending]: (state) => {
-      state.status = "loading"
-    },
-    [fetchRootDirectory.fulfilled]: (state, action) => {
-      state.status = "succeeded";
-      state.content = action.payload
-    },
-    [fetchRootDirectory.rejected]: (state, action) => {
-      state.status = "failed"
-      state.error = action.error.message
-    }
+  extraReducers: (builder) => {
+    builder.addCase(fetchRootDirectory.pending, (state) => {
+      state.status = 'loading';
+    }).addCase(fetchRootDirectory.fulfilled, (state, action) => {
+      state.status = 'succeeded';
+      state.content = action.payload;
+    }).addCase(fetchRootDirectory.rejected, (state, action) => {
+      state.status = 'failed';
+      state.content = action.error.message;
+    });
   }
 });
 

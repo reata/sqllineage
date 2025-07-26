@@ -49,31 +49,26 @@ export const editorSlice = createSlice({
       state.dagLevel = action.payload
     }
   },
-  extraReducers: {
-    [fetchContent.pending]: (state) => {
-      state.editorStatus = "loading"
-    },
-    [fetchContent.fulfilled]: (state, action) => {
-      state.editorStatus = "succeeded";
-      state.content = action.payload.content
-    },
-    [fetchContent.rejected]: (state, action) => {
-      state.editorStatus = "failed"
-      state.editorError = action.error.message
-    },
-    [fetchDAG.pending]: (state) => {
-      state.dagStatus = "loading"
-    },
-    [fetchDAG.fulfilled]: (state, action) => {
+  extraReducers: (builder) => {
+    builder.addCase(fetchContent.pending, (state) => {
+      state.editorStatus = "loading";
+    }).addCase(fetchContent.fulfilled, (state, action) => {
+      state.editorStatus = "success";
+      state.content = action.payload.content;
+    }).addCase(fetchContent.rejected, (state, action) => {
+      state.editorStatus = "failed";
+      state.editorError = action.error.message;
+    }).addCase(fetchDAG.pending, (state) => {
+      state.dagStatus = "loading";
+    }).addCase(fetchDAG.fulfilled, (state, action) => {
       state.dagStatus = "succeeded";
       state.dagContent = action.payload.dag;
       state.dagVerbose = action.payload.verbose;
       state.dagColumn = action.payload.column;
-    },
-    [fetchDAG.rejected]: (state, action) => {
+    }).addCase(fetchDAG.rejected, (state, action) => {
       state.dagStatus = "failed";
       state.dagError = action.error.message;
-    }
+    });
   }
 });
 

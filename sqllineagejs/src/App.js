@@ -8,6 +8,7 @@ import {
   FormControl,
   FormControlLabel,
   Grid,
+  IconButton,
   ListSubheader,
   Menu,
   MenuItem,
@@ -17,70 +18,19 @@ import {
   Toolbar,
   Tooltip,
   Typography
-} from "@material-ui/core";
+} from "@mui/material";
 import {DAG} from "./features/editor/DAG";
 import {Editor} from "./features/editor/Editor";
-import {makeStyles} from "@material-ui/core/styles";
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import CreateIcon from "@material-ui/icons/Create";
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import IconButton from "@material-ui/core/IconButton";
-import LanguageIcon from '@material-ui/icons/Language';
-import MenuIcon from "@material-ui/icons/Menu";
-import clsx from "clsx";
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import CreateIcon from "@mui/icons-material/Create";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import LanguageIcon from '@mui/icons-material/Language';
+import MenuIcon from "@mui/icons-material/Menu";
 import {Directory} from "./features/directory/Directory";
 import {BrowserRouter as Router, Link} from "react-router-dom";
 import {DAGDesc} from "./features/editor/DAGDesc";
 import {useSelector} from "react-redux";
 import {selectEditor} from "./features/editor/editorSlice";
-
-
-const useStyles = makeStyles((theme) => ({
-  appBar: {
-    flexGrow: 1,
-    zIndex: theme.zIndex.drawer + 1,
-  },
-  menuButton: {
-    marginRight: theme.spacing(2),
-  },
-  title: {
-    flexGrow: 1,
-  },
-  content: {
-    padding: theme.spacing(0.5),
-    marginTop: theme.spacing(6),
-    float: "right"
-  },
-  hide: {
-    display: "none"
-  },
-  drawerPaper: {
-    width: ({drawerWidth}) => drawerWidth + "vw",
-  },
-  contentShift: {
-    transition: theme.transitions.create('margin', {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-  },
-  dragger: {
-    width: '5px',
-    cursor: 'ew-resize',
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: ({drawerWidth}) => drawerWidth + "vw",
-    backgroundColor: "transparent",
-    zIndex: 999
-  },
-  dialect: {
-    margin: theme.spacing(0, 0.5, 0, 1),
-    display: 'none',
-    [theme.breakpoints.up('md')]: {
-      display: 'block',
-    },
-  }
-}));
 
 
 let isResizing = null;
@@ -123,7 +73,6 @@ export default function App() {
   const [drawerWidth, setDrawerWidth] = React.useState(18);
   const [dialectMenuAnchor, setDialectMenuAnchor] = React.useState(null);
   const [dialectSelected, setDialectSelected] = React.useState("ansi");
-  const classes = useStyles({drawerWidth: drawerWidth});
 
   const height = "90vh";
   const width = useMemo(() => {
@@ -179,20 +128,23 @@ export default function App() {
     <Router basename={process.env.PUBLIC_URL}>
       <div>
         <Box>
-          <AppBar position="fixed" className={classes.appBar}>
+          <AppBar position="fixed" sx={theme => ({
+            flexGrow: 1,
+            zIndex: theme.zIndex.drawer + 1,
+          })}>
             <Toolbar variant="dense">
               <IconButton
                 edge="start"
-                className={classes.menuButton}
+                sx={theme => ({marginRight: theme.spacing(2)})}
                 color="inherit"
                 aria-label="menu"
                 onClick={() => {
                   setDrawerOpen(!drawerOpen)
                 }}
-              >
+                size="large">
                 {drawerOpen ? <ChevronLeftIcon/> : <MenuIcon/>}
               </IconButton>
-              <Typography variant="h6" className={classes.title}>
+              <Typography variant="h6" sx={{flexGrow: 1}}>
                 SQLLineage
               </Typography>
 
@@ -204,7 +156,15 @@ export default function App() {
                   }}
                 >
                   <LanguageIcon/>
-                  <span className={classes.dialect}>{dialectSelected}</span>
+                  <Box
+                    component="span"
+                    sx={theme => ({
+                      margin: theme.spacing(0, 0.5, 0, 1),
+                      display: {xs: "none", md: "block"},
+                    })}
+                  >
+                    {dialectSelected}
+                  </Box>
                   <ExpandMoreIcon fontSize="small"/>
                 </Button>
               </Tooltip>
@@ -213,7 +173,9 @@ export default function App() {
                 anchorEl={dialectMenuAnchor}
                 open={Boolean(dialectMenuAnchor)}
                 onClose={handleDialectMenuClose}
-                TransitionComponent={Fade}
+                slots={{
+                  transition: Fade
+                }}
               >
                 {Object.entries(dialects).map((entry) => (
                   <div>
@@ -244,7 +206,7 @@ export default function App() {
                         setViewSelected("script");
                         setDrawerOpen(false);
                       }}
-                    >
+                      size="large">
                       <CreateIcon/>
                     </IconButton>
                   </Tooltip>
@@ -255,36 +217,55 @@ export default function App() {
           <Drawer
             variant="persistent"
             open={drawerOpen}
-            classes={{
-              paper: classes.drawerPaper,
-            }}
           >
-            <Box className={classes.content}>
+            <Box sx={theme => ({
+              padding: theme.spacing(0.5),
+              marginTop: theme.spacing(6),
+              float: "right",
+              width: drawerWidth + "vw",
+            })}>
               <Directory/>
             </Box>
           </Drawer>
         </Box>
-        <div
+        <Box
           id="dragger"
           onMouseDown={handleMouseDown}
-          className={clsx(classes.dragger, {[classes.hide]: !drawerOpen})}
+          component="div"
+          sx={{
+            width: '5px',
+            cursor: 'ew-resize',
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            backgroundColor: "transparent",
+            zIndex: 999,
+            display: drawerOpen ? "block" : "none",
+            left: drawerWidth + 0.6 + "vw",
+          }}
         />
-        <main
-          className={clsx(classes.content, {[classes.contentShift]: drawerOpen})}
+        <Box
+          component="main"
+          sx={theme => ({
+              padding: theme.spacing(0.5),
+              marginTop: theme.spacing(6),
+              float: "right",
+              marginLeft: drawerOpen ? drawerWidth + "vw" : theme.spacing(0)
+            })}
         >
           <Paper elevation="24" style={{height: height, width: width}}>
-            <Box className={viewSelected === "dag" ? "" : classes.hide}>
+            <Box sx={viewSelected === "dag" ? {} : {display: "none"}}>
               <DAG height={height} width={width}/>
             </Box>
-            <Box className={viewSelected === "text" ? "" : classes.hide}>
+            <Box sx={viewSelected === "text" ? {} : {display: "none"}}>
               <DAGDesc height={height} width={width}/>
             </Box>
-            <Box className={viewSelected === "script" ? "" : classes.hide}>
+            <Box sx={viewSelected === "script" ? {} : {display: "none"}}>
               <Editor height={height} width={width} dialect={dialectSelected}/>
             </Box>
           </Paper>
-          <Grid container justify="center">
-            <FormControl component="fieldset">
+          <Grid container justifyContent="center">
+            <FormControl variant="standard" component="fieldset">
               <RadioGroup row aria-label="position" name="position" defaultValue="dag"
                           value={viewSelected}
                           onChange={(event) => setViewSelected(event.target.value)}>
@@ -306,8 +287,8 @@ export default function App() {
               </RadioGroup>
             </FormControl>
           </Grid>
-        </main>
+        </Box>
       </div>
     </Router>
-  )
+  );
 }

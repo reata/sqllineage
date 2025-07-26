@@ -1,44 +1,21 @@
 import React, {useEffect} from "react";
-import Typography from "@material-ui/core/Typography";
-import TreeView from "@material-ui/lab/TreeView";
-import TreeItem from "@material-ui/lab/TreeItem";
-import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
-import ChevronRightIcon from "@material-ui/icons/ChevronRight";
-import FolderIcon from "@material-ui/icons/Folder";
-import DescriptionIcon from "@material-ui/icons/Description";
-import {makeStyles} from "@material-ui/core";
+import {
+  Box,
+  Typography
+} from "@mui/material";
+import {
+  SimpleTreeView,
+  TreeItem
+} from "@mui/x-tree-view";
+import FolderIcon from "@mui/icons-material/Folder";
+import DescriptionIcon from "@mui/icons-material/Description";
 import {useDispatch, useSelector} from "react-redux";
 import {DirectoryAPI, selectDirectory, setOpenNonSQLWarning} from "./directorySlice";
-import {useHistory} from "react-router-dom";
-
-
-const useStyles = makeStyles((theme) => ({
-  "@global": {
-    ".MuiTreeItem-root.Mui-selected > .MuiTreeItem-content .MuiTreeItem-label": {
-      backgroundColor: "white"
-    },
-  },
-  directory: {
-    marginLeft: theme.spacing(0.2)
-  },
-  labelRoot: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: theme.spacing(0.1, 0),
-  },
-  labelIcon: {
-    marginRight: theme.spacing(0.2),
-  },
-  labelText: {
-    fontWeight: 'inherit',
-    flexGrow: 1,
-  },
-}));
+import {useNavigate} from "react-router-dom";
 
 
 export default function DirectoryTreeItem(props) {
-  const classes = useStyles();
-  const history = useHistory();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const directoryState = useSelector(selectDirectory);
   const [childNodes, setChildNodes] = React.useState(null);
@@ -53,17 +30,17 @@ export default function DirectoryTreeItem(props) {
     }
   }, [directoryState.content.children, props.id, props.is_root])
 
-  const handleSelect = () => {
+  const handleSelectionChange = () => {
     if (!props.is_dir) {
       if (props.name.endsWith(".sql")) {
-        history.push(`/?f=${props.id}`);
+        navigate(`/?f=${props.id}`);
       } else {
         dispatch(setOpenNonSQLWarning(true))
       }
     }
   };
 
-  const handleToggle = (event, nodes) => {
+  const handleExpansionChange = (event, nodes) => {
     const expandingNodes = nodes.filter(x => !expanded.includes(x));
     setExpanded(nodes);
     if (expandingNodes[0]) {
@@ -78,29 +55,38 @@ export default function DirectoryTreeItem(props) {
   };
 
   return (
-    <TreeView
-      className={classes.directory}
-      defaultCollapseIcon={<ExpandMoreIcon/>}
-      defaultExpandIcon={<ChevronRightIcon/>}
+    <SimpleTreeView
+      sx={theme => ({marginLeft: theme.spacing(0.2)})}
       expanded={expanded}
-      onNodeSelect={handleSelect}
-      onNodeToggle={handleToggle}
+      onSelectedItemsChange={handleSelectionChange}
+      onExpandedItemsChange={handleExpansionChange}
     >
       <TreeItem
-        key={props.id}
-        nodeId={props.id}
+        itemId={props.id}
+        sx={{
+          '.MuiTreeItem-content[data-selected]': {
+            backgroundColor: 'transparent',
+          },
+        }}
         label={
-          <div className={classes.labelRoot}>
-            {props.is_dir ? <FolderIcon color="action" className={classes.labelIcon}/> :
-              <DescriptionIcon color="action" className={classes.labelIcon}/>}
-            <Typography variant="body2" className={classes.labelText}>
+          <Box
+            component="div"
+            sx={theme => ({
+              display: "flex",
+              alignItems: "center",
+              padding: theme.spacing(0.1, 0),
+            })}
+          >
+            {props.is_dir ? <FolderIcon color="action" sx={theme => ({marginRight: theme.spacing(0.2)})}/> :
+              <DescriptionIcon color="action" sx={theme => ({marginRight: theme.spacing(0.2)})}/>}
+            <Typography variant="body2" sx={{fontWeight: "inherit", flexGrow: 1}}>
               {props.name}
             </Typography>
-          </div>
+          </Box>
         }
       >
-        {props.is_dir && (childNodes || [<div key="stub"/>])}
+        {props.is_dir && (childNodes || [<Box/>])}
       </TreeItem>
-    </TreeView>
+    </SimpleTreeView>
   );
 }
