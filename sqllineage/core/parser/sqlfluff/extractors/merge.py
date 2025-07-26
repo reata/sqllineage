@@ -53,7 +53,8 @@ class MergeExtractor(BaseExtractor):
                                     src_col = tgt_col = None
                                     if src_cqt := extract_column_qualifier(columns[1]):
                                         src_col = Column(src_cqt.column)
-                                        src_col.parent = direct_source
+                                        if direct_source is not None:
+                                            src_col.parent = direct_source
                                     if tgt_cqt := extract_column_qualifier(columns[0]):
                                         tgt_col = Column(tgt_cqt.column)
                                         tgt_col.parent = list(holder.write)[0]
@@ -86,7 +87,8 @@ class MergeExtractor(BaseExtractor):
                                                 column_reference_optional
                                             ):
                                                 src_col = Column(cqt.column)
-                                                src_col.parent = direct_source
+                                                if direct_source is not None:
+                                                    src_col.parent = direct_source
                                                 holder.add_column_lineage(
                                                     src_col, insert_columns[j]
                                                 )
