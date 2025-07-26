@@ -1,5 +1,5 @@
-import React, {useEffect} from "react";
-import {useDispatch, useSelector} from "react-redux";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   fetchContent,
   fetchDAG,
@@ -8,15 +8,15 @@ import {
   setDagLevel,
   setEditable,
   setFile,
-  setDialect
+  setDialect,
 } from "./editorSlice";
 import MonacoEditor from "react-monaco-editor";
-import {Loading} from "../widget/Loading";
-import {LoadError} from "../widget/LoadError";
-import {useNavigate, useLocation} from "react-router-dom";
+import { Loading } from "../widget/Loading";
+import { LoadError } from "../widget/LoadError";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const useQueryParam = () => {
-  return new URLSearchParams(useLocation().search)
+  return new URLSearchParams(useLocation().search);
 };
 
 export function Editor(props) {
@@ -39,51 +39,57 @@ export function Editor(props) {
         dispatch(setDagLevel("table"));
         if (file === null) {
           dispatch(setEditable(true));
-          dispatch(fetchDAG({"e": editorState.contentComposed}))
+          dispatch(fetchDAG({ e: editorState.contentComposed }));
         } else {
           dispatch(setEditable(false));
-          dispatch(fetchContent({"f": file}));
-          dispatch(fetchDAG({"f": file}));
+          dispatch(fetchContent({ f: file }));
+          dispatch(fetchDAG({ f: file }));
         }
       }
     }
-  })
+  });
 
   const handleEditorDidMount = (editor, monaco) => {
     const readOnly = monaco.editor.EditorOption.readOnly;
     editor.onDidBlurEditorText(() => {
       if (!editor.getOption(readOnly)) {
         dispatch(setContentComposed(editor.getValue()));
-        dispatch(fetchDAG({"e": editor.getValue()}));
+        dispatch(fetchDAG({ e: editor.getValue() }));
       }
-    })
+    });
     editor.onKeyDown(() => {
       // This is a walk-around to trigger "Cannot editor in readonly editor". Be default this tooltip is only shown
       // when user press backspace key on readonly editor, we want it with any key
       if (editor.getOption(readOnly)) {
-        editor.trigger(monaco.KeyCode.Backspace, 'deleteLeft')
+        editor.trigger(monaco.KeyCode.Backspace, "deleteLeft");
       }
-    })
-  }
+    });
+  };
 
   if (editorState.editorStatus === "loading") {
-    return <Loading minHeight={height}/>
+    return <Loading minHeight={height} />;
   } else if (editorState.editorStatus === "failed") {
-    return <LoadError minHeight={height} message={editorState.editorError}/>
+    return <LoadError minHeight={height} message={editorState.editorError} />;
   } else {
     const options = {
-      minimap: {enabled: false},
+      minimap: { enabled: false },
       readOnly: !editorState.editable,
       wordWrap: "on",
-      automaticLayout: true
-    }
-    return <MonacoEditor
-      width={width}
-      height={height}
-      language="sql"
-      value={editorState.editable ? editorState.contentComposed : editorState.content}
-      options={options}
-      editorDidMount={handleEditorDidMount}
-    />
+      automaticLayout: true,
+    };
+    return (
+      <MonacoEditor
+        width={width}
+        height={height}
+        language="sql"
+        value={
+          editorState.editable
+            ? editorState.contentComposed
+            : editorState.content
+        }
+        options={options}
+        editorDidMount={handleEditorDidMount}
+      />
+    );
   }
 }

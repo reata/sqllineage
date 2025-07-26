@@ -1,8 +1,7 @@
-import React from 'react';
-import Fade from '@mui/material/Fade';
-import CircularProgress from '@mui/material/CircularProgress';
-import {Box} from "@mui/material";
-
+import React from "react";
+import Fade from "@mui/material/Fade";
+import CircularProgress from "@mui/material/CircularProgress";
+import { Box } from "@mui/material";
 
 export function Loading(props) {
   return (
@@ -15,11 +14,11 @@ export function Loading(props) {
       <Fade
         in
         style={{
-          transitionDelay: '500ms',
+          transitionDelay: "500ms",
         }}
         unmountOnExit
       >
-        <CircularProgress/>
+        <CircularProgress />
       </Fade>
     </Box>
   );

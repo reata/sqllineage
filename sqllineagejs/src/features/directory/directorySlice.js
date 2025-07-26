@@ -1,41 +1,47 @@
-import {createAsyncThunk, createSlice} from '@reduxjs/toolkit';
-import {assemble_absolute_endpoint, client} from "../../api/client";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { assemble_absolute_endpoint, client } from "../../api/client";
 
 const initialState = {
   content: {},
-  status: 'idle',
+  status: "idle",
   error: null,
-  openNonSQLWarning: false
+  openNonSQLWarning: false,
 };
 
 export const DirectoryAPI = async (payload) => {
   return await client.post(assemble_absolute_endpoint("/directory"), payload);
-}
+};
 
-export const fetchRootDirectory = createAsyncThunk('directory/fetchDirectory', DirectoryAPI);
+export const fetchRootDirectory = createAsyncThunk(
+  "directory/fetchDirectory",
+  DirectoryAPI,
+);
 
 export const directorySlice = createSlice({
-  name: 'directory',
+  name: "directory",
   initialState,
   reducers: {
     setOpenNonSQLWarning(state, action) {
-      state.openNonSQLWarning = action.payload
-    }
+      state.openNonSQLWarning = action.payload;
+    },
   },
   extraReducers: (builder) => {
-    builder.addCase(fetchRootDirectory.pending, (state) => {
-      state.status = 'loading';
-    }).addCase(fetchRootDirectory.fulfilled, (state, action) => {
-      state.status = 'succeeded';
-      state.content = action.payload;
-    }).addCase(fetchRootDirectory.rejected, (state, action) => {
-      state.status = 'failed';
-      state.content = action.error.message;
-    });
-  }
+    builder
+      .addCase(fetchRootDirectory.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(fetchRootDirectory.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.content = action.payload;
+      })
+      .addCase(fetchRootDirectory.rejected, (state, action) => {
+        state.status = "failed";
+        state.content = action.error.message;
+      });
+  },
 });
 
-export const selectDirectory = state => state.directory;
-export const {setOpenNonSQLWarning} = directorySlice.actions;
+export const selectDirectory = (state) => state.directory;
+export const { setOpenNonSQLWarning } = directorySlice.actions;
 
 export default directorySlice.reducer;
