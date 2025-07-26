@@ -1,7 +1,7 @@
 import React from 'react';
-import Fade from '@material-ui/core/Fade';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import {Box} from "@material-ui/core";
+import Fade from '@mui/material/Fade';
+import CircularProgress from '@mui/material/CircularProgress';
+import {Box} from "@mui/material";
 
 
 export function Loading(props) {

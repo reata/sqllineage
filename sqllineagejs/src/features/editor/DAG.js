@@ -6,36 +6,19 @@ import {useDispatch, useSelector} from "react-redux";
 import {selectEditor, setDagLevel} from "./editorSlice";
 import {Loading} from "../widget/Loading";
 import {LoadError} from "../widget/LoadError";
-import {SpeedDial, SpeedDialIcon, ToggleButton, ToggleButtonGroup} from "@material-ui/lab";
-import {makeStyles} from "@material-ui/core/styles";
-import SpeedDialAction from '@material-ui/lab/SpeedDialAction';
-import SaveAltIcon from '@material-ui/icons/SaveAlt';
-import ZoomInIcon from '@material-ui/icons/ZoomIn';
-import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
-import ZoomOutIcon from '@material-ui/icons/ZoomOut';
-import TableChartIcon from '@material-ui/icons/TableChart';
-import ViewWeekIcon from '@material-ui/icons/ViewWeek';
-import {Tooltip} from "@material-ui/core";
+import { SpeedDial, SpeedDialIcon, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import SpeedDialAction from '@mui/material/SpeedDialAction';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import ViewWeekIcon from '@mui/icons-material/ViewWeek';
 
 cytoscape.use(dagre);
 
-const useStyles = makeStyles((theme) => ({
-  speedDial: {
-    position: 'absolute',
-    bottom: theme.spacing(5),
-    right: theme.spacing(2),
-  },
-  floatingButton: {
-    position: 'absolute',
-    right: theme.spacing(0),
-    bottom: theme.spacing(50),
-    zIndex: 100
-  }
-}))
-
 
 export function DAG(props) {
-  const classes = useStyles();
   const dispatch = useDispatch();
   const editorState = useSelector(selectEditor);
   const [open, setOpen] = React.useState(false);
@@ -163,6 +146,7 @@ export function DAG(props) {
           const costheta = x / z;
           const alpha = 0.2;
           const controlPointDistances = [-alpha * y * costheta, alpha * y * costheta];
+          edge.style("curve-style", "unbundled-bezier");
           edge.style("control-point-distances", controlPointDistances);
           edge.style("control-point-weights", [alpha, 1 - alpha]);
         }
@@ -249,7 +233,7 @@ export function DAG(props) {
           'target-arrow-color': '#9ab5c7',
           'target-arrow-shape': 'triangle',
           'arrow-scale': 0.8,
-          'curve-style': 'unbundled-bezier',
+          'curve-style': 'bezier',
         }
       },
       {
@@ -311,7 +295,12 @@ export function DAG(props) {
           exclusive
           onChange={handleLevel}
           aria-label="lineage level"
-          className={classes.floatingButton}
+          sx={theme => ({
+            position: 'absolute',
+            right: theme.spacing(0),
+            bottom: theme.spacing(50),
+            zIndex: 100
+          })}
         >
           <ToggleButton value="table">
             <Tooltip title="Table Level Lineage">
@@ -326,7 +315,11 @@ export function DAG(props) {
         </ToggleButtonGroup>
         <SpeedDial
           ariaLabel="SpeedDial example"
-          className={classes.speedDial}
+          sx={theme => ({
+            position: 'absolute',
+            bottom: theme.spacing(5),
+            right: theme.spacing(2),
+          })}
           hidden={false}
           icon={<SpeedDialIcon/>}
           onClose={() => setOpen(false)}
