@@ -1,8 +1,7 @@
-import React from 'react';
-import {Box} from "@mui/material";
-import EmojiPeopleOutlinedIcon from '@mui/icons-material/EmojiPeopleOutlined';
+import React from "react";
+import { Box } from "@mui/material";
+import EmojiPeopleOutlinedIcon from "@mui/icons-material/EmojiPeopleOutlined";
 import ErrorOutlinedIcon from "@mui/icons-material/Error";
-
 
 export function LoadError(props) {
   let Icon = props.info ? EmojiPeopleOutlinedIcon : ErrorOutlinedIcon;
@@ -13,10 +12,12 @@ export function LoadError(props) {
       alignItems="center"
       minHeight={props.minHeight}
     >
-    <span>
-      <Icon color="primary" fontSize="large"/>
-      {props.message.split("\n").map(line => <p>{line}</p>)}
-    </span>
+      <span>
+        <Icon color="primary" fontSize="large" />
+        {props.message.split("\n").map((line) => (
+          <p>{line}</p>
+        ))}
+      </span>
     </Box>
   );
 }
