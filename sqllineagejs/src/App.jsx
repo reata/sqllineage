@@ -27,10 +27,11 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LanguageIcon from "@mui/icons-material/Language";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Directory } from "./features/directory/Directory";
-import { BrowserRouter as Router, Link } from "react-router-dom";
+import { BrowserRouter, Link } from "react-router-dom";
 import { DAGDesc } from "./features/editor/DAGDesc";
 import { useSelector } from "react-redux";
 import { selectEditor } from "./features/editor/editorSlice";
+import { BASE_URL } from "./config.js";
 
 let isResizing = null;
 
@@ -122,7 +123,7 @@ export default function App() {
   }, []);
 
   return (
-    <Router basename={process.env.PUBLIC_URL}>
+    <BrowserRouter basename={BASE_URL}>
       <div>
         <Box>
           <AppBar
@@ -301,6 +302,6 @@ export default function App() {
           </Grid>
         </Box>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }

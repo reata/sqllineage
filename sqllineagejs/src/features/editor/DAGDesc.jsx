@@ -2,7 +2,7 @@ import { Loading } from "../widget/Loading";
 import { LoadError } from "../widget/LoadError";
 import React from "react";
 import { useSelector } from "react-redux";
-import MonacoEditor from "react-monaco-editor";
+import { Editor as MonacoEditor } from "@monaco-editor/react";
 import { selectEditor } from "./editorSlice";
 
 export function DAGDesc(props) {

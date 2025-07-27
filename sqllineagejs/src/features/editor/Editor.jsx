@@ -10,7 +10,7 @@ import {
   setFile,
   setDialect,
 } from "./editorSlice";
-import MonacoEditor from "react-monaco-editor";
+import { Editor as MonacoEditor } from "@monaco-editor/react";
 import { Loading } from "../widget/Loading";
 import { LoadError } from "../widget/LoadError";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -88,7 +88,7 @@ export function Editor(props) {
             : editorState.content
         }
         options={options}
-        editorDidMount={handleEditorDidMount}
+        onMount={handleEditorDidMount}
       />
     );
   }

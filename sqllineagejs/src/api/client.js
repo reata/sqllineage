@@ -1,10 +1,10 @@
+import { BACKEND_API } from "../config.js";
+
 // A tiny wrapper around fetch(), borrowed from
 // https://kentcdodds.com/blog/replace-axios-with-a-simple-custom-fetch-wrapper
-
 export function assemble_absolute_endpoint(relative_endpoint) {
-  let backend_api = process.env.REACT_APP_BACKEND_API;
-  let api_prefix = backend_api
-    ? backend_api
+  let api_prefix = BACKEND_API
+    ? BACKEND_API
     : new URL(window.location.href).origin;
   return `${api_prefix}${relative_endpoint}`;
 }
