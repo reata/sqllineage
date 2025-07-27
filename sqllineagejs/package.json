@@ -23,7 +23,7 @@
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "gh-pages -d build",
+    "deploy": "VITE_BACKEND_API=https://sqllineage.azurewebsites.net/api/sqllineage/ vite build --base=/sqllineage/ && gh-pages -d build",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{js,jsx,json,css,md}\""
   },
