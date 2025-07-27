@@ -1,13 +1,15 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Snackbar } from "@mui/material";
+
+import { Loading } from "../widget/Loading";
+import { LoadError } from "../widget/LoadError";
+
 import {
   fetchRootDirectory,
   selectDirectory,
   setOpenNonSQLWarning,
 } from "./directorySlice";
-import { Loading } from "../widget/Loading";
-import { LoadError } from "../widget/LoadError";
-import { Snackbar } from "@mui/material";
 import DirectoryTreeItem from "./DirectoryTreeItem";
 
 export function Directory(props) {

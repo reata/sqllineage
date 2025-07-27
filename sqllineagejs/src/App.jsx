@@ -19,17 +19,18 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { DAG } from "./features/editor/DAG";
-import { Editor } from "./features/editor/Editor";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import CreateIcon from "@mui/icons-material/Create";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LanguageIcon from "@mui/icons-material/Language";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Directory } from "./features/directory/Directory";
 import { BrowserRouter, Link } from "react-router-dom";
-import { DAGDesc } from "./features/editor/DAGDesc";
 import { useSelector } from "react-redux";
+
+import { Directory } from "./features/directory/Directory";
+import { DAGDesc } from "./features/editor/DAGDesc";
+import { Editor } from "./features/editor/Editor";
+import { DAG } from "./features/editor/DAG";
 import { selectEditor } from "./features/editor/editorSlice";
 import { BASE_URL } from "./config.js";
 

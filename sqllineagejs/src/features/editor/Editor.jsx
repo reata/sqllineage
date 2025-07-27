@@ -1,5 +1,11 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Editor as MonacoEditor } from "@monaco-editor/react";
+import { useNavigate, useLocation } from "react-router-dom";
+
+import { Loading } from "../widget/Loading";
+import { LoadError } from "../widget/LoadError";
+
 import {
   fetchContent,
   fetchDAG,
@@ -10,10 +16,6 @@ import {
   setFile,
   setDialect,
 } from "./editorSlice";
-import { Editor as MonacoEditor } from "@monaco-editor/react";
-import { Loading } from "../widget/Loading";
-import { LoadError } from "../widget/LoadError";
-import { useNavigate, useLocation } from "react-router-dom";
 
 const useQueryParam = () => {
   return new URLSearchParams(useLocation().search);
