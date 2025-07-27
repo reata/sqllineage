@@ -4,12 +4,13 @@ import { SimpleTreeView, TreeItem } from "@mui/x-tree-view";
 import FolderIcon from "@mui/icons-material/Folder";
 import DescriptionIcon from "@mui/icons-material/Description";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+
 import {
   DirectoryAPI,
   selectDirectory,
   setOpenNonSQLWarning,
 } from "./directorySlice";
-import { useNavigate } from "react-router-dom";
 
 export default function DirectoryTreeItem(props) {
   const navigate = useNavigate();

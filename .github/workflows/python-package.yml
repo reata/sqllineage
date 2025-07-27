@@ -26,7 +26,7 @@ jobs:
     - name: Set up NodeJS
       uses: actions/setup-node@v3
       with:
-        node-version: '16'
+        node-version: '20'
     - name: Install
       run: pip install tox codecov
     - name: Script

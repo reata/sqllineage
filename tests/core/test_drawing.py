@@ -32,7 +32,7 @@ def test_handler():
     # 200
     mock_request("GET", "/")
     assert container.status.startswith(str(HTTPStatus.OK.value))
-    mock_request("GET", "/manifest.json")
+    mock_request("GET", "/favicon.ico")
     assert container.status.startswith(str(HTTPStatus.OK.value))
     mock_request("POST", "/lineage", {"e": "SELECT * FROM dual", "p": 5000})
     assert container.status.startswith(str(HTTPStatus.OK.value))

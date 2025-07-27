@@ -3,9 +3,6 @@ import CytoscapeComponent from "react-cytoscapejs";
 import dagre from "cytoscape-dagre";
 import cytoscape from "cytoscape";
 import { useDispatch, useSelector } from "react-redux";
-import { selectEditor, setDagLevel } from "./editorSlice";
-import { Loading } from "../widget/Loading";
-import { LoadError } from "../widget/LoadError";
 import {
   SpeedDial,
   SpeedDialIcon,
@@ -20,6 +17,11 @@ import SettingsBackupRestoreIcon from "@mui/icons-material/SettingsBackupRestore
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import ViewWeekIcon from "@mui/icons-material/ViewWeek";
+
+import { LoadError } from "../widget/LoadError";
+import { Loading } from "../widget/Loading";
+
+import { selectEditor, setDagLevel } from "./editorSlice";
 
 cytoscape.use(dagre);
 
