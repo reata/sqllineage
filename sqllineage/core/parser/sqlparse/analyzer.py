@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import add
-from typing import Optional, Union
+from typing import Union
 
 import sqlparse
 from sqlparse.sql import (
@@ -19,7 +19,7 @@ from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.analyzer import LineageAnalyzer
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.core.parser.sqlparse.handlers.base import (
     CurrentTokenBaseHandler,
     NextTokenBaseHandler,
@@ -113,7 +113,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         holder = StatementLineageHolder()
         src_flag = tgt_flag = update_flag = insert_flag = False
         insert_columns = []
-        direct_source: Optional[Union[Table, SubQuery]] = None
+        # TODO
+        direct_source: Union[Table, SubQuery, Path] = Path("unknown")
         for token in stmt.tokens:
             if is_token_negligible(token):
                 continue

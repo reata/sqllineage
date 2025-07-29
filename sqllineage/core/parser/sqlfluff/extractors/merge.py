@@ -1,9 +1,9 @@
-from typing import Optional, Union
+from typing import Union
 
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import StatementLineageHolder
-from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.cte import CteExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
@@ -31,7 +31,8 @@ class MergeExtractor(BaseExtractor):
     ) -> StatementLineageHolder:
         holder = StatementLineageHolder()
         src_flag = tgt_flag = False
-        direct_source: Optional[Union[Table, SubQuery]] = None
+        # TODO
+        direct_source: Union[Table, SubQuery, Path] = Path("unknown")
         segments = list_child_segments(statement)
         for i, segment in enumerate(segments):
             if segment.type == "merge_match":
