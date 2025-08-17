@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Background,
   Controls,
@@ -14,17 +8,11 @@ import {
   useEdgesState,
   getNodesBounds,
   getViewportForBounds,
+  ControlButton,
 } from "@xyflow/react";
 import dagre from "dagre";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  SpeedDial,
-  SpeedDialIcon,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-} from "@mui/material";
-import SpeedDialAction from "@mui/material/SpeedDialAction";
+import { ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import ViewWeekIcon from "@mui/icons-material/ViewWeek";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
@@ -104,7 +92,6 @@ export function DAGReactFlow(props) {
   const dispatch = useDispatch();
   const editorState = useSelector(selectEditor);
 
-  const [open, setOpen] = useState(false);
   const reactFlowWrapper = useRef(null);
   const reactFlowInstance = useRef(null);
 
@@ -133,7 +120,6 @@ export function DAGReactFlow(props) {
     queueMicrotask(() => {
       reactFlowInstance.current?.fitView({ padding: 0.2 });
     });
-    setOpen(false);
   }, [edges, setNodes]);
 
   const handleSave = useCallback(() => {
@@ -146,7 +132,7 @@ export function DAGReactFlow(props) {
       imageHeight,
       0.5,
       2,
-      0.2
+      0.2,
     );
     toPng(document.querySelector(".react-flow__viewport"), {
       backgroundColor: "white",
@@ -225,7 +211,14 @@ export function DAGReactFlow(props) {
           ]} // limit drag scope
         >
           <MiniMap />
-          <Controls />
+          <Controls>
+            <ControlButton title={"Re-layout DAG"} onClick={handleRelayout}>
+              <AutorenewIcon />
+            </ControlButton>
+            <ControlButton title={"Download DAG as PNG"} onClick={handleSave}>
+              <SaveAltIcon />
+            </ControlButton>
+          </Controls>
           <Background />
         </ReactFlow>
 
@@ -253,32 +246,6 @@ export function DAGReactFlow(props) {
             </Tooltip>
           </ToggleButton>
         </ToggleButtonGroup>
-        <SpeedDial
-          ariaLabel="SpeedDial example"
-          sx={(theme) => ({
-            position: "absolute",
-            bottom: theme.spacing(5),
-            right: theme.spacing(2),
-          })}
-          hidden={false}
-          icon={<SpeedDialIcon />}
-          onClose={() => setOpen(false)}
-          onOpen={() => setOpen(true)}
-          open={open}
-          direction="left"
-          FabProps={{ size: "small" }}
-        >
-          <SpeedDialAction
-            title="Save"
-            icon={<SaveAltIcon />}
-            onClick={handleSave}
-          />
-          <SpeedDialAction
-            title="Relayout"
-            icon={<AutorenewIcon />}
-            onClick={handleRelayout}
-          />
-        </SpeedDial>
       </div>
     );
   }
