@@ -33,6 +33,7 @@ import { Editor } from "./features/editor/Editor";
 import { DAG } from "./features/editor/DAG";
 import { selectEditor } from "./features/editor/editorSlice";
 import { BASE_URL } from "./config.js";
+import { DAGReactFlow } from "./features/editor/DAGReactFlow.jsx";
 
 let isResizing = null;
 
@@ -264,7 +265,7 @@ export default function App() {
         >
           <Paper elevation="24" style={{ height: height, width: width }}>
             <Box sx={viewSelected === "dag" ? {} : { display: "none" }}>
-              <DAG height={height} width={width} />
+              <DAGReactFlow height={height} width={width} />
             </Box>
             <Box sx={viewSelected === "text" ? {} : { display: "none" }}>
               <DAGDesc height={height} width={width} />
