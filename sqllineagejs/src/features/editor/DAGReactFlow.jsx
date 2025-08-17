@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Background,
   Controls,
-  MiniMap,
   ReactFlow,
   useNodesState,
   useEdgesState,
@@ -210,7 +209,6 @@ export function DAGReactFlow(props) {
             [3000, 3000],
           ]} // limit drag scope
         >
-          <MiniMap />
           <Controls>
             <ControlButton title={"Re-layout DAG"} onClick={handleRelayout}>
               <AutorenewIcon />
