@@ -12,12 +12,11 @@ import {
   ReactFlow,
   useNodesState,
   useEdgesState,
+  getNodesBounds,
+  getViewportForBounds,
 } from "@xyflow/react";
 import dagre from "dagre";
 import { useDispatch, useSelector } from "react-redux";
-import { selectEditor, setDagLevel } from "./editorSlice.js";
-import { Loading } from "../widget/Loading.jsx";
-import { LoadError } from "../widget/LoadError.jsx";
 import {
   SpeedDial,
   SpeedDialIcon,
@@ -31,6 +30,12 @@ import ViewWeekIcon from "@mui/icons-material/ViewWeek";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import "@xyflow/react/dist/style.css";
+import { toPng } from "html-to-image";
+
+import { Loading } from "../widget/Loading.jsx";
+import { LoadError } from "../widget/LoadError.jsx";
+
+import { selectEditor, setDagLevel } from "./editorSlice.js";
 
 // convert cytoscape elements to react flow nodes and edges
 function cytoToReactFlow(elements) {
@@ -132,12 +137,31 @@ export function DAGReactFlow(props) {
   }, [edges, setNodes]);
 
   const handleSave = useCallback(() => {
-    if (!reactFlowInstance.current) return;
-    reactFlowInstance.current.toPng().then((dataUrl) => {
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = `${editorState.file}.png`;
-      setOpen(false);
+    let imageWidth = 4096;
+    let imageHeight = 2160;
+    const nodesBounds = getNodesBounds(reactFlowInstance.current?.getNodes());
+    const viewPoint = getViewportForBounds(
+      nodesBounds,
+      imageWidth,
+      imageHeight,
+      0.5,
+      2,
+      0.2
+    );
+    toPng(document.querySelector(".react-flow__viewport"), {
+      backgroundColor: "white",
+      width: imageWidth,
+      height: imageHeight,
+      style: {
+        width: imageWidth,
+        height: imageHeight,
+        transform: `translate(${viewPoint.x}px, ${viewPoint.y}px) scale(${viewPoint.zoom})`,
+      },
+    }).then((dataUrl) => {
+      const aDownloadLink = document.createElement("a");
+      aDownloadLink.download = `${editorState.file}.png`;
+      aDownloadLink.href = dataUrl;
+      aDownloadLink.click();
     });
   }, [editorState.file]);
 

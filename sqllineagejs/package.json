@@ -15,6 +15,7 @@
     "cytoscape": "^3.32.0",
     "cytoscape-dagre": "^2.3.3",
     "dagre": "^0.8.5",
+    "html-to-image": "1.11.11",
     "react": "^19.1.0",
     "react-cytoscapejs": "^2.0.0",
     "react-dom": "^19.1.0",
