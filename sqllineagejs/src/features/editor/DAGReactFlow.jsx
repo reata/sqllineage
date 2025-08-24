@@ -24,41 +24,6 @@ import { LoadError } from "../widget/LoadError.jsx";
 
 import { selectEditor, setDagLevel } from "./editorSlice.js";
 
-// convert cytoscape elements to react flow nodes and edges
-function cytoToReactFlow(elements) {
-  const nodes = [];
-  const edges = [];
-
-  elements.forEach((el) => {
-    if (el.data && el.data.id) {
-      if (el.group === "nodes" || el.data.source === undefined) {
-        nodes.push({
-          id: el.data.id,
-          data: { label: el.data.id, ...el.data },
-          position: {
-            // placeholder, true position will be set by dagre
-            x: el.position?.x ?? Math.random() * 400,
-            y: el.position?.y ?? Math.random() * 400,
-          },
-          type: "default",
-          sourcePosition: "right",
-          targetPosition: "left",
-        });
-      } else if (el.group === "edges" || el.data.source) {
-        edges.push({
-          id: el.data.id || `${el.data.source}-${el.data.target}`,
-          source: el.data.source,
-          target: el.data.target,
-          animated: false,
-          style: { stroke: "#9ab5c7" },
-          markerEnd: { type: "arrowclosed", color: "#9ab5c7" },
-        });
-      }
-    }
-  });
-  return { nodes, edges };
-}
-
 function layoutWithDagre(nodes, edges, direction = "LR") {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -74,48 +39,87 @@ function layoutWithDagre(nodes, edges, direction = "LR") {
 
   dagre.layout(dagreGraph);
 
-  return nodes.map((n) => {
-    const p = dagreGraph.node(n.id);
-    return {
-      ...n,
-      position: {
-        x: p.x - NODE_W / 2,
-        y: p.y - NODE_H / 2,
-      },
-      positionAbsolute: undefined, // imply reactflow that position is absolute to avoid initial view shake
-    };
+  return {
+    nodes: nodes.map((n) => {
+      const p = dagreGraph.node(n.id);
+      return {
+        ...n,
+        position: {
+          x: p.x - NODE_W / 2,
+          y: p.y - NODE_H / 2,
+        },
+        positionAbsolute: undefined, // imply reactflow that position is absolute to avoid initial view shake
+      };
+    }),
+    edges: edges,
+  };
+}
+
+function formatReactFlow(nodes, edges) {
+  const formatted_nodes = [];
+  const formatted_edges = [];
+
+  nodes.forEach((el) => {
+    let style = el.type === "group" ? {style: {width: 170, height: 140}} : {};
+    formatted_nodes.push({
+      ...el,
+      ...style,
+      sourcePosition: "right",
+      targetPosition: "left",
+    });
   });
+
+  edges.forEach((el) => {
+    formatted_edges.push({
+      ...el,
+      animated: false,
+      style: { stroke: "#9ab5c7" },
+      markerEnd: { type: "arrowclosed", color: "#9ab5c7" },
+    });
+  });
+  return layoutWithDagre(formatted_nodes, formatted_edges, "LR");
 }
 
 export function DAGReactFlow(props) {
   const dispatch = useDispatch();
   const editorState = useSelector(selectEditor);
 
+  // redux state only stores the raw nodes and edges, reactFlowData includes position info
+  const reactFlowData = useMemo(() => {
+    if (editorState.dagLevel === "table") {
+      return formatReactFlow(
+        editorState.tableLineage.nodes,
+        editorState.tableLineage.edges,
+      );
+    } else {
+      return formatReactFlow(
+        editorState.columnLineage.nodes,
+        editorState.columnLineage.edges,
+      );
+    }
+  }, [
+    editorState.dagLevel,
+    editorState.tableLineage,
+    editorState.columnLineage,
+  ]);
+
   const reactFlowWrapper = useRef(null);
   const reactFlowInstance = useRef(null);
-
-  // only update reactflow nodes/edges when dag changes
-  const cyto = useMemo(
-    () => cytoToReactFlow(editorState.dagContent),
-    [editorState.dagContent],
-  );
-
   // use reactflow hooks to manage nodes and edges state
-  const [nodes, setNodes, onNodesChange] = useNodesState(cyto.nodes);
-  const [edges, setEdges] = useEdgesState(cyto.edges);
+  const [nodes, setNodes, onNodesChange] = useNodesState(reactFlowData.nodes);
+  const [edges, setEdges] = useEdgesState(reactFlowData.edges);
 
   // when cyto changes, run layout once, and then node dragging will only update local state
   useEffect(() => {
-    const layouted = layoutWithDagre(cyto.nodes, cyto.edges, "LR");
-    setNodes(layouted);
-    setEdges(cyto.edges);
+    setNodes(reactFlowData.nodes);
+    setEdges(reactFlowData.edges);
     queueMicrotask(() => {
       reactFlowInstance.current?.fitView({ padding: 0.2 });
     });
-  }, [cyto.nodes, cyto.edges, setNodes, setEdges]);
+  }, [reactFlowData, setNodes, setEdges]);
 
   const handleRelayout = useCallback(() => {
-    setNodes((prev) => layoutWithDagre(prev, edges, "LR"));
+    setNodes((prev) => layoutWithDagre(prev, edges, "LR").nodes);
     queueMicrotask(() => {
       reactFlowInstance.current?.fitView({ padding: 0.2 });
     });

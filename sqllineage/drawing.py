@@ -175,6 +175,8 @@ def lineage(payload):
         "verbose": str(lr),
         "dag": lr.to_cytoscape(),
         "column": lr.to_cytoscape(LineageLevel.COLUMN),
+        "table_lineage": lr.to_reactflow(LineageLevel.TABLE),
+        "column_lineage": lr.to_reactflow(LineageLevel.COLUMN),
     }
     return data
 

@@ -12,7 +12,7 @@ from sqllineage.core.models import Column, Table
 from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
 from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
-from sqllineage.io import to_cytoscape
+from sqllineage.io import to_cytoscape, to_reactflow
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import split, trim_comment
 
@@ -113,6 +113,20 @@ Target Tables:
             return to_cytoscape(self._sql_holder.column_lineage_graph, compound=True)
         else:
             return to_cytoscape(self._sql_holder.table_lineage_graph)
+
+    @lazy_method
+    def to_reactflow(self, level=LineageLevel.TABLE) -> dict[str, list[dict[str, Any]]]:
+        """
+        to turn the DAG into reactflow format.
+        """
+        return to_reactflow(
+            (
+                self._sql_holder.table_lineage_graph
+                if level == LineageLevel.TABLE
+                else self._sql_holder.column_lineage_graph
+            ),
+            level=level,
+        )
 
     def draw(self) -> None:
         """

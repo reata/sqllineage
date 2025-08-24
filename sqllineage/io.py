@@ -2,6 +2,8 @@ from typing import Any
 
 from networkx import DiGraph
 
+from sqllineage.utils.constant import LineageLevel
+
 
 def to_cytoscape(graph: DiGraph, compound=False) -> list[dict[str, dict[str, Any]]]:
     """
@@ -45,3 +47,39 @@ def to_cytoscape(graph: DiGraph, compound=False) -> list[dict[str, dict[str, Any
         for i, edge in enumerate(graph.edges)
     ]
     return nodes + edges
+
+
+def to_reactflow(graph: DiGraph, level: str) -> dict[str, list[dict[str, Any]]]:
+    """
+    graph visualization using reactflow
+    """
+    if level == LineageLevel.COLUMN:
+        parent_nodes = [
+            {
+                "id": str(parent),
+                "data": {"label": str(parent)},
+                "type": "group",
+            }
+            for parent in {node.parent for node in graph.nodes}
+        ]
+        column_nodes = [
+            {
+                "id": str(node),
+                "data": {"label": str(node)},
+                "type": "default",
+                "parentId": str(node.parent),
+                "extent": "parent",
+            }
+            for node in graph.nodes
+        ]
+        # parent nodes should come first for reactflow to render correctly
+        nodes = parent_nodes + column_nodes
+    else:
+        nodes = [
+            {"id": str(node), "data": {"label": str(node)}, "type": "default"}
+            for node in graph.nodes
+        ]
+    edges: list[dict[str, Any]] = [
+        {"id": f"{u}->{v}", "source": str(u), "target": str(v)} for u, v in graph.edges
+    ]
+    return {"nodes": nodes, "edges": edges}

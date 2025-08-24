@@ -10,8 +10,10 @@ const initialState = {
   editable: false,
   editorStatus: "idle",
   editorError: null,
-  dagContent: [],
-  dagColumn: [],
+  dagContent: [], // deprecated, cytoscape-based data structure, use tableLineage instead
+  dagColumn: [], // deprecated, cytoscape-based data structure, use columnLineage instead
+  tableLineage: { nodes: [], edges: [] },
+  columnLineage: { nodes: [], edges: [] },
   dagLevel: "table",
   dagVerbose: "",
   dagStatus: "idle",
@@ -74,6 +76,8 @@ export const editorSlice = createSlice({
         state.dagContent = action.payload.dag;
         state.dagVerbose = action.payload.verbose;
         state.dagColumn = action.payload.column;
+        state.tableLineage = action.payload.table_lineage;
+        state.columnLineage = action.payload.column_lineage;
       })
       .addCase(fetchDAG.rejected, (state, action) => {
         state.dagStatus = "failed";
