@@ -44,14 +44,14 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 ci = [
-    "black",
-    "mypy",
-    "pytest",
-    "pytest-cov",
-    "ruff",
-    "tox",
-    "twine",
-    "wheel",
+    "black>=25.1.0",
+    "mypy>=1.17.1",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.10",
+    "tox>=4.28.4",
+    "twine>=6.1.0",
+    "wheel>=0.45.1",
 ]
 docs = [
     "Sphinx>=3.2.0",
