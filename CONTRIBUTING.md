@@ -7,22 +7,22 @@ The following is a set of guidelines for contributing to SQLLineage, and we try 
 with CI tools. 
 
 #### Table of Contents
-  * [Style Guide](#Style Guide)
+  * [Style Guide](#style-guide)
     - [black](#black)
     - [ruff](#ruff)
     - [mypy](#mypy)
     - [pytest](#pytest)
-  * [Set up Local Development Environment](#Set up Local Development Environment)
-    - [Running CI in Local](#Running CI in Local)
-    - [Multi Python Version](#Multi Python Version)
+  * [Set up Local Development Environment](#set-up-local-development-environment)
+    - [Running CI in Local](#running-ci-in-local)
+    - [Multi Python Version](#multi-python-version)
     - [Pre-commit](#pre-commit)
-  * [Development Flow](#Development Flow)
-    - [Raise Issue](#Raise Issue)
-    - [Issue Handling](#Issue Handling)
-    - [Submit Pull Request](#Submit Pull Request)
-  * [Release](#Release)
-    - [Milestone](#Milestone)
-    - [Tag](#Tag)
+  * [Development Flow](#development-flow)
+    - [Raise Issue](#raise-issue)
+    - [Issue Handling](#issue-handling)
+    - [Submit Pull Request](#submit-pull-request)
+  * [Release](#release)
+    - [Milestone](#milestone)
+    - [Tag](#tag)
 
 ## Style Guide
 
@@ -42,13 +42,22 @@ Unit test is particularly important in the success of SQLLineage. We have a comp
 
 ## Set up Local Development Environment
 All the style guidelines are enforced by [GitHub Actions](https://github.com/reata/sqllineage/actions), so each time you submit a PR, 
-these server side checks will be triggered, but you can also set up local CI for rapid validation of your code change.
+these server side checks will be triggered, but you can also set up local env for rapid validation of your code change.
+
+Make sure you have a Python version installed meeting the `requires-python` in 
+[pyproject.toml](https://github.com/reata/sqllineage/blob/master/pyproject.toml). For development purpose,
+we recommend use the minimum supported version, so as not to accidentally introduce any new language features not yet 
+supported in the minimum version.
+
+Use [tox](https://github.com/tox-dev/tox) to create a virtualenv with all dependencies installed to do your development work.
+
+```bash
+tox -e py39 --devenv venv
+```
 
 ### Running CI in Local
-The entrypoint for CI in GitHub Actions is simply [tox](https://github.com/tox-dev/tox). Install tox and run it in local, 
-all the style check will be triggered.
+The entrypoint for CI in GitHub Actions is simply tox. Run it in local, all the style check will be triggered.
 
-Change the python version accordingly to your local env.
 ```bash
 tox -e py39
 ```
@@ -56,12 +65,14 @@ tox -e py39
 ### Multi Python Version
 We rely on [GitHub Actions matrix](https://github.com/reata/sqllineage/blob/master/.github/workflows/python-package.yml) 
 to do multiple Python version test and feed the exact version to tox, same as you saw in the local mode here. 
+If you stick to the minimum Python version as development, running tox with that version is enough.
+
 However, in case you would also like to test against multiple Python versions locally, you can install different 
 versions of Python, possibly with [pyenv](https://github.com/pyenv/pyenv) in local env,
 and run tox without specifying Python version.
 
 In this case, all Python versions defined in [pyproject.toml](https://github.com/reata/sqllineage/blob/master/pyproject.toml)
-[tool.tox] section will be tested.
+`[tool.tox]` section will be tested.
 ```bash
 tox
 ```
