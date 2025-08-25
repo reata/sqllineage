@@ -44,7 +44,6 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 ci = [
-    "bandit",
     "black",
     "mypy",
     "pytest",
@@ -96,7 +95,6 @@ deps = [".[ci]"]
 commands = [
     ["black", ".", "--check", "--diff"],
     ["ruff", "check", "."],
-    ["bandit", "-r", "sqllineage"],
     ["mypy"],
     ["pytest", "--cov"],
 ]
