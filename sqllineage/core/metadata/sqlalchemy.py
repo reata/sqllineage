@@ -36,6 +36,11 @@ class SQLAlchemyMetaDataProvider(MetaDataProvider):
         except OperationalError as e:
             raise MetaDataProviderException(f"Could not connect to {url}") from e
 
+    def __del__(self):
+        # dispose the engine to close all connections
+        if hasattr(self, "engine") and self.engine is not None:
+            self.engine.dispose()
+
     def _get_table_columns(self, schema: str, table: str, **kwargs) -> list[str]:
         columns = []
         try:
