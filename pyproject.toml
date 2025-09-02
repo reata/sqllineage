@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "sqllineage"
@@ -19,7 +19,7 @@ maintainers = [
 ]
 description = "SQL Lineage Analysis Tool powered by Python"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
 keywords = [
     "metadata",
     "sql",
@@ -30,7 +30,6 @@ keywords = [
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
@@ -71,20 +70,11 @@ Repository = "https://github.com/reata/sqllineage.git"
 Issues = "https://github.com/reata/sqllineage/issues"
 Changelog = "https://github.com/reata/sqllineage/releases"
 
-[tool.setuptools.packages.find]
-include = ["sqllineage*"]
+[tool.hatch.version]
+path = "sqllineage/__init__.py"
 
-[tool.setuptools.package-data]
-"sqllineage.build" = [
-    "*",
-    "**/**/*"
-]
-"sqllineage.data" = [
-    "**/*",
-]
-
-[tool.setuptools.dynamic]
-version = { attr = "sqllineage.VERSION" }
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "hatch_build.py"
 
 [tool.tox]
 requires = ["tox>=4.19"]
