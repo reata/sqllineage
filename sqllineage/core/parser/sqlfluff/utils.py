@@ -221,6 +221,14 @@ def list_child_segments(
 
 def extract_identifier(col_segment: BaseSegment) -> str:
     identifiers = list_child_segments(col_segment)
+
+    # tsql assignment operator syntax: alias_name = expression
+    # starting from sqlfluff 3.4.2, the alias_expression contains the alias operator that we need to get rid of
+    if col_segment.type == "alias_expression" and col_segment.get_child(
+        "alias_operator"
+    ):
+        identifiers = [seg for seg in identifiers if seg.type != "alias_operator"]
+
     col_identifier = identifiers[-1]
     return str(col_identifier.raw)
 
