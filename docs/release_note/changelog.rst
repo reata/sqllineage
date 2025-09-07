@@ -2,6 +2,28 @@
 Changelog
 *********
 
+v1.5.5
+======
+:Date: September 7, 2025
+
+This is a tech refresh release, including the following changes:
+
+* unpin sqlparse and sqlfluff dependencies to allow flexible more dependency resolution when using sqllineage as a
+  library. Enable nightly CI to test against compatibility on latest version of sqlparse and sqlfluff
+* leverage Python 3.9 new syntax features to simplify code base, including: 1) use built-in type hinting generic in
+  standard collections (list, dict, tuple, etc.); 2) use dictionary merge operator (|)
+* use pyproject.toml as centralized configuration file for all tools (tox, black, ruff, mypy, etc.)
+* use ruff as linter to replace flake8
+* use hatch as build backend to replace setuptools
+* sqllineagejs frontend tool chain refresh: 1) upgrade react, redux, mui to latest major version; 2) use vite as
+  frontend build tool to replace react-scripts; 3) add eslint as linter and prettier as formatter;
+
+Bugfix
+-------------
+* Target table is empty for BigQuery INSERT statement (`#693 <https://github.com/reata/sqllineage/issues/693>`_)
+* problem on parsing tablename with tsql table hint (`#448 <https://github.com/reata/sqllineage/issues/448>`_)
+* close database connection after destruction of MetaDataProvider to avoid connection leak
+
 v1.5.4
 ======
 :Date: Feb 8, 2025
