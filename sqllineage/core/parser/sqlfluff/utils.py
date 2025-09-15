@@ -53,6 +53,27 @@ def is_wildcard(segment: BaseSegment) -> bool:
     )
 
 
+def is_teradata_title_phrase(segment: BaseSegment) -> bool:
+    """
+    Check if a select_clause_element contains Teradata specific TITLE phrase
+    Teradata TITLE phrase syntax: column_name (TITLE 'title_name')
+    This gets incorrectly parsed as a function by sqlfluff
+    """
+    if segment.type != "select_clause_element":
+        return False
+    if function := segment.get_child("function"):
+        if function_contents := function.get_child("function_contents"):
+            if bracketed := function_contents.get_child("bracketed"):
+                if expression := bracketed.get_child("expression"):
+                    if data_type := expression.get_child("data_type"):
+                        if data_type_identifier := data_type.get_child(
+                            "data_type_identifier"
+                        ):
+                            if data_type_identifier.raw_upper == "TITLE":
+                                return True
+    return False
+
+
 def find_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
     """
     segment can be of type:

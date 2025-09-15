@@ -8,6 +8,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
     extract_identifier,
     is_subquery,
+    is_teradata_title_phrase,
     is_wildcard,
     list_child_segments,
 )
@@ -103,6 +104,19 @@ class SqlFluffColumn(Column):
         :return: 'Column' object
         """
         if column.type == "select_clause_element":
+
+            # Special handling for Teradata TITLE phrase
+            if is_teradata_title_phrase(column):
+                function_name_identifier = next(
+                    column.recursive_crawl("function_name_identifier")
+                )
+                return Column(
+                    function_name_identifier.raw,
+                    source_columns=[
+                        ColumnQualifierTuple(function_name_identifier.raw, None)
+                    ],
+                )
+
             source_columns, alias = SqlFluffColumn._get_column_and_alias(column)
             if alias:
                 return Column(alias, source_columns=source_columns, from_alias=True)

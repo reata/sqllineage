@@ -26,3 +26,31 @@ FROM Production.Product"""
         dialect=dialect,
         test_sqlparse=False,
     )
+
+
+@pytest.mark.parametrize("dialect", ["teradata"])
+def test_teradata_title_phrase(dialect: str):
+    """
+    The TITLE phrase of a CREATE TABLE, ALTER TABLE, or SELECT statement gives a name to a column heading.
+    TITLE is a Teradata extension to the ANSI SQL:2011 standard.
+    It is used for display formatting and should be ignored for lineage purposes.
+    https://docs.teradata.com/r/Enterprise_IntelliFlex_VMware/SQL-Data-Types-and-Literals/Data-Type-Formats-and-Format-Phrases/TITLE/Examples/Example-Using-the-TITLE-Phrase-in-a-SELECT-Statement
+    """
+    sql = """CREATE VIEW foo AS
+SELECT Name, DOB (TITLE 'Birthdate')
+FROM Employee;"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("Name", "Employee"),
+                ColumnQualifierTuple("Name", "foo"),
+            ),
+            (
+                ColumnQualifierTuple("DOB", "Employee"),
+                ColumnQualifierTuple("DOB", "foo"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
