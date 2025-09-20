@@ -155,3 +155,22 @@ FROM tab1
             ),
         ],
     )
+
+
+def test_column_lineage_with_table_alias_in_nested_parentheses():
+    sql = """INSERT INTO tab3
+SELECT t2.col1
+FROM (
+        (tab2 AS t2
+            JOIN tab1 AS t1 
+                ON t2.id = t1.t2_id)
+)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab3"),
+            ),
+        ],
+    )
