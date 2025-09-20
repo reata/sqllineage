@@ -67,3 +67,19 @@ SELECT * FROM tab1""",
         {Path("hdfs://path/to/folder")},
         dialect=dialect,
     )
+
+
+@pytest.mark.parametrize("dialect", ["redshift"])
+def test_redshift_unloading_data_to_s3(dialect: str):
+    """
+    https://docs.aws.amazon.com/redshift/latest/dg/t_Unloading_tables.html
+    """
+    assert_table_lineage_equal(
+        """unload ('select * from venue')   
+to 's3://amzn-s3-demo-bucket/tickit/unload/venue_' 
+iam_role 'arn:aws:iam::0123456789012:role/MyRedshiftRole';""",
+        {"venue"},
+        {Path("s3://amzn-s3-demo-bucket/tickit/unload/venue_")},
+        dialect=dialect,
+        test_sqlparse=False,
+    )
