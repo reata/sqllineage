@@ -2,13 +2,29 @@
 Changelog
 *********
 
+v1.5.6
+======
+:Date: October 12, 2025
+
+This is a bugfix release with a couple of dialect-specific minor enhancements:
+
+Enhancement
+-------------
+* Support Teradata Title Phrase (`#702 <https://github.com/reata/sqllineage/issues/702>`_)
+* Support Redshift Unload Command (`#700 <https://github.com/reata/sqllineage/issues/700>`_)
+
+Bugfix
+-------------
+* column lineage has table alias instead of the table name when from clause wrapped by nested parenthesis (`#713 <https://github.com/reata/sqllineage/issues/713>`_)
+* Incorrect Lineage Detection for Nested UNION in SQL (`#696 <https://github.com/reata/sqllineage/issues/696>`_)
+
 v1.5.5
 ======
 :Date: September 7, 2025
 
 This is a tech refresh release, including the following changes:
 
-* unpin sqlparse and sqlfluff dependencies to allow flexible more dependency resolution when using sqllineage as a
+* unpin sqlparse and sqlfluff dependencies to allow more flexible dependency resolution when using sqllineage as a
   library. Enable nightly CI to test against compatibility on latest version of sqlparse and sqlfluff
 * leverage Python 3.9 new syntax features to simplify code base, including: 1) use built-in type hinting generic in
   standard collections (list, dict, tuple, etc.); 2) use dictionary merge operator (|)
