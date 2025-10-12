@@ -346,6 +346,18 @@ FROM (SELECT id
     assert_table_lineage_equal(sql, {"tab1", "tab2"})
 
 
+def test_select_nested_union_all():
+    sql = """SELECT id
+FROM tab1
+UNION ALL
+(SELECT id
+ FROM tab2
+ UNION ALL
+ SELECT id
+ FROM tab3)"""
+    assert_table_lineage_equal(sql, {"tab1", "tab2", "tab3"})
+
+
 def test_non_reserved_keyword_as_source():
     assert_table_lineage_equal(
         "SELECT col1, col2 FROM segment", {"segment"}, test_sqlparse=False

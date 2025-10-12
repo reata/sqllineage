@@ -49,12 +49,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                 subqueries.append(sq)
 
             if is_set_expression(segment):
-                for _, sub_segment in enumerate(
-                    segment.get_children("select_statement", "bracketed")
-                ):
-                    for seg in list_child_segments(sub_segment):
-                        for sq in self.list_subquery(seg):
-                            subqueries.append(sq)
+                subqueries.extend(self._collect_subqueries_in_set_expression(segment))
 
         self.extract_subquery(subqueries, holder)
 
@@ -62,15 +57,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             self._handle_select_statement_child_segments(segment, holder)
 
             if is_set_expression(segment):
-                for idx, sub_segment in enumerate(
-                    segment.get_children("select_statement", "bracketed")
-                ):
-                    if idx != 0:
-                        self.union_barriers.append(
-                            (len(self.columns), len(self.tables))
-                        )
-                    for seg in list_child_segments(sub_segment):
-                        self._handle_select_statement_child_segments(seg, holder)
+                self._handle_set_expression(segment, holder)
 
         self.end_of_query_cleanup(holder)
 
@@ -125,6 +112,44 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             if identifier := find_table_identifier(segment):
                 if table := self.find_table(identifier):
                     holder.add_write(table)
+
+    def _handle_set_expression(
+        self, segment: BaseSegment, holder: SubQueryLineageHolder
+    ) -> None:
+        # Recursively handle set_expression and nested bracketed set_expressions
+        for idx, child in enumerate(
+            segment.get_children("select_statement", "bracketed")
+        ):
+            if idx != 0:
+                self.union_barriers.append((len(self.columns), len(self.tables)))
+            if child.type == "select_statement":
+                for seg in list_child_segments(child):
+                    self._handle_select_statement_child_segments(seg, holder)
+            elif child.type == "bracketed":
+                # If the bracketed child contains another set_expression, recurse; otherwise handle its contents
+                inner_children = list_child_segments(child)
+                if any(c.type == "set_expression" for c in inner_children):
+                    for c in inner_children:
+                        if c.type == "set_expression":
+                            self._handle_set_expression(c, holder)
+                else:
+                    for seg in inner_children:
+                        self._handle_select_statement_child_segments(seg, holder)
+
+    def _collect_subqueries_in_set_expression(self, segment: BaseSegment):
+        subqueries = []
+        for child in segment.get_children("select_statement", "bracketed"):
+            if child.type == "select_statement":
+                for seg in list_child_segments(child):
+                    subqueries.extend(self.list_subquery(seg))
+            elif child.type == "bracketed":
+                inner_children = list_child_segments(child)
+                for c in inner_children:
+                    if c.type == "set_expression":
+                        subqueries.extend(self._collect_subqueries_in_set_expression(c))
+                    else:
+                        subqueries.extend(self.list_subquery(c))
+        return subqueries
 
     def _handle_column(self, segment: BaseSegment) -> None:
         """
