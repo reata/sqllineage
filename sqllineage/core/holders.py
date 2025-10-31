@@ -165,7 +165,14 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             for column in self.write_columns:
                 if column.raw_name == "*":
                     tgt_wildcard = column
-                    for src_wildcard in self.get_source_columns(tgt_wildcard):
+                    src_wildcards = self.get_source_columns(tgt_wildcard)
+                    # Enable positional mapping only for UNION-of-* into a real table; avoid join/subquery cases
+                    wildcard_in_union = (
+                        isinstance(tgt_table, Table)
+                        and len(self.write_columns) == 1
+                        and len(src_wildcards) > 1
+                    )
+                    for src_wildcard in src_wildcards:
                         if source_table := src_wildcard.parent:
                             src_table_columns = []
                             if isinstance(source_table, SubQuery):
@@ -182,6 +189,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                                     src_table_columns,
                                     tgt_wildcard,
                                     src_wildcard,
+                                    wildcard_in_union=wildcard_in_union,
                                 )
 
     def get_alias_mapping_from_table_group(
@@ -223,16 +231,32 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         src_table_columns: list[Column],
         tgt_wildcard: Column,
         src_wildcard: Column,
+        wildcard_in_union: bool = False,
     ) -> None:
         target_columns = self.get_table_columns(tgt_table)
-        for src_col in src_table_columns:
-            new_column = Column(src_col.raw_name)
-            new_column.parent = tgt_table
-            if new_column in target_columns or src_col.raw_name == "*":
-                continue
-            self.graph.add_edge(tgt_table, new_column, type=EdgeType.HAS_COLUMN)
-            self.graph.add_edge(src_col.parent, src_col, type=EdgeType.HAS_COLUMN)
-            self.graph.add_edge(src_col, new_column, type=EdgeType.LINEAGE)
+        for idx, src_col in enumerate(src_table_columns):
+            # Prefer positional mapping only when enabled (e.g., subsequent UNION arms)
+            if wildcard_in_union and idx < len(target_columns):
+                target_col = target_columns[idx]
+            else:
+                # otherwise, if target column with same name exists (union scenario), reuse it; or create a new one
+                existing_col = next(
+                    (c for c in target_columns if c.raw_name == src_col.raw_name),
+                    None,
+                )
+                if existing_col is None:
+                    new_column = Column(src_col.raw_name)
+                    new_column.parent = tgt_table
+                    self.graph.add_edge(tgt_table, new_column, type=EdgeType.HAS_COLUMN)
+                    target_col = new_column
+                    # keep local target_columns in sync to preserve order for the same call
+                    target_columns.append(target_col)
+                else:
+                    target_col = existing_col
+            # ensure source column node exists and link lineage
+            if src_col.parent is not None:
+                self.graph.add_edge(src_col.parent, src_col, type=EdgeType.HAS_COLUMN)
+            self.graph.add_edge(src_col, target_col, type=EdgeType.LINEAGE)
         # remove wildcard
         if self.graph.has_node(tgt_wildcard):
             self.graph.remove_node(tgt_wildcard)
