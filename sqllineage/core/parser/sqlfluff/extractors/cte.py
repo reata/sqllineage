@@ -27,35 +27,36 @@ class CteExtractor(BaseExtractor):
         holder = self._init_holder(context)
         subqueries = []
         for segment in list_child_segments(statement):
-            if segment.type in ["select_statement", "set_expression"]:
-                holder |= self.delegate_to(
-                    SelectExtractor,
-                    segment,
-                    AnalyzerContext(
-                        cte=holder.cte,
-                        write=holder.write,
-                        write_columns=holder.write_columns,
-                    ),
-                )
-            elif segment.type == "insert_statement":
-                holder |= self.delegate_to(
-                    CreateInsertExtractor, segment, AnalyzerContext(cte=holder.cte)
-                )
-            elif segment.type == "update_statement":
-                holder |= self.delegate_to(
-                    UpdateExtractor, segment, AnalyzerContext(cte=holder.cte)
-                )
-            elif segment.type == "common_table_expression":
-                alias = None
-                sub_segments = list_child_segments(segment)
-                for sub_segment in sub_segments:
-                    if sub_segment.type == "identifier":
-                        alias = sub_segment.raw
-                    elif sub_segment.type == "bracketed":
-                        for sq in self.list_subquery(sub_segment):
-                            sq.alias = alias
-                            subqueries.append(sq)
-                        holder.add_cte(SqlFluffSubQuery.of(sub_segment, alias))
+            match segment.type:
+                case "select_statement" | "set_expression":
+                    holder |= self.delegate_to(
+                        SelectExtractor,
+                        segment,
+                        AnalyzerContext(
+                            cte=holder.cte,
+                            write=holder.write,
+                            write_columns=holder.write_columns,
+                        ),
+                    )
+                case "insert_statement":
+                    holder |= self.delegate_to(
+                        CreateInsertExtractor, segment, AnalyzerContext(cte=holder.cte)
+                    )
+                case "update_statement":
+                    holder |= self.delegate_to(
+                        UpdateExtractor, segment, AnalyzerContext(cte=holder.cte)
+                    )
+                case "common_table_expression":
+                    alias = None
+                    for sub_segment in list_child_segments(segment):
+                        match sub_segment.type:
+                            case "identifier":
+                                alias = sub_segment.raw
+                            case "bracketed":
+                                for sq in self.list_subquery(sub_segment):
+                                    sq.alias = alias
+                                    subqueries.append(sq)
+                                holder.add_cte(SqlFluffSubQuery.of(sub_segment, alias))
 
         self.extract_subquery(subqueries, holder)
 
