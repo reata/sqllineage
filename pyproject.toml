@@ -10,7 +10,7 @@ dependencies = [
     "sqlfluff>=3.2.0",
     "sqlalchemy>=2.0.0",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "Reata", email = "reddevil.hjw@gmail.com" },
 ]
@@ -32,7 +32,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -79,7 +78,7 @@ path = "hatch_build.py"
 
 [tool.tox]
 requires = ["tox>=4.19"]
-env_list = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
 [tool.tox.env_run_base]
 deps = [".[ci]"]
@@ -93,7 +92,7 @@ commands = [
 [tool.ruff]
 line-length = 120
 indent-width = 4
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [

@@ -53,15 +53,16 @@ print(result.target_tables)
 A clear and concise description of what you expected to happen, and the output in accordance with the `To Reproduce` section.
 
 **Python version (available via `python --version`)**
- - 3.8.17
- - 3.9.18
- - 3.10.13
- - 3.11.5
+ - 3.10.0
+ - 3.11.0
+ - 3.12.0
+ - 3.13.0
+ - 3.14.0
  - etc.
 
 **SQLLineage version (available via `sqllineage --version`):**
- - 1.3.8
- - 1.4.7
+ - 1.4.9
+ - 1.5.6
  - etc.
 
 **Additional context**
