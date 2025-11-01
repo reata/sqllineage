@@ -93,17 +93,18 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             )
         segments = []
         for top_segment in getattr(parsed.tree, "segments", []):
-            if top_segment.type == "statement":
-                segments.append(top_segment.segments[0])
-            elif top_segment.type == "batch":
-                statements = top_segment.get_children("statement")
-                if len(statements) > 1:
-                    warnings.warn(
-                        "SQL statements is not split by semicolon. "
-                        "SQLLineage is not guaranteed to generate correct result under this circumstances.",
-                        SyntaxWarning,
-                        stacklevel=2,
-                    )
-                for statement in statements:
-                    segments.append(statement.segments[0])
+            match top_segment.type:
+                case "statement":
+                    segments.append(top_segment.segments[0])
+                case "batch":
+                    statements = top_segment.get_children("statement")
+                    if len(statements) > 1:
+                        warnings.warn(
+                            "SQL statements is not split by semicolon. "
+                            "SQLLineage is not guaranteed to generate correct result under this circumstances.",
+                            SyntaxWarning,
+                            stacklevel=2,
+                        )
+                    for statement in statements:
+                        segments.append(statement.segments[0])
         return segments
