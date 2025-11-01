@@ -10,6 +10,7 @@ providers = generate_metadata_providers(
         "db.tbl_x": ["id", "a", "b"],
         "db.tbl_y": ["id", "h", "i"],
         "db.tbl_z": ["pk", "s", "t"],
+        "db.tbl_x1": ["id", "a", "b"],
     }
 )
 
@@ -332,6 +333,82 @@ def test_wildcard_reference_from_previous_statements(provider: MetaDataProvider)
             (
                 ColumnQualifierTuple("t", "db.tbl_z"),
                 ColumnQualifierTuple("t", "db.tbl"),
+            ),
+        ],
+        metadata_provider=provider,
+    )
+
+
+@pytest.mark.parametrize("provider", providers)
+def test_wildcard_table_union_with_same_column_names(provider: MetaDataProvider):
+    sql = """insert into test_v
+SELECT * FROM db.tbl_x
+UNION
+SELECT * FROM db.tbl_x1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("id", "db.tbl_x"),
+                ColumnQualifierTuple("id", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("a", "db.tbl_x"),
+                ColumnQualifierTuple("a", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("b", "db.tbl_x"),
+                ColumnQualifierTuple("b", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("id", "db.tbl_x1"),
+                ColumnQualifierTuple("id", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("a", "db.tbl_x1"),
+                ColumnQualifierTuple("a", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("b", "db.tbl_x1"),
+                ColumnQualifierTuple("b", "<default>.test_v"),
+            ),
+        ],
+        metadata_provider=provider,
+    )
+
+
+@pytest.mark.parametrize("provider", providers)
+def test_wildcard_table_union_with_different_column_names(provider: MetaDataProvider):
+    sql = """insert into test_v
+SELECT * FROM db.tbl_x
+UNION
+SELECT * FROM db.tbl_y"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("id", "db.tbl_x"),
+                ColumnQualifierTuple("id", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("a", "db.tbl_x"),
+                ColumnQualifierTuple("a", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("b", "db.tbl_x"),
+                ColumnQualifierTuple("b", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("id", "db.tbl_y"),
+                ColumnQualifierTuple("id", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("h", "db.tbl_y"),
+                ColumnQualifierTuple("a", "<default>.test_v"),
+            ),
+            (
+                ColumnQualifierTuple("i", "db.tbl_y"),
+                ColumnQualifierTuple("b", "<default>.test_v"),
             ),
         ],
         metadata_provider=provider,
