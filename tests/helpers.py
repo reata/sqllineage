@@ -1,6 +1,5 @@
 import os.path
 from pathlib import Path
-from typing import Optional
 
 from sqlalchemy import (
     Column as SQLAlchemyColumn,
@@ -77,7 +76,7 @@ def assert_column_lineage_equal(
     sql: str,
     column_lineages=None,
     dialect: str = "ansi",
-    metadata_provider: Optional[MetaDataProvider] = None,
+    metadata_provider: MetaDataProvider | None = None,
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
 ):

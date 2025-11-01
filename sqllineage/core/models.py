@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Optional, Union
+from typing import Any
 
 from sqllineage.config import SQLLineageConfig
 from sqllineage.exceptions import SQLLineageException
@@ -13,7 +13,7 @@ class Schema:
 
     unknown = "<default>"
 
-    def __init__(self, name: Optional[str] = None):
+    def __init__(self, name: str | None = None):
         """
         :param name: schema name
         """
@@ -110,7 +110,7 @@ class SubQuery:
     Data Class for SubQuery
     """
 
-    def __init__(self, subquery: Any, subquery_raw: str, alias: Optional[str]):
+    def __init__(self, subquery: Any, subquery_raw: str, alias: str | None):
         """
         :param subquery: subquery
         :param alias: subquery alias name
@@ -136,7 +136,7 @@ class SubQuery:
         return hash(self.query_raw)
 
     @staticmethod
-    def of(subquery: Any, alias: Optional[str]) -> "SubQuery":
+    def of(subquery: Any, alias: str | None) -> "SubQuery":
         raise NotImplementedError
 
 
@@ -151,7 +151,7 @@ class Column:
         :param parent: :class:`Table` or :class:`SubQuery`
         :param kwargs:
         """
-        self._parent: set[Union[Path, Table, SubQuery]] = set()
+        self._parent: set[Path | Table | SubQuery] = set()
         self.raw_name = escape_identifier_name(name)
         self.source_columns = [
             (
@@ -185,15 +185,15 @@ class Column:
         return hash(str(self))
 
     @property
-    def parent(self) -> Optional[Union[Path, Table, SubQuery]]:
+    def parent(self) -> Path | Table | SubQuery | None:
         return next(iter(self._parent)) if len(self._parent) == 1 else None
 
     @parent.setter
-    def parent(self, value: Union[Path, Table, SubQuery]):
+    def parent(self, value: Path | Table | SubQuery):
         self._parent.add(value)
 
     @property
-    def parent_candidates(self) -> list[Union[Path, Table, SubQuery]]:
+    def parent_candidates(self) -> list[Path | Table | SubQuery]:
         return sorted(self._parent, key=lambda p: str(p))
 
     @staticmethod
@@ -205,13 +205,13 @@ class Column:
         """
         raise NotImplementedError
 
-    def to_source_columns(self, alias_mapping: dict[str, Union[Path, Table, SubQuery]]):
+    def to_source_columns(self, alias_mapping: dict[str, Path | Table | SubQuery]):
         """
         Best guess for source table given all the possible table/subquery and their alias.
         """
 
         def _to_src_col(
-            name: str, parent: Optional[Union[Path, Table, SubQuery]] = None
+            name: str, parent: Path | Table | SubQuery | None = None
         ) -> Column:
             col = Column(name)
             if parent:

@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import StatementLineageHolder
@@ -31,7 +29,7 @@ class MergeExtractor(BaseExtractor):
     ) -> StatementLineageHolder:
         holder = StatementLineageHolder()
         src_flag = tgt_flag = False
-        direct_source: Optional[Union[Table, SubQuery]] = None
+        direct_source: Table | SubQuery | None = None
         segments = list_child_segments(statement)
         for i, segment in enumerate(segments):
             if segment.type == "merge_match":

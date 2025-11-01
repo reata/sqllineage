@@ -1,5 +1,4 @@
 import re
-from typing import Optional, Union
 
 from sqlparse.sql import (
     Case,
@@ -101,8 +100,7 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
             pass
         else:
             raise SQLLineageException(
-                "An Identifier is expected, got %s[value: %s] instead."
-                % (type(token).__name__, token)
+                f"An Identifier is expected, got {type(token).__name__}[value: {token}] instead."
             )
 
     def _handle_column(self, token: Token) -> None:
@@ -137,12 +135,12 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
         elif isinstance(first_token, Parenthesis) and is_values_clause(first_token):
             # (VALUES ...) AS alias, no dataset involved
             return None
-        dataset: Union[Table, SubQuery, Path]
+        dataset: Table | SubQuery | Path
         path_match = re.match(r"(parquet|csv|json)\.`(.*)`", identifier.value)
         if path_match is not None:
             dataset = Path(path_match.groups()[1])
         else:
-            read: Optional[Union[Table, SubQuery]] = None
+            read: Table | SubQuery | None = None
             subqueries = get_subquery_parentheses(identifier)
             if len(subqueries) > 0:
                 # SELECT col1 FROM (SELECT col2 FROM tab1) dt, the subquery will be parsed as Identifier

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlparse import tokens as T
 from sqlparse.engine import grouping
 from sqlparse.lexer import Lexer
@@ -53,7 +51,7 @@ class SqlParseTable(Table):
 
 class SqlParseSubQuery(SubQuery):
     @staticmethod
-    def of(subquery: Parenthesis, alias: Optional[str]) -> SubQuery:
+    def of(subquery: Parenthesis, alias: str | None) -> SubQuery:
         return SubQuery(subquery, subquery.value, alias)
 
 

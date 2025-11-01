@@ -37,7 +37,7 @@ def main(args=None) -> None:
         prog="sqllineage", description="SQL Lineage Parser."
     )
     parser.add_argument(
-        "--version", action="version", version="%s %s" % (MAIN_NAME, MAIN_VERSION)
+        "--version", action="version", version=f"{MAIN_NAME} {MAIN_VERSION}"
     )
     parser.add_argument(
         "-e", metavar="<quoted-query-string>", help="SQL from command line"

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqllineage.core.metadata_provider import MetaDataProvider
 
 
@@ -8,7 +6,7 @@ class DummyMetaDataProvider(MetaDataProvider):
     A Dummy MetaDataProvider that accept metadata as a dict
     """
 
-    def __init__(self, metadata: Optional[dict[str, list[str]]] = None):
+    def __init__(self, metadata: dict[str, list[str]] | None = None):
         """
         :param metadata: a dict with schema.table name as key and a list of unqualified column name as value
         """

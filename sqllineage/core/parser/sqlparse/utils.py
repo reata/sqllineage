@@ -1,5 +1,3 @@
-from typing import Union
-
 from sqlparse.sql import (
     Case,
     Comment,
@@ -99,7 +97,7 @@ def is_values_clause(token: Parenthesis) -> bool:
 
 
 def get_subquery_parentheses(
-    token: Union[Identifier, Function, Values, Where],
+    token: Identifier | Function | Values | Where,
 ) -> list[SubQueryTuple]:
     """
     Retrieve subquery list
