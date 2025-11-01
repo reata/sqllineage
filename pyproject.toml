@@ -120,3 +120,9 @@ disallow_any_generics = true
 
 [tool.coverage.run]
 source = ["sqllineage"]
+
+[tool.coverage.report]
+exclude_also = [
+    "raise NotImplementedError",
+    "@(abc\\.)?abstractmethod",
+]
