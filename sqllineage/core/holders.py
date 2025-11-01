@@ -1,5 +1,4 @@
 import itertools
-from typing import Optional, Union
 
 import networkx as nx
 from networkx import DiGraph
@@ -70,14 +69,14 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         self.graph = nx.compose(self.graph, other.graph)
         return self
 
-    def _property_getter(self, prop) -> set[Union[SubQuery, Table]]:
+    def _property_getter(self, prop) -> set[SubQuery | Table]:
         return {t for t, attr in self.graph.nodes(data=True) if attr.get(prop) is True}
 
     def _property_setter(self, value, prop) -> None:
         self.graph.add_node(value, **{prop: True})
 
     @property
-    def read(self) -> set[Union[SubQuery, Table]]:
+    def read(self) -> set[SubQuery | Table]:
         return self._property_getter(NodeTag.READ)
 
     def add_read(self, value) -> None:
@@ -87,7 +86,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             self.graph.add_edge(value, value.alias, type=EdgeType.HAS_ALIAS)
 
     @property
-    def write(self) -> set[Union[SubQuery, Table]]:
+    def write(self) -> set[SubQuery | Table]:
         # SubQueryLineageHolder.write can return a single SubQuery or Table, or both when __or__ together.
         # This is different from StatementLineageHolder.write, where Table is the only possibility.
         return self._property_getter(NodeTag.WRITE)
@@ -151,7 +150,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
             self.graph.add_edge(src.parent, src, type=EdgeType.HAS_COLUMN)
 
-    def get_table_columns(self, table: Union[Table, SubQuery]) -> list[Column]:
+    def get_table_columns(self, table: Table | SubQuery) -> list[Column]:
         return [
             tgt
             for (src, tgt, edge_type) in self.graph.out_edges(nbunch=table, data="type")
@@ -193,8 +192,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                                 )
 
     def get_alias_mapping_from_table_group(
-        self, table_group: list[Union[Path, Table, SubQuery]]
-    ) -> dict[str, Union[Path, Table, SubQuery]]:
+        self, table_group: list[Path | Table | SubQuery]
+    ) -> dict[str, Path | Table | SubQuery]:
         """
         A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
         For SubQuery, it's only alias then.
@@ -212,7 +211,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         }
         return alias_map | unqualified_map | qualified_map
 
-    def _get_target_table(self) -> Optional[Union[SubQuery, Table]]:
+    def _get_target_table(self) -> SubQuery | Table | None:
         table = None
         if write_only := self.write.difference(self.read):
             table = next(iter(write_only))
@@ -227,7 +226,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def _replace_wildcard(
         self,
-        tgt_table: Union[Table, SubQuery],
+        tgt_table: Table | SubQuery,
         src_table_columns: list[Column],
         tgt_wildcard: Column,
         src_wildcard: Column,
@@ -387,7 +386,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         intermediate_tables -= self.__retrieve_tag_tables(NodeTag.SELFLOOP)
         return intermediate_tables
 
-    def __retrieve_tag_tables(self, tag) -> set[Union[Path, Table]]:
+    def __retrieve_tag_tables(self, tag) -> set[Path | Table]:
         return {
             table
             for table, attr in self.graph.nodes(data=True)

@@ -1,5 +1,3 @@
-from typing import Union
-
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Column, Path, SubQuery, Table
@@ -7,7 +5,7 @@ from sqllineage.exceptions import SQLLineageException
 
 
 class SourceHandlerMixin:
-    tables: list[Union[Path, SubQuery, Table]]
+    tables: list[Path | SubQuery | Table]
     columns: list[Column]
     union_barriers: list[tuple[int, int]]
 

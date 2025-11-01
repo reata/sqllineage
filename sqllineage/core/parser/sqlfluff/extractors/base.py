@@ -1,6 +1,5 @@
 from functools import reduce
 from operator import add
-from typing import Optional, Union
 
 import networkx as nx
 from sqlfluff.core.parser import BaseSegment
@@ -54,7 +53,7 @@ class BaseExtractor:
         raise NotImplementedError
 
     @classmethod
-    def find_table(cls, segment: BaseSegment) -> Optional[Table]:
+    def find_table(cls, segment: BaseSegment) -> Table | None:
         table = None
         if segment.type in ["table_reference", "object_reference"]:
             table = SqlFluffTable.of(segment)
@@ -89,7 +88,7 @@ class BaseExtractor:
 
     def _list_table_from_from_clause_or_join_clause(
         self, segment: BaseSegment, holder: SubQueryLineageHolder
-    ) -> list[Union[Table, SubQuery, Path]]:
+    ) -> list[Table | SubQuery | Path]:
         """
         Extract table from from_clause or join_clause, join_clause is a child node of from_clause.
         """
@@ -119,12 +118,12 @@ class BaseExtractor:
     @staticmethod
     def _add_dataset_from_expression_element(
         segment: BaseSegment, holder: SubQueryLineageHolder
-    ) -> list[Union[Table, SubQuery, Path]]:
+    ) -> list[Table | SubQuery | Path]:
         """
         Append tables and subqueries identified in the 'from_expression_element' type segment to the table and
         holder extra subqueries sets
         """
-        tables: list[Union[Table, SubQuery, Path]] = []
+        tables: list[Table | SubQuery | Path] = []
         all_segments = [
             seg for seg in list_child_segments(segment) if seg.type != "keyword"
         ]

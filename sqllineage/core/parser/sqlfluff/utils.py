@@ -9,8 +9,6 @@ naming convention:
 first parameter of each function must be sqlfluff BaseSegment
 """
 
-from typing import Optional
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.utils.entities import ColumnQualifierTuple, SubQueryTuple
@@ -73,7 +71,7 @@ def is_teradata_title_phrase(segment: BaseSegment) -> bool:
     return False
 
 
-def find_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
+def find_from_expression_element(segment: BaseSegment) -> BaseSegment | None:
     """
     segment can be of type:
         from_clause as grandparent
@@ -88,7 +86,7 @@ def find_from_expression_element(segment: BaseSegment) -> Optional[BaseSegment]:
     return from_expression_element
 
 
-def find_table_identifier(segment: BaseSegment) -> Optional[BaseSegment]:
+def find_table_identifier(segment: BaseSegment) -> BaseSegment | None:
     """
     recursively find table identifier
     """
@@ -255,7 +253,7 @@ def extract_identifier(col_segment: BaseSegment) -> str:
 
 def extract_as_and_target_segment(
     segment: BaseSegment,
-) -> tuple[Optional[BaseSegment], BaseSegment]:
+) -> tuple[BaseSegment | None, BaseSegment]:
     as_segment = segment.get_child("alias_expression")
     sublist = list_child_segments(segment, False)
     target = sublist[0]
@@ -265,7 +263,7 @@ def extract_as_and_target_segment(
     return as_segment, table_expr
 
 
-def extract_column_qualifier(segment: BaseSegment) -> Optional[ColumnQualifierTuple]:
+def extract_column_qualifier(segment: BaseSegment) -> ColumnQualifierTuple | None:
     cqt = None
     if is_wildcard(segment):
         identifiers = segment.raw.split(".")

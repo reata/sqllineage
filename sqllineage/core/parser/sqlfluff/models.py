@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage import SQLPARSE_DIALECT
@@ -41,7 +39,7 @@ class SqlFluffTable(Table):
     """
 
     @staticmethod
-    def of(table: BaseSegment, alias: Optional[str] = None) -> Table:
+    def of(table: BaseSegment, alias: str | None = None) -> Table:
         """
         Build an object of type 'Table'
         :param table: table segment to be processed
@@ -81,7 +79,7 @@ class SqlFluffSubQuery(SubQuery):
     """
 
     @staticmethod
-    def of(subquery: BaseSegment, alias: Optional[str]) -> SubQuery:
+    def of(subquery: BaseSegment, alias: str | None) -> SubQuery:
         """
         Build a 'SubQuery' object
         :param subquery: subquery segment
@@ -230,7 +228,7 @@ class SqlFluffColumn(Column):
     @staticmethod
     def _get_column_and_alias(
         segment: BaseSegment, check_bracketed: bool = True
-    ) -> tuple[list[ColumnQualifierTuple], Optional[str]]:
+    ) -> tuple[list[ColumnQualifierTuple], str | None]:
         """
         check_bracketed is True for top-level column definition, like (col1 + col2) as col3
         set to False for bracket in function call, like coalesce(col1, col2) as col3

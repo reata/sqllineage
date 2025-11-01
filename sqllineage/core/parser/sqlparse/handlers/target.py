@@ -39,8 +39,7 @@ class TargetHandler(NextTokenBaseHandler):
             # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
             if not isinstance(token.token_first(skip_cm=True), Identifier):
                 raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead."
-                    % (type(token).__name__, token)
+                    f"An Identifier is expected, got {type(token).__name__}[value: {token}] instead."
                 )
             holder.add_write(SqlParseTable.of(token.token_first(skip_cm=True)))
         elif isinstance(token, Comparison):
@@ -51,8 +50,7 @@ class TargetHandler(NextTokenBaseHandler):
                 and isinstance(token.right, Identifier)
             ):
                 raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead."
-                    % (type(token).__name__, token)
+                    f"An Identifier is expected, got {type(token).__name__}[value: {token}] instead."
                 )
             holder.add_write(SqlParseTable.of(token.left))
             holder.add_read(SqlParseTable.of(token.right))

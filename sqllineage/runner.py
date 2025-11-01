@@ -1,7 +1,7 @@
 import logging
 import warnings
 from collections import OrderedDict
-from typing import Any, Optional
+from typing import Any
 
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
 from sqllineage.config import SQLLineageConfig
@@ -33,7 +33,7 @@ def lazy_property(func):
     return property(lazy_method(func))
 
 
-class LineageRunner(object):
+class LineageRunner:
     def __init__(
         self,
         sql: str,
@@ -41,7 +41,7 @@ class LineageRunner(object):
         metadata_provider: MetaDataProvider = DummyMetaDataProvider(),
         verbose: bool = False,
         silent_mode: bool = False,
-        draw_options: Optional[dict[str, Any]] = None,
+        draw_options: dict[str, Any] | None = None,
         file_path: str = ".",
     ):
         """

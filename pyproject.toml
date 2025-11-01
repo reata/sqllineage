@@ -98,9 +98,10 @@ target-version = "py310"
 select = [
     "E",
     "F",
-    "A", # builtins
-    "G", # logging format
-    "I", # import order
+    "A",  # builtins
+    "G",  # logging format
+    "I",  # import order
+    "UP", # upgrade syntax for newer python versions
 ]
 ignore = [
     "A005", # stdlib-module-shadowing, we have modules like parser, copy, select, io violating this rule
