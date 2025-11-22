@@ -20,3 +20,10 @@ class AnalyzerContext(NamedTuple):
     write: set[SubQuery | Table] | None = None
     # columns that write table specifies, used for `INSERT INTO x (col1, col2) SELECT` syntax
     write_columns: list[Column] | None = None
+
+
+class EdgeTuple(NamedTuple):
+    source: Any
+    target: Any
+    label: str
+    attributes: dict[str, Any] = {}

@@ -1,9 +1,9 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 from sqllineage.core.models import Column, Table
 
 
-class MetaDataProvider:
+class MetaDataProvider(ABC):
     """
     Base class used to provide metadata like table schema.
 
@@ -41,7 +41,7 @@ class MetaDataProvider:
 
     @abstractmethod
     def _get_table_columns(self, schema: str, table: str, **kwargs) -> list[str]:
-        """To be implemented by subclasses."""
+        raise NotImplementedError
 
     def register_session_metadata(self, table: Table, columns: list[Column]) -> None:
         """Register session-level metadata, like temporary table or view created."""
