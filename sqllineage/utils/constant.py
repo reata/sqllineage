@@ -19,6 +19,11 @@ class EdgeType:
     HAS_ALIAS = "has_alias"
 
 
+class EdgeDirection:
+    IN = "in"
+    OUT = "out"
+
+
 class LineageLevel:
     TABLE = "table"
     COLUMN = "column"
