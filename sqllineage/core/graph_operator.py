@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import Generic, TypeVar
 
 from sqllineage.utils.entities import EdgeTuple
 
 T = TypeVar("T")
 
 
-class GraphOperator(ABC):
+class GraphOperator(ABC, Generic[T]):
     """
     Base class used to operator the graph structure that holder leverages to store lineage information
     """
@@ -62,7 +62,8 @@ class GraphOperator(ABC):
         self, src_vertex: T, tgt_vertex: T, label: str, **props
     ) -> None:
         """
-        when vertex already exists, props will be updated
+        when source and target vertices do not exist, they will be added to the graph first.
+        when edge already exists, invoking this method should not create duplicate edge.
         """
         raise NotImplementedError
 
@@ -81,11 +82,16 @@ class GraphOperator(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_sub_graph(self, *vertices: T) -> "GraphOperator":
+    def get_sub_graph(self, *vertices: T) -> "GraphOperator[T]":
         raise NotImplementedError
 
     @abstractmethod
-    def merge(self, other: "GraphOperator") -> None:
+    def merge(self, other: "GraphOperator[T]") -> None:
+        """
+        The vertices and edges from other graph will be added to current graph.
+        When vertex or edge already exists, their props will be updated.
+        In case of prop keys conflict, self takes precedence over other.
+        """
         raise NotImplementedError
 
     @abstractmethod

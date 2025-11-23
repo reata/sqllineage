@@ -7,7 +7,15 @@ from sqllineage.utils.constant import EdgeDirection
 from sqllineage.utils.entities import EdgeTuple
 
 
-class NetworkXGraphOperator(GraphOperator):
+class NetworkXGraphOperator(GraphOperator[T]):
+    """
+    networkx based implementation of GraphOperator.
+
+    networkx allows any hashable object to be added as a node, so T can be any hashable type.
+
+    networkx edge has a native support for edge type, which we use to store edge label.
+    """
+
     def __init__(self, graph: nx.DiGraph = None) -> None:
         if graph is None:
             self.graph = nx.DiGraph()
@@ -95,10 +103,10 @@ class NetworkXGraphOperator(GraphOperator):
     def drop_edge(self, src_vertex: T, tgt_vertex: T) -> None:
         self.graph.remove_edge(src_vertex, tgt_vertex)
 
-    def get_sub_graph(self, *vertices) -> "NetworkXGraphOperator":
+    def get_sub_graph(self, *vertices) -> "NetworkXGraphOperator[T]":
         return NetworkXGraphOperator(self.graph.subgraph(vertices))
 
-    def merge(self, other: GraphOperator) -> None:
+    def merge(self, other: GraphOperator[T]) -> None:
         if isinstance(other, NetworkXGraphOperator):
             self.graph = nx.compose(self.graph, other.graph)
         else:
