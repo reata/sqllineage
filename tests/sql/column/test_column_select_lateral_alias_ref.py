@@ -447,33 +447,33 @@ def test_column_top_level_disable_lateral_ref_with_metadata_from_table():
 
 
 def test_column_disable_lateral_ref_within_subquery():
-    # sql = """
-    # insert into public.tgt_tbl1
-    # select
-    #     sq.name
-    # from
-    #     (
-    #         select
-    #             id     || a as alias1,
-    #             alias1 || b as name
-    #         from
-    #             public.src_tbl1
-    #     ) as sq
-    # """
-    # assert_column_lineage_equal(
-    #     sql,
-    #     [
-    #         (
-    #             ColumnQualifierTuple("alias1", "public.src_tbl1"),
-    #             ColumnQualifierTuple("name", "public.tgt_tbl1"),
-    #         ),
-    #         (
-    #             ColumnQualifierTuple("b", "public.src_tbl1"),
-    #             ColumnQualifierTuple("name", "public.tgt_tbl1"),
-    #         ),
-    #     ],
-    #     test_sqlparse=False,
-    # )
+    sql = """
+    insert into public.tgt_tbl1
+    select
+        sq.name
+    from
+        (
+            select
+                id     || a as alias1,
+                alias1 || b as name
+            from
+                public.src_tbl1
+        ) as sq
+    """
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("alias1", "public.src_tbl1"),
+                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+            ),
+            (
+                ColumnQualifierTuple("b", "public.src_tbl1"),
+                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
 
     sql = """
     insert into public.tgt_tbl1

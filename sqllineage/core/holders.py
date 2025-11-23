@@ -22,10 +22,9 @@ class ColumnLineageMixin:
         """
         self.go: GraphOperator  # For mypy attribute checking
         # filter all the column node in the graph
-        column_nodes = [
-            v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)
-        ]
-        column_graph = self.go.get_sub_graph(*column_nodes)
+        column_graph = self.go.get_sub_graph(
+            *[v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)]
+        )
         source_columns = column_graph.retrieve_source_vertices()
         # if a column lineage path ends at SubQuery, then it should be pruned
         target_columns = column_graph.retrieve_target_vertices()
@@ -36,7 +35,7 @@ class ColumnLineageMixin:
             }
         columns = set()
         for source, target in itertools.product(source_columns, target_columns):
-            simple_paths = self.go.list_paths(source, target)
+            simple_paths = self.go.list_lineage_paths(source, target)
             for path in simple_paths:
                 if exclude_subquery_columns:
                     path = [

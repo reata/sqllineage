@@ -12,7 +12,10 @@ class GraphOperator(ABC):
     """
 
     @abstractmethod
-    def add_vertex_if_not_exist(self, node: T, **props) -> None:
+    def add_vertex_if_not_exist(self, vertex: T, **props) -> None:
+        """
+        when vertex already exists, props will be updated
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -49,12 +52,18 @@ class GraphOperator(ABC):
 
     @abstractmethod
     def drop_vertices(self, *vertices: T) -> None:
+        """
+        drop vertices from the graph if exists
+        """
         raise NotImplementedError
 
     @abstractmethod
     def add_edge_if_not_exist(
         self, src_vertex: T, tgt_vertex: T, label: str, **props
     ) -> None:
+        """
+        when vertex already exists, props will be updated
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -80,7 +89,10 @@ class GraphOperator(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def list_paths(self, src_vertex: T, tgt_vertex: T) -> list[list[T]]:
+    def list_lineage_paths(self, src_vertex: T, tgt_vertex: T) -> list[list[T]]:
+        """
+        list all lineage paths (acyclic) in the graph from src_vertex to tgt_vertex.
+        """
         raise NotImplementedError
 
     @abstractmethod

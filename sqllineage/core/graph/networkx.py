@@ -14,8 +14,8 @@ class NetworkXGraphOperator(GraphOperator):
         else:
             self.graph = graph
 
-    def add_vertex_if_not_exist(self, node: T, **props) -> None:
-        self.graph.add_node(node, **props)
+    def add_vertex_if_not_exist(self, vertex: T, **props) -> None:
+        self.graph.add_node(vertex, **props)
 
     def retrieve_vertices_by_props(self, **props) -> list[T]:
         vertices = []
@@ -27,14 +27,14 @@ class NetworkXGraphOperator(GraphOperator):
     def retrieve_source_vertices(self) -> list[T]:
         return list(
             set(v for v, degree in self.graph.in_degree if degree == 0).intersection(
-                v for v, degree in self.graph.out_degree if degree > 0
+                set(v for v, degree in self.graph.out_degree if degree > 0)
             )
         )
 
     def retrieve_target_vertices(self) -> list[T]:
         return list(
             set(v for v, degree in self.graph.out_degree if degree == 0).intersection(
-                v for v, degree in self.graph.in_degree if degree > 0
+                set(v for v, degree in self.graph.in_degree if degree > 0)
             )
         )
 
@@ -55,10 +55,10 @@ class NetworkXGraphOperator(GraphOperator):
     def add_edge_if_not_exist(
         self, src_vertex: T, tgt_vertex: T, label: str, **props
     ) -> None:
+        # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
         if src_vertex is not None and tgt_vertex is not None:
-            # pop type if present as type will be explicitly set to label
+            # pop type if present as type is explicitly set by label
             props.pop("type", None)
-            # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
             self.graph.add_edge(src_vertex, tgt_vertex, type=label, **props)
 
     def retrieve_edges_by_label(self, label: str) -> list[EdgeTuple]:
@@ -80,6 +80,7 @@ class NetworkXGraphOperator(GraphOperator):
             else self.graph.out_edges(vertex, data=True)
         )
         for src, tgt, attr in edge_view:
+            # always add the edge when label is not specified (or when specified and matches)
             if label is None or attr.get("type") == label:
                 edges.append(
                     EdgeTuple(
@@ -105,7 +106,7 @@ class NetworkXGraphOperator(GraphOperator):
                 "Expect other to be NetworkXGraphOperator, got " + str(type(other))
             )
 
-    def list_paths(self, src_vertex: T, tgt_vertex: T) -> list[list[T]]:
+    def list_lineage_paths(self, src_vertex: T, tgt_vertex: T) -> list[list[T]]:
         return list(nx.all_simple_paths(self.graph, src_vertex, tgt_vertex))
 
     def to_cytoscape(
