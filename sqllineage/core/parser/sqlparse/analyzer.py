@@ -271,13 +271,15 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 ],
                 [],
             )
-        elif is_subquery(token):
+        elif isinstance(token, Parenthesis) and is_subquery(token):
             # Parenthesis for SubQuery without alias, this is valid syntax for certain SQL dialect
             result = [SqlParseSubQuery.of(token, None)]
         return result
 
     @classmethod
-    def _parse_subquery(cls, token: Identifier | Function | Where) -> list[SubQuery]:
+    def _parse_subquery(
+        cls, token: Identifier | Function | Where | Values
+    ) -> list[SubQuery]:
         """
         convert SubQueryTuple to sqllineage.core.models.SubQuery
         """
