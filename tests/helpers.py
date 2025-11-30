@@ -15,6 +15,7 @@ from sqlalchemy import (
 )
 
 from sqllineage import SQLPARSE_DIALECT
+from sqllineage.config import SQLLineageConfig
 from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.core.metadata.sqlalchemy import SQLAlchemyMetaDataProvider
 from sqllineage.core.metadata_provider import MetaDataProvider
@@ -56,6 +57,24 @@ def _assert_column_lineage(lr: LineageRunner, column_lineages=None):
     ), f"\n\tExpected Lineage: {expected}\n\tActual Lineage: {actual}"
 
 
+def _gen_dialects(
+    dialect: str = "ansi", test_sqlfluff: bool = True, test_sqlparse: bool = True
+):
+    dialects = []
+    if test_sqlfluff:
+        dialects.append(dialect)
+    if test_sqlparse:
+        dialects.append(SQLPARSE_DIALECT)
+    return dialects
+
+
+def _gen_graph_operators():
+    return [
+        "sqllineage.core.graph.networkx.NetworkXGraphOperator",
+        "sqllineage.core.graph.rustworkx.RustworkXGraphOperator",
+    ]
+
+
 def assert_table_lineage_equal(
     sql: str,
     source_tables=None,
@@ -64,12 +83,11 @@ def assert_table_lineage_equal(
     test_sqlfluff: bool = True,
     test_sqlparse: bool = True,
 ):
-    lr = LineageRunner(sql, dialect=SQLPARSE_DIALECT)
-    lr_sqlfluff = LineageRunner(sql, dialect=dialect)
-    if test_sqlparse:
-        _assert_table_lineage(lr, source_tables, target_tables)
-    if test_sqlfluff:
-        _assert_table_lineage(lr_sqlfluff, source_tables, target_tables)
+    for dialect_ in _gen_dialects(dialect, test_sqlfluff, test_sqlparse):
+        for graph_operator in _gen_graph_operators():
+            with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+                lr = LineageRunner(sql, dialect=dialect_)
+                _assert_table_lineage(lr, source_tables, target_tables)
 
 
 def assert_column_lineage_equal(
@@ -83,16 +101,13 @@ def assert_column_lineage_equal(
     metadata_provider = (
         DummyMetaDataProvider() if metadata_provider is None else metadata_provider
     )
-    lr = LineageRunner(
-        sql, dialect=SQLPARSE_DIALECT, metadata_provider=metadata_provider
-    )
-    lr_sqlfluff = LineageRunner(
-        sql, dialect=dialect, metadata_provider=metadata_provider
-    )
-    if test_sqlparse:
-        _assert_column_lineage(lr, column_lineages)
-    if test_sqlfluff:
-        _assert_column_lineage(lr_sqlfluff, column_lineages)
+    for dialect_ in _gen_dialects(dialect, test_sqlfluff, test_sqlparse):
+        for graph_operator in _gen_graph_operators():
+            with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+                lr = LineageRunner(
+                    sql, dialect=dialect_, metadata_provider=metadata_provider
+                )
+                _assert_column_lineage(lr, column_lineages)
 
 
 def generate_metadata_providers(test_schemas) -> list[MetaDataProvider]:

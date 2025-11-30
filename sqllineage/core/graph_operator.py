@@ -1,57 +1,55 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Any
 
 from sqllineage.utils.entities import EdgeTuple
 
-T = TypeVar("T")
 
-
-class GraphOperator(ABC, Generic[T]):
+class GraphOperator(ABC):
     """
     Base class used to operator the graph structure that holder leverages to store lineage information
     """
 
     @abstractmethod
-    def add_vertex_if_not_exist(self, vertex: T, **props) -> None:
+    def add_vertex_if_not_exist(self, vertex: Any, **props) -> None:
         """
         when vertex already exists, props will be updated
         """
         raise NotImplementedError
 
     @abstractmethod
-    def retrieve_vertices_by_props(self, **props) -> list[T]:
+    def retrieve_vertices_by_props(self, **props) -> list[Any]:
         """
         when props is empty, return all vertices
         """
         raise NotImplementedError
 
     @abstractmethod
-    def retrieve_source_vertices(self) -> list[T]:
+    def retrieve_source_vertices(self) -> list[Any]:
         """
         source vertices are defined as vertices with no incoming edges and at least one outgoing edge
         """
         raise NotImplementedError
 
     @abstractmethod
-    def retrieve_target_vertices(self) -> list[T]:
+    def retrieve_target_vertices(self) -> list[Any]:
         """
         target vertices are defined as vertices with no outgoing edges and at least one incoming edge
         """
         raise NotImplementedError
 
     @abstractmethod
-    def retrieve_selfloop_vertices(self) -> list[T]:
+    def retrieve_selfloop_vertices(self) -> list[Any]:
         """
         self-loop vertices are defined as vertices with edges pointing to themselves
         """
         raise NotImplementedError
 
     @abstractmethod
-    def update_vertices(self, *vertices: T, **props) -> None:
+    def update_vertices(self, *vertices: Any, **props) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def drop_vertices(self, *vertices: T) -> None:
+    def drop_vertices(self, *vertices: Any) -> None:
         """
         drop vertices from the graph if exists
         """
@@ -59,7 +57,7 @@ class GraphOperator(ABC, Generic[T]):
 
     @abstractmethod
     def add_edge_if_not_exist(
-        self, src_vertex: T, tgt_vertex: T, label: str, **props
+        self, src_vertex: Any, tgt_vertex: Any, label: str, **props
     ) -> None:
         """
         when source and target vertices do not exist, they will be added to the graph first.
@@ -73,20 +71,20 @@ class GraphOperator(ABC, Generic[T]):
 
     @abstractmethod
     def retrieve_edges_by_vertex(
-        self, vertex: T, direction: str, label: str | None = None
+        self, vertex: Any, direction: str, label: str | None = None
     ) -> list[EdgeTuple]:
         raise NotImplementedError
 
     @abstractmethod
-    def drop_edge(self, src_vertex: T, tgt_vertex: T) -> None:
+    def drop_edge(self, src_vertex: Any, tgt_vertex: Any) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_sub_graph(self, *vertices: T) -> "GraphOperator[T]":
+    def get_sub_graph(self, *vertices: Any) -> "GraphOperator":
         raise NotImplementedError
 
     @abstractmethod
-    def merge(self, other: "GraphOperator[T]") -> None:
+    def merge(self, other: "GraphOperator") -> None:
         """
         The vertices and edges from other graph will be added to current graph.
         When vertex or edge already exists, their props will be updated.
@@ -95,7 +93,7 @@ class GraphOperator(ABC, Generic[T]):
         raise NotImplementedError
 
     @abstractmethod
-    def list_lineage_paths(self, src_vertex: T, tgt_vertex: T) -> list[list[T]]:
+    def list_lineage_paths(self, src_vertex: Any, tgt_vertex: Any) -> list[list[Any]]:
         """
         list all lineage paths (acyclic) in the graph from src_vertex to tgt_vertex.
         """

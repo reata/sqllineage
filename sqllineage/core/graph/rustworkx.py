@@ -2,12 +2,12 @@ from typing import Any
 
 import rustworkx as rx
 
-from sqllineage.core.graph_operator import GraphOperator, T
+from sqllineage.core.graph_operator import GraphOperator
 from sqllineage.utils.constant import EdgeDirection
 from sqllineage.utils.entities import EdgeTuple
 
 
-class RustworkXGraphOperator(GraphOperator[T]):
+class RustworkXGraphOperator(GraphOperator):
     """
     rustworkx based implementation of GraphOperator
 
@@ -20,10 +20,10 @@ class RustworkXGraphOperator(GraphOperator[T]):
     e.g., {label: str, prop1: val1, ...}
     """
 
-    def __init__(self, graph: rx.PyDiGraph = None) -> None:
+    def __init__(self, graph: rx.PyDiGraph[Any, Any] | None = None) -> None:
         if graph is None:
             self.graph = rx.PyDiGraph()
-            self._vertex_to_index: dict[T, int] = {}
+            self._vertex_to_index: dict[Any, int] = {}
         else:
             self.graph = graph
             # Rebuild vertex mapping from existing graph using actual node indices
@@ -32,7 +32,7 @@ class RustworkXGraphOperator(GraphOperator[T]):
                 node_data = self.graph[node_idx]
                 self._vertex_to_index[node_data["vertex"]] = node_idx
 
-    def add_vertex_if_not_exist(self, vertex: T, **props) -> None:
+    def add_vertex_if_not_exist(self, vertex: Any, **props) -> None:
         if vertex in self._vertex_to_index:
             # Update existing node
             node_idx = self._vertex_to_index[vertex]
@@ -45,7 +45,7 @@ class RustworkXGraphOperator(GraphOperator[T]):
             node_idx = self.graph.add_node(node_data)
             self._vertex_to_index[vertex] = node_idx
 
-    def retrieve_vertices_by_props(self, **props) -> list[T]:
+    def retrieve_vertices_by_props(self, **props) -> list[Any]:
         vertices = []
         for node_idx in self.graph.node_indices():
             node_data = self.graph[node_idx]
@@ -53,7 +53,7 @@ class RustworkXGraphOperator(GraphOperator[T]):
                 vertices.append(node_data["vertex"])
         return vertices
 
-    def retrieve_source_vertices(self) -> list[T]:
+    def retrieve_source_vertices(self) -> list[Any]:
         return [
             self.graph[node_idx]["vertex"]
             for node_idx in self.graph.node_indices()
@@ -61,7 +61,7 @@ class RustworkXGraphOperator(GraphOperator[T]):
             and len(self.graph.out_edges(node_idx)) > 0
         ]
 
-    def retrieve_target_vertices(self) -> list[T]:
+    def retrieve_target_vertices(self) -> list[Any]:
         return [
             self.graph[node_idx]["vertex"]
             for node_idx in self.graph.node_indices()
@@ -69,14 +69,14 @@ class RustworkXGraphOperator(GraphOperator[T]):
             and len(self.graph.out_edges(node_idx)) == 0
         ]
 
-    def retrieve_selfloop_vertices(self) -> list[T]:
+    def retrieve_selfloop_vertices(self) -> list[Any]:
         return [
             self.graph[node_idx]["vertex"]
             for node_idx in self.graph.node_indices()
             if self.graph.has_edge(node_idx, node_idx)
         ]
 
-    def update_vertices(self, *vertices: T, **props) -> None:
+    def update_vertices(self, *vertices: Any, **props) -> None:
         for vertex in vertices:
             if vertex in self._vertex_to_index:
                 node_idx = self._vertex_to_index[vertex]
@@ -84,7 +84,7 @@ class RustworkXGraphOperator(GraphOperator[T]):
                 node_data.update(props)
                 self.graph[node_idx] = node_data
 
-    def drop_vertices(self, *vertices: T) -> None:
+    def drop_vertices(self, *vertices: Any) -> None:
         indices_to_remove = []
         for vertex in vertices:
             # remove from mapping and collect indices to remove
@@ -93,7 +93,7 @@ class RustworkXGraphOperator(GraphOperator[T]):
         self.graph.remove_nodes_from(indices_to_remove)
 
     def add_edge_if_not_exist(
-        self, src_vertex: T, tgt_vertex: T, label: str, **props
+        self, src_vertex: Any, tgt_vertex: Any, label: str, **props
     ) -> None:
         if src_vertex is not None and tgt_vertex is not None:
             src_idx = self._vertex_to_index.get(src_vertex)
@@ -126,12 +126,10 @@ class RustworkXGraphOperator(GraphOperator[T]):
         return edges
 
     def retrieve_edges_by_vertex(
-        self, vertex: T, direction: str, label: str | None = None
+        self, vertex: Any, direction: str, label: str | None = None
     ) -> list[EdgeTuple]:
         edges: list[EdgeTuple] = []
-        vertex_idx = self._vertex_to_index.get(vertex)
-        if vertex_idx is None:
-            return edges
+        vertex_idx = self._vertex_to_index.get(vertex, -1)
 
         # rustworkx returns in_edges and out_edges in reverse insertion order
         # we want to return in insertion order to match the behavior of NetworkX
@@ -165,7 +163,7 @@ class RustworkXGraphOperator(GraphOperator[T]):
 
         return edges
 
-    def drop_edge(self, src_vertex: T, tgt_vertex: T) -> None:
+    def drop_edge(self, src_vertex: Any, tgt_vertex: Any) -> None:
         src_idx = self._vertex_to_index.get(src_vertex)
         tgt_idx = self._vertex_to_index.get(tgt_vertex)
         if (
@@ -175,7 +173,7 @@ class RustworkXGraphOperator(GraphOperator[T]):
         ):
             self.graph.remove_edge(src_idx, tgt_idx)
 
-    def get_sub_graph(self, *vertices: T) -> "RustworkXGraphOperator[T]":
+    def get_sub_graph(self, *vertices: Any) -> "RustworkXGraphOperator":
         indices = [
             self._vertex_to_index[vertex]
             for vertex in vertices
@@ -183,7 +181,7 @@ class RustworkXGraphOperator(GraphOperator[T]):
         ]
         return RustworkXGraphOperator(self.graph.subgraph(indices))
 
-    def merge(self, other: GraphOperator[T]) -> None:
+    def merge(self, other: GraphOperator) -> None:
         if isinstance(other, RustworkXGraphOperator):
             # Create a mapping from other's indices to self's indices
             index_mapping = {}
@@ -203,8 +201,8 @@ class RustworkXGraphOperator(GraphOperator[T]):
             # Add all edges from other graph
             for src_idx, tgt_idx in other.graph.edge_list():
                 edge_data = other.graph.get_edge_data(src_idx, tgt_idx)
-                self_src_idx = index_mapping.get(src_idx)
-                self_tgt_idx = index_mapping.get(tgt_idx)
+                self_src_idx = index_mapping.get(src_idx, -1)
+                self_tgt_idx = index_mapping.get(tgt_idx, -1)
                 if not self.graph.has_edge(self_src_idx, self_tgt_idx):
                     self.graph.add_edge(self_src_idx, self_tgt_idx, edge_data)
         else:
@@ -212,12 +210,12 @@ class RustworkXGraphOperator(GraphOperator[T]):
                 "Expect other to be RustworkXGraphOperator, got " + str(type(other))
             )
 
-    def list_lineage_paths(self, src_vertex: T, tgt_vertex: T) -> list[list[T]]:
+    def list_lineage_paths(self, src_vertex: Any, tgt_vertex: Any) -> list[list[Any]]:
         result = []
         for path in rx.all_simple_paths(
             self.graph,
-            self._vertex_to_index.get(src_vertex),
-            self._vertex_to_index.get(tgt_vertex),
+            self._vertex_to_index.get(src_vertex, -1),
+            self._vertex_to_index.get(tgt_vertex, -1),
         ):
             path_vertices = []
             for idx in path:

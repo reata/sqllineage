@@ -6,9 +6,10 @@ build-backend = "hatchling.build"
 name = "sqllineage"
 dependencies = [
     "sqlparse>=0.5.4",
-    "networkx>=2.4",
     "sqlfluff>=3.2.0",
     "sqlalchemy>=2.0.0",
+    "networkx>=2.4",
+    "rustworkx>=0.16.0",
 ]
 requires-python = ">=3.10"
 authors = [
