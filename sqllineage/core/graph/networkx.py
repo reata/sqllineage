@@ -2,43 +2,51 @@ from typing import Any
 
 import networkx as nx
 
-from sqllineage.core.graph_operator import GraphOperator, T
+from sqllineage.core.graph_operator import GraphOperator
 from sqllineage.utils.constant import EdgeDirection
 from sqllineage.utils.entities import EdgeTuple
 
 
 class NetworkXGraphOperator(GraphOperator):
+    """
+    networkx based implementation of GraphOperator.
+
+    networkx allows any hashable object to be added as a node.
+
+    networkx edge has a native support for edge type, which we use to store edge label.
+    """
+
     def __init__(self, graph: nx.DiGraph = None) -> None:
         if graph is None:
             self.graph = nx.DiGraph()
         else:
             self.graph = graph
 
-    def add_vertex_if_not_exist(self, vertex: T, **props) -> None:
+    def add_vertex_if_not_exist(self, vertex: Any, **props) -> None:
         self.graph.add_node(vertex, **props)
 
-    def retrieve_vertices_by_props(self, **props) -> list[T]:
+    def retrieve_vertices_by_props(self, **props) -> list[Any]:
         vertices = []
         for v, attr in self.graph.nodes(data=True):
             if all(attr.get(prop) == val for prop, val in props.items()):
                 vertices.append(v)
         return vertices
 
-    def retrieve_source_vertices(self) -> list[T]:
+    def retrieve_source_vertices(self) -> list[Any]:
         return list(
             set(v for v, degree in self.graph.in_degree if degree == 0).intersection(
                 set(v for v, degree in self.graph.out_degree if degree > 0)
             )
         )
 
-    def retrieve_target_vertices(self) -> list[T]:
+    def retrieve_target_vertices(self) -> list[Any]:
         return list(
             set(v for v, degree in self.graph.out_degree if degree == 0).intersection(
                 set(v for v, degree in self.graph.in_degree if degree > 0)
             )
         )
 
-    def retrieve_selfloop_vertices(self) -> list[T]:
+    def retrieve_selfloop_vertices(self) -> list[Any]:
         return [e[0] for e in nx.selfloop_edges(self.graph)]
 
     def update_vertices(self, *vertices, **props) -> None:
@@ -53,7 +61,7 @@ class NetworkXGraphOperator(GraphOperator):
                 self.graph.remove_node(vertex)
 
     def add_edge_if_not_exist(
-        self, src_vertex: T, tgt_vertex: T, label: str, **props
+        self, src_vertex: Any, tgt_vertex: Any, label: str, **props
     ) -> None:
         # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
         if src_vertex is not None and tgt_vertex is not None:
@@ -71,7 +79,7 @@ class NetworkXGraphOperator(GraphOperator):
         ]
 
     def retrieve_edges_by_vertex(
-        self, vertex: T, direction: str, label: str | None = None
+        self, vertex: Any, direction: str, label: str | None = None
     ) -> list[EdgeTuple]:
         edges = []
         edge_view = (
@@ -92,7 +100,7 @@ class NetworkXGraphOperator(GraphOperator):
                 )
         return edges
 
-    def drop_edge(self, src_vertex: T, tgt_vertex: T) -> None:
+    def drop_edge(self, src_vertex: Any, tgt_vertex: Any) -> None:
         self.graph.remove_edge(src_vertex, tgt_vertex)
 
     def get_sub_graph(self, *vertices) -> "NetworkXGraphOperator":
@@ -106,7 +114,7 @@ class NetworkXGraphOperator(GraphOperator):
                 "Expect other to be NetworkXGraphOperator, got " + str(type(other))
             )
 
-    def list_lineage_paths(self, src_vertex: T, tgt_vertex: T) -> list[list[T]]:
+    def list_lineage_paths(self, src_vertex: Any, tgt_vertex: Any) -> list[list[Any]]:
         return list(nx.all_simple_paths(self.graph, src_vertex, tgt_vertex))
 
     def to_cytoscape(

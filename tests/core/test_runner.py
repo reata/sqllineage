@@ -2,22 +2,25 @@ import os
 import tempfile
 
 from sqllineage.cli import main
+from sqllineage.config import SQLLineageConfig
 from sqllineage.core.models import SubQuery
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
 
-from ..helpers import assert_table_lineage_equal
+from ..helpers import _gen_graph_operators, assert_table_lineage_equal
 
 
 def test_runner_dummy():
-    runner = LineageRunner(
-        """insert into tab2 select col1, col2, col3, col4, col5, col6 from tab1;
-insert into tab3 select * from tab2""",
-        verbose=True,
-    )
-    assert str(runner)
-    assert runner.to_cytoscape() is not None
-    assert runner.to_cytoscape(level=LineageLevel.COLUMN) is not None
+    for graph_operator in _gen_graph_operators():
+        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+            runner = LineageRunner(
+                """insert into tab2 select col1, col2, col3, col4, col5, col6 from tab1;
+        insert into tab3 select * from tab2""",
+                verbose=True,
+            )
+            assert str(runner)
+            assert runner.to_cytoscape() is not None
+            assert runner.to_cytoscape(level=LineageLevel.COLUMN) is not None
 
 
 def test_statements_trim_comment():

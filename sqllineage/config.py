@@ -20,6 +20,11 @@ class _SQLLineageConfigLoader:
         "TSQL_NO_SEMICOLON": (bool, False),
         # lateral column alias reference supported by some dialect (redshift, spark 3.4+, etc)
         "LATERAL_COLUMN_ALIAS_REFERENCE": (bool, False),
+        # graph operator implementation class
+        "GRAPH_OPERATOR_CLASS": (
+            str,
+            "sqllineage.core.graph.networkx.NetworkXGraphOperator",
+        ),
     }
 
     def __init__(self) -> None:

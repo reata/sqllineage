@@ -90,6 +90,24 @@ Default: ``False``
 
 Since: 1.4.8
 
+GRAPH_OPERATOR_CLASS
+====================
+A rustworkx graph operator implementation is available since v1.5.7. Set this config to
+``sqllineage.core.graph.rustworkx.RustworkXGraphOperator`` to enable it for better performance, in particular
+when handling large lineage graphs.
+
+SQLLineage uses networkx as default graph operator implementation. Any import errors when using other graph operator
+will fallback to networkx implementation.
+
+.. note::
+     This is an experimental feature. Based on our test suite, rustworkx graph operator shows significant performance
+     improvement over networkx implementation and passes all tests. However, there might be edge cases not covered
+     by our tests. Please report any issues you encounter when using rustworkx graph operator.
+
+Default: ``sqllineage.core.graph.networkx.NetworkXGraphOperator``
+
+Since: 1.5.7
+
 
 .. _Amazon Redshift announces support for lateral column alias reference: https://aws.amazon.com/about-aws/whats-new/2018/08/amazon-redshift-announces-support-for-lateral-column-alias-reference/
 .. _Support "lateral column alias references" to allow column aliases to be used within SELECT clauses: https://issues.apache.org/jira/browse/SPARK-27561

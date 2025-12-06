@@ -1,6 +1,6 @@
 import itertools
 
-from sqllineage.core.graph.networkx import NetworkXGraphOperator
+from sqllineage.core.graph import get_graph_operator_class
 from sqllineage.core.graph_operator import GraphOperator
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
@@ -60,7 +60,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     """
 
     def __init__(self) -> None:
-        self.go = NetworkXGraphOperator()
+        self.go = get_graph_operator_class()()
 
     def __or__(self, other):
         self.go.merge(other.go)
@@ -334,7 +334,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         """
         The table level GraphOperator held by SQLLineageHolder
         """
-        table_nodes = [  # type: ignore[var-annotated]
+        table_nodes = [
             v
             for v in self.go.retrieve_vertices_by_props()
             if isinstance(v, DATASET_CLASSES)
@@ -346,7 +346,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         """
         The column level GraphOperator held by SQLLineageHolder
         """
-        column_nodes = [  # type: ignore[var-annotated]
+        column_nodes = [
             v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)
         ]
         return self.go.get_sub_graph(*column_nodes)
@@ -399,7 +399,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return intermediate_tables
 
     def __retrieve_tag_tables(self, tag) -> set[Path | Table]:
-        return {  # type: ignore[var-annotated]
+        return {
             vertex
             for vertex in self.go.retrieve_vertices_by_props(**{tag: True})
             if isinstance(vertex, DATASET_CLASSES)
@@ -411,7 +411,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         To assemble multiple :class:`sqllineage.core.holders.StatementLineageHolder` into
         :class:`sqllineage.core.holders.SQLLineageHolder`
         """
-        ngo = NetworkXGraphOperator()
+        ngo = get_graph_operator_class()()
         for holder in args:
             ngo.merge(holder.go)
             if holder.drop:
