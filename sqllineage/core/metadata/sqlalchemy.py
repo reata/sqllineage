@@ -1,8 +1,14 @@
 import logging
 from typing import Any
 
-from sqlalchemy import MetaData, Table, create_engine, make_url
-from sqlalchemy.exc import NoSuchModuleError, NoSuchTableError, OperationalError
+try:
+    from sqlalchemy import MetaData, Table, create_engine, make_url
+    from sqlalchemy.exc import NoSuchModuleError, NoSuchTableError, OperationalError
+except ImportError as exc:
+    print(
+        "The dependency `sqlalchemy` isn't installed. Please install using `pip install sqllineage[sqlalchemy]`."
+    )
+    raise exc
 
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.exceptions import MetaDataProviderException

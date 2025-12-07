@@ -1,6 +1,12 @@
 from typing import Any
 
-import rustworkx as rx
+try:
+    import rustworkx as rx
+except ImportError as exc:
+    print(
+        "The dependency `rustworkx` isn't installed. Please install using `pip install sqllineage[rustworkx]`."
+    )
+    raise exc
 
 from sqllineage.core.graph_operator import GraphOperator
 from sqllineage.utils.constant import EdgeDirection

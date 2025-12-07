@@ -7,9 +7,7 @@ name = "sqllineage"
 dependencies = [
     "sqlparse>=0.5.4",
     "sqlfluff>=3.2.0",
-    "sqlalchemy>=2.0.0",
     "networkx>=2.4",
-    "rustworkx>=0.16.0",
 ]
 requires-python = ">=3.10"
 authors = [
@@ -57,7 +55,12 @@ docs = [
     "Sphinx>=3.2.0",
     "sphinx_rtd_theme>=0.5.0",
 ]
-
+rustworkx = [
+    "rustworkx>=0.16.0"
+]
+sqlalchemy = [
+    "sqlalchemy>=2.0.0"
+]
 [project.scripts]
 sqllineage = "sqllineage.cli:main"
 
@@ -82,7 +85,7 @@ requires = ["tox>=4.19"]
 env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
 [tool.tox.env_run_base]
-deps = [".[ci]"]
+deps = [".[ci,rustworkx,sqlalchemy]"]
 commands = [
     ["black", ".", "--check", "--diff"],
     ["ruff", "check", "."],
