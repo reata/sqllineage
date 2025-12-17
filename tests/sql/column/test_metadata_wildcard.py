@@ -11,6 +11,7 @@ providers = generate_metadata_providers(
         "db.tbl_y": ["id", "h", "i"],
         "db.tbl_z": ["pk", "s", "t"],
         "db.tbl_x1": ["id", "a", "b"],
+        "db.tbl_x2": ["id", "a", "b", "dt"],
     }
 )
 
@@ -430,4 +431,35 @@ FROM (SELECT tab_b.col_b AS col_a
                 ColumnQualifierTuple("col_a", "tab_c"),
             ),
         ],
+    )
+
+
+@pytest.mark.parametrize("provider", providers)
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_insert_overwrite_with_partition_excludes_partition_columns(
+    provider: MetaDataProvider,
+    dialect: str,
+):
+    sql = """INSERT OVERWRITE TABLE db.tbl_x2 PARTITION (dt=20251217)
+SELECT id, h, i
+FROM db.tbl_y"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("id", "db.tbl_y"),
+                ColumnQualifierTuple("id", "db.tbl_x2"),
+            ),
+            (
+                ColumnQualifierTuple("h", "db.tbl_y"),
+                ColumnQualifierTuple("a", "db.tbl_x2"),
+            ),
+            (
+                ColumnQualifierTuple("i", "db.tbl_y"),
+                ColumnQualifierTuple("b", "db.tbl_x2"),
+            ),
+        ],
+        dialect=dialect,
+        metadata_provider=provider,
+        test_sqlparse=False,  # Only test with sqlfluff as sqlparse doesn't handle write_column
     )
