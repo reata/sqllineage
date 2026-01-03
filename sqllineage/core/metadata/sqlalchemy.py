@@ -1,7 +1,10 @@
 import logging
 from typing import Any
 
-from sqlalchemy import MetaData, Table, create_engine, make_url
+from sqlalchemy import MetaData, Table, create_engine
+from sqlalchemy.engine import (
+    make_url,
+)  # note: from sqlalchemy import make_url is only possible for v2.x
 from sqlalchemy.exc import NoSuchModuleError, NoSuchTableError, OperationalError
 
 from sqllineage.core.metadata_provider import MetaDataProvider
