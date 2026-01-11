@@ -2,6 +2,28 @@
 Changelog
 *********
 
+v1.5.7
+======
+:Date: Jan 11, 2026
+
+This is a regular minor release:
+
+Enhancement
+-------------
+* Drop Support for Python 3.9 (`#735 <https://github.com/reata/sqllineage/issues/735>`_)
+* Add Support for Python 3.14 (`#729 <https://github.com/reata/sqllineage/issues/729>`_)
+* Add an experimental feature to use rustworkx for lineage graph to improve performance on large SQL/graphs (`#685 <https://github.com/reata/sqllineage/pull/685>`_)
+* Lower minimum required sqlalchemy version to 1.4.x (`#624 <https://github.com/reata/sqllineage/issues/624>`_)
+
+Bugfix
+-------------
+* wrong column lineage for sparksql with partition column (`#733 <https://github.com/reata/sqllineage/issues/733>`_)
+* UNION * Fails to resolve subsequent column lineage in UNION clause (`#629 <https://github.com/reata/sqllineage/issues/629>`_)
+* Subquery Partial Wildcard expansion breaks the column lineage path (`#612 <https://github.com/reata/sqllineage/issues/612>`_)
+* Tsql -UPDATE set analyz error (`#592 <https://github.com/reata/sqllineage/issues/592>`_)
+* No column-level lineage for T-SQL MERGE statement (`#579 <https://github.com/reata/sqllineage/issues/579>`_)
+* Empty LineageRunner.get_column_lineage result for INSERT with SELECT when joining with the target table (`#447 <https://github.com/reata/sqllineage/issues/447>`_)
+
 v1.5.6
 ======
 :Date: October 12, 2025
