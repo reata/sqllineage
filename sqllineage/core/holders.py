@@ -26,9 +26,14 @@ class ColumnLineageMixin:
             *[v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)]
         )
         source_columns = column_graph.retrieve_source_vertices()
-        # if a column lineage path ends at SubQuery, then it should be pruned
         target_columns = column_graph.retrieve_target_vertices()
-
+        # handle column-level self-loop case like table-level
+        selfloop_columns = column_graph.retrieve_selfloop_vertices()
+        for column_group in [source_columns, target_columns]:
+            for column in selfloop_columns:
+                if column not in column_group:
+                    column_group.append(column)
+        # if a column lineage path ends at SubQuery, then it should be pruned
         if exclude_path_ending_in_subquery:
             target_columns = {
                 node for node in target_columns if isinstance(node.parent, Table)
