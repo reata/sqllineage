@@ -1,7 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Column
+from sqllineage.core.models import Column, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
@@ -24,6 +24,9 @@ class UpdateExtractor(BaseExtractor):
         tgt_flag = False
         columns = []
         subqueries = []
+        # track potential alias reference in UPDATE clause
+        potential_table_alias = None
+
         for segment in list_child_segments(statement):
             if segment.type == "from_expression":
                 # UPDATE with JOIN, mysql only syntax
@@ -42,7 +45,12 @@ class UpdateExtractor(BaseExtractor):
 
             if tgt_flag:
                 if write_table := self.find_table(segment):
-                    holder.add_write(write_table)
+                    if "." in segment.raw:
+                        # Qualified table name, definitely not an alias
+                        holder.add_write(write_table)
+                    else:
+                        # tsql allows table alias here, don't add as write table yet, will resolve in FROM clause
+                        potential_table_alias = segment.raw
                 tgt_flag = False
 
             if segment.type == "set_clause_list":
@@ -61,10 +69,29 @@ class UpdateExtractor(BaseExtractor):
                 # there can be multiple from items, each may be a table or a subquery
                 for sq in self.list_subquery(segment):
                     subqueries.append(sq)
-                for read_table in self._list_table_from_from_clause_or_join_clause(
+
+                from_join_tables = self._list_table_from_from_clause_or_join_clause(
                     segment, holder
-                ):
-                    holder.add_read(read_table)
+                )
+                target_table = None
+                if potential_table_alias is not None and from_join_tables:
+                    for table in from_join_tables:
+                        if (
+                            hasattr(table, "alias")
+                            and table.alias == potential_table_alias
+                        ):
+                            target_table = table
+                            holder.add_write(table)
+                            # set to None to indicate resolved
+                            potential_table_alias = None
+
+                for read_table in from_join_tables:
+                    if read_table != target_table:
+                        holder.add_read(read_table)
+
+        if potential_table_alias is not None:
+            # still unresolved, add as is
+            holder.add_write(Table(potential_table_alias))
 
         for tgt_col in columns:
             tgt_col.parent = list(holder.write)[0]
