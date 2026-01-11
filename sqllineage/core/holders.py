@@ -259,9 +259,14 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                     src_col.parent, src_col, EdgeType.HAS_COLUMN
                 )
             self.go.add_edge_if_not_exist(src_col, target_col, EdgeType.LINEAGE)
-        # remove wildcard
-        self.go.drop_vertices(tgt_wildcard)
-        self.go.drop_vertices(src_wildcard)
+        # preserve SubQuery wildcards in the lineage graph to maintain the wildcard chain in case of partial expansion
+        # otherwise, remove wildcard for Table
+        if not isinstance(tgt_table, SubQuery):
+            self.go.drop_vertices(tgt_wildcard)
+            if src_wildcard.parent is not None and not isinstance(
+                src_wildcard.parent, SubQuery
+            ):
+                self.go.drop_vertices(src_wildcard)
 
 
 class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
