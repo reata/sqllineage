@@ -174,3 +174,21 @@ FROM (
             ),
         ],
     )
+
+
+def test_insert_overwrite_from_self_with_join():
+    assert_column_lineage_equal(
+        """INSERT INTO tab1
+    SELECT max(t1.price) + min(t2.price) AS price FROM tab2 t2
+                  INNER JOIN tab1 t1 ON t1.id = t2.id""",
+        [
+            (
+                ColumnQualifierTuple("price", "tab1"),
+                ColumnQualifierTuple("price", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("price", "tab2"),
+                ColumnQualifierTuple("price", "tab1"),
+            ),
+        ],
+    )
