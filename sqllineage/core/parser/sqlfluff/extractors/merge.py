@@ -73,23 +73,41 @@ class MergeExtractor(BaseExtractor):
                                     tgt_col = Column(cqt.column)
                                     tgt_col.parent = list(holder.write)[0]
                                     insert_columns.append(tgt_col)
+                            values_bracketed = None
                             if values_clause := merge_insert.get_child("values_clause"):
-                                if bracketed := values_clause.get_child("bracketed"):
-                                    for j, e in enumerate(
-                                        bracketed.get_children("literal", "expression")
+                                # ANSI dialect and most others inheriting from it, VALUES is wrapped in values_clause
+                                values_bracketed = values_clause.get_child("bracketed")
+                            else:
+                                # tsql dialect: VALUES keyword is a direct child, followed by bracketed
+                                values_flag = False
+                                for seg in list_child_segments(merge_insert):
+                                    if values_flag and seg.type == "bracketed":
+                                        values_bracketed = seg
+                                        break
+                                    if (
+                                        seg.type == "keyword"
+                                        and seg.raw_upper == "VALUES"
                                     ):
-                                        if column_reference_optional := e.get_child(
-                                            "column_reference"
+                                        values_flag = True
+
+                            if values_bracketed:
+                                for j, e in enumerate(
+                                    values_bracketed.get_children(
+                                        "literal", "expression"
+                                    )
+                                ):
+                                    if column_reference_optional := e.get_child(
+                                        "column_reference"
+                                    ):
+                                        if cqt := extract_column_qualifier(
+                                            column_reference_optional
                                         ):
-                                            if cqt := extract_column_qualifier(
-                                                column_reference_optional
-                                            ):
-                                                src_col = Column(cqt.column)
-                                                if direct_source is not None:
-                                                    src_col.parent = direct_source
-                                                holder.add_column_lineage(
-                                                    src_col, insert_columns[j]
-                                                )
+                                            src_col = Column(cqt.column)
+                                            if direct_source is not None:
+                                                src_col.parent = direct_source
+                                            holder.add_column_lineage(
+                                                src_col, insert_columns[j]
+                                            )
             elif segment.type == "keyword":
                 if segment.raw_upper in ["MERGE", "INTO"]:
                     tgt_flag = True
