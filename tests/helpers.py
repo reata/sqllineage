@@ -117,9 +117,11 @@ def generate_metadata_providers(test_schemas) -> list[MetaDataProvider]:
     metadata = MetaData()
     for full_table_name, columns_names in test_schemas.items():
         schema, table = full_table_name.split(".")
-        if schema not in ("main", "temp") and not inspect(
-            sqlite3_sqlalchemy_provider.engine
-        ).has_schema(schema):
+        if (
+            schema not in ("main", "temp")
+            and schema
+            not in inspect(sqlite3_sqlalchemy_provider.engine).get_schema_names()
+        ):
             db_file_path = Path(os.path.dirname(__file__)).parent.joinpath(
                 f"{schema}.db"
             )
