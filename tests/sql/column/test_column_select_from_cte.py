@@ -104,6 +104,24 @@ def test_cte_inside_insert_in_parenthesis():
     )
 
 
+def test_nested_cte_with_partial_wildcard_expansion():
+    sql = """WITH t2 AS (SELECT *
+            FROM tab1),
+     t3 AS (SELECT f1,
+                   *
+            FROM t2)
+INSERT INTO tab3
+SELECT *
+FROM t3;"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("*", "tab1"), ColumnQualifierTuple("*", "tab3")),
+        ],
+        test_sqlparse=False,
+    )
+
+
 def test_select_column_from_cte_case_insensitive():
     sql = """WITH CTE1 AS (SELECT col1 FROM tab2)
 INSERT INTO tab1
