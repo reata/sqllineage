@@ -44,7 +44,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 ci = [
-    "black>=25.1.0",
+    "black>=26.1.0",
     "mypy>=1.19.0",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",

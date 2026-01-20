@@ -10,10 +10,8 @@ def test_drop():
 
 
 def test_drop_with_comment():
-    assert_table_lineage_equal(
-        """--comment
-DROP TABLE IF EXISTS tab1"""
-    )
+    assert_table_lineage_equal("""--comment
+DROP TABLE IF EXISTS tab1""")
 
 
 def test_drop_view():
