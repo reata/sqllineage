@@ -144,3 +144,18 @@ SELECT col1 FROM cTE1"""
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
+
+
+def test_select_column_from_cte_and_table_with_to_resolved_column_referenced_multiple_times():
+    sql = """WITH CTE1 AS (SELECT id, col1 FROM tab2)
+INSERT INTO tab1
+    SELECT col1 / 2 as a, col1 / 3 as b FROM cte1
+          join tab3
+          ON cte1.id = tab3.id"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("a", "tab1")),
+            (ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("b", "tab1")),
+        ],
+    )
