@@ -514,7 +514,10 @@ class SQLLineageHolder(ColumnLineageMixin):
                 ngo.drop_edge(unresolved_col, tgt_col)
 
         # when unresolved column got resolved, it will be orphan node, and we can remove it
-        for unresolved_col, _ in unresolved_column_lineages:
+        # convert unresolved_column_lineages to a set of cols, otherwise if an unresolved appears multiple times,
+        # calling retrieve_edges_by_vertex using a deleted node would cause inconsistent behavior for different graph
+        # operator, e.g. NetworkX 3.x would throw exception while NetworkX 2.x and Rustworkx would succeed silently
+        for unresolved_col in {col for col, _ in unresolved_column_lineages}:
             if (
                 len(ngo.retrieve_edges_by_vertex(unresolved_col, EdgeDirection.OUT))
                 == 0
