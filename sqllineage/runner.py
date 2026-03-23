@@ -190,7 +190,11 @@ Target Tables:
                 self._file_path, self._dialect, self._silent_mode
             )
         )
-        if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
+        if (
+            SQLLineageConfig.TSQL_NO_SEMICOLON
+            and self._dialect == "tsql"
+            or self._dialect == "bigquery"
+        ):
             self._stmt = analyzer.split_tsql(self._sql.strip())
         else:
             if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect != "tsql":
