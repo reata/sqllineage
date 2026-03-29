@@ -3,87 +3,82 @@ import pytest
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
 
+from ...conftest import data_warehouse_schemas
 from ...helpers import assert_column_lineage_equal, generate_metadata_providers
 
-providers = generate_metadata_providers(
-    {
-        "db1.table1": ["id", "a", "b", "c", "d"],
-        "db2.table2": ["id", "h", "i", "j", "k"],
-        "db3.table3": ["pk", "p", "q", "r"],
-    }
-)
+providers = generate_metadata_providers(data_warehouse_schemas)
 
 
 @pytest.mark.parametrize("provider", providers)
 def test_select_column_from_tables(provider: MetaDataProvider):
-    sql = """insert into db.tbl
-select t1.id, a as x, b, h, i as y
-from db1.table1 t1
-join db2.table2 t2 on t1.id = t2.id
+    sql = """insert into temp.order_line_extract
+select t1.salesorderid, customerid as customer_id, territoryid, orderqty, unitprice as unit_price
+from sales.salesorderdetail t1
+left join sales.salesorderheader t2 on t1.salesorderid = t2.salesorderid
 """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("id", "db1.table1"),
-                ColumnQualifierTuple("id", "db.tbl"),
+                ColumnQualifierTuple("salesorderid", "sales.salesorderdetail"),
+                ColumnQualifierTuple("salesorderid", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("a", "db1.table1"),
-                ColumnQualifierTuple("x", "db.tbl"),
+                ColumnQualifierTuple("customerid", "sales.salesorderheader"),
+                ColumnQualifierTuple("customer_id", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("b", "db1.table1"),
-                ColumnQualifierTuple("b", "db.tbl"),
+                ColumnQualifierTuple("territoryid", "sales.salesorderheader"),
+                ColumnQualifierTuple("territoryid", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("h", "db2.table2"),
-                ColumnQualifierTuple("h", "db.tbl"),
+                ColumnQualifierTuple("orderqty", "sales.salesorderdetail"),
+                ColumnQualifierTuple("orderqty", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("i", "db2.table2"),
-                ColumnQualifierTuple("y", "db.tbl"),
+                ColumnQualifierTuple("unitprice", "sales.salesorderdetail"),
+                ColumnQualifierTuple("unit_price", "temp.order_line_extract"),
             ),
         ],
         metadata_provider=provider,
     )
 
-    sql = """insert into db.tbl
-    select a, b as x, h, i as y, p, q, pk as z
-    from db1.table1 t1
-    left join db2.table2 t2 on t1.id = t2.id
-    right join db3.table3 t3 on t2.id = t3.pk
-    """
+    sql = """insert into temp.order_line_extract
+select customerid, territoryid as territory, orderqty, unitprice as unit_price, weight, color, name as product_name
+from sales.salesorderdetail t1
+left join sales.salesorderheader t2 on t1.salesorderid = t2.salesorderid
+left join production.product t3 on t2.salesorderid = t3.productid
+"""
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "db1.table1"),
-                ColumnQualifierTuple("a", "db.tbl"),
+                ColumnQualifierTuple("customerid", "sales.salesorderheader"),
+                ColumnQualifierTuple("customerid", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("b", "db1.table1"),
-                ColumnQualifierTuple("x", "db.tbl"),
+                ColumnQualifierTuple("territoryid", "sales.salesorderheader"),
+                ColumnQualifierTuple("territory", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("h", "db2.table2"),
-                ColumnQualifierTuple("h", "db.tbl"),
+                ColumnQualifierTuple("orderqty", "sales.salesorderdetail"),
+                ColumnQualifierTuple("orderqty", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("i", "db2.table2"),
-                ColumnQualifierTuple("y", "db.tbl"),
+                ColumnQualifierTuple("unitprice", "sales.salesorderdetail"),
+                ColumnQualifierTuple("unit_price", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("p", "db3.table3"),
-                ColumnQualifierTuple("p", "db.tbl"),
+                ColumnQualifierTuple("weight", "production.product"),
+                ColumnQualifierTuple("weight", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("q", "db3.table3"),
-                ColumnQualifierTuple("q", "db.tbl"),
+                ColumnQualifierTuple("color", "production.product"),
+                ColumnQualifierTuple("color", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("pk", "db3.table3"),
-                ColumnQualifierTuple("z", "db.tbl"),
+                ColumnQualifierTuple("name", "production.product"),
+                ColumnQualifierTuple("product_name", "temp.order_line_extract"),
             ),
         ],
         metadata_provider=provider,
@@ -92,67 +87,67 @@ join db2.table2 t2 on t1.id = t2.id
 
 @pytest.mark.parametrize("provider", providers)
 def test_select_column_from_subqueries(provider: MetaDataProvider):
-    sql = """insert into db.tbl
-select a, b as x, h, y
-from (select a, b, c from db1.table1) t1
-full join (select h, i, j as y from db2.table2) t2
-on t1.id = t2.id
+    sql = """insert into temp.order_line_extract
+select customerid, territoryid as territory, orderqty, detail_id
+from (select orderqty, unitprice, salesorderdetailid as detail_id from sales.salesorderdetail) t1
+left join (select customerid, territoryid, subtotal from sales.salesorderheader) t2
+on t1.salesorderid = t2.salesorderid
 """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "db1.table1"),
-                ColumnQualifierTuple("a", "db.tbl"),
+                ColumnQualifierTuple("customerid", "sales.salesorderheader"),
+                ColumnQualifierTuple("customerid", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("b", "db1.table1"),
-                ColumnQualifierTuple("x", "db.tbl"),
+                ColumnQualifierTuple("territoryid", "sales.salesorderheader"),
+                ColumnQualifierTuple("territory", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("h", "db2.table2"),
-                ColumnQualifierTuple("h", "db.tbl"),
+                ColumnQualifierTuple("orderqty", "sales.salesorderdetail"),
+                ColumnQualifierTuple("orderqty", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("j", "db2.table2"),
-                ColumnQualifierTuple("y", "db.tbl"),
+                ColumnQualifierTuple("salesorderdetailid", "sales.salesorderdetail"),
+                ColumnQualifierTuple("detail_id", "temp.order_line_extract"),
             ),
         ],
         metadata_provider=provider,
     )
 
-    sql = """insert into db.tbl
-select a, b as x, h, y, pk as z, p
-from (select id, a, b, c from db1.table1) t1
-join (select id, h, i as y, j from db2.table2) t2 on t1.id = t2.id
-left join (select pk, p, q from db3.table3) t3 on t1.id = t3.pk
-"""
+    sql = """insert into temp.order_line_extract
+select orderqty, unitprice as unit_price, subtotal, territory, productid as product_id, color
+from (select salesorderid, orderqty, unitprice, product from sales.salesorderdetail) t1
+join (select salesorderid, subtotal, territoryid as territory, j from sales.salesorderheader) t2 on t1.salesorderid = t2.salesorderid
+left join (select productid, color, weight from production.product) t3 on t1.product = t3.productid
+"""  # noqa: E501
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "db1.table1"),
-                ColumnQualifierTuple("a", "db.tbl"),
+                ColumnQualifierTuple("orderqty", "sales.salesorderdetail"),
+                ColumnQualifierTuple("orderqty", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("b", "db1.table1"),
-                ColumnQualifierTuple("x", "db.tbl"),
+                ColumnQualifierTuple("unitprice", "sales.salesorderdetail"),
+                ColumnQualifierTuple("unit_price", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("h", "db2.table2"),
-                ColumnQualifierTuple("h", "db.tbl"),
+                ColumnQualifierTuple("subtotal", "sales.salesorderheader"),
+                ColumnQualifierTuple("subtotal", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("i", "db2.table2"),
-                ColumnQualifierTuple("y", "db.tbl"),
+                ColumnQualifierTuple("territoryid", "sales.salesorderheader"),
+                ColumnQualifierTuple("territory", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("p", "db3.table3"),
-                ColumnQualifierTuple("p", "db.tbl"),
+                ColumnQualifierTuple("productid", "production.product"),
+                ColumnQualifierTuple("product_id", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("pk", "db3.table3"),
-                ColumnQualifierTuple("z", "db.tbl"),
+                ColumnQualifierTuple("color", "production.product"),
+                ColumnQualifierTuple("color", "temp.order_line_extract"),
             ),
         ],
         metadata_provider=provider,
@@ -161,67 +156,67 @@ left join (select pk, p, q from db3.table3) t3 on t1.id = t3.pk
 
 @pytest.mark.parametrize("provider", providers)
 def test_select_column_from_table_subquery(provider: MetaDataProvider):
-    sql = """insert into db.tbl
-select a as x, b, q, pk as y
-from db1.table1 t1
-right join (select pk, p, q from db3.table3) t3
-on t1.id = t3.pk
+    sql = """insert into temp.order_line_extract
+select unitprice as unit_price, orderqty, weight, name as product_name
+from sales.salesorderdetail t1
+left join (select name, color, weight from production.product) t3
+on t1.productid = t3.productid
 """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "db1.table1"),
-                ColumnQualifierTuple("x", "db.tbl"),
+                ColumnQualifierTuple("unitprice", "sales.salesorderdetail"),
+                ColumnQualifierTuple("unit_price", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("b", "db1.table1"),
-                ColumnQualifierTuple("b", "db.tbl"),
+                ColumnQualifierTuple("orderqty", "sales.salesorderdetail"),
+                ColumnQualifierTuple("orderqty", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("pk", "db3.table3"),
-                ColumnQualifierTuple("y", "db.tbl"),
+                ColumnQualifierTuple("weight", "production.product"),
+                ColumnQualifierTuple("weight", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("q", "db3.table3"),
-                ColumnQualifierTuple("q", "db.tbl"),
+                ColumnQualifierTuple("name", "production.product"),
+                ColumnQualifierTuple("product_name", "temp.order_line_extract"),
             ),
         ],
         metadata_provider=provider,
     )
 
-    sql = """insert into db.tbl
-select a, x, h as y, i, p, z
-from (select id, a, b as x, c from db1.table1) t1
-join db2.table2 t2 on t1.id = t2.id
-left join (select pk, p, q as z from db3.table3) t3 on t2.id = t3.pk
+    sql = """insert into temp.order_line_extract
+select orderqty, unit_price, territoryid as territory, subtotal, color, product_name
+from (select salesorderdetailid, orderqty, unitprice as unit_price, specialofferid from sales.salesorderdetail) t1
+left join sales.salesorderheader t2 on t1.salesorderid = t2.salesorderid
+left join (select productid, color, name as product_name from production.product) t3 on t1.productid = t3.productid
 """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "db1.table1"),
-                ColumnQualifierTuple("a", "db.tbl"),
+                ColumnQualifierTuple("orderqty", "sales.salesorderdetail"),
+                ColumnQualifierTuple("orderqty", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("b", "db1.table1"),
-                ColumnQualifierTuple("x", "db.tbl"),
+                ColumnQualifierTuple("unitprice", "sales.salesorderdetail"),
+                ColumnQualifierTuple("unit_price", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("h", "db2.table2"),
-                ColumnQualifierTuple("y", "db.tbl"),
+                ColumnQualifierTuple("territoryid", "sales.salesorderheader"),
+                ColumnQualifierTuple("territory", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("i", "db2.table2"),
-                ColumnQualifierTuple("i", "db.tbl"),
+                ColumnQualifierTuple("subtotal", "sales.salesorderheader"),
+                ColumnQualifierTuple("subtotal", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("p", "db3.table3"),
-                ColumnQualifierTuple("p", "db.tbl"),
+                ColumnQualifierTuple("color", "production.product"),
+                ColumnQualifierTuple("color", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("q", "db3.table3"),
-                ColumnQualifierTuple("z", "db.tbl"),
+                ColumnQualifierTuple("name", "production.product"),
+                ColumnQualifierTuple("product_name", "temp.order_line_extract"),
             ),
         ],
         metadata_provider=provider,
@@ -231,43 +226,46 @@ left join (select pk, p, q as z from db3.table3) t3 on t2.id = t3.pk
 @pytest.mark.parametrize("provider", providers)
 def test_select_column_from_tempview_view_subquery(provider: MetaDataProvider):
     sql = """
-create or replace view test_view
-as
-select id, a from db1.table1
+create or replace view test_view as
+select salesorderid, unitprice, productid from sales.salesorderdetail
 ;
 
-insert into db.tbl
-select test_view.id, a as x, h as y, i, p, z
+insert into temp.order_line_extract
+select test_view.salesorderid, unitprice as unit_price, test_view.productid, shipdate as ship_date, shipmethodid, color, product_name
 from test_view
-join db2.table2 t2 on test_view.id = t2.id
-left join (select pk, p, q as z from db3.table3) t3 on t2.id = t3.pk
-"""
+left join sales.salesorderheader t2 on test_view.salesorderid = t2.salesorderid
+left join (select productid, color, name as product_name from production.product) t3 on test_view.productid = t3.productid
+"""  # noqa: E501
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("id", "db1.table1"),
-                ColumnQualifierTuple("id", "db.tbl"),
+                ColumnQualifierTuple("salesorderid", "sales.salesorderdetail"),
+                ColumnQualifierTuple("salesorderid", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("a", "db1.table1"),
-                ColumnQualifierTuple("x", "db.tbl"),
+                ColumnQualifierTuple("unitprice", "sales.salesorderdetail"),
+                ColumnQualifierTuple("unit_price", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("h", "db2.table2"),
-                ColumnQualifierTuple("y", "db.tbl"),
+                ColumnQualifierTuple("productid", "sales.salesorderdetail"),
+                ColumnQualifierTuple("productid", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("i", "db2.table2"),
-                ColumnQualifierTuple("i", "db.tbl"),
+                ColumnQualifierTuple("shipdate", "sales.salesorderheader"),
+                ColumnQualifierTuple("ship_date", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("p", "db3.table3"),
-                ColumnQualifierTuple("p", "db.tbl"),
+                ColumnQualifierTuple("shipmethodid", "sales.salesorderheader"),
+                ColumnQualifierTuple("shipmethodid", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("q", "db3.table3"),
-                ColumnQualifierTuple("z", "db.tbl"),
+                ColumnQualifierTuple("color", "production.product"),
+                ColumnQualifierTuple("color", "temp.order_line_extract"),
+            ),
+            (
+                ColumnQualifierTuple("name", "production.product"),
+                ColumnQualifierTuple("product_name", "temp.order_line_extract"),
             ),
         ],
         metadata_provider=provider,

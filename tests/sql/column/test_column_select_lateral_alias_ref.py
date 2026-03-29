@@ -6,13 +6,10 @@ import pytest
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
 
+from ...conftest import data_warehouse_schemas
 from ...helpers import assert_column_lineage_equal, generate_metadata_providers
 
-providers = generate_metadata_providers(
-    {
-        "public.src_tbl1": ["id", "a", "b", "c"],
-    }
-)
+providers = generate_metadata_providers(data_warehouse_schemas)
 
 
 @pytest.mark.parametrize("provider", providers)
@@ -21,85 +18,87 @@ def test_column_top_level_enable_lateral_ref(
     provider: MetaDataProvider,
 ):
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_contact
     select
-        name               as user_name,
-        user_name || email as id
+        firstname             as user_name,
+        user_name || lastname as id
     from
-        public.src_tbl1
+        person.person
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("name", "public.src_tbl1"),
-                ColumnQualifierTuple("user_name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("user_name", "temp.person_contact"),
             ),
             (
-                ColumnQualifierTuple("name", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("id", "temp.person_contact"),
             ),
             (
-                ColumnQualifierTuple("email", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("id", "temp.person_contact"),
             ),
         ],
         test_sqlparse=False,
         metadata_provider=provider,
     )
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_contact
     (
-        name,
-        email
+        firstname,
+        middlename
     )
     select
-        st1.name,
-        st1.name || st1.email || '@gmail.com' as email
+        p.firstname,
+        p.firstname || '-' || p.middlename as middlename
     from
-        public.src_tbl1 as st1
+        person.person as p
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("name", "public.src_tbl1"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("firstname", "temp.person_contact"),
             ),
             (
-                ColumnQualifierTuple("name", "public.src_tbl1"),
-                ColumnQualifierTuple("email", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("middlename", "temp.person_contact"),
             ),
             (
-                ColumnQualifierTuple("email", "public.src_tbl1"),
-                ColumnQualifierTuple("email", "public.tgt_tbl1"),
+                ColumnQualifierTuple("middlename", "person.person"),
+                ColumnQualifierTuple("middlename", "temp.person_contact"),
             ),
         ],
         test_sqlparse=False,
         metadata_provider=provider,
     )
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_identifier
     (
-        id,
-        id_original
+        businessentityid,
+        businessentityid_original
     )
     select
-        'a || b || c' || id as id,
-        id                  as id_original
+        'prefix_' || businessentityid as businessentityid,
+        businessentityid              as businessentityid_original
     from
-        public.src_tbl1
+        person.person
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_identifier"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id_original", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple(
+                    "businessentityid_original", "temp.person_identifier"
+                ),
             ),
         ],
         test_sqlparse=False,
@@ -113,35 +112,37 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_table(
     provider: MetaDataProvider,
 ):
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_composite_key
     select
-        a || b || c || id as id,
-        id                as id_original
+        firstname || middlename || lastname || businessentityid as businessentityid,
+        businessentityid                                        as businessentityid_original
     from
-        public.src_tbl1
+        person.person
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("b", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("middlename", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("c", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id_original", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple(
+                    "businessentityid_original", "temp.person_composite_key"
+                ),
             ),
         ],
         test_sqlparse=False,
@@ -155,40 +156,42 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_subquery(
     provider: MetaDataProvider,
 ):
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_composite_key
     select
-        a || b || c || id as id,
-        id                as id_original
+        firstname || middlename || lastname || businessentityid as businessentityid,
+        businessentityid                                        as businessentityid_original
     from
         (
             select
                *
             from
-                public.src_tbl1
+                person.person
         ) as sq
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("b", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("middlename", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("c", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id_original", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple(
+                    "businessentityid_original", "temp.person_composite_key"
+                ),
             ),
         ],
         test_sqlparse=False,
@@ -202,10 +205,10 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_nested_subquery(
     provider: MetaDataProvider,
 ):
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_composite_key
     select
-        a || b || c || id as id,
-        id                as id_original
+        firstname || middlename || lastname || businessentityid as businessentityid,
+        businessentityid                                        as businessentityid_original
     from
         (
             select
@@ -215,7 +218,7 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_nested_subquery(
                     select
                        *
                     from
-                        public.src_tbl1
+                        person.person
                 ) as inner_sq
         ) as outer_sq
     """
@@ -223,24 +226,26 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_nested_subquery(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("b", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("middlename", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("c", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id_original", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple(
+                    "businessentityid_original", "temp.person_composite_key"
+                ),
             ),
         ],
         test_sqlparse=False,
@@ -254,32 +259,32 @@ def test_column_enable_lateral_ref_within_subquery(
     provider: MetaDataProvider,
 ):
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_full_name
     select
         sq.name
     from
         (
             select
-                id     || a as alias1,
-                alias1 || b as name
+                firstname  || middlename as prefixname,
+                prefixname || lastname   as name
             from
-                public.src_tbl1
+                person.person
         ) as sq
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("name", "temp.person_full_name"),
             ),
             (
-                ColumnQualifierTuple("a", "public.src_tbl1"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("middlename", "person.person"),
+                ColumnQualifierTuple("name", "temp.person_full_name"),
             ),
             (
-                ColumnQualifierTuple("b", "public.src_tbl1"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("name", "temp.person_full_name"),
             ),
         ],
         test_sqlparse=False,
@@ -287,36 +292,36 @@ def test_column_enable_lateral_ref_within_subquery(
     )
 
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.customer_identifier
     select
-        sq.name
+        sq.customer_code
     from
         (
             select
-                st1.id || st1.name as alias1,
-                alias1 || st2.email as name
+                p.businessentityid || p.lastname   as partial_code,
+                partial_code       || c.customerid as customer_code
             from
-                public.src_tbl1 as st1
+                person.person as p
                 join
-                    public.src_tbl2 as st2
+                    sales.customer as c
                 on
-                    st1.id = st2.id
+                    p.businessentityid = c.personid
         ) as sq
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple("customer_code", "temp.customer_identifier"),
             ),
             (
-                ColumnQualifierTuple("name", "public.src_tbl1"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("customer_code", "temp.customer_identifier"),
             ),
             (
-                ColumnQualifierTuple("email", "public.src_tbl2"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("customerid", "sales.customer"),
+                ColumnQualifierTuple("customer_code", "temp.customer_identifier"),
             ),
         ],
         test_sqlparse=False,
@@ -326,83 +331,85 @@ def test_column_enable_lateral_ref_within_subquery(
 
 def test_column_top_level_disable_lateral_ref():
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_contact
     select
-        name               as user_name,
-        user_name || email as id
+        firstname             as user_name,
+        user_name || lastname as id
     from
-        public.src_tbl1
+        person.person
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("name", "public.src_tbl1"),
-                ColumnQualifierTuple("user_name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("user_name", "temp.person_contact"),
             ),
             (
-                ColumnQualifierTuple("user_name", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("user_name", "person.person"),
+                ColumnQualifierTuple("id", "temp.person_contact"),
             ),
             (
-                ColumnQualifierTuple("email", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("id", "temp.person_contact"),
             ),
         ],
         test_sqlparse=False,
     )
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_contact
     (
-        name,
-        email
+        firstname,
+        middlename
     )
     select
-        st1.name,
-        st1.name || st1.email || '@gmail.com' as email
+        p.firstname,
+        p.firstname || '-' || p.middlename as middlename
     from
-        public.src_tbl1 as st1
+        person.person as p
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("name", "public.src_tbl1"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("firstname", "temp.person_contact"),
             ),
             (
-                ColumnQualifierTuple("name", "public.src_tbl1"),
-                ColumnQualifierTuple("email", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("middlename", "temp.person_contact"),
             ),
             (
-                ColumnQualifierTuple("email", "public.src_tbl1"),
-                ColumnQualifierTuple("email", "public.tgt_tbl1"),
+                ColumnQualifierTuple("middlename", "person.person"),
+                ColumnQualifierTuple("middlename", "temp.person_contact"),
             ),
         ],
         test_sqlparse=False,
     )
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_identifier
     (
-        id,
-        id_original
+        businessentityid,
+        businessentityid_original
     )
     select
-        'a || b || c' || id as id,
-        id                  as id_original
+        'prefix_' || businessentityid as businessentityid,
+        businessentityid              as businessentityid_original
     from
-        public.src_tbl1
+        person.person
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_identifier"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id_original", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple(
+                    "businessentityid_original", "temp.person_identifier"
+                ),
             ),
         ],
         test_sqlparse=False,
@@ -411,35 +418,37 @@ def test_column_top_level_disable_lateral_ref():
 
 def test_column_top_level_disable_lateral_ref_with_metadata_from_table():
     sql = """
-    insert into public.tgt_tbl1
-    select
-        a || b || c || id as id,
-        id                as id_original
-    from
-        public.src_tbl1
-    """
+        insert into temp.person_composite_key
+        select
+            firstname || middlename || lastname || businessentityid as businessentityid,
+            businessentityid                                        as businessentityid_original
+        from
+            person.person
+        """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("b", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("middlename", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("c", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_composite_key"),
             ),
             (
-                ColumnQualifierTuple("id", "public.src_tbl1"),
-                ColumnQualifierTuple("id_original", "public.tgt_tbl1"),
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple(
+                    "businessentityid_original", "temp.person_composite_key"
+                ),
             ),
         ],
         test_sqlparse=False,
@@ -448,60 +457,60 @@ def test_column_top_level_disable_lateral_ref_with_metadata_from_table():
 
 def test_column_disable_lateral_ref_within_subquery():
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.person_full_name
     select
         sq.name
     from
         (
             select
-                id     || a as alias1,
-                alias1 || b as name
+                firstname  || middlename as prefixname,
+                prefixname || lastname   as name
             from
-                public.src_tbl1
+                person.person
         ) as sq
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("alias1", "public.src_tbl1"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("prefixname", "person.person"),
+                ColumnQualifierTuple("name", "temp.person_full_name"),
             ),
             (
-                ColumnQualifierTuple("b", "public.src_tbl1"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("name", "temp.person_full_name"),
             ),
         ],
         test_sqlparse=False,
     )
 
     sql = """
-    insert into public.tgt_tbl1
+    insert into temp.customer_identifier
     select
-        sq.name
+        sq.customer_code
     from
         (
             select
-                st1.id || st1.name as alias1,
-                alias1 || st2.email as name
+                p.businessentityid || p.lastname   as partial_code,
+                partial_code       || c.customerid as customer_code
             from
-                public.src_tbl1 as st1
+                person.person as p
                 join
-                    public.src_tbl2 as st2
+                    sales.customer as c
                 on
-                    st1.id = st2.id
+                    p.businessentityid = c.personid
         ) as sq
     """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("alias1", None),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("partial_code", None),
+                ColumnQualifierTuple("customer_code", "temp.customer_identifier"),
             ),
             (
-                ColumnQualifierTuple("email", "public.src_tbl2"),
-                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+                ColumnQualifierTuple("customerid", "sales.customer"),
+                ColumnQualifierTuple("customer_code", "temp.customer_identifier"),
             ),
         ],
         test_sqlparse=False,

@@ -3,42 +3,41 @@ import pytest
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
 
+from ....conftest import data_warehouse_schemas
 from ....helpers import assert_column_lineage_equal, generate_metadata_providers
 
-providers = generate_metadata_providers(
-    {
-        "db1.table1": ["id", "a", "b", "c", "d"],
-        "db2.table2": ["id", "h", "i", "j", "k"],
-        "db3.table3": ["pk", "p", "q", "r"],
-    }
-)
+providers = generate_metadata_providers(data_warehouse_schemas)
 
 
 @pytest.mark.parametrize("provider", providers)
 def test_do_not_register_session_metadata_for_update_statement(
     provider: MetaDataProvider,
 ):
-    sql = """UPDATE db1.table1 SET a = 1;
+    sql = """UPDATE sales.salesorderheader SET status = 5 WHERE salesorderid = 1001;
 
-CREATE TABLE db1.foo AS
-SELECT a, b, c
-FROM db1.table1 tab1
-INNER JOIN db1.table2 tab2 ON tab1.id = tab2.id
+CREATE TABLE temp.order_line_extract AS
+SELECT salesorderdetailid, productid, unitprice, orderqty
+FROM sales.salesorderdetail sod
+INNER JOIN sales.salesorderheader soh ON sod.salesorderid = soh.salesorderid 
 """
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("a", "db1.table1"),
-                ColumnQualifierTuple("a", "db1.foo"),
+                ColumnQualifierTuple("salesorderdetailid", "sales.salesorderdetail"),
+                ColumnQualifierTuple("salesorderdetailid", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("b", "db1.table1"),
-                ColumnQualifierTuple("b", "db1.foo"),
+                ColumnQualifierTuple("productid", "sales.salesorderdetail"),
+                ColumnQualifierTuple("productid", "temp.order_line_extract"),
             ),
             (
-                ColumnQualifierTuple("c", "db1.table1"),
-                ColumnQualifierTuple("c", "db1.foo"),
+                ColumnQualifierTuple("unitprice", "sales.salesorderdetail"),
+                ColumnQualifierTuple("unitprice", "temp.order_line_extract"),
+            ),
+            (
+                ColumnQualifierTuple("orderqty", "sales.salesorderdetail"),
+                ColumnQualifierTuple("orderqty", "temp.order_line_extract"),
             ),
         ],
         metadata_provider=provider,
