@@ -91,9 +91,18 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                 f"{sql}\n"
                 f"{violation_msg}"
             )
+        supported_types = []
+        for extractor_cls in BaseExtractor.__subclasses__():
+            supported_types.extend(extractor_cls.SUPPORTED_STMT_TYPES)
         segments = []
         for top_segment in getattr(parsed.tree, "segments", []):
             match top_segment.type:
+                case "multi_statement_segment":
+                    for statement in top_segment.segments[0].recursive_crawl(
+                        "statement"
+                    ):
+                        if statement.segments[0].type in supported_types:
+                            segments.append(statement.segments[0])
                 case "statement":
                     segments.append(top_segment.segments[0])
                 case "batch":
