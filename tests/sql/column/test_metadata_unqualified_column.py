@@ -1,15 +1,9 @@
-import pytest
-
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
 
-from ...conftest import data_warehouse_schemas
-from ...helpers import assert_column_lineage_equal, generate_metadata_providers
-
-providers = generate_metadata_providers(data_warehouse_schemas)
+from ...helpers import assert_column_lineage_equal
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_column_from_tables(provider: MetaDataProvider):
     sql = """insert into temp.order_line_extract
 select t1.salesorderid, customerid as customer_id, territoryid, orderqty, unitprice as unit_price
@@ -85,7 +79,6 @@ left join production.product t3 on t2.salesorderid = t3.productid
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_column_from_subqueries(provider: MetaDataProvider):
     sql = """insert into temp.order_line_extract
 select customerid, territoryid as territory, orderqty, detail_id
@@ -154,7 +147,6 @@ left join (select productid, color, weight from production.product) t3 on t1.pro
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_column_from_table_subquery(provider: MetaDataProvider):
     sql = """insert into temp.order_line_extract
 select unitprice as unit_price, orderqty, weight, name as product_name
@@ -223,7 +215,6 @@ left join (select productid, color, name as product_name from production.product
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_column_from_tempview_view_subquery(provider: MetaDataProvider):
     sql = """
 create or replace view test_view as

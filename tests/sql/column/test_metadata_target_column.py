@@ -1,15 +1,9 @@
-import pytest
-
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
 
-from ...conftest import data_warehouse_schemas
-from ...helpers import assert_column_lineage_equal, generate_metadata_providers
-
-providers = generate_metadata_providers(data_warehouse_schemas)
+from ...helpers import assert_column_lineage_equal
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_metadata_target_column(provider: MetaDataProvider):
     sql = """insert into marts.dim_date
 select
@@ -73,7 +67,6 @@ from date.date"""
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_metadata_target_column_cte(provider: MetaDataProvider):
     sql = """
 INSERT INTO marts.dim_date
