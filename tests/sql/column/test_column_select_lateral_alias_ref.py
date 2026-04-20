@@ -1,18 +1,12 @@
 import os
 from unittest.mock import patch
 
-import pytest
-
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
 
-from ...conftest import data_warehouse_schemas
-from ...helpers import assert_column_lineage_equal, generate_metadata_providers
-
-providers = generate_metadata_providers(data_warehouse_schemas)
+from ...helpers import assert_column_lineage_equal
 
 
-@pytest.mark.parametrize("provider", providers)
 @patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_top_level_enable_lateral_ref(
     provider: MetaDataProvider,
@@ -106,7 +100,6 @@ def test_column_top_level_enable_lateral_ref(
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 @patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_top_level_enable_lateral_ref_with_metadata_from_table(
     provider: MetaDataProvider,
@@ -150,7 +143,6 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_table(
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 @patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_top_level_enable_lateral_ref_with_metadata_from_subquery(
     provider: MetaDataProvider,
@@ -199,7 +191,6 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_subquery(
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 @patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_top_level_enable_lateral_ref_with_metadata_from_nested_subquery(
     provider: MetaDataProvider,
@@ -253,7 +244,6 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_nested_subquery(
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 @patch.dict(os.environ, {"SQLLINEAGE_LATERAL_COLUMN_ALIAS_REFERENCE": "1"})
 def test_column_enable_lateral_ref_within_subquery(
     provider: MetaDataProvider,
@@ -418,13 +408,13 @@ def test_column_top_level_disable_lateral_ref():
 
 def test_column_top_level_disable_lateral_ref_with_metadata_from_table():
     sql = """
-        insert into temp.person_composite_key
-        select
-            firstname || middlename || lastname || businessentityid as businessentityid,
-            businessentityid                                        as businessentityid_original
-        from
-            person.person
-        """
+    insert into temp.person_composite_key
+    select
+        firstname || middlename || lastname || businessentityid as businessentityid,
+        businessentityid                                        as businessentityid_original
+    from
+        person.person
+    """
     assert_column_lineage_equal(
         sql,
         [

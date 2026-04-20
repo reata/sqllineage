@@ -3,13 +3,9 @@ import pytest
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
 
-from ...conftest import data_warehouse_schemas
 from ...helpers import assert_column_lineage_equal, generate_metadata_providers
 
-providers = generate_metadata_providers(data_warehouse_schemas)
 
-
-@pytest.mark.parametrize("provider", providers)
 def test_select_single_table_wildcard(provider: MetaDataProvider):
     sql = """insert into temp.creditcard_snapshot
     select *
@@ -35,7 +31,6 @@ def test_select_single_table_wildcard(provider: MetaDataProvider):
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_single_table_wildcard_in_subquery(provider: MetaDataProvider):
     sql = """insert into temp.creditcard_snapshot
     select creditcard_key, cardtype
@@ -62,7 +57,6 @@ def test_select_single_table_wildcard_in_subquery(provider: MetaDataProvider):
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_single_table_partial_wildcard_in_subquery(provider: MetaDataProvider):
     sql = """insert into temp.creditcard_snapshot
     select creditcardid, cardtype
@@ -110,7 +104,6 @@ def test_select_single_table_partial_wildcard_in_subquery(provider: MetaDataProv
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_table_join_partial_wildcard_at_last(provider: MetaDataProvider):
     sql = """insert into temp.sales_creditcard_snapshot
     select sales_key, creditcard_key, cardtype
@@ -141,7 +134,6 @@ def test_select_table_join_partial_wildcard_at_last(provider: MetaDataProvider):
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_table_join_partial_wildcard_at_beginning(provider: MetaDataProvider):
     sql = """insert into temp.sales_creditcard_snapshot
     select sales_key, creditcard_key, cardtype
@@ -172,7 +164,6 @@ def test_select_table_join_partial_wildcard_at_beginning(provider: MetaDataProvi
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_table_join_multiple_wildcards(provider: MetaDataProvider):
     sql = """insert into temp.sales_creditcard_snapshot
     select sales_key, cardtype
@@ -197,7 +188,6 @@ def test_select_table_join_multiple_wildcards(provider: MetaDataProvider):
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_table_join_multiple_wildcards_merged_at_top_level(
     provider: MetaDataProvider,
 ):
@@ -300,7 +290,6 @@ def test_select_table_join_multiple_wildcards_merged_at_top_level(
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_select_table_join_multiple_wildcards_at_different_level(
     provider: MetaDataProvider,
 ):
@@ -393,7 +382,6 @@ def test_select_table_join_multiple_wildcards_at_different_level(
     )
 
 
-@pytest.mark.parametrize("provider", providers)
 def test_wildcard_reference_from_previous_statements(provider: MetaDataProvider):
     sql = """create table temp.customer_latest_ship_address_snapshot as
     select customer_key, ship_address_key
@@ -457,35 +445,27 @@ def test_wildcard_reference_from_previous_statements(provider: MetaDataProvider)
     )
 
 
+# The following tests use locally-defined schema instead of the global conftest fixture because they require tables
+# with identical or structurally-paired column layouts (union compatibility, partition exclusion) that don't exist in
+# the shared dimensional model schema
 @pytest.mark.parametrize(
     "provider",
     generate_metadata_providers(
         {
-            **data_warehouse_schemas,
             "temp.dim_credit_card1": ["creditcard_key", "creditcardid", "cardtype"],
+            "temp.dim_credit_card2": ["creditcard_key", "creditcardid", "cardtype"],
         }
     ),
+    ids=["dummy", "sqlalchemy"],
 )
 def test_wildcard_table_union_with_same_column_names(provider: MetaDataProvider):
     sql = """insert into temp.creditcard_snapshot
-SELECT * FROM marts.dim_credit_card
+SELECT * FROM temp.dim_credit_card1
 UNION
-SELECT * FROM temp.dim_credit_card1"""
+SELECT * FROM temp.dim_credit_card2"""
     assert_column_lineage_equal(
         sql,
         [
-            (
-                ColumnQualifierTuple("creditcard_key", "marts.dim_credit_card"),
-                ColumnQualifierTuple("creditcard_key", "temp.creditcard_snapshot"),
-            ),
-            (
-                ColumnQualifierTuple("creditcardid", "marts.dim_credit_card"),
-                ColumnQualifierTuple("creditcardid", "temp.creditcard_snapshot"),
-            ),
-            (
-                ColumnQualifierTuple("cardtype", "marts.dim_credit_card"),
-                ColumnQualifierTuple("cardtype", "temp.creditcard_snapshot"),
-            ),
             (
                 ColumnQualifierTuple("creditcard_key", "temp.dim_credit_card1"),
                 ColumnQualifierTuple("creditcard_key", "temp.creditcard_snapshot"),
@@ -498,6 +478,18 @@ SELECT * FROM temp.dim_credit_card1"""
                 ColumnQualifierTuple("cardtype", "temp.dim_credit_card1"),
                 ColumnQualifierTuple("cardtype", "temp.creditcard_snapshot"),
             ),
+            (
+                ColumnQualifierTuple("creditcard_key", "temp.dim_credit_card2"),
+                ColumnQualifierTuple("creditcard_key", "temp.creditcard_snapshot"),
+            ),
+            (
+                ColumnQualifierTuple("creditcardid", "temp.dim_credit_card2"),
+                ColumnQualifierTuple("creditcardid", "temp.creditcard_snapshot"),
+            ),
+            (
+                ColumnQualifierTuple("cardtype", "temp.dim_credit_card2"),
+                ColumnQualifierTuple("cardtype", "temp.creditcard_snapshot"),
+            ),
         ],
         metadata_provider=provider,
     )
@@ -507,29 +499,30 @@ SELECT * FROM temp.dim_credit_card1"""
     "provider",
     generate_metadata_providers(
         {
-            **data_warehouse_schemas,
+            "temp.dim_credit_card1": ["creditcard_key", "creditcardid", "cardtype"],
             "temp.dim_credit_card2": ["cc_key", "cc_id", "cc_type"],
         }
     ),
+    ids=["dummy", "sqlalchemy"],
 )
 def test_wildcard_table_union_with_different_column_names(provider: MetaDataProvider):
     sql = """insert into temp.creditcard_snapshot
-SELECT * FROM marts.dim_credit_card
+SELECT * FROM temp.dim_credit_card1
 UNION
 SELECT * FROM temp.dim_credit_card2"""
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("creditcard_key", "marts.dim_credit_card"),
+                ColumnQualifierTuple("creditcard_key", "temp.dim_credit_card1"),
                 ColumnQualifierTuple("creditcard_key", "temp.creditcard_snapshot"),
             ),
             (
-                ColumnQualifierTuple("creditcardid", "marts.dim_credit_card"),
+                ColumnQualifierTuple("creditcardid", "temp.dim_credit_card1"),
                 ColumnQualifierTuple("creditcardid", "temp.creditcard_snapshot"),
             ),
             (
-                ColumnQualifierTuple("cardtype", "marts.dim_credit_card"),
+                ColumnQualifierTuple("cardtype", "temp.dim_credit_card1"),
                 ColumnQualifierTuple("cardtype", "temp.creditcard_snapshot"),
             ),
             (
@@ -553,10 +546,11 @@ SELECT * FROM temp.dim_credit_card2"""
     "provider",
     generate_metadata_providers(
         {
-            **data_warehouse_schemas,
+            "temp.dim_credit_card": ["creditcard_key", "creditcardid", "cardtype"],
             "temp.credit_card_daily": ["creditcard_key", "creditcard_id", "card_type"],
         }
     ),
+    ids=["dummy", "sqlalchemy"],
 )
 @pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_insert_overwrite_with_partition_excludes_partition_columns(
@@ -565,20 +559,20 @@ def test_insert_overwrite_with_partition_excludes_partition_columns(
 ):
     sql = """INSERT OVERWRITE TABLE temp.credit_card_daily PARTITION (dt=20251217)
 SELECT creditcard_key, creditcardid, cardtype
-FROM marts.dim_credit_card"""
+FROM temp.dim_credit_card"""
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("creditcard_key", "marts.dim_credit_card"),
+                ColumnQualifierTuple("creditcard_key", "temp.dim_credit_card"),
                 ColumnQualifierTuple("creditcard_key", "temp.credit_card_daily"),
             ),
             (
-                ColumnQualifierTuple("creditcardid", "marts.dim_credit_card"),
+                ColumnQualifierTuple("creditcardid", "temp.dim_credit_card"),
                 ColumnQualifierTuple("creditcard_id", "temp.credit_card_daily"),
             ),
             (
-                ColumnQualifierTuple("cardtype", "marts.dim_credit_card"),
+                ColumnQualifierTuple("cardtype", "temp.dim_credit_card"),
                 ColumnQualifierTuple("card_type", "temp.credit_card_daily"),
             ),
         ],

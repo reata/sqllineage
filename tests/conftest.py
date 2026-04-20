@@ -1,5 +1,9 @@
+import pytest
+
+from .helpers import generate_metadata_providers
+
 # a Kimball dimensional model, source from https://github.com/Data-Engineer-Camp/dbt-dimensional-modelling
-data_warehouse_schemas = {
+_data_warehouse_schemas = {
     # raw data, Third Normal Form (3NF) modeling
     "date.date": [
         "date_day",  # date, PK
@@ -253,3 +257,13 @@ data_warehouse_schemas = {
         "day_of_year",  # integer
     ],
 }
+
+
+@pytest.fixture(
+    scope="session",
+    params=generate_metadata_providers(_data_warehouse_schemas),
+    ids=["dummy", "sqlalchemy"],
+)
+def provider(request):
+    # session scope: SQLAlchemy provider is expensive to initialize; share one instance across all tests
+    return request.param
