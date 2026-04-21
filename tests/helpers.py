@@ -1,6 +1,3 @@
-import os.path
-from pathlib import Path
-
 from sqlalchemy import (
     Column as SQLAlchemyColumn,
 )
@@ -118,15 +115,14 @@ def generate_metadata_providers(test_schemas) -> list[MetaDataProvider]:
     for full_table_name, columns_names in test_schemas.items():
         schema, table = full_table_name.split(".")
         if (
+            # main and temp are SQLite built-in schemas; all others need explicit ATTACH
             schema not in ("main", "temp")
             and schema
             not in inspect(sqlite3_sqlalchemy_provider.engine).get_schema_names()
         ):
-            db_file_path = Path(os.path.dirname(__file__)).parent.joinpath(
-                f"{schema}.db"
-            )
             with sqlite3_sqlalchemy_provider.engine.connect() as conn:
-                conn.execute(text(f"ATTACH DATABASE '{db_file_path}' AS '{schema}'"))
+                # ATTACH In-Memory Databases: https://sqlite.org/inmemorydb.html
+                conn.execute(text(f"ATTACH DATABASE ':memory:' AS '{schema}'"))
         SQLAlchemyTable(
             table,
             metadata,
