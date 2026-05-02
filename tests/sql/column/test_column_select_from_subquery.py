@@ -134,3 +134,13 @@ FROM (SELECT col1 FROM tab2) dT"""
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
+
+
+def test_select_column_in_subquery_quoted_alias_case_sensitive():
+    sql = """INSERT INTO tab1
+SELECT "Abc" AS col1
+FROM (SELECT col1 AS "Abc" FROM tab2) dt"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )

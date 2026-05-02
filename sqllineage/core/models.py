@@ -152,7 +152,9 @@ class Column:
         :param kwargs:
         """
         self._parent: set[Path | Table | SubQuery] = set()
-        self.raw_name = escape_identifier_name(name)
+        self.raw_name = (
+            name if kwargs.pop("escaped", False) else escape_identifier_name(name)
+        )
         self.source_columns = [
             (
                 escape_identifier_name(raw_name),
@@ -213,7 +215,9 @@ class Column:
         def _to_src_col(
             name: str, parent: Path | Table | SubQuery | None = None
         ) -> Column:
-            col = Column(name)
+            # names in self.source_columns are already normalized by escape_identifier_name in __init__
+            # avoid double-processing which would lowercase case-sensitive quoted identifiers (e.g. "Abc" -> "abc")
+            col = Column(name, escaped=True)
             if parent:
                 col.parent = parent
             return col
