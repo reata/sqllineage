@@ -51,7 +51,7 @@ END"""
 
 
 @pytest.mark.parametrize("dialect", proc_dialects)
-def test_procedure_column_multiple_statements(dialect: str):
+def test_procedure_multiple_statements(dialect: str):
     sql = f"""CREATE PROCEDURE proc1()
 {'' if dialect == 'bigquery' else 'AS'}
 BEGIN

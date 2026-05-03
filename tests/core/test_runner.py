@@ -34,6 +34,11 @@ def test_silent_mode():
     LineageRunner(sql, dialect="greenplum", silent_mode=True)._eval()
 
 
+def test_procedure_silent_mode():
+    sql = "CREATE PROCEDURE proc1() AS BEGIN SELECT col1 FROM tab1; END"
+    LineageRunner(sql, dialect="tsql", silent_mode=True)._eval()
+
+
 def test_get_column_lineage_exclude_subquery_inpath():
     v_sql = "insert into ta select b from (select b from tb union all select c from tc ) sub"
     parse = LineageRunner(sql=v_sql)
