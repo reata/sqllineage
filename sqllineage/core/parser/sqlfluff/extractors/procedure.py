@@ -28,10 +28,11 @@ class ProcedureExtractor(BaseExtractor):
     def _delegate_to_extractor(
         self, segment: BaseSegment, context: AnalyzerContext
     ) -> SubQueryLineageHolder:
-        for extractor_cls in BaseExtractor.__subclasses__():
-            extractor = extractor_cls(self.dialect, self.metadata_provider)
-            if extractor.can_extract(segment.type):
-                return extractor.extract(segment, context)
+        holder = BaseExtractor.try_extract(
+            self.dialect, self.metadata_provider, segment, context
+        )
+        if holder is not None:
+            return holder
         else:
             warnings.warn(
                 "SQLLineage doesn't support analyzing statement type "
