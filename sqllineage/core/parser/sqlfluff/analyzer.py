@@ -57,15 +57,14 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             )  # pragma: no cover
         else:
             statement_segment = statement_segments[0]
-            for extractor in [
-                extractor_cls(self._sqlfluff_config.get("dialect"), metadata_provider)
-                for extractor_cls in BaseExtractor.__subclasses__()
-            ]:
-                if extractor.can_extract(statement_segment.type):
-                    lineage_holder = extractor.extract(
-                        statement_segment, AnalyzerContext()
-                    )
-                    return StatementLineageHolder.of(lineage_holder)
+            holder = BaseExtractor.try_extract(
+                self._sqlfluff_config.get("dialect"),
+                metadata_provider,
+                statement_segment,
+                AnalyzerContext(),
+            )
+            if holder is not None:
+                return StatementLineageHolder.of(holder)
             else:
                 if self._silent_mode:
                     warnings.warn(

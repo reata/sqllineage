@@ -31,12 +31,23 @@ class BaseExtractor:
         self.dialect = dialect
         self.metadata_provider = metadata_provider
 
-    def can_extract(self, statement_type: str) -> bool:
+    @classmethod
+    def try_extract(
+        cls,
+        dialect: str,
+        metadata_provider: MetaDataProvider,
+        segment: BaseSegment,
+        context: AnalyzerContext,
+    ) -> SubQueryLineageHolder | None:
         """
-        Determine if the current lineage holder extractor can process the statement
-        :param statement_type: a sqlfluff segment type
+        Find an extractor subclass to extract lineage for a given statement. Return None if no extractor can process
+        the statement
         """
-        return statement_type in self.SUPPORTED_STMT_TYPES
+        for extractor_cls in cls.__subclasses__():
+            extractor = extractor_cls(dialect, metadata_provider)
+            if segment.type in extractor.SUPPORTED_STMT_TYPES:
+                return extractor.extract(segment, context)
+        return None
 
     def extract(
         self,
