@@ -21,21 +21,21 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Set up NodeJS
-      uses: actions/setup-node@v3
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
       with:
-        node-version: '20'
+        node-version: '22'
     - name: Install
       run: pip install tox codecov
     - name: Script
       run: tox -e py
     - name: After Success
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v6
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         verbose: true
