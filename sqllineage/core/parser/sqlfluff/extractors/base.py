@@ -27,15 +27,9 @@ class BaseExtractor:
 
     SUPPORTED_STMT_TYPES: list[str] = []
 
-    def __init__(
-        self,
-        dialect: str,
-        metadata_provider: MetaDataProvider,
-        silent_mode: bool = False,
-    ):
+    def __init__(self, dialect: str, metadata_provider: MetaDataProvider):
         self.dialect = dialect
         self.metadata_provider = metadata_provider
-        self._silent_mode = silent_mode
 
     def can_extract(self, statement_type: str) -> bool:
         """

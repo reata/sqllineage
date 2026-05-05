@@ -1,4 +1,3 @@
-import textwrap
 import warnings
 
 from sqlfluff.core.parser import BaseSegment
@@ -34,14 +33,8 @@ class ProcedureExtractor(BaseExtractor):
             if extractor.can_extract(segment.type):
                 return extractor.extract(segment, context)
         else:
-            if not self._silent_mode:
-                char_limit = 50
-                segment_text = textwrap.shorten(
-                    segment.raw, width=char_limit, placeholder=" ..."
-                )
-                warnings.warn(
-                    "SQLLineage doesn't support analyzing statement type "
-                    f"[{segment.type}] for SQL Segment: '{segment_text}'"
-                )
-                return SubQueryLineageHolder()
+            warnings.warn(
+                "SQLLineage doesn't support analyzing statement type "
+                f"[{segment.type}] for SQL Segment: '{segment.raw}' embedding in procedure, skipping it."
+            )
             return SubQueryLineageHolder()
