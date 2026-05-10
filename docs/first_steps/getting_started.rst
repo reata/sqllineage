@@ -19,8 +19,14 @@ If you want the latest development version, you can install directly from GitHub
 
 
 .. note::
-    Installation from GitHub (or source code) requires **NodeJS/npm** for frontend code building, while for PyPI,
-    we already pre-built the frontend code so Python/pip will be enough.
+    Installation from GitHub requires **NodeJS/npm** for frontend code building. When Node.js/npm is not available,
+    the installation will still succeed but the web-based DAG viewer will not be available.
+
+    For PyPI wheel installation (``pip install sqllineage``), the frontend code is pre-built so Python/pip will be
+    sufficient.
+
+    Note if source code distribution installation is specified (``pip install --no-binary sqllineage``), the behavior
+    will be the same as installation from GitHub.
 
 SQLLineage in Command Line
 =======================================
