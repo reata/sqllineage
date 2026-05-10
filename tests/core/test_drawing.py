@@ -3,9 +3,13 @@ import os.path
 from collections import namedtuple
 from http import HTTPStatus
 from io import StringIO
+from unittest.mock import patch
+
+import pytest
 
 from sqllineage.config import SQLLineageConfig
-from sqllineage.drawing import app
+from sqllineage.drawing import app, draw_lineage_graph
+from sqllineage.exceptions import SQLLineageException
 
 
 def test_handler():
@@ -79,6 +83,10 @@ def test_handler():
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
     mock_request("OPTIONS", "/non-exist-resource")
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
+    with patch("pathlib.Path.exists", return_value=False):
+        result = app({"REQUEST_METHOD": "GET", "PATH_INFO": "/"}, start_response)
+        assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
+        assert "Frontend assets not built" in json.loads(result[0])["message"]
     # 405
     mock_request("PUT", "/")
     assert container.status.startswith(str(HTTPStatus.METHOD_NOT_ALLOWED.value))
@@ -86,3 +94,12 @@ def test_handler():
     assert container.status.startswith(str(HTTPStatus.METHOD_NOT_ALLOWED.value))
     mock_request("DELETE", "/")
     assert container.status.startswith(str(HTTPStatus.METHOD_NOT_ALLOWED.value))
+
+
+def test_port_already_in_use():
+    def failing_make_server(host, port, app):
+        raise OSError(48, "Address already in use")
+
+    with patch("sqllineage.drawing.make_server", failing_make_server):
+        with pytest.raises(SQLLineageException, match="Failed to start server"):
+            draw_lineage_graph()
