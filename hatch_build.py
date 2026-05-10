@@ -7,6 +7,7 @@ import platform
 import shlex
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
@@ -35,6 +36,16 @@ class FrontendBuildHook(BuildHookInterface):
         static_path = py_path / static_folder
         js_path = Path("sqllineagejs")
         use_shell = True if platform.system() == "Windows" else False
+
+        if shutil.which("npm") is None:
+            print(
+                "WARNING: npm is not available. Skipping frontend build — "
+                "the web-based DAG viewer will not be available. "
+                "Install Node.js and npm to enable this feature.",
+                file=sys.stderr,
+            )
+            return
+
         try:
             # install npm dependencies
             subprocess.check_call(

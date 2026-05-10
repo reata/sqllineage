@@ -49,7 +49,14 @@ class SQLLineageApp:
             if request_method == "GET":
                 mimetype = "text/html; charset=utf-8"
                 if path_info == "/":
-                    static_fname = str(static_folder.joinpath(Path("index.html")))
+                    index_path = static_folder.joinpath(Path("index.html"))
+                    if not index_path.exists():
+                        return self.handle_404(
+                            start_response,
+                            "Frontend assets not built. Install Node.js/npm and reinstall sqllineage from "
+                            "source to enable the web-based DAG viewer. Or install the pre-built wheel distribution.",
+                        )
+                    static_fname = str(index_path)
                 else:
                     if ".." in path_info:
                         # Do not allow going back to parent path of static folder
@@ -127,8 +134,9 @@ class SQLLineageApp:
             start_response, HTTPStatus.FORBIDDEN, message
         )
 
-    def handle_404(self, start_response) -> list[bytes]:
-        message = "File Not Found"
+    def handle_404(
+        self, start_response, message: str = "File Not Found"
+    ) -> list[bytes]:
         return self.handle_client_error_response(
             start_response, HTTPStatus.NOT_FOUND, message
         )
@@ -215,6 +223,11 @@ def draw_lineage_graph(**kwargs) -> None:
         app.root_path = Path(f).parent
     if metadata_provider := kwargs.get("metadata_provider"):
         app.metadata_provider = metadata_provider
-    with make_server(host, port, app) as httpd:
-        print(f" * SQLLineage Running on http://{host}:{port}{path}")
-        httpd.serve_forever()
+    try:
+        with make_server(host, port, app) as httpd:
+            print(f" * SQLLineage Running on http://{host}:{port}{path}")
+            httpd.serve_forever()
+    except OSError as e:
+        raise SQLLineageException(
+            f"Failed to start server on {host}:{port}: {e.strerror or str(e)}"
+        ) from e
