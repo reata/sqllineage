@@ -240,6 +240,18 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 if next_handler.indicator:
                     next_handler.handle(sub_token, holder)
         else:
+            # populate target table columns from metadata for INSERT statement
+            if (
+                isinstance(token, Statement)
+                and token.get_type() == "INSERT"
+                and metadata_provider
+            ):
+                if tgt_tbl := holder._get_target_table():
+                    if isinstance(tgt_tbl, Table) and not holder.get_table_columns(
+                        tgt_tbl
+                    ):
+                        tgt_columns = metadata_provider.get_table_columns(tgt_tbl)
+                        holder.add_write_column(*tgt_columns)
             # call end of query hook here as loop is over
             for next_handler in next_handlers:
                 next_handler.end_of_query_cleanup(holder)

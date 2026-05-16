@@ -578,5 +578,4 @@ FROM temp.dim_credit_card"""
         ],
         dialect=dialect,
         metadata_provider=provider,
-        test_sqlparse=False,  # Only test with sqlfluff as sqlparse doesn't handle write_column
     )
