@@ -96,8 +96,18 @@ class CreateInsertExtractor(BaseExtractor):
                         columns = []
                         for sub_segment in sub_segments:
                             if sub_segment.type == "column_definition":
+                                # sqlfluff's column_definition parse tree varies by dialect:
+                                #  for most dialect:
+                                #     column_definition -> identifier
+                                #  for sparksql, databricks since sqlfluff 3.2.5):
+                                #     column_definition -> column_reference -> identifier
+                                # We try identifier first, then fall back to column_reference.
                                 if identifier := sub_segment.get_child("identifier"):
                                     sub_segment = identifier
+                                elif column_ref := sub_segment.get_child(
+                                    "column_reference"
+                                ):
+                                    sub_segment = column_ref
                             columns.append(SqlFluffColumn.of(sub_segment))
                         holder.add_write_column(*columns)
 
