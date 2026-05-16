@@ -237,9 +237,11 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         wildcard_in_union: bool = False,
     ) -> None:
         target_columns = self.get_table_columns(tgt_table)
+        use_positional = wildcard_in_union or (
+            len(target_columns) == len(src_table_columns)
+        )
         for idx, src_col in enumerate(src_table_columns):
-            # Prefer positional mapping only when enabled (e.g., subsequent UNION arms)
-            if wildcard_in_union and idx < len(target_columns):
+            if use_positional and idx < len(target_columns):
                 target_col = target_columns[idx]
             else:
                 # otherwise, if target column with same name exists (union scenario), reuse it; or create a new one

@@ -63,7 +63,6 @@ from date.date"""
             ),
         ],
         metadata_provider=provider,
-        test_sqlparse=False,
     )
 
 
@@ -128,5 +127,4 @@ SELECT date_key, dd, prd, ndd, pydd, pyoydd, dow, down, dom, doy FROM cte_table"
             ),
         ],
         metadata_provider=provider,
-        test_sqlparse=False,
     )
