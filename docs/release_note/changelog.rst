@@ -2,6 +2,24 @@
 Changelog
 *********
 
+v1.5.8
+======
+:Date: May 16, 2026
+
+This is a minor release with two enhancements and several bugfixes:
+
+Enhancement
+-------------
+* Preliminary support for parsing stored procedures (`#643 <https://github.com/reata/sqllineage/issues/643>`_)
+* Allow installation from source without npm (`#623 <https://github.com/reata/sqllineage/issues/623>`_)
+
+Bugfix
+-------------
+* DDL fragments leaking into column names for sparksql (`#757 <https://github.com/reata/sqllineage/issues/757>`_)
+* NetworkXError: Node value is not in the graph (`#753 <https://github.com/reata/sqllineage/issues/753>`_)
+* Column names in quotes not parsed in subqueries (`#654 <https://github.com/reata/sqllineage/issues/654>`_)
+* INSERT INTO target SELECT * FROM source with MetaDataProvider still maps target columns to source column names (`#635 <https://github.com/reata/sqllineage/issues/635>`_)
+
 v1.5.7
 ======
 :Date: Jan 11, 2026
