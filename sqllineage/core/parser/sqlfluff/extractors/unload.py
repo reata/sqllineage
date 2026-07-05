@@ -31,5 +31,5 @@ class UnloadExtractor(BaseExtractor):
     def _analyze_inner_sql(self, sql: str) -> StatementLineageHolder:
         from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
 
-        analyzer = SqlFluffLineageAnalyzer("", self.dialect)
+        analyzer = SqlFluffLineageAnalyzer(sql, "", self.dialect)
         return analyzer.analyze(sql, self.metadata_provider)

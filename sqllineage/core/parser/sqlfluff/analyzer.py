@@ -26,40 +26,42 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlfluff"
     SUPPORTED_DIALECTS = list(dialect.label for dialect in dialect_readout())
 
-    def __init__(self, file_path: str, dialect: str, silent_mode: bool = False):
+    def __init__(
+        self,
+        sql: str,
+        file_path: str,
+        dialect: str,
+        silent_mode: bool = False,
+    ):
+        super().__init__(sql)
         self._sqlfluff_config = FluffConfig.from_path(
             path=file_path, overrides={"dialect": dialect}
         )
+        self._dialect = dialect
         self._silent_mode = silent_mode
         self._segment_cache: dict[str, BaseSegment] = {}
+        self._stmts = self._split_and_cache()
 
-    def split_tsql(self, sql: str) -> list[str]:
-        """
-        use sqlfluff parse to split tsql statements. This is in particular for semicolon not present cases.
-        The result is cached so that later analyze method doesn't have to parse regarding single statement sql.
-        """
-        sqls = []
-        for segment in self._list_specific_statement_segment(sql):
-            self._segment_cache[segment.raw] = segment
-            sqls.append(segment.raw)
-        return sqls
+    def _split_and_cache(self) -> list[str]:
+        """Parse SQL once, split into statements, and cache segment per statement."""
+        stripped = self._sql.strip()
+        if not stripped:
+            return []
+        # sqlfluff handles multi-statement SQL natively, including TSQL
+        # without semicolons — no need for separate TSQL_NO_SEMICOLON path.
+        segments = self._list_specific_statement_segment(stripped)
+        stmts = []
+        for segment in segments:
+            # Append trailing semicolon to match sqlparse split behavior, which
+            # preserves the semicolon as part of the statement string.
+            stmt = segment.raw + ";"
+            self._segment_cache[stmt] = segment
+            stmts.append(stmt)
+        return stmts
 
-    def preparse(self, statements: list[str]) -> None:
-        """
-        Parse all statements in a single Linter call, caching the resulting segments.
-        This eliminates the per-statement FluffConfig deepcopy that occurs inside every
-        Linter() construction, replacing N copies with one.
-
-        Cache keys are the original input strings (not segment.raw) so that lookups in
-        analyze() always hit regardless of how the caller normalises whitespace or
-        semicolons.  On a segment-count mismatch the cache is left empty and analyze()
-        falls back to per-statement parsing transparently.
-        """
-        combined = "\n;\n".join(s.rstrip("; \t\n") for s in statements)
-        segments = self._list_specific_statement_segment(combined)
-        if len(segments) == len(statements):
-            for stmt, segment in zip(statements, segments):
-                self._segment_cache[stmt] = segment
+    @property
+    def statements(self) -> list[str]:
+        return self._stmts
 
     def analyze(
         self, sql: str, metadata_provider: MetaDataProvider

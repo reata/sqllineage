@@ -3,7 +3,7 @@ import tempfile
 
 from sqllineage.cli import main
 from sqllineage.config import SQLLineageConfig
-from sqllineage.core.models import SubQuery, Table
+from sqllineage.core.models import SubQuery
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
 
@@ -40,13 +40,6 @@ def test_get_column_lineage_exclude_subquery_inpath():
     for col_tuple in parse.get_column_lineage(exclude_subquery_columns=True):
         for col in col_tuple:
             assert not isinstance(col.parent, SubQuery)
-
-
-def test_runner_with_list_input():
-    stmts = ["select * from tab1", "insert into tab2 select * from tab1"]
-    runner = LineageRunner(sql=stmts)
-    assert runner.source_tables == [Table("tab1")]
-    assert runner.target_tables == [Table("tab2")]
 
 
 def test_respect_sqlfluff_configuration_file():

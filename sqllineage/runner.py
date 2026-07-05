@@ -4,7 +4,6 @@ from collections import OrderedDict
 from typing import Any
 
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
-from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SQLLineageHolder
 from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.core.metadata_provider import MetaDataProvider
@@ -14,7 +13,6 @@ from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.utils.constant import LineageLevel
-from sqllineage.utils.helpers import split, trim_comment
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +34,7 @@ def lazy_property(func):
 class LineageRunner:
     def __init__(
         self,
-        sql: str | list[str],
+        sql: str,
         dialect: str = DEFAULT_DIALECT,
         metadata_provider: MetaDataProvider = DummyMetaDataProvider(),
         verbose: bool = False,
@@ -47,9 +45,7 @@ class LineageRunner:
         """
         The entry point of SQLLineage after command line options are parsed.
 
-        :param sql: a string of one or more SQL statements, or a pre-split list of individual statements.
-                    Passing a list avoids the internal split step, which is useful when statements are
-                    already tokenised upstream.
+        :param sql: a string representation of SQL statements.
         :param dialect: sql dialect
         :param metadata_provider: metadata service object providing table schema
         :param verbose: verbose flag indicating whether statement-wise lineage result will be shown
@@ -123,15 +119,7 @@ Target Tables:
         draw_options = self._draw_options
         if draw_options.get("f") is None:
             draw_options.pop("f", None)
-            draw_options["e"] = (
-                self._sql
-                if isinstance(self._sql, str)
-                else (
-                    "\n".join(self._sql)
-                    if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql"
-                    else ";\n".join(self._sql)
-                )
-            )
+            draw_options["e"] = self._sql
             draw_options["dialect"] = self._dialect
             draw_options["metadata_provider"] = self._metadata_provider
         return draw_lineage_graph(**draw_options)
@@ -141,7 +129,7 @@ Target Tables:
         """
         a list of SQL statements.
         """
-        return [trim_comment(s) for s in self._stmt]
+        return self._stmt
 
     @lazy_property
     def source_tables(self) -> list[Table]:
@@ -194,28 +182,13 @@ Target Tables:
 
     def _eval(self):
         analyzer = (
-            SqlParseLineageAnalyzer()
+            SqlParseLineageAnalyzer(self._sql)
             if self._dialect == SQLPARSE_DIALECT
             else SqlFluffLineageAnalyzer(
-                self._file_path, self._dialect, self._silent_mode
+                self._sql, self._file_path, self._dialect, self._silent_mode
             )
         )
-        if isinstance(self._sql, list):
-            self._stmt = [s for s in self._sql if s.strip()]
-        elif SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
-            self._stmt = analyzer.split_tsql(self._sql.strip())
-        else:
-            if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect != "tsql":
-                warnings.warn(
-                    f"Dialect={self._dialect}, TSQL_NO_SEMICOLON will be ignored unless dialect is tsql"
-                )
-            self._stmt = split(self._sql.strip())
-
-        if isinstance(analyzer, SqlFluffLineageAnalyzer) and not (
-            SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql"
-        ):
-            analyzer.preparse(self._stmt)
-
+        self._stmt = analyzer.statements
         with self._metadata_provider.session() as session:
             stmt_holders = []
             for stmt in self._stmt:

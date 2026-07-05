@@ -235,46 +235,6 @@ def bench_lineage_runner(n_stmts: int = 120, n_repeats: int = 3) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Integration benchmark: LineageRunner str input vs list[str] input
-# ---------------------------------------------------------------------------
-
-
-def bench_list_vs_str(n_repeats: int = 3) -> None:
-    _hr("Integration: LineageRunner  str input vs list[str] input")
-
-    header = f"{'Stmts':<8}  {'Input type':<12}  {'Best (s)':>10}  {'Avg (s)':>10}  {'Speedup':>8}"
-    print("  " + header)
-    print("  " + "-" * len(header))
-
-    for n_stmts in (60, 120, 480):
-        stmts_list = _build_sql_workload(n_stmts)
-        stmts_str = ";\n".join(stmts_list)
-
-        str_times = []
-        for _ in range(n_repeats):
-            t = timeit.default_timer()
-            lr = LineageRunner(stmts_str, dialect="ansi")
-            lr.get_column_lineage()
-            str_times.append(timeit.default_timer() - t)
-
-        list_times = []
-        for _ in range(n_repeats):
-            t = timeit.default_timer()
-            lr = LineageRunner(stmts_list, dialect="ansi")
-            lr.get_column_lineage()
-            list_times.append(timeit.default_timer() - t)
-
-        str_best, str_avg = min(str_times), sum(str_times) / n_repeats
-        list_best, list_avg = min(list_times), sum(list_times) / n_repeats
-        speedup = str_best / list_best
-
-        print(f"  {n_stmts:<8}  {'str':<12}  {str_best:10.3f}  {str_avg:10.3f}")
-        print(
-            f"  {n_stmts:<8}  {'list[str]':<12}  {list_best:10.3f}  {list_avg:10.3f}  {speedup:7.2f}x"
-        )
-
-
-# ---------------------------------------------------------------------------
 # Micro-benchmark: retrieve_vertices_by_props tag index vs O(N) scan
 # ---------------------------------------------------------------------------
 
@@ -348,18 +308,18 @@ def bench_batch_parse(n_repeats: int = 3) -> None:
         # Sequential: N separate Linter calls (simulates old per-statement behaviour)
         seq_times = []
         for _ in range(n_repeats):
-            a = SqlFluffLineageAnalyzer(".", "ansi")
+            a = SqlFluffLineageAnalyzer("", ".", "ansi")
             t = timeit.default_timer()
             for stmt in stmts:
                 a._list_specific_statement_segment(stmt)
             seq_times.append(timeit.default_timer() - t)
 
-        # Batch: one Linter call for all statements combined
+        # Batch: constructor triggers batch parse of all statements at once
         batch_times = []
         for _ in range(n_repeats):
-            a = SqlFluffLineageAnalyzer(".", "ansi")
+            combined = ";\n".join(stmts)
             t = timeit.default_timer()
-            a.preparse(stmts)
+            a = SqlFluffLineageAnalyzer(combined, ".", "ansi")
             batch_times.append(timeit.default_timer() - t)
 
         seq_best, seq_avg = min(seq_times), sum(seq_times) / n_repeats
@@ -384,7 +344,6 @@ if __name__ == "__main__":
     bench_column()
     bench_tag_index()
     bench_batch_parse()
-    bench_list_vs_str()
     bench_lineage_runner()
 
     print("\nDone.")

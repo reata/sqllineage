@@ -50,27 +50,3 @@ def extract_file_path_from_args(args: Namespace) -> str:
     if getattr(args, "f", None):
         file_path = args.f
     return file_path
-
-
-def split(sql: str) -> list[str]:
-    # TODO: we need a parser independent split function
-    import sqlparse
-    from sqlparse.tokens import Punctuation
-
-    result = []
-    for s in sqlparse.parse(sql):
-        if first_token := s.token_first(skip_cm=True):
-            # sometimes sqlparse split out a statement that is comment only or semicolon only, we want to exclude that
-            if first_token.ttype == Punctuation and first_token.value == ";":
-                # exclude semicolon only statement
-                continue
-            else:
-                result.append(s.value)
-    return result
-
-
-def trim_comment(sql: str) -> str:
-    # TODO: we need a parser independent trim_comment function
-    import sqlparse
-
-    return str(sqlparse.format(sql, strip_comments=True))
