@@ -1,3 +1,5 @@
+from sqllineage.utils.constant import Dialect
+
 NAME = "sqllineage"
 VERSION = "1.5.8"
 DEFAULT_LOGGING = {
@@ -30,5 +32,5 @@ DEFAULT_LOGGING = {
 STATIC_FOLDER = "build"
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 5000
-SQLPARSE_DIALECT = "non-validating"
-DEFAULT_DIALECT = "ansi"
+SQLPARSE_DIALECT = Dialect.NON_VALIDATING
+DEFAULT_DIALECT = Dialect.ANSI

@@ -1,11 +1,12 @@
 import os
 import tempfile
 
+from sqllineage import DEFAULT_DIALECT
 from sqllineage.cli import main
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.models import SubQuery
 from sqllineage.runner import LineageRunner
-from sqllineage.utils.constant import LineageLevel
+from sqllineage.utils.constant import Dialect, LineageLevel
 
 from ..helpers import _gen_graph_operators, assert_table_lineage_equal
 
@@ -21,6 +22,13 @@ def test_runner_dummy():
             assert str(runner)
             assert runner.to_cytoscape() is not None
             assert runner.to_cytoscape(level=LineageLevel.COLUMN) is not None
+
+
+def test_dialect_is_str_enum():
+    assert DEFAULT_DIALECT is Dialect.ANSI
+    assert isinstance(Dialect.TSQL, str)
+    assert str(Dialect.TSQL) == "tsql"
+    LineageRunner("select * from dual", dialect=Dialect.ANSI)._eval()
 
 
 def test_statements_trim_comment():

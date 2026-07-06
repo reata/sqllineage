@@ -13,7 +13,7 @@ from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
 from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
-from sqllineage.utils.constant import LineageLevel
+from sqllineage.utils.constant import Dialect, LineageLevel
 from sqllineage.utils.helpers import split, trim_comment
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class LineageRunner:
     def __init__(
         self,
         sql: str,
-        dialect: str = DEFAULT_DIALECT,
+        dialect: Dialect = DEFAULT_DIALECT,
         metadata_provider: MetaDataProvider = DummyMetaDataProvider(),
         verbose: bool = False,
         silent_mode: bool = False,
