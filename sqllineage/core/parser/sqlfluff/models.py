@@ -39,11 +39,14 @@ class SqlFluffTable(Table):
     """
 
     @staticmethod
-    def of(table: BaseSegment, alias: str | None = None) -> Table:
+    def of(
+        table: BaseSegment, alias: str | None = None, dialect: str = "ansi"
+    ) -> Table:
         """
         Build an object of type 'Table'
         :param table: table segment to be processed
         :param alias: alias of the table segment
+        :param dialect: sql dialect
         :return: 'Table' object
         """
         dot_idx = None
@@ -52,7 +55,7 @@ class SqlFluffTable(Table):
             if bool(token.type == "symbol"):
                 dot_idx, _ = idx, token
                 break
-        real_name = (
+        real_name = escape_identifier_name(
             table.segments[dot_idx + 1].raw
             if dot_idx
             else (table.raw if table.type == "identifier" else table.segments[0].raw)
@@ -70,7 +73,15 @@ class SqlFluffTable(Table):
         )
         schema = Schema(parent_name) if parent_name is not None else Schema()
         kwargs = {"alias": alias} if alias else {}
-        return Table(real_name, schema, **kwargs)
+        if dot_idx is None:
+            # no dot-symbol found, dots are inside a quoted identifier
+            # for most dialects dots are literal characters in the name;
+            # BigQuery is the exception — backtick-quoted dots remain separators
+            escaped = dialect != "bigquery"
+        else:
+            # dot-symbol found, .of() already decomposed schema and table name
+            escaped = True
+        return Table(real_name, schema, escaped=escaped, **kwargs)
 
 
 class SqlFluffSubQuery(SubQuery):

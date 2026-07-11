@@ -62,11 +62,10 @@ class BaseExtractor:
         """
         raise NotImplementedError
 
-    @staticmethod
-    def find_table(segment: BaseSegment) -> Table | None:
+    def find_table(self, segment: BaseSegment) -> Table | None:
         table = None
         if segment.type in ["table_reference", "object_reference"]:
-            table = SqlFluffTable.of(segment)
+            table = SqlFluffTable.of(segment, dialect=self.dialect)
         return table
 
     @staticmethod
@@ -125,9 +124,8 @@ class BaseExtractor:
 
         return tables
 
-    @staticmethod
     def _add_dataset_from_expression_element(
-        segment: BaseSegment, holder: SubQueryLineageHolder
+        self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> list[Table | SubQuery | Path]:
         """
         Append tables and subqueries identified in the 'from_expression_element' type segment to the table and
@@ -195,7 +193,11 @@ class BaseExtractor:
                             )
                         )
                     else:
-                        tables.append(SqlFluffTable.of(table_identifier, alias=alias))
+                        tables.append(
+                            SqlFluffTable.of(
+                                table_identifier, alias=alias, dialect=self.dialect
+                            )
+                        )
 
         return tables
 

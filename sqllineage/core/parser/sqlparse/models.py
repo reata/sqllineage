@@ -31,7 +31,22 @@ class SqlParseTable(Table):
             start=len(table.tokens),
             reverse=True,
         )
-        real_name = table._get_first_name(dot_idx, real_name=True)
+        if dot_idx:
+            # scan forward from the dot to find the name token, preserving
+            # quotes for case sensitivity (e.g., schema."MyTable" → MyTable)
+            real_name = None
+            for token in table.tokens[dot_idx + 1 :]:
+                if token.ttype in (T.Name, T.Wildcard, T.Literal.String.Symbol):
+                    real_name = escape_identifier_name(token.value)
+                    break
+            if real_name is None:
+                real_name = escape_identifier_name(
+                    table._get_first_name(dot_idx, real_name=True)
+                )
+        else:
+            # use raw token value instead of _get_first_name to preserve
+            # quoting info (e.g., "1.2.3.SomeTable" → 1.2.3.SomeTable)
+            real_name = escape_identifier_name(table.tokens[0].value)
         # rewrite identifier's get_parent_name accordingly
         parent_name = (
             "".join(
@@ -46,7 +61,7 @@ class SqlParseTable(Table):
         schema = Schema(parent_name) if parent_name is not None else Schema()
         alias = table.get_alias()
         kwargs = {"alias": alias} if alias else {}
-        return Table(real_name, schema, **kwargs)
+        return Table(real_name, schema, escaped=True, **kwargs)
 
 
 class SqlParseSubQuery(SubQuery):
