@@ -50,18 +50,18 @@ class Table:
         :param name: table name
         :param schema: schema as defined by :class:`Schema`
         """
-        if "." not in name:
-            self.schema = schema
-            self.raw_name = escape_identifier_name(name)
-        else:
+        escaped = kwargs.pop("escaped", False)
+        if not escaped and "." in name:
             schema_name, table_name = name.rsplit(".", 1)
             if len(schema_name.split(".")) > 2:
-                # allow db.schema as schema_name, but a.b.c as schema_name is forbidden
                 raise SQLLineageException("Invalid format for table name: %s.", name)
             self.schema = Schema(schema_name)
             self.raw_name = escape_identifier_name(table_name)
             if schema:
                 warnings.warn("Name is in schema.table format, schema param is ignored")
+        else:
+            self.schema = schema
+            self.raw_name = name if escaped else escape_identifier_name(name)
         self.alias = escape_identifier_name(kwargs.pop("alias", self.raw_name))
 
     def __str__(self):

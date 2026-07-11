@@ -131,7 +131,7 @@ class CreateInsertExtractor(BaseExtractor):
 
             if tgt_flag:
                 if segment.type in ["table_reference", "object_reference"]:
-                    write_obj = SqlFluffTable.of(segment)
+                    write_obj = SqlFluffTable.of(segment, dialect=self.dialect)
                     holder.add_write(write_obj)
                     # get target table columns from metadata if available
                     if (
@@ -159,7 +159,7 @@ class CreateInsertExtractor(BaseExtractor):
                 tgt_flag = False
             if src_flag:
                 if segment.type in ["table_reference", "object_reference"]:
-                    holder.add_read(SqlFluffTable.of(segment))
+                    holder.add_read(SqlFluffTable.of(segment, dialect=self.dialect))
                 src_flag = False
         return holder
 
