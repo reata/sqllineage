@@ -12,7 +12,7 @@ DEFAULT_LOGGING = {
         }
     },
     "loggers": {
-        "": {
+        "sqllineage": {
             "handlers": ["console"],
             "level": "WARNING",
             "propagate": False,
