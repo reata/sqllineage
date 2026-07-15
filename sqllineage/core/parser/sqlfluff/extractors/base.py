@@ -62,15 +62,14 @@ class BaseExtractor:
         """
         raise NotImplementedError
 
-    @classmethod
-    def find_table(cls, segment: BaseSegment) -> Table | None:
+    def find_table(self, segment: BaseSegment) -> Table | None:
         table = None
         if segment.type in ["table_reference", "object_reference"]:
-            table = SqlFluffTable.of(segment)
+            table = SqlFluffTable.of(segment, dialect=self.dialect)
         return table
 
-    @classmethod
-    def list_subquery(cls, segment: BaseSegment) -> list[SubQuery]:
+    @staticmethod
+    def list_subquery(segment: BaseSegment) -> list[SubQuery]:
         """
         The parse_subquery function takes a segment as an argument.
         :param segment: segment to determine if it is a subquery
@@ -84,13 +83,13 @@ class BaseExtractor:
             return reduce(
                 add,
                 [
-                    cls._parse_subquery(list_subqueries(identifier))
+                    BaseExtractor._parse_subquery(list_subqueries(identifier))
                     for identifier in identifiers
                 ],
                 [],
             )
         if segment.type in ["select_clause", "from_clause", "where_clause"]:
-            result = cls._parse_subquery(list_subqueries(segment))
+            result = BaseExtractor._parse_subquery(list_subqueries(segment))
         elif is_subquery(segment):
             # Parenthesis for SubQuery without alias, this is valid syntax for certain SQL dialect
             result = [SqlFluffSubQuery.of(segment, None)]
@@ -125,9 +124,8 @@ class BaseExtractor:
 
         return tables
 
-    @staticmethod
     def _add_dataset_from_expression_element(
-        segment: BaseSegment, holder: SubQueryLineageHolder
+        self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> list[Table | SubQuery | Path]:
         """
         Append tables and subqueries identified in the 'from_expression_element' type segment to the table and
@@ -195,12 +193,16 @@ class BaseExtractor:
                             )
                         )
                     else:
-                        tables.append(SqlFluffTable.of(table_identifier, alias=alias))
+                        tables.append(
+                            SqlFluffTable.of(
+                                table_identifier, alias=alias, dialect=self.dialect
+                            )
+                        )
 
         return tables
 
-    @classmethod
-    def _parse_subquery(cls, subqueries: list[SubQueryTuple]) -> list[SubQuery]:
+    @staticmethod
+    def _parse_subquery(subqueries: list[SubQueryTuple]) -> list[SubQuery]:
         """
         Convert a list of 'SqlFluffSubQueryTuple' to 'SqlFluffSubQuery'
         :param subqueries:  a list of 'SqlFluffSubQueryTuple'

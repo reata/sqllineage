@@ -78,8 +78,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             )
         return holder
 
-    @classmethod
-    def _extract_from_ddl_drop(cls, stmt: Statement) -> StatementLineageHolder:
+    @staticmethod
+    def _extract_from_ddl_drop(stmt: Statement) -> StatementLineageHolder:
         holder = StatementLineageHolder()
         for table in {
             SqlParseTable.of(t) for t in stmt.tokens if isinstance(t, Identifier)
@@ -87,8 +87,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             holder.add_drop(table)
         return holder
 
-    @classmethod
-    def _extract_from_ddl_alter(cls, stmt: Statement) -> StatementLineageHolder:
+    @staticmethod
+    def _extract_from_ddl_alter(stmt: Statement) -> StatementLineageHolder:
         holder = StatementLineageHolder()
         tables = []
         for t in stmt.tokens:
@@ -112,9 +112,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             holder.add_read(tables[1])
         return holder
 
-    @classmethod
+    @staticmethod
     def _extract_from_dml_merge(
-        cls,
         stmt: Statement,
         metadata_provider: MetaDataProvider,
     ) -> StatementLineageHolder:
@@ -144,10 +143,10 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 tgt_flag = False
             elif src_flag:
                 if isinstance(token, Identifier):
-                    if subqueries := cls.parse_subquery(token):
+                    if subqueries := SqlParseLineageAnalyzer.parse_subquery(token):
                         for sq in subqueries:
                             direct_source = SqlParseSubQuery.of(sq.query, sq.alias)
-                            holder |= cls._extract_from_dml(
+                            holder |= SqlParseLineageAnalyzer._extract_from_dml(
                                 sq.query,
                                 AnalyzerContext(cte=holder.cte, write={sq}),
                                 metadata_provider,
@@ -204,9 +203,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                     insert_flag = False
         return holder
 
-    @classmethod
+    @staticmethod
     def _extract_from_dml(
-        cls,
         token: TokenList,
         context: AnalyzerContext,
         metadata_provider: MetaDataProvider,
@@ -232,7 +230,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             if is_token_negligible(sub_token):
                 continue
 
-            for sq in cls.parse_subquery(sub_token):
+            for sq in SqlParseLineageAnalyzer.parse_subquery(sub_token):
                 # Collecting subquery on the way, hold on parsing until last
                 # so that each handler don't have to worry about what's inside subquery
                 subqueries.append(sq)
@@ -266,7 +264,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 next_handler.end_of_query_cleanup(holder)
         # By recursively extracting each subquery of the parent and merge, we're doing Depth-first search
         for sq in subqueries:
-            holder |= cls._extract_from_dml(
+            holder |= SqlParseLineageAnalyzer._extract_from_dml(
                 sq.query,
                 AnalyzerContext(cte=holder.cte, write={sq}),
                 metadata_provider,
@@ -275,19 +273,19 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         holder.expand_wildcard(metadata_provider)
         return holder
 
-    @classmethod
-    def parse_subquery(cls, token: TokenList) -> list[SubQuery]:
+    @staticmethod
+    def parse_subquery(token: TokenList) -> list[SubQuery]:
         result = []
         if isinstance(token, (Identifier, Function, Where, Values)):
             # usually SubQuery is an Identifier, but not all Identifiers are SubQuery
             # Function for CTE without AS keyword
-            result = cls._parse_subquery(token)
+            result = SqlParseLineageAnalyzer._parse_subquery(token)
         elif isinstance(token, IdentifierList):
             # IdentifierList for SQL89 style of JOIN or multiple CTEs, this is actually SubQueries
             result = reduce(
                 add,
                 [
-                    cls._parse_subquery(identifier)
+                    SqlParseLineageAnalyzer._parse_subquery(identifier)
                     for identifier in token.get_sublists()
                 ],
                 [],
@@ -297,9 +295,9 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             result = [SqlParseSubQuery.of(token, None)]
         return result
 
-    @classmethod
+    @staticmethod
     def _parse_subquery(
-        cls, token: Identifier | Function | Where | Values
+        token: Identifier | Function | Where | Values,
     ) -> list[SubQuery]:
         """
         convert SubQueryTuple to sqllineage.core.models.SubQuery

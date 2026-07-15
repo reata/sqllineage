@@ -322,9 +322,9 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
     def add_rename(self, src: Table, tgt: Table) -> None:
         self.go.add_edge_if_not_exist(src, tgt, EdgeType.RENAME)
 
-    @staticmethod
-    def of(holder: SubQueryLineageHolder) -> "StatementLineageHolder":
-        stmt_holder = StatementLineageHolder()
+    @classmethod
+    def of(cls, holder: SubQueryLineageHolder) -> "StatementLineageHolder":
+        stmt_holder = cls()
         stmt_holder.go = holder.go
         return stmt_holder
 
@@ -417,8 +417,8 @@ class SQLLineageHolder(ColumnLineageMixin):
             if isinstance(vertex, DATASET_CLASSES)
         }
 
-    @staticmethod
-    def of(metadata_provider, *args: StatementLineageHolder) -> "SQLLineageHolder":
+    @classmethod
+    def of(cls, metadata_provider, *args: StatementLineageHolder) -> "SQLLineageHolder":
         """
         To assemble multiple :class:`sqllineage.core.holders.StatementLineageHolder` into
         :class:`sqllineage.core.holders.SQLLineageHolder`
@@ -527,4 +527,4 @@ class SQLLineageHolder(ColumnLineageMixin):
                 == 0
             ):
                 ngo.drop_vertices(unresolved_col)
-        return SQLLineageHolder(ngo)
+        return cls(ngo)
