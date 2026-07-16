@@ -63,10 +63,9 @@ class Table:
             self.schema = schema
             self.raw_name = name if escaped else escape_identifier_name(name)
         self.alias = escape_identifier_name(kwargs.pop("alias", self.raw_name))
-        self._str_cache = f"{self.schema}.{self.raw_name}"
 
     def __str__(self):
-        return self._str_cache
+        return f"{self.schema}.{self.raw_name}"
 
     def __repr__(self):
         return "Table: " + str(self)
@@ -168,17 +167,11 @@ class Column:
         self.from_alias = kwargs.pop("from_alias", False)
 
     def __str__(self):
-        try:
-            return self._str_cache
-        except AttributeError:
-            p = self.parent
-            result = (
-                f"{p}.{self.raw_name}"
-                if p is not None and not isinstance(p, Path)
-                else self.raw_name
-            )
-            self._str_cache = result
-            return result
+        return (
+            f"{self.parent}.{self.raw_name}"
+            if self.parent is not None and not isinstance(self.parent, Path)
+            else f"{self.raw_name}"
+        )
 
     def __repr__(self):
         return "Column: " + str(self)
@@ -203,7 +196,6 @@ class Column:
     @parent.setter
     def parent(self, value: Path | Table | SubQuery):
         self._parent.add(value)
-        self.__dict__.pop("_str_cache", None)
 
     @property
     def parent_candidates(self) -> list[Path | Table | SubQuery]:
