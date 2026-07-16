@@ -19,34 +19,18 @@ class NetworkXGraphOperator(GraphOperator):
     def __init__(self, graph: nx.DiGraph = None) -> None:
         if graph is None:
             self.graph = nx.DiGraph()
-            self._tag_index: dict[str, set[Any]] = {}
-            self._canonical: dict[Any, Any] = {}
         else:
             self.graph = graph
-            self._tag_index = {}
-            self._canonical = {}
-            for v, attr in self.graph.nodes(data=True):
-                self._canonical[v] = v
-                for prop, val in attr.items():
-                    if val is True:
-                        self._tag_index.setdefault(prop, set()).add(v)
 
     def add_vertex_if_not_exist(self, vertex: Any, **props) -> None:
-        assert all(v is True for v in props.values()), "props values must be True"
         self.graph.add_node(vertex, **props)
-        canonical = self._canonical.setdefault(vertex, vertex)
-        for prop in props:
-            self._tag_index.setdefault(prop, set()).add(canonical)
 
     def retrieve_vertices_by_props(self, **props) -> list[Any]:
-        assert all(v is True for v in props.values()), "props values must be True"
-        if not props:
-            return list(self.graph.nodes())
-        result: set[Any] | None = None
-        for prop in props:
-            candidates = self._tag_index.get(prop, set())
-            result = candidates if result is None else result & candidates
-        return list(result or set())
+        vertices = []
+        for v, attr in self.graph.nodes(data=True):
+            if all(attr.get(prop) == val for prop, val in props.items()):
+                vertices.append(v)
+        return vertices
 
     def retrieve_source_vertices(self) -> list[Any]:
         return list(
@@ -70,22 +54,11 @@ class NetworkXGraphOperator(GraphOperator):
             self.graph,
             {vertex: {k: v for k, v in props.items()} for vertex in vertices},
         )
-        for prop, val in props.items():
-            if val is True:
-                tag_set = self._tag_index.setdefault(prop, set())
-                tag_set.update(self._canonical.get(v, v) for v in vertices)
-            else:
-                tag_set = self._tag_index.get(prop, set())
-                for vertex in vertices:
-                    tag_set.discard(self._canonical.get(vertex, vertex))
 
     def drop_vertices(self, *vertices) -> None:
         for vertex in vertices:
             if self.graph.has_node(vertex):
                 self.graph.remove_node(vertex)
-            canonical = self._canonical.pop(vertex, vertex)
-            for tag_set in self._tag_index.values():
-                tag_set.discard(canonical)
 
     def add_edge_if_not_exist(
         self, src_vertex: Any, tgt_vertex: Any, label: str, **props
@@ -136,12 +109,6 @@ class NetworkXGraphOperator(GraphOperator):
     def merge(self, other: GraphOperator) -> None:
         if isinstance(other, NetworkXGraphOperator):
             self.graph = nx.compose(self.graph, other.graph)
-            for v, c in other._canonical.items():
-                self._canonical.setdefault(v, c)
-            for prop, tag_set in other._tag_index.items():
-                self_tag_set = self._tag_index.setdefault(prop, set())
-                for v in tag_set:
-                    self_tag_set.add(self._canonical.get(v, v))
         else:
             raise TypeError(
                 "Expect other to be NetworkXGraphOperator, got " + str(type(other))

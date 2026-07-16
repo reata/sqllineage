@@ -24,47 +24,34 @@ class RustworkXGraphOperator(GraphOperator):
         if graph is None:
             self.graph = rx.PyDiGraph()
             self._vertex_to_index: dict[Any, int] = {}
-            self._tag_index: dict[str, set[Any]] = {}
         else:
             self.graph = graph
             # Rebuild vertex mapping from existing graph using actual node indices
             self._vertex_to_index = {}
-            self._tag_index = {}
             for node_idx in self.graph.node_indices():
                 node_data = self.graph[node_idx]
-                vertex = node_data["vertex"]
-                self._vertex_to_index[vertex] = node_idx
-                for prop, val in node_data.items():
-                    if prop != "vertex" and val is True:
-                        self._tag_index.setdefault(prop, set()).add(vertex)
+                self._vertex_to_index[node_data["vertex"]] = node_idx
 
     def add_vertex_if_not_exist(self, vertex: Any, **props) -> None:
-        assert all(v is True for v in props.values()), "props values must be True"
         if vertex in self._vertex_to_index:
             # Update existing node
             node_idx = self._vertex_to_index[vertex]
             node_data = self.graph[node_idx]
-            canonical = node_data["vertex"]
             node_data.update(props)
             self.graph[node_idx] = node_data
         else:
             # Add new node
-            canonical = vertex
             node_data = {"vertex": vertex, **props}
             node_idx = self.graph.add_node(node_data)
             self._vertex_to_index[vertex] = node_idx
-        for prop in props:
-            self._tag_index.setdefault(prop, set()).add(canonical)
 
     def retrieve_vertices_by_props(self, **props) -> list[Any]:
-        assert all(v is True for v in props.values()), "props values must be True"
-        if not props:
-            return [self.graph[i]["vertex"] for i in self.graph.node_indices()]
-        result: set[Any] | None = None
-        for prop in props:
-            candidates = self._tag_index.get(prop, set())
-            result = candidates if result is None else result & candidates
-        return list(result or set())
+        vertices = []
+        for node_idx in self.graph.node_indices():
+            node_data = self.graph[node_idx]
+            if all(node_data.get(prop) == val for prop, val in props.items()):
+                vertices.append(node_data["vertex"])
+        return vertices
 
     def retrieve_source_vertices(self) -> list[Any]:
         return [
@@ -96,19 +83,6 @@ class RustworkXGraphOperator(GraphOperator):
                 node_data = self.graph[node_idx]
                 node_data.update(props)
                 self.graph[node_idx] = node_data
-        for prop, val in props.items():
-            if val is True:
-                tag_set = self._tag_index.setdefault(prop, set())
-                for v in vertices:
-                    if v in self._vertex_to_index:
-                        canonical = self.graph[self._vertex_to_index[v]]["vertex"]
-                        tag_set.add(canonical)
-            else:
-                tag_set = self._tag_index.get(prop, set())
-                for v in vertices:
-                    if v in self._vertex_to_index:
-                        canonical = self.graph[self._vertex_to_index[v]]["vertex"]
-                        tag_set.discard(canonical)
 
     def drop_vertices(self, *vertices: Any) -> None:
         indices_to_remove = []
@@ -116,8 +90,6 @@ class RustworkXGraphOperator(GraphOperator):
             # remove from mapping and collect indices to remove
             if (idx := self._vertex_to_index.pop(vertex, None)) is not None:
                 indices_to_remove.append(idx)
-            for tag_set in self._tag_index.values():
-                tag_set.discard(vertex)
         self.graph.remove_nodes_from(indices_to_remove)
 
     def add_edge_if_not_exist(
@@ -233,12 +205,6 @@ class RustworkXGraphOperator(GraphOperator):
                 self_tgt_idx = index_mapping.get(tgt_idx, -1)
                 if not self.graph.has_edge(self_src_idx, self_tgt_idx):
                     self.graph.add_edge(self_src_idx, self_tgt_idx, edge_data)
-            for prop, tag_set in other._tag_index.items():
-                self_tag_set = self._tag_index.setdefault(prop, set())
-                for v in tag_set:
-                    if v in self._vertex_to_index:
-                        canonical = self.graph[self._vertex_to_index[v]]["vertex"]
-                        self_tag_set.add(canonical)
         else:
             raise TypeError(
                 "Expect other to be RustworkXGraphOperator, got " + str(type(other))
