@@ -52,7 +52,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
         self, sql: str, metadata_provider: MetaDataProvider
     ) -> StatementLineageHolder:
         # get rid of comments, which cause inconsistencies in sqlparse output
-        stmt = sqlparse.parse(str(sqlparse.format(sql, strip_comments=True)))[0]
+        stmt = sqlparse.parse(sqlparse.format(sql, strip_comments=True))[0]
         if (
             stmt.get_type() == "DELETE"
             or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"

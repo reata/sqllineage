@@ -52,11 +52,10 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         segments = self._list_specific_statement_segment(stripped)
         stmts = []
         for segment in segments:
+            self._segment_cache[segment.raw] = segment
             # Append trailing semicolon to match sqlparse split behavior, which
             # preserves the semicolon as part of the statement string.
-            stmt = segment.raw + ";"
-            self._segment_cache[stmt] = segment
-            stmts.append(stmt)
+            stmts.append(segment.raw + ";")
         return stmts
 
     @property
@@ -66,8 +65,8 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
     def analyze(
         self, sql: str, metadata_provider: MetaDataProvider
     ) -> StatementLineageHolder:
-        if sql in self._segment_cache:
-            statement_segments = [self._segment_cache[sql]]
+        if (cache_key := sql.rstrip(";")) in self._segment_cache:
+            statement_segments = [self._segment_cache[cache_key]]
         else:
             statement_segments = self._list_specific_statement_segment(sql)
         if len(statement_segments) == 0:
