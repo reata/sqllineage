@@ -274,3 +274,26 @@ FROM (SELECT tab_b.col_b AS col_a
             ),
         ],
     )
+
+
+def test_select_unqualified_column_from_join_is_unresolved():
+    """An unqualified column selected from a JOIN has no resolved parent (qualifier=None).
+
+    Without schema metadata, sqllineage cannot determine which of the joined tables
+    owns col1, so Column.parent must remain None rather than picking an arbitrary
+    table.  This pins the behaviour that Column.parent returns None when
+    len(self._parent) != 1.
+    """
+    sql = """INSERT INTO tgt
+SELECT col1
+FROM t1
+INNER JOIN t2 ON t1.id = t2.id"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", None),
+                ColumnQualifierTuple("col1", "tgt"),
+            )
+        ],
+    )

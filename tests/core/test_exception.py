@@ -1,6 +1,3 @@
-import os
-from unittest.mock import patch
-
 import pytest
 
 from sqllineage import SQLPARSE_DIALECT
@@ -54,13 +51,4 @@ def test_syntax_warning_no_semicolon_in_tsql():
             """SELECT * FROM foo
 SELECT * FROM bar""",
             dialect="tsql",
-        )._eval()
-
-
-@patch.dict(os.environ, {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
-def test_user_warning_enable_tsql_no_semicolon_with_other_dialect():
-    with pytest.warns(UserWarning):
-        LineageRunner(
-            """SELECT * FROM foo;
-SELECT * FROM bar""",
         )._eval()

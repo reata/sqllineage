@@ -24,13 +24,12 @@ class SourceHandlerMixin:
                     raise SQLLineageException
                 tgt_tbl = next(iter(holder.write))
                 lateral_column_aliases: dict[str, list[Column]] = {}
+                alias_mapping = holder.get_alias_mapping_from_table_group(tbl_grp)
                 for idx, tgt_col_from_query in enumerate(col_grp):
                     tgt_col_from_query.parent = tgt_tbl
                     tgt_col_resolved = tgt_col_from_query
                     src_cols_resolved = []
-                    for src_col in tgt_col_from_query.to_source_columns(
-                        holder.get_alias_mapping_from_table_group(tbl_grp),
-                    ):
+                    for src_col in tgt_col_from_query.to_source_columns(alias_mapping):
                         if len(write_columns := holder.write_columns) == len(col_grp):
                             # example query: create view test (col3) select col1 as col2 from tab
                             # without write_columns = [col3] information, by default src_col = col1 and tgt_col = col2

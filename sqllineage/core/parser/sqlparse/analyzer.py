@@ -13,6 +13,7 @@ from sqlparse.sql import (
     Values,
     Where,
 )
+from sqlparse.tokens import Punctuation
 
 from sqllineage import SQLPARSE_DIALECT
 from sqllineage.core.analyzer import LineageAnalyzer
@@ -30,7 +31,6 @@ from sqllineage.core.parser.sqlparse.utils import (
     is_token_negligible,
 )
 from sqllineage.utils.entities import AnalyzerContext
-from sqllineage.utils.helpers import trim_comment
 
 
 class SqlParseLineageAnalyzer(LineageAnalyzer):
@@ -39,11 +39,20 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
     PARSER_NAME = "sqlparse"
     SUPPORTED_DIALECTS = [SQLPARSE_DIALECT]
 
+    @property
+    def statements(self) -> list[str]:
+        return [
+            s.value
+            for s in sqlparse.parse(self._sql.strip())
+            if (first_token := s.token_first(skip_cm=True))
+            and not (first_token.ttype == Punctuation and first_token.value == ";")
+        ]
+
     def analyze(
         self, sql: str, metadata_provider: MetaDataProvider
     ) -> StatementLineageHolder:
         # get rid of comments, which cause inconsistencies in sqlparse output
-        stmt = sqlparse.parse(trim_comment(sql))[0]
+        stmt = sqlparse.parse(str(sqlparse.format(sql, strip_comments=True)))[0]
         if (
             stmt.get_type() == "DELETE"
             or stmt.token_first(skip_cm=True).normalized == "TRUNCATE"

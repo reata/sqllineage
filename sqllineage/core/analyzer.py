@@ -12,6 +12,21 @@ class LineageAnalyzer(ABC):
     PARSER_NAME: str = ""
     SUPPORTED_DIALECTS: list[str] = []
 
+    def __init__(self, sql: str, **_):
+        """
+        :param sql: a string representation of single or multiple SQL statements
+        """
+        self._sql = sql
+
+    @property
+    @abstractmethod
+    def statements(self) -> list[str]:
+        """
+        Split the raw SQL into individual statements.
+        :return: list of individual statement strings
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def analyze(
         self, sql: str, metadata_provider: MetaDataProvider

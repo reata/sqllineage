@@ -188,7 +188,10 @@ class Column:
 
     @property
     def parent(self) -> Path | Table | SubQuery | None:
-        return next(iter(self._parent)) if len(self._parent) == 1 else None
+        if len(self._parent) == 1:
+            for p in self._parent:
+                return p
+        return None
 
     @parent.setter
     def parent(self, value: Path | Table | SubQuery):

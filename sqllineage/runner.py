@@ -4,7 +4,6 @@ from collections import OrderedDict
 from typing import Any
 
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
-from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SQLLineageHolder
 from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.core.metadata_provider import MetaDataProvider
@@ -14,7 +13,6 @@ from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.utils.constant import LineageLevel
-from sqllineage.utils.helpers import split, trim_comment
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +129,7 @@ Target Tables:
         """
         a list of SQL statements.
         """
-        return [trim_comment(s) for s in self._stmt]
+        return self._stmt
 
     @lazy_property
     def source_tables(self) -> list[Table]:
@@ -184,21 +182,13 @@ Target Tables:
 
     def _eval(self):
         analyzer = (
-            SqlParseLineageAnalyzer()
+            SqlParseLineageAnalyzer(self._sql)
             if self._dialect == SQLPARSE_DIALECT
             else SqlFluffLineageAnalyzer(
-                self._file_path, self._dialect, self._silent_mode
+                self._sql, self._file_path, self._dialect, self._silent_mode
             )
         )
-        if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect == "tsql":
-            self._stmt = analyzer.split_tsql(self._sql.strip())
-        else:
-            if SQLLineageConfig.TSQL_NO_SEMICOLON and self._dialect != "tsql":
-                warnings.warn(
-                    f"Dialect={self._dialect}, TSQL_NO_SEMICOLON will be ignored unless dialect is tsql"
-                )
-            self._stmt = split(self._sql.strip())
-
+        self._stmt = analyzer.statements
         with self._metadata_provider.session() as session:
             stmt_holders = []
             for stmt in self._stmt:
