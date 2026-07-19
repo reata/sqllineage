@@ -12,14 +12,16 @@ def escape_identifier_name(name: str):
     Reference: https://stackoverflow.com/a/19933159
     """
     quote_chars = ["`", '"', "'"]
-    if any(quote_char in name for quote_char in quote_chars):
+    if name.startswith("[") and name.endswith("]"):
+        # tsql allows quoted identifier with square brackets, see reference
+        # https://learn.microsoft.com/en-us/sql/relational-databases/databases/database-identifiers?view=sql-server-ver16#classes-of-identifiers
+        # check brackets first so a bracketed identifier containing a quote char
+        # (e.g. [O'Brien]) is still correctly unquoted
+        return name.strip("[]")
+    elif any(quote_char in name for quote_char in quote_chars):
         for quote_char in quote_chars:
             name = name.strip(quote_char)
         return name
-    elif name.startswith("[") and name.endswith("]"):
-        # tsql allows quoted identifier with square brackets, see reference
-        # https://learn.microsoft.com/en-us/sql/relational-databases/databases/database-identifiers?view=sql-server-ver16#classes-of-identifiers
-        return name.strip("[]")
     else:
         return name.lower()
 
