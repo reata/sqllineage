@@ -169,6 +169,37 @@ def list_subqueries(segment: BaseSegment) -> list[SubQueryTuple]:
                                     else None
                                 )
                                 subquery.append(SubQueryTuple(bracketed_segment, alias))
+                        # subquery living in the ELSE branch of a CASE expression
+                        if else_clause := case_expression.get_child("else_clause"):
+                            if else_expression := else_clause.get_child("expression"):
+                                for bracketed in else_expression.get_children(
+                                    "bracketed"
+                                ):
+                                    if is_subquery(bracketed):
+                                        subquery.append(
+                                            SubQueryTuple(
+                                                extract_innermost_bracketed(bracketed),
+                                                None,
+                                            )
+                                        )
+                    else:
+                        # scalar subquery used directly as a projected column,
+                        # e.g. SELECT (SELECT max(x) FROM b) AS m FROM a
+                        for bracketed in expression.get_children("bracketed"):
+                            if is_subquery(bracketed):
+                                alias_expression = select_clause_element.get_child(
+                                    "alias_expression"
+                                )
+                                alias = (
+                                    extract_identifier(alias_expression)
+                                    if alias_expression
+                                    else None
+                                )
+                                subquery.append(
+                                    SubQueryTuple(
+                                        extract_innermost_bracketed(bracketed), alias
+                                    )
+                                )
                 elif function := select_clause_element.get_child("function"):
                     for bracketed in function.recursive_crawl("bracketed"):
                         if is_subquery(bracketed):

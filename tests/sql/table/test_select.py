@@ -197,6 +197,21 @@ WHERE col1 IN (SELECT max(col1) FROM tab2)""",
     )
 
 
+def test_select_scalar_subquery_in_projection():
+    assert_table_lineage_equal(
+        "SELECT (SELECT max(col1) FROM tab1) AS c1, col2 FROM tab2",
+        {"tab1", "tab2"},
+    )
+
+
+def test_select_subquery_in_case_else():
+    assert_table_lineage_equal(
+        "SELECT CASE WHEN col1 = 1 THEN col2 "
+        "ELSE (SELECT max(col3) FROM tab2) END AS c FROM tab1",
+        {"tab1", "tab2"},
+    )
+
+
 def test_select_subquery_in_function():
     assert_table_lineage_equal(
         "SELECT TO_DATE((SELECT MIN(dt) FROM tab1))",
