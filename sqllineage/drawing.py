@@ -81,9 +81,9 @@ class SQLLineageApp:
                     request_body = environ["wsgi.input"].read(request_body_size)
                     payload = json.loads(request_body)
                     for param in ["d", "f"]:
-                        if param in payload and not str(
-                            Path(payload[param]).absolute()
-                        ).startswith(str(Path(self.root_path).absolute())):
+                        if param in payload and not Path(
+                            payload[param]
+                        ).resolve().is_relative_to(Path(self.root_path).resolve()):
                             return self.handle_403(start_response)
                     data = self.routes[path_info](payload)
                     return self.handle_200_json(start_response, data)

@@ -66,6 +66,9 @@ def test_handler():
     assert container.status.startswith(str(HTTPStatus.FORBIDDEN.value))
     mock_request("POST", "/directory", {"d": "/"})
     assert container.status.startswith(str(HTTPStatus.FORBIDDEN.value))
+    # a sibling directory that merely shares the root's string prefix is not inside it
+    mock_request("POST", "/directory", {"d": SQLLineageConfig.DIRECTORY + "_evil"})
+    assert container.status.startswith(str(HTTPStatus.FORBIDDEN.value))
     # 404
     mock_request("GET", "/non-exist-resource")
     assert container.status.startswith(str(HTTPStatus.NOT_FOUND.value))
