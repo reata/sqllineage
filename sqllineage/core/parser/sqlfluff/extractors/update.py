@@ -55,7 +55,18 @@ class UpdateExtractor(BaseExtractor):
 
             if segment.type == "set_clause_list":
                 for set_clause in segment.get_children("set_clause"):
-                    column_references = set_clause.get_children("column_reference")
+                    column_references = list(
+                        set_clause.get_children("column_reference")
+                    )
+                    if len(column_references) == 1:
+                        # tsql wraps the RHS of an assignment in an `expression` segment
+                        if expression := set_clause.get_child("expression"):
+                            expr_children = list_child_segments(expression)
+                            if (
+                                len(expr_children) == 1
+                                and expr_children[0].type == "column_reference"
+                            ):
+                                column_references.append(expr_children[0])
                     if len(column_references) == 2:
                         tgt_cqt = extract_column_qualifier(column_references[0])
                         src_cqt = extract_column_qualifier(column_references[1])
