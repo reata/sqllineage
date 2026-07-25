@@ -159,3 +159,15 @@ def test_column_update_with_subquery():
         ],
         test_sqlparse=False,
     )
+
+
+def test_column_update_tsql_alias_target_column():
+    # tsql wraps the assignment RHS in an `expression` segment, so the
+    # source column of `SET t.c = s.c` used to be dropped
+    sql = "UPDATE t SET t.c = s.c FROM tab1 t JOIN tab2 s ON t.id = s.id"
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("c", "tab2"), ColumnQualifierTuple("c", "tab1"))],
+        dialect="tsql",
+        test_sqlparse=False,
+    )

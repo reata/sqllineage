@@ -46,7 +46,20 @@ class MergeExtractor(BaseExtractor):
                             for set_clause in set_clause_list.get_children(
                                 "set_clause"
                             ):
-                                columns = set_clause.get_children("column_reference")
+                                columns = list(
+                                    set_clause.get_children("column_reference")
+                                )
+                                if len(columns) == 1:
+                                    # tsql wraps the RHS of an assignment in an
+                                    # `expression` segment
+                                    if expression := set_clause.get_child("expression"):
+                                        expr_children = list_child_segments(expression)
+                                        if (
+                                            len(expr_children) == 1
+                                            and expr_children[0].type
+                                            == "column_reference"
+                                        ):
+                                            columns.append(expr_children[0])
                                 if len(columns) == 2:
                                     src_col = tgt_col = None
                                     if src_cqt := extract_column_qualifier(columns[1]):

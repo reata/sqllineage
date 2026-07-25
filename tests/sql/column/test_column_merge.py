@@ -123,3 +123,16 @@ WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v_max)"""
         dialect="tsql",
         test_sqlparse=False,
     )
+
+
+def test_merge_into_update_tsql():
+    # tsql wraps the assignment RHS in an `expression` segment, so the
+    # UPDATE SET source column of a MERGE used to be dropped
+    sql = """MERGE INTO target USING src ON target.id = src.id
+WHEN MATCHED THEN UPDATE SET target.v = src.v"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target"))],
+        dialect="tsql",
+        test_sqlparse=False,
+    )
