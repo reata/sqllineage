@@ -35,6 +35,12 @@ def test_select_with_schema_in_bracket(dialect: str):
     )
 
 
+@pytest.mark.parametrize("dialect", ["tsql"])
+def test_select_with_bracket_identifier_containing_quote(dialect: str):
+    # a bracketed identifier that contains a quote char must still be unquoted
+    assert_table_lineage_equal("SELECT * FROM [O'Brien]", {"O'Brien"}, dialect=dialect)
+
+
 @pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_select_left_semi_join(dialect: str):
     assert_table_lineage_equal(
