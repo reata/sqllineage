@@ -31,6 +31,7 @@ User can instantiate DummyMetaDataProvider with metadata dict of their own inste
     main.foo.col1 <- main.bar.col1
     main.foo.col2 <- main.bar.col2
     >>> sql2 = "insert into main.foo select * from main.baz"
+    >>> LineageRunner(sql2, metadata_provider=provider).print_column_lineage()
     main.foo.* <- main.baz.*
 
 DummyMetaDataProvider is mostly used for testing purposes. The demo above shows that when there is another SQL query like

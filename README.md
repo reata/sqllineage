@@ -76,14 +76,14 @@ Statement #1: insert into db1.table1 select * from db2.table2;
     table read: [Table: db2.table2]
     table write: [Table: db1.table1]
     table cte: []
-    table rename: []
     table drop: []
+    table rename: []
 Statement #2: insert into db3.table3 select * from db1.table1;
     table read: [Table: db1.table1]
     table write: [Table: db3.table3]
     table cte: []
-    table rename: []
     table drop: []
+    table rename: []
 ==========
 Summary:
 Statements(#): 2
@@ -140,7 +140,7 @@ FROM bar a
          LEFT JOIN (SELECT bar_id, sum(col3) AS col3_sum
                     FROM qux
                     GROUP BY bar_id) c
-                   ON a.id = sq.bar_id
+                   ON a.id = c.bar_id
          CROSS JOIN quux d;
 
 INSERT INTO corge
@@ -177,14 +177,14 @@ Suppose all the tables are created in sqlite database with a file called `db.db`
 table `quux` has columns `col5` and `col6` and `baz` has column `col4`. 
 ```shell
 sqlite3 db.db 'CREATE TABLE IF NOT EXISTS baz (bar_id int, col1 int, col4 int)';
-sqlite3 db.db 'CREATE TABLE IF NOT EXISTS quux (quux_id int, col5 int, col6 int)';
+sqlite3 db.db 'CREATE TABLE IF NOT EXISTS quux (col5 int, col6 int)';
 ```
 
 Now given the same SQL, column lineage is fully resolved.
 ```shell
 $ SQLLINEAGE_DEFAULT_SCHEMA=main sqllineage -f test.sql -l column --sqlalchemy_url=sqlite:///db.db
 main.corge.col1 <- main.foo.col1 <- main.bar.col1
-main.corge.col2 <- main.foo.col2 <- main.bar.col1
+main.corge.col2 <- main.foo.col2 <- main.baz.col1
 main.corge.col2 <- main.grault.col2
 main.foo.col3 <- c.col3_sum <- main.qux.col3
 main.foo.col4 <- main.baz.col4
