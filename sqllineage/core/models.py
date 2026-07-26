@@ -63,9 +63,11 @@ class Table:
             self.schema = schema
             self.raw_name = name if escaped else escape_identifier_name(name)
         self.alias = escape_identifier_name(kwargs.pop("alias", self.raw_name))
+        self._str_cache = f"{self.schema}.{self.raw_name}"
+        self._hash_cache = hash(self._str_cache)
 
     def __str__(self):
-        return f"{self.schema}.{self.raw_name}"
+        return self._str_cache
 
     def __repr__(self):
         return "Table: " + str(self)
@@ -74,7 +76,7 @@ class Table:
         return isinstance(other, Table) and str(self) == str(other)
 
     def __hash__(self):
-        return hash(str(self))
+        return self._hash_cache
 
     @staticmethod
     def of(table: Any) -> "Table":
@@ -167,11 +169,17 @@ class Column:
         self.from_alias = kwargs.pop("from_alias", False)
 
     def __str__(self):
-        return (
-            f"{self.parent}.{self.raw_name}"
-            if self.parent is not None and not isinstance(self.parent, Path)
-            else f"{self.raw_name}"
-        )
+        try:
+            return self._str_cache
+        except AttributeError:
+            p = self.parent
+            result = (
+                f"{p}.{self.raw_name}"
+                if p is not None and not isinstance(p, Path)
+                else self.raw_name
+            )
+            self._str_cache = result
+            return result
 
     def __repr__(self):
         return "Column: " + str(self)
@@ -184,7 +192,11 @@ class Column:
         )
 
     def __hash__(self):
-        return hash(str(self))
+        try:
+            return self._hash_cache
+        except AttributeError:
+            result = self._hash_cache = hash(str(self))
+            return result
 
     @property
     def parent(self) -> Path | Table | SubQuery | None:
@@ -196,6 +208,8 @@ class Column:
     @parent.setter
     def parent(self, value: Path | Table | SubQuery):
         self._parent.add(value)
+        self.__dict__.pop("_str_cache", None)
+        self.__dict__.pop("_hash_cache", None)
 
     @property
     def parent_candidates(self) -> list[Path | Table | SubQuery]:
