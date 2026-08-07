@@ -18,6 +18,7 @@ from sqllineage import (
 from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.core.metadata.sqlalchemy import SQLAlchemyMetaDataProvider
 from sqllineage.drawing import draw_lineage_graph
+from sqllineage.exceptions import AmbiguousNode
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import extract_file_path_from_args, extract_sql_from_args
@@ -55,6 +56,15 @@ def main(args=None) -> None:
         help="lineage level, column or table, default at table level",
         choices=[LineageLevel.TABLE, LineageLevel.COLUMN],
         default=LineageLevel.TABLE,
+    )
+    parser.add_argument(
+        "--node",
+        help="restrict column level lineage to paths touching this column/table "
+        "identifier, e.g. col1, tab1.col1, db.tab1.col1, or tab1. "
+        "Only valid together with -l/--level column",
+        type=str,
+        default=None,
+        metavar="<identifier>",
     )
     parser.add_argument(
         "-g",
@@ -110,6 +120,8 @@ def main(args=None) -> None:
     )
     if args.e and args.f:
         warnings.warn("Both -e and -f options are specified. -e option will be ignored")
+    if args.node and args.level != LineageLevel.COLUMN:
+        parser.error("--node is only valid together with -l/--level column")
     if args.f or args.e:
         sql = extract_sql_from_args(args)
         file_path = extract_file_path_from_args(args)
@@ -129,7 +141,10 @@ def main(args=None) -> None:
         if args.graph_visualization:
             runner.draw()
         elif args.level == LineageLevel.COLUMN:
-            runner.print_column_lineage()
+            try:
+                runner.print_column_lineage(node=args.node)
+            except AmbiguousNode as e:
+                parser.error(str(e))
         else:
             runner.print_table_lineage()
     elif args.graph_visualization:
