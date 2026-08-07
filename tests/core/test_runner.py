@@ -5,7 +5,7 @@ import pytest
 
 from sqllineage.cli import main
 from sqllineage.config import SQLLineageConfig
-from sqllineage.core.models import SubQuery, Table
+from sqllineage.core.models import Column, SubQuery, Table
 from sqllineage.exceptions import AmbiguousNode
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
@@ -124,6 +124,32 @@ def test_node_filter_none_unchanged():
     lr1 = LineageRunner(_MULTI_COL_SQL)
     lr2 = LineageRunner(_MULTI_COL_SQL)
     assert lr1.get_column_lineage() == lr2.get_column_lineage(node=None)
+
+
+def test_node_filter_by_column_object():
+    lr = LineageRunner(_MULTI_COL_SQL)
+    lr._eval()
+    col = Column("col1")
+    col.parent = Table("tab2")
+    result = lr.get_column_lineage(node=col)
+    assert len(result) > 0
+    assert all(col in path for path in result)
+
+
+def test_node_filter_cone_with_no_reachable_target_returns_empty():
+    # sub.c is selected from tb but never projected into ta, so it has no
+    # path to a real table target once subquery-ending paths are pruned
+    sql = "insert into ta select b from (select b, c from tb) sub"
+    lr = LineageRunner(sql)
+    assert lr.get_column_lineage(node="tb.c") == []
+
+
+def test_node_filter_exclude_subquery_columns_drops_collapsed_path():
+    # sub.b has no upstream column (literal value), so once the subquery
+    # column is stripped, the remaining path is a single column and dropped
+    sql = "insert into ta select b from (select 1 as b) sub"
+    lr = LineageRunner(sql)
+    assert lr.get_column_lineage(node="ta.b", exclude_subquery_columns=True) == []
 
 
 def test_respect_sqlfluff_configuration_file():
