@@ -154,24 +154,34 @@ Target Tables:
 
     @lazy_method
     def get_column_lineage(
-        self, exclude_path_ending_in_subquery=True, exclude_subquery_columns=False
+        self,
+        exclude_path_ending_in_subquery=True,
+        exclude_subquery_columns=False,
+        node: str | Column | Table | None = None,
     ) -> list[tuple[Column, Column]]:
         """
         a list of column tuple :class:`sqllineage.models.Column`
+
+        :param node: restrict the result to paths that touch this column/table,
+               e.g. ``col1``, ``tab1.col1``, ``db.tab1.col1``, or a bare table
+               name ``tab1``. Raises :class:`sqllineage.exceptions.AmbiguousNode`
+               if more than one column matches.
         """
         # sort by target column, and then source column
         return sorted(
             self._sql_holder.get_column_lineage(
-                exclude_path_ending_in_subquery, exclude_subquery_columns
+                exclude_path_ending_in_subquery, exclude_subquery_columns, node
             ),
             key=lambda x: (str(x[-1]), str(x[0])),
         )
 
-    def print_column_lineage(self) -> None:
+    def print_column_lineage(self, node: str | Column | Table | None = None) -> None:
         """
         print column level lineage to stdout
+
+        :param node: see :meth:`get_column_lineage`
         """
-        for path in self.get_column_lineage():
+        for path in self.get_column_lineage(node=node):
             print(" <- ".join(str(col) for col in reversed(path)))
 
     def print_table_lineage(self) -> None:

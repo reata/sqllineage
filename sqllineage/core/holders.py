@@ -4,27 +4,79 @@ from sqllineage.core.graph import get_graph_operator_class
 from sqllineage.core.graph_operator import GraphOperator
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
+from sqllineage.exceptions import AmbiguousNode
 from sqllineage.utils.constant import EdgeDirection, EdgeTag, EdgeType, NodeTag
+from sqllineage.utils.helpers import escape_identifier_name
 
 DATASET_CLASSES = (Path, Table)
 
 
+def _resolve_node(node: str | Column | Table, columns: list[Column]) -> list[Column]:
+    """
+    Match ``node`` against the full set of column vertices in the graph.
+
+    ``node`` can be a :class:`Column`, a :class:`Table` (matches every column of
+    that table), or a string identifier: ``col1``, ``tab1.col1``,
+    ``db.tab1.col1``, or a bare table name ``tab1``.
+    """
+    matches: list[Column] = []
+    if isinstance(node, Column):
+        matches = [c for c in columns if c == node]
+    elif isinstance(node, Table):
+        target = escape_identifier_name(node.raw_name)
+        matches = [
+            c
+            for c in columns
+            if isinstance(c.parent, Table) and c.parent.raw_name == target
+        ]
+    else:
+        parts = [escape_identifier_name(part) for part in node.split(".")]
+        if len(parts) == 1:
+            token = parts[0]
+            matches = [c for c in columns if c.raw_name == token]
+            matches += [
+                c
+                for c in columns
+                if isinstance(c.parent, Table)
+                and c.parent.raw_name == token
+                and c not in matches
+            ]
+        else:
+            col_name, table_tail = parts[-1], parts[:-1]
+            for c in columns:
+                if c.raw_name != col_name or c.parent is None:
+                    continue
+                parent_parts = str(c.parent).split(".")
+                if parent_parts[-len(table_tail) :] == table_tail:
+                    matches.append(c)
+    return matches
+
+
 class ColumnLineageMixin:
+    go: GraphOperator  # For mypy attribute checking; set by including classes
+
     def get_column_lineage(
-        self, exclude_path_ending_in_subquery=True, exclude_subquery_columns=False
+        self,
+        exclude_path_ending_in_subquery=True,
+        exclude_subquery_columns=False,
+        node: str | Column | Table | None = None,
     ) -> set[tuple[Column, ...]]:
         """
         :param exclude_path_ending_in_subquery:  exclude_subquery rename to exclude_path_ending_in_subquery
                exclude column from SubQuery in the ending path
         :param exclude_subquery_columns: exclude column from SubQuery in the path.
+        :param node: restrict the result to paths that touch this column/table.
+               See :func:`_resolve_node` for accepted forms. Raises
+               :class:`sqllineage.exceptions.AmbiguousNode` if more than one
+               column matches.
 
         return a list of column tuple :class:`sqllineage.models.Column`
         """
-        self.go: GraphOperator  # For mypy attribute checking
         # filter all the column node in the graph
-        column_graph = self.go.get_sub_graph(
-            *[v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)]
-        )
+        all_columns = [
+            v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)
+        ]
+        column_graph = self.go.get_sub_graph(*all_columns)
         source_columns = column_graph.retrieve_source_vertices()
         target_columns = column_graph.retrieve_target_vertices()
         # handle column-level self-loop case like table-level
@@ -35,22 +87,98 @@ class ColumnLineageMixin:
                     column_group.append(column)
         # if a column lineage path ends at SubQuery, then it should be pruned
         if exclude_path_ending_in_subquery:
-            target_columns = {
-                node for node in target_columns if isinstance(node.parent, Table)
-            }
+            target_columns = [
+                col for col in target_columns if isinstance(col.parent, Table)
+            ]
+        source_column_set = set(source_columns)
+        target_column_set = set(target_columns)
+
+        if node is None:
+            raw_paths = self._all_paths(source_column_set, target_column_set)
+        else:
+            matches = _resolve_node(node, all_columns)
+            if len(matches) > 1:
+                raise AmbiguousNode(
+                    f"node {node!r} matches {len(matches)} columns", matches
+                )
+            if not matches:
+                return set()
+            raw_paths = self._cone_paths(
+                matches[0], source_column_set, target_column_set
+            )
+
         columns = set()
-        for source, target in itertools.product(source_columns, target_columns):
-            simple_paths = self.go.list_lineage_paths(source, target)
-            for path in simple_paths:
-                if exclude_subquery_columns:
-                    path = [
-                        node for node in path if not isinstance(node.parent, SubQuery)
-                    ]
-                    if len(path) > 1:
-                        columns.add(tuple(path))
-                else:
-                    columns.add(tuple(path))
+        for path in raw_paths:
+            if exclude_subquery_columns:
+                path = [n for n in path if not isinstance(n.parent, SubQuery)]
+                if len(path) <= 1:
+                    continue
+            columns.add(tuple(path))
         return columns
+
+    def _all_paths(
+        self, source_columns: set[Column], target_columns: set[Column]
+    ) -> list[list[Column]]:
+        """Naive path enumeration: every source/target pair, no filtering."""
+        return [
+            path
+            for source, target in itertools.product(source_columns, target_columns)
+            for path in self.go.list_lineage_paths(source, target)
+        ]
+
+    def _cone_paths(
+        self, seed: Column, source_columns: set[Column], target_columns: set[Column]
+    ) -> list[list[Column]]:
+        """
+        Path enumeration restricted to the subgraph around ``seed``: only
+        ancestors/descendants of ``seed`` are considered, so path enumeration
+        runs on a much smaller subgraph than the full lineage graph.
+        """
+        ancestors = self._lineage_neighbors(seed, EdgeDirection.IN)
+        descendants = self._lineage_neighbors(seed, EdgeDirection.OUT)
+        true_sources = ancestors & source_columns
+        true_targets = descendants & target_columns
+        if seed in source_columns:
+            true_sources.add(seed)
+        if seed in target_columns:
+            true_targets.add(seed)
+        if not true_sources or not true_targets:
+            return []
+
+        up_graph = self.go.get_sub_graph(*(ancestors | {seed}))
+        down_graph = self.go.get_sub_graph(*(descendants | {seed}))
+        up_paths = [[seed]] if seed in true_sources else []
+        up_paths += [
+            path
+            for source in true_sources - {seed}
+            for path in up_graph.list_lineage_paths(source, seed)
+        ]
+        down_paths = [[seed]] if seed in true_targets else []
+        down_paths += [
+            path
+            for target in true_targets - {seed}
+            for path in down_graph.list_lineage_paths(seed, target)
+        ]
+        return [up + down[1:] for up in up_paths for down in down_paths]
+
+    def _lineage_neighbors(self, seed: Column, direction: str) -> set[Column]:
+        """BFS over LINEAGE edges from ``seed``, returning ancestors or descendants."""
+        seen: set[Column] = set()
+        frontier = [seed]
+        while frontier:
+            next_frontier = []
+            for vertex in frontier:
+                for edge in self.go.retrieve_edges_by_vertex(
+                    vertex, direction, EdgeType.LINEAGE
+                ):
+                    neighbor = (
+                        edge.source if direction == EdgeDirection.IN else edge.target
+                    )
+                    if neighbor != seed and neighbor not in seen:
+                        seen.add(neighbor)
+                        next_frontier.append(neighbor)
+            frontier = next_frontier
+        return seen
 
 
 class SubQueryLineageHolder(ColumnLineageMixin):
