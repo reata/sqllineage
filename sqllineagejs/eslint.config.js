@@ -2,10 +2,9 @@ import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
-import importPlugin from 'eslint-plugin-import'
+import importPlugin from 'eslint-plugin-import-x'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
-/* eslint import/no-unused-modules: "off" */
 export default defineConfig([
   globalIgnores(['build']),
   {
@@ -15,7 +14,7 @@ export default defineConfig([
     },
     extends: [
       js.configs.recommended,
-      reactHooks.configs['recommended-latest'],
+      reactHooks.configs.flat['recommended-latest'],
       reactRefresh.configs.vite,
     ],
     languageOptions: {
@@ -29,7 +28,6 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
-      'import/no-unused-modules': [1, { unusedExports: true }],
       'import/order': [
         'warn',
         {
