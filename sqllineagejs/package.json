@@ -12,7 +12,7 @@
     "@mui/x-tree-view": "^8.7.0",
     "@reduxjs/toolkit": "^2.12.0",
     "cytoscape": "^3.34.1",
-    "cytoscape-dagre": "^2.3.3",
+    "cytoscape-dagre": "^4.0.0",
     "react": "^19.2.8",
     "react-cytoscapejs": "^2.0.0",
     "react-dom": "^19.2.8",
