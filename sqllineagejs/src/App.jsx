@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   AppBar,
   Box,
@@ -34,8 +34,6 @@ import { DAG } from "./features/editor/DAG";
 import { selectEditor } from "./features/editor/editorSlice";
 import { BASE_URL } from "./config.js";
 
-let isResizing = null;
-
 const dialects = {
   sqlfluff: [
     "ansi",
@@ -70,7 +68,10 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = React.useState(true);
   const [drawerWidth, setDrawerWidth] = React.useState(18);
   const [dialectMenuAnchor, setDialectMenuAnchor] = React.useState(null);
-  const [dialectSelected, setDialectSelected] = React.useState("ansi");
+  const [dialectSelected, setDialectSelected] = React.useState(
+    () => localStorage.getItem("dialect") ?? "ansi",
+  );
+  const isResizing = React.useRef(false);
 
   const height = "90vh";
   const width = useMemo(() => {
@@ -83,11 +84,11 @@ export default function App() {
     e.preventDefault();
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-    isResizing = true;
+    isResizing.current = true;
   };
 
   const handleMouseMove = (e) => {
-    if (!isResizing) {
+    if (!isResizing.current) {
       return;
     }
     let width = (e.clientX * 100) / window.innerWidth;
@@ -99,10 +100,10 @@ export default function App() {
   };
 
   const handleMouseUp = () => {
-    if (!isResizing) {
+    if (!isResizing.current) {
       return;
     }
-    isResizing = false;
+    isResizing.current = false;
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
@@ -115,13 +116,6 @@ export default function App() {
     }
     setDialectMenuAnchor(null);
   };
-
-  useEffect(() => {
-    let dialect = localStorage.getItem("dialect");
-    if (dialect !== null) {
-      setDialectSelected(dialect);
-    }
-  }, []);
 
   return (
     <BrowserRouter basename={BASE_URL}>
