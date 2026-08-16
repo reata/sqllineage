@@ -1,0 +1,63 @@
+# Dependabot configuration
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+version: 2
+
+updates:
+  # Frontend (npm): grouped weekly version updates + grouped security updates
+  - package-ecosystem: npm
+    directory: /sqllineagejs
+    schedule:
+      interval: weekly
+      day: friday
+      time: "18:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    groups:
+      version-updates:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # Python library (pip): security updates only, version updates disabled as sqllineage is a library
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: friday
+      time: "18:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 0
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # GitHub Actions: grouped weekly version updates + grouped security updates
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: friday
+      time: "18:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    groups:
+      version-updates:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
