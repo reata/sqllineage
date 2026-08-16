@@ -10,14 +10,14 @@
     "@mui/icons-material": "^7.2.0",
     "@mui/material": "^7.2.0",
     "@mui/x-tree-view": "^8.7.0",
-    "@reduxjs/toolkit": "^2.8.2",
-    "cytoscape": "^3.32.0",
+    "@reduxjs/toolkit": "^2.12.0",
+    "cytoscape": "^3.34.1",
     "cytoscape-dagre": "^2.3.3",
-    "react": "^19.1.0",
+    "react": "^19.2.8",
     "react-cytoscapejs": "^2.0.0",
-    "react-dom": "^19.1.0",
-    "react-redux": "^9.2.0",
-    "react-router-dom": "^7.18.0"
+    "react-dom": "^19.2.8",
+    "react-redux": "^9.3.0",
+    "react-router-dom": "^7.18.2"
   },
   "scripts": {
     "start": "vite",
@@ -41,16 +41,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^6.0.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^9.32.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
+    "eslint-plugin-react-refresh": "^0.5.4",
     "gh-pages": "^5.0.0",
     "globals": "^16.3.0",
-    "prettier": "^3.6.2",
-    "vite": "^8.1.0"
+    "prettier": "^3.9.6",
+    "vite": "^8.2.1"
   }
 }
