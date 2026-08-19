@@ -46,24 +46,3 @@ def test_file_permission_error(_):
     with pytest.raises(SystemExit) as e:
         main(["-f", __file__])
     assert e.value.code == 1
-
-
-def test_node_without_column_level():
-    with pytest.raises(SystemExit) as e:
-        main(["-e", "select * from dual", "--node", "col1"])
-    assert e.value.code == 2
-
-
-def test_node_ambiguous():
-    with pytest.raises(SystemExit) as e:
-        main(
-            [
-                "-e",
-                "insert into tab1 select col1 from tab2 " "union select col1 from tab3",
-                "-l",
-                "column",
-                "--node",
-                "col1",
-            ]
-        )
-    assert e.value.code == 2

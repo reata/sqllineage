@@ -1,56 +1,14 @@
 import itertools
+from collections.abc import Callable
 
 from sqllineage.core.graph import get_graph_operator_class
 from sqllineage.core.graph.utils import cone_lineage_paths, list_lineage_paths_between
 from sqllineage.core.graph_operator import GraphOperator
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
-from sqllineage.exceptions import AmbiguousNode
 from sqllineage.utils.constant import EdgeDirection, EdgeTag, EdgeType, NodeTag
-from sqllineage.utils.helpers import escape_identifier_name
 
 DATASET_CLASSES = (Path, Table)
-
-
-def _resolve_node(node: str | Column | Table, columns: list[Column]) -> list[Column]:
-    """
-    Match ``node`` against the full set of column vertices in the graph.
-
-    ``node`` can be a :class:`Column`, a :class:`Table` (matches every column of
-    that table), or a string identifier: ``col1``, ``tab1.col1``,
-    ``db.tab1.col1``, or a bare table name ``tab1``.
-    """
-    matches: list[Column] = []
-    if isinstance(node, Column):
-        matches = [c for c in columns if c == node]
-    elif isinstance(node, Table):
-        target = escape_identifier_name(node.raw_name)
-        matches = [
-            c
-            for c in columns
-            if isinstance(c.parent, Table) and c.parent.raw_name == target
-        ]
-    else:
-        parts = [escape_identifier_name(part) for part in node.split(".")]
-        if len(parts) == 1:
-            token = parts[0]
-            matches = [c for c in columns if c.raw_name == token]
-            matches += [
-                c
-                for c in columns
-                if isinstance(c.parent, Table)
-                and c.parent.raw_name == token
-                and c not in matches
-            ]
-        else:
-            col_name, table_tail = parts[-1], parts[:-1]
-            for c in columns:
-                if c.raw_name != col_name or c.parent is None:
-                    continue
-                parent_parts = str(c.parent).split(".")
-                if parent_parts[-len(table_tail) :] == table_tail:
-                    matches.append(c)
-    return matches
 
 
 class ColumnLineageMixin:
@@ -60,19 +18,20 @@ class ColumnLineageMixin:
         self,
         exclude_path_ending_in_subquery=True,
         exclude_subquery_columns=False,
-        node: str | Column | Table | None = None,
+        node: Column | None = None,
     ) -> set[tuple[Column, ...]]:
         """
         :param exclude_path_ending_in_subquery:  exclude_subquery rename to exclude_path_ending_in_subquery
                exclude column from SubQuery in the ending path
         :param exclude_subquery_columns: exclude column from SubQuery in the path.
-        :param node: restrict the result to paths that touch this column/table.
-               See :func:`_resolve_node` for accepted forms. Raises
-               :class:`sqllineage.exceptions.AmbiguousNode` if more than one
-               column matches.
+        :param node: restrict the result to paths that touch this column. Use
+               :meth:`SQLLineageHolder.find_nodes` to discover a candidate
+               :class:`sqllineage.core.models.Column` first.
 
         return a list of column tuple :class:`sqllineage.models.Column`
         """
+        if node is not None and not isinstance(node, Column):
+            raise TypeError(f"node must be a Column, got {type(node).__name__}")
         # filter all the column node in the graph
         all_columns = [
             v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)
@@ -99,15 +58,10 @@ class ColumnLineageMixin:
                 column_graph, source_column_set, target_column_set
             )
         else:
-            matches = _resolve_node(node, all_columns)
-            if len(matches) > 1:
-                raise AmbiguousNode(
-                    f"node {node!r} matches {len(matches)} columns", matches
-                )
-            if not matches:
+            if node not in all_columns:
                 return set()
             raw_paths = cone_lineage_paths(
-                column_graph, matches[0], source_column_set, target_column_set
+                column_graph, node, source_column_set, target_column_set
             )
 
         columns = set()
@@ -429,6 +383,20 @@ class SQLLineageHolder(ColumnLineageMixin):
             v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)
         ]
         return self.go.get_sub_graph(*column_nodes)
+
+    def find_nodes(
+        self, predicate: Callable[[Column | Table], bool]
+    ) -> list[Column | Table]:
+        """
+        Return every Column/Table vertex in the graph for which
+        ``predicate(vertex)`` is true. Use this to discover a candidate, then
+        pass it to :meth:`get_column_lineage` as ``node``.
+        """
+        return [
+            v
+            for v in self.go.retrieve_vertices_by_props()
+            if isinstance(v, (Column, Table)) and predicate(v)
+        ]
 
     @property
     def source_tables(self) -> set[Table | Path]:

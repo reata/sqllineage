@@ -1,6 +1,3 @@
-from typing import Any
-
-
 class SQLLineageException(Exception):
     """Base Exception for SQLLineage"""
 
@@ -19,11 +16,3 @@ class MetaDataProviderException(SQLLineageException):
 
 class ConfigException(SQLLineageException):
     """Raised for configuration errors"""
-
-
-class AmbiguousNode(SQLLineageException):
-    """Raised when a node filter matches more than one column"""
-
-    def __init__(self, message: str, matches: list[Any]):
-        super().__init__(message)
-        self.matches = matches

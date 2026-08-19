@@ -6,7 +6,6 @@ import pytest
 from sqllineage.cli import main
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.models import Column, SubQuery, Table
-from sqllineage.exceptions import AmbiguousNode
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
 
@@ -53,71 +52,63 @@ _SINGLE_COL_SQL = (
 )
 
 
-def _naive_filter(all_paths, node_str):
-    """reference implementation: compute everything, keep paths touching node_str"""
+def _col(name: str, table: str) -> Column:
+    col = Column(name)
+    col.parent = Table(table)
+    return col
 
-    def _matches(col):
-        return (
-            col.raw_name == node_str
-            or str(col) == node_str
-            or str(col).endswith("." + node_str)
-        )
 
-    return {path for path in all_paths if any(_matches(col) for col in path)}
+def _naive_filter(all_paths, node):
+    """reference implementation: compute everything, keep paths touching node"""
+    return {path for path in all_paths if node in path}
 
 
 def test_node_filter_matches_naive_filtering():
     for graph_operator in _gen_graph_operators():
         with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
             full = set(LineageRunner(_MULTI_COL_SQL).get_column_lineage())
-            for node_str in ["tab2.col1", "tab2.col2", "tab1.col2", "tab3.col1"]:
+            for node in [
+                _col("col1", "tab2"),
+                _col("col2", "tab2"),
+                _col("col2", "tab1"),
+                _col("col1", "tab3"),
+            ]:
                 filtered = set(
-                    LineageRunner(_MULTI_COL_SQL).get_column_lineage(node=node_str)
+                    LineageRunner(_MULTI_COL_SQL).get_column_lineage(node=node)
                 )
-                assert filtered == _naive_filter(full, node_str), node_str
+                assert filtered == _naive_filter(full, node), node
 
 
-def test_node_filter_by_string_column():
+def test_node_filter_by_column_object():
     lr = LineageRunner(_MULTI_COL_SQL)
-    result = lr.get_column_lineage(node="tab2.col1")
+    lr._eval()
+    col = _col("col1", "tab2")
+    result = lr.get_column_lineage(node=col)
     assert len(result) > 0
-    assert all(any(str(col).endswith(".tab2.col1") for col in path) for path in result)
+    assert all(col in path for path in result)
 
 
-def test_node_filter_by_table_object():
-    lr = LineageRunner(_SINGLE_COL_SQL)
-    result = lr.get_column_lineage(node=Table("tab2"))
-    assert len(result) > 0
-    assert all(any(col.parent == Table("tab2") for col in path) for path in result)
-
-
-def test_node_filter_by_bare_table_name():
-    lr = LineageRunner(_SINGLE_COL_SQL)
-    result = lr.get_column_lineage(node="tab2")
-    assert len(result) > 0
-    assert all(any(col.parent == Table("tab2") for col in path) for path in result)
-
-
-def test_node_filter_multi_column_table_is_ambiguous():
-    lr = LineageRunner(_MULTI_COL_SQL)
-    with pytest.raises(AmbiguousNode) as exc_info:
-        lr.get_column_lineage(node="tab2")
-    assert len(exc_info.value.matches) == 2
-
-
-def test_node_filter_no_match_returns_empty():
-    lr = LineageRunner(_SINGLE_COL_SQL)
-    assert lr.get_column_lineage(node="does_not_exist") == []
-
-
-def test_node_filter_ambiguous_raises():
+def test_node_filter_disambiguates_same_column_name_different_table():
+    # col1 in tab2 and col1 in tab3 are two independent siblings both sourced
+    # from tab1.col1; a Column node must resolve to exactly the requested
+    # one, not conflate same-named columns from different tables
     sql = (
         "insert into tab2 select col1 from tab1; insert into tab3 select col1 from tab1"
     )
     lr = LineageRunner(sql)
-    with pytest.raises(AmbiguousNode) as exc_info:
-        lr.get_column_lineage(node="col1")
-    assert len(exc_info.value.matches) > 1
+    result = lr.get_column_lineage(node=_col("col1", "tab2"))
+    assert result == [(_col("col1", "tab1"), _col("col1", "tab2"))]
+
+
+def test_node_filter_no_match_returns_empty():
+    lr = LineageRunner(_SINGLE_COL_SQL)
+    assert lr.get_column_lineage(node=_col("does_not_exist", "tab2")) == []
+
+
+def test_node_filter_rejects_non_column():
+    lr = LineageRunner(_SINGLE_COL_SQL)
+    with pytest.raises(TypeError):
+        lr.get_column_lineage(node=Table("tab2"))
 
 
 def test_node_filter_none_unchanged():
@@ -126,22 +117,12 @@ def test_node_filter_none_unchanged():
     assert lr1.get_column_lineage() == lr2.get_column_lineage(node=None)
 
 
-def test_node_filter_by_column_object():
-    lr = LineageRunner(_MULTI_COL_SQL)
-    lr._eval()
-    col = Column("col1")
-    col.parent = Table("tab2")
-    result = lr.get_column_lineage(node=col)
-    assert len(result) > 0
-    assert all(col in path for path in result)
-
-
 def test_node_filter_cone_with_no_reachable_target_returns_empty():
     # sub.c is selected from tb but never projected into ta, so it has no
     # path to a real table target once subquery-ending paths are pruned
     sql = "insert into ta select b from (select b, c from tb) sub"
     lr = LineageRunner(sql)
-    assert lr.get_column_lineage(node="tb.c") == []
+    assert lr.get_column_lineage(node=_col("c", "tb")) == []
 
 
 def test_node_filter_exclude_subquery_columns_drops_collapsed_path():
@@ -149,7 +130,28 @@ def test_node_filter_exclude_subquery_columns_drops_collapsed_path():
     # column is stripped, the remaining path is a single column and dropped
     sql = "insert into ta select b from (select 1 as b) sub"
     lr = LineageRunner(sql)
-    assert lr.get_column_lineage(node="ta.b", exclude_subquery_columns=True) == []
+    assert (
+        lr.get_column_lineage(node=_col("b", "ta"), exclude_subquery_columns=True) == []
+    )
+
+
+def test_find_nodes_by_predicate():
+    lr = LineageRunner(_MULTI_COL_SQL)
+    result = lr.find_nodes(lambda v: isinstance(v, Column) and v.raw_name == "col1")
+    assert len(result) > 0
+    assert all(isinstance(v, Column) and v.raw_name == "col1" for v in result)
+
+
+def test_find_nodes_matches_tables_and_columns():
+    lr = LineageRunner(_MULTI_COL_SQL)
+    result = lr.find_nodes(lambda v: "tab2" in str(v))
+    assert any(isinstance(v, Table) for v in result)
+    assert any(isinstance(v, Column) for v in result)
+
+
+def test_find_nodes_no_match_returns_empty():
+    lr = LineageRunner(_MULTI_COL_SQL)
+    assert lr.find_nodes(lambda v: str(v) == "does_not_exist") == []
 
 
 def test_respect_sqlfluff_configuration_file():

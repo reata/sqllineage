@@ -1,13 +1,14 @@
 import logging
 import warnings
 from collections import OrderedDict
+from collections.abc import Callable
 from typing import Any
 
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
 from sqllineage.core.holders import SQLLineageHolder
 from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.core.models import Column, Table
+from sqllineage.core.models import Column, Path, Table
 from sqllineage.core.parser.sqlfluff.analyzer import SqlFluffLineageAnalyzer
 from sqllineage.core.parser.sqlparse.analyzer import SqlParseLineageAnalyzer
 from sqllineage.drawing import draw_lineage_graph
@@ -32,6 +33,8 @@ def lazy_property(func):
 
 
 class LineageRunner:
+    _sql_holder: SQLLineageHolder  # For mypy attribute checking; set by _eval()
+
     def __init__(
         self,
         sql: str,
@@ -132,40 +135,50 @@ Target Tables:
         return self._stmt
 
     @lazy_property
-    def source_tables(self) -> list[Table]:
+    def source_tables(self) -> list[Table | Path]:
         """
         a list of source :class:`sqllineage.models.Table`
         """
         return sorted(self._sql_holder.source_tables, key=lambda x: str(x))
 
     @lazy_property
-    def target_tables(self) -> list[Table]:
+    def target_tables(self) -> list[Table | Path]:
         """
         a list of target :class:`sqllineage.models.Table`
         """
         return sorted(self._sql_holder.target_tables, key=lambda x: str(x))
 
     @lazy_property
-    def intermediate_tables(self) -> list[Table]:
+    def intermediate_tables(self) -> list[Table | Path]:
         """
         a list of intermediate :class:`sqllineage.models.Table`
         """
         return sorted(self._sql_holder.intermediate_tables, key=lambda x: str(x))
 
     @lazy_method
+    def find_nodes(
+        self, predicate: Callable[[Column | Table], bool]
+    ) -> list[Column | Table]:
+        """
+        a list of :class:`sqllineage.models.Column`/:class:`sqllineage.models.Table`
+        for which ``predicate`` is true, for discovering a ``node`` to pass into
+        :meth:`get_column_lineage`
+        """
+        return self._sql_holder.find_nodes(predicate)
+
+    @lazy_method
     def get_column_lineage(
         self,
         exclude_path_ending_in_subquery=True,
         exclude_subquery_columns=False,
-        node: str | Column | Table | None = None,
-    ) -> list[tuple[Column, Column]]:
+        node: Column | None = None,
+    ) -> list[tuple[Column, ...]]:
         """
         a list of column tuple :class:`sqllineage.models.Column`
 
-        :param node: restrict the result to paths that touch this column/table,
-               e.g. ``col1``, ``tab1.col1``, ``db.tab1.col1``, or a bare table
-               name ``tab1``. Raises :class:`sqllineage.exceptions.AmbiguousNode`
-               if more than one column matches.
+        :param node: restrict the result to paths that touch this column. Use
+               :meth:`find_nodes` to discover a candidate
+               :class:`sqllineage.models.Column` first.
         """
         # sort by target column, and then source column
         return sorted(
@@ -175,7 +188,7 @@ Target Tables:
             key=lambda x: (str(x[-1]), str(x[0])),
         )
 
-    def print_column_lineage(self, node: str | Column | Table | None = None) -> None:
+    def print_column_lineage(self, node: Column | None = None) -> None:
         """
         print column level lineage to stdout
 
