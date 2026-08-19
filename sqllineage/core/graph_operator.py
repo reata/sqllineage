@@ -110,6 +110,14 @@ class GraphOperator(ABC):
     def list_lineage_paths(self, src_vertex: Any, tgt_vertex: Any) -> list[list[Any]]:
         """
         list all lineage paths (acyclic) in the graph from src_vertex to tgt_vertex.
+
+        When src_vertex == tgt_vertex, this returns [[src_vertex, src_vertex]] if
+        a self-loop edge exists on that vertex, or [] otherwise. Implementations
+        must agree on this: networkx's all_simple_paths trivially returns
+        [[v]] for src == tgt regardless of whether an edge exists, while
+        rustworkx's all_simple_paths only returns a (2-element) path when a
+        real self-loop edge is present, see Qiskit/rustworkx#1617. This
+        interface follows rustworkx's edge-presence semantics.
         """
         raise NotImplementedError
 

@@ -154,6 +154,57 @@ def test_find_nodes_no_match_returns_empty():
     assert lr.find_nodes(lambda v: str(v) == "does_not_exist") == []
 
 
+def test_column_selfloop_matches_across_graph_operators():
+    # insert into tab1 select col1 from tab1: tab1.col1 has a real self-loop
+    # lineage edge; both backends must report the same shape for it, see
+    # https://github.com/Qiskit/rustworkx/issues/1617 for the divergence this
+    # guards against.
+    sql = "insert into tab1 select col1 from tab1"
+    results = []
+    for graph_operator in _gen_graph_operators():
+        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+            results.append(set(LineageRunner(sql).get_column_lineage()))
+    assert len(set(map(frozenset, results))) == 1
+    seed = _col("col1", "tab1")
+    assert results[0] == {(seed, seed)}
+
+
+def test_column_selfloop_via_node_filter_matches_across_graph_operators():
+    sql = "insert into tab1 select col1 from tab1"
+    seed = _col("col1", "tab1")
+    results = []
+    for graph_operator in _gen_graph_operators():
+        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+            results.append(set(LineageRunner(sql).get_column_lineage(node=seed)))
+    assert len(set(map(frozenset, results))) == 1
+    assert results[0] == {(seed, seed)}
+
+
+def test_column_selfloop_with_downstream_target():
+    # tab1.col1 self-loops, and also feeds tab2.col1; both the self-loop path
+    # and the genuine downstream path must be present, on both backends.
+    sql = (
+        "insert into tab1 select col1 from tab1; "
+        "insert into tab2 select col1 from tab1"
+    )
+    seed = _col("col1", "tab1")
+    down = _col("col1", "tab2")
+    for graph_operator in _gen_graph_operators():
+        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+            result = set(LineageRunner(sql).get_column_lineage(node=seed))
+            assert result == {(seed, seed), (seed, down)}, graph_operator
+
+
+def test_table_selfloop_classified_as_source_and_target():
+    sql = "insert into tab1 select * from tab1"
+    for graph_operator in _gen_graph_operators():
+        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+            lr = LineageRunner(sql)
+            assert Table("tab1") in lr.source_tables
+            assert Table("tab1") in lr.target_tables
+            assert Table("tab1") not in lr.intermediate_tables
+
+
 def test_respect_sqlfluff_configuration_file():
     sqlfluff_config = """[sqlfluff:templater:jinja:context]
 num_things=456

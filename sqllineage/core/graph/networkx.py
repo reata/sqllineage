@@ -121,6 +121,13 @@ class NetworkXGraphOperator(GraphOperator):
             )
 
     def list_lineage_paths(self, src_vertex: Any, tgt_vertex: Any) -> list[list[Any]]:
+        if src_vertex == tgt_vertex:
+            # nx.all_simple_paths trivially returns [[src_vertex]] for src == tgt
+            # regardless of whether a self-loop edge exists; only report a path
+            # when a real self-loop edge is present, matching rustworkx's shape.
+            if self.graph.has_edge(src_vertex, src_vertex):
+                return [[src_vertex, src_vertex]]
+            return []
         return list(nx.all_simple_paths(self.graph, src_vertex, tgt_vertex))
 
     def to_cytoscape(
