@@ -137,12 +137,6 @@ def test_node_filter_exclude_subquery_columns_drops_collapsed_path():
     )
 
 
-@pytest.mark.xfail(
-    reason="cone_lineage_paths joins ancestor/descendant paths without checking "
-    "vertex-disjointness; a cycle longer than a self-loop makes the shared "
-    "node appear twice in one returned path (utils.py cone_lineage_paths)",
-    strict=True,
-)
 @parametrize_graph_operator
 def test_node_filter_cone_path_is_simple_across_cycle(graph_operator):
     # tabX -> tabSeed -> tabX forms a two-table cycle around the seed node;

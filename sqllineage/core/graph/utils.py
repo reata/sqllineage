@@ -57,5 +57,10 @@ def cone_lineage_paths(
         # already represents (correctly, as a self-loop edge or not at all);
         # skip it here so it isn't double-counted or wrongly trivialized.
         if not (up == [seed] and down == [seed])
+        # a cycle through seed longer than a self-loop can put the same
+        # vertex on both the ancestor and descendant side (e.g. seed -> x ->
+        # seed); stitching such an up/down pair together would repeat that
+        # vertex, so only join halves that share nothing but seed itself.
+        and set(up[:-1]).isdisjoint(down[1:])
     ]
     return self_paths + joined
