@@ -1,6 +1,7 @@
 import itertools
 
 from sqllineage.core.graph import get_graph_operator_class
+from sqllineage.core.graph.utils import cone_lineage_paths, list_lineage_paths_between
 from sqllineage.core.graph_operator import GraphOperator
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
@@ -94,7 +95,7 @@ class ColumnLineageMixin:
         target_column_set = set(target_columns)
 
         if node is None:
-            raw_paths = self._all_paths(
+            raw_paths = list_lineage_paths_between(
                 column_graph, source_column_set, target_column_set
             )
         else:
@@ -105,7 +106,7 @@ class ColumnLineageMixin:
                 )
             if not matches:
                 return set()
-            raw_paths = self._cone_paths(
+            raw_paths = cone_lineage_paths(
                 column_graph, matches[0], source_column_set, target_column_set
             )
 
@@ -117,58 +118,6 @@ class ColumnLineageMixin:
                     continue
             columns.add(tuple(path))
         return columns
-
-    def _all_paths(
-        self,
-        column_graph: GraphOperator,
-        source_columns: set[Column],
-        target_columns: set[Column],
-    ) -> list[list[Column]]:
-        """Naive path enumeration: every source/target pair, no filtering."""
-        return [
-            path
-            for source, target in itertools.product(source_columns, target_columns)
-            for path in column_graph.list_lineage_paths(source, target)
-        ]
-
-    def _cone_paths(
-        self,
-        column_graph: GraphOperator,
-        seed: Column,
-        source_columns: set[Column],
-        target_columns: set[Column],
-    ) -> list[list[Column]]:
-        """
-        Path enumeration restricted to the subgraph around ``seed``: only
-        ancestors/descendants of ``seed`` are considered, so path enumeration
-        runs on a much smaller subgraph than the full lineage graph.
-        """
-        ancestors = column_graph.ancestors(seed)
-        descendants = column_graph.descendants(seed)
-        true_sources = ancestors & source_columns
-        true_targets = descendants & target_columns
-        if seed in source_columns:
-            true_sources.add(seed)
-        if seed in target_columns:
-            true_targets.add(seed)
-        if not true_sources or not true_targets:
-            return []
-
-        up_graph = column_graph.get_sub_graph(*(ancestors | {seed}))
-        down_graph = column_graph.get_sub_graph(*(descendants | {seed}))
-        up_paths = [[seed]] if seed in true_sources else []
-        up_paths += [
-            path
-            for source in true_sources - {seed}
-            for path in up_graph.list_lineage_paths(source, seed)
-        ]
-        down_paths = [[seed]] if seed in true_targets else []
-        down_paths += [
-            path
-            for target in true_targets - {seed}
-            for path in down_graph.list_lineage_paths(seed, target)
-        ]
-        return [up + down[1:] for up in up_paths for down in down_paths]
 
 
 class SubQueryLineageHolder(ColumnLineageMixin):
