@@ -25,10 +25,11 @@ class ColumnLineageMixin:
                exclude column from SubQuery in the ending path
         :param exclude_subquery_columns: exclude column from SubQuery in the path.
         :param node: restrict the result to paths that touch this column. Use
-               :meth:`SQLLineageHolder.find_nodes` to discover a candidate,
-               filtering its result to :class:`sqllineage.core.models.Column`
-               instances first, since ``find_nodes`` can also return
-               :class:`sqllineage.core.models.Table` vertices that this
+               :meth:`find_nodes` to discover a candidate, filtering its
+               result to :class:`sqllineage.core.models.Column` instances
+               first, since ``find_nodes`` can also return
+               :class:`sqllineage.core.models.Table` and
+               :class:`sqllineage.core.models.Path` vertices that this
                method rejects. If ``node`` is
                itself a :class:`sqllineage.core.models.SubQuery` column and
                ``exclude_subquery_columns`` is ``True``, the returned tuples
@@ -44,6 +45,7 @@ class ColumnLineageMixin:
         all_columns = [
             v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)
         ]
+        all_column_set = set(all_columns)
         column_graph = self.go.get_sub_graph(*all_columns)
         source_columns = column_graph.retrieve_source_vertices()
         target_columns = column_graph.retrieve_target_vertices()
@@ -66,7 +68,7 @@ class ColumnLineageMixin:
                 column_graph, source_column_set, target_column_set
             )
         else:
-            if node not in all_columns:
+            if node not in all_column_set:
                 return set()
             raw_paths = cone_lineage_paths(
                 column_graph, node, source_column_set, target_column_set
@@ -80,6 +82,24 @@ class ColumnLineageMixin:
                     continue
             columns.add(tuple(path))
         return columns
+
+    def find_nodes(
+        self, predicate: Callable[[Column | Table | Path], bool] | None = None
+    ) -> list[Column | Table | Path]:
+        """
+        Return every Column/Table/Path vertex in the graph for which
+        ``predicate(vertex)`` is true. To discover a candidate for
+        :meth:`get_column_lineage`'s ``node`` argument, filter the result to
+        :class:`sqllineage.core.models.Column` instances, e.g.
+        ``[v for v in find_nodes(predicate) if isinstance(v, Column)]``.
+        """
+        return [
+            v
+            for v in self.go.retrieve_vertices_by_props()
+            if predicate is not None
+            and isinstance(v, (Column, *DATASET_CLASSES))
+            and predicate(v)
+        ]
 
 
 class SubQueryLineageHolder(ColumnLineageMixin):
@@ -391,22 +411,6 @@ class SQLLineageHolder(ColumnLineageMixin):
             v for v in self.go.retrieve_vertices_by_props() if isinstance(v, Column)
         ]
         return self.go.get_sub_graph(*column_nodes)
-
-    def find_nodes(
-        self, predicate: Callable[[Column | Table], bool] | None = None
-    ) -> list[Column | Table]:
-        """
-        Return every Column/Table vertex in the graph for which
-        ``predicate(vertex)`` is true. To discover a candidate for
-        :meth:`get_column_lineage`'s ``node`` argument, filter the result to
-        :class:`sqllineage.core.models.Column` instances, e.g.
-        ``[v for v in find_nodes(predicate) if isinstance(v, Column)]``.
-        """
-        return [
-            v
-            for v in self.go.retrieve_vertices_by_props()
-            if predicate is not None and isinstance(v, (Column, Table)) and predicate(v)
-        ]
 
     @property
     def source_tables(self) -> set[Table | Path]:

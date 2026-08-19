@@ -5,7 +5,7 @@ import pytest
 
 from sqllineage.cli import main
 from sqllineage.config import SQLLineageConfig
-from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.core.models import Column, Path, SubQuery, Table
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
 
@@ -214,6 +214,12 @@ def test_find_nodes_matches_tables_and_columns():
 def test_find_nodes_no_match_returns_empty():
     lr = LineageRunner(_MULTI_COL_SQL)
     assert lr.find_nodes(lambda v: str(v) == "does_not_exist") == []
+
+
+def test_find_nodes_matches_path():
+    lr = LineageRunner("COPY tab1 FROM 's3://mybucket/mypath'", dialect="postgres")
+    result = lr.find_nodes(lambda v: isinstance(v, Path))
+    assert result == [Path("s3://mybucket/mypath")]
 
 
 @parametrize_graph_operator

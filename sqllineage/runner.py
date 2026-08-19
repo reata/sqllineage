@@ -157,12 +157,12 @@ Target Tables:
 
     @lazy_method
     def find_nodes(
-        self, predicate: Callable[[Column | Table], bool] | None = None
-    ) -> list[Column | Table]:
+        self, predicate: Callable[[Column | Table | Path], bool] | None = None
+    ) -> list[Column | Table | Path]:
         """
-        a list of :class:`sqllineage.models.Column`/:class:`sqllineage.models.Table`
-        for which ``predicate`` is true. To discover a ``node`` to pass into
-        :meth:`get_column_lineage`, filter the result to
+        a list of :class:`sqllineage.models.Column`/:class:`sqllineage.models.Table`/
+        :class:`sqllineage.models.Path` for which ``predicate`` is true. To discover
+        a ``node`` to pass into :meth:`get_column_lineage`, filter the result to
         :class:`sqllineage.models.Column` instances first.
         """
         return self._sql_holder.find_nodes(predicate)
@@ -181,7 +181,8 @@ Target Tables:
                :meth:`find_nodes` to discover a candidate, filtering its
                result to :class:`sqllineage.models.Column` instances first,
                since ``find_nodes`` can also return
-               :class:`sqllineage.models.Table` vertices that this method
+               :class:`sqllineage.models.Table` and
+               :class:`sqllineage.models.Path` vertices that this method
                rejects.
         """
         # sort by target column, then source column, then the full path as a

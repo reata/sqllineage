@@ -46,17 +46,9 @@ def cone_lineage_paths(
     )
 
     up_paths = [[seed]] if seed in true_sources else []
-    up_paths += [
-        path
-        for source in true_sources - {seed}
-        for path in up_graph.list_lineage_paths(source, seed)
-    ]
+    up_paths += list_lineage_paths_between(up_graph, true_sources - {seed}, {seed})
     down_paths = [[seed]] if seed in true_targets else []
-    down_paths += [
-        path
-        for target in true_targets - {seed}
-        for path in down_graph.list_lineage_paths(seed, target)
-    ]
+    down_paths += list_lineage_paths_between(down_graph, {seed}, true_targets - {seed})
     joined = [
         up + down[1:]
         for up in up_paths
@@ -64,6 +56,6 @@ def cone_lineage_paths(
         # the [seed] x [seed] pairing is the same relationship self_paths
         # already represents (correctly, as a self-loop edge or not at all);
         # skip it here so it isn't double-counted or wrongly trivialized.
-        if not (self_paths and up == [seed] and down == [seed])
+        if not (up == [seed] and down == [seed])
     ]
     return self_paths + joined
