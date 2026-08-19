@@ -87,6 +87,9 @@ class GraphOperator(ABC):
     def ancestors(self, vertex: Any) -> set[Any]:
         """
         all vertices with a path leading to vertex, not just direct predecessors.
+
+        Raises KeyError if vertex is not a vertex in the graph. Implementations
+        must agree on this.
         """
         raise NotImplementedError
 
@@ -94,6 +97,9 @@ class GraphOperator(ABC):
     def descendants(self, vertex: Any) -> set[Any]:
         """
         all vertices with a path leading from vertex, not just direct successors.
+
+        Raises KeyError if vertex is not a vertex in the graph. Implementations
+        must agree on this.
         """
         raise NotImplementedError
 
@@ -110,6 +116,9 @@ class GraphOperator(ABC):
     def list_lineage_paths(self, src_vertex: Any, tgt_vertex: Any) -> list[list[Any]]:
         """
         list all lineage paths (acyclic) in the graph from src_vertex to tgt_vertex.
+
+        Raises KeyError if either src_vertex or tgt_vertex is not a vertex in
+        the graph. Implementations must agree on this.
 
         When src_vertex == tgt_vertex, this returns [[src_vertex, src_vertex]] if
         a self-loop edge exists on that vertex, or [] otherwise. Implementations

@@ -137,6 +137,66 @@ def test_node_filter_exclude_subquery_columns_drops_collapsed_path():
     )
 
 
+@pytest.mark.xfail(
+    reason="cone_lineage_paths joins ancestor/descendant paths without checking "
+    "vertex-disjointness; a cycle longer than a self-loop makes the shared "
+    "node appear twice in one returned path (utils.py cone_lineage_paths)",
+    strict=True,
+)
+@parametrize_graph_operator
+def test_node_filter_cone_path_is_simple_across_cycle(graph_operator):
+    # tabX -> tabSeed -> tabX forms a two-table cycle around the seed node;
+    # every path returned for get_column_lineage(node=...) must still be a
+    # simple path (no repeated column), just like the unfiltered result.
+    sql = (
+        "insert into tabX select col1 from tab0; "
+        "insert into tabSeed select col1 from tabX; "
+        "insert into tabX select col1 from tabSeed; "
+        "insert into tabY select col1 from tabX"
+    )
+    seed = _col("col1", "tabSeed")
+    with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+        result = LineageRunner(sql).get_column_lineage(node=seed)
+        for path in result:
+            assert len(path) == len(set(path)), path
+
+
+def test_get_column_lineage_deterministic_order_for_tied_endpoints():
+    """
+    Two distinct paths sharing the same source and target column, differing
+    only in an intermediate column, must sort the same way regardless of the
+    order they come out of the underlying set, not just by (target, source).
+    """
+    runner = LineageRunner("select * from dual")
+    runner._eval()
+
+    src_col = Column("src")
+    src_col.parent = Table("tab1")
+    tgt_col = Column("tgt")
+    tgt_col.parent = Table("tab3")
+    mid1 = Column("mid1")
+    mid1.parent = SubQuery("select 1", "select 1", "sub1")
+    mid2 = Column("mid2")
+    mid2.parent = SubQuery("select 2", "select 2", "sub2")
+
+    path_a = (src_col, mid1, tgt_col)
+    path_b = (src_col, mid2, tgt_col)
+
+    class FakeHolder:
+        def __init__(self, paths):
+            self._paths = paths
+
+        def get_column_lineage(self, *args, **kwargs):
+            return self._paths
+
+    runner._sql_holder = FakeHolder([path_a, path_b])
+    result_ab = runner.get_column_lineage()
+    runner._sql_holder = FakeHolder([path_b, path_a])
+    result_ba = runner.get_column_lineage()
+
+    assert result_ab == result_ba == [path_a, path_b]
+
+
 def test_find_nodes_by_predicate():
     lr = LineageRunner(_MULTI_COL_SQL)
     result = lr.find_nodes(lambda v: isinstance(v, Column) and v.raw_name == "col1")

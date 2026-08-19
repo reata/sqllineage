@@ -161,8 +161,9 @@ Target Tables:
     ) -> list[Column | Table]:
         """
         a list of :class:`sqllineage.models.Column`/:class:`sqllineage.models.Table`
-        for which ``predicate`` is true, for discovering a ``node`` to pass into
-        :meth:`get_column_lineage`
+        for which ``predicate`` is true. To discover a ``node`` to pass into
+        :meth:`get_column_lineage`, filter the result to
+        :class:`sqllineage.models.Column` instances first.
         """
         return self._sql_holder.find_nodes(predicate)
 
@@ -177,15 +178,20 @@ Target Tables:
         a list of column tuple :class:`sqllineage.models.Column`
 
         :param node: restrict the result to paths that touch this column. Use
-               :meth:`find_nodes` to discover a candidate
-               :class:`sqllineage.models.Column` first.
+               :meth:`find_nodes` to discover a candidate, filtering its
+               result to :class:`sqllineage.models.Column` instances first,
+               since ``find_nodes`` can also return
+               :class:`sqllineage.models.Table` vertices that this method
+               rejects.
         """
-        # sort by target column, and then source column
+        # sort by target column, then source column, then the full path as a
+        # tiebreaker so paths sharing both endpoints get a deterministic order
+        # regardless of Column's hash-randomization-dependent set iteration order
         return sorted(
             self._sql_holder.get_column_lineage(
                 exclude_path_ending_in_subquery, exclude_subquery_columns, node
             ),
-            key=lambda x: (str(x[-1]), str(x[0])),
+            key=lambda x: (str(x[-1]), str(x[0]), tuple(str(c) for c in x)),
         )
 
     def print_column_lineage(self, node: Column | None = None) -> None:

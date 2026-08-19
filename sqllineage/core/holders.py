@@ -25,8 +25,16 @@ class ColumnLineageMixin:
                exclude column from SubQuery in the ending path
         :param exclude_subquery_columns: exclude column from SubQuery in the path.
         :param node: restrict the result to paths that touch this column. Use
-               :meth:`SQLLineageHolder.find_nodes` to discover a candidate
-               :class:`sqllineage.core.models.Column` first.
+               :meth:`SQLLineageHolder.find_nodes` to discover a candidate,
+               filtering its result to :class:`sqllineage.core.models.Column`
+               instances first, since ``find_nodes`` can also return
+               :class:`sqllineage.core.models.Table` vertices that this
+               method rejects. If ``node`` is
+               itself a :class:`sqllineage.core.models.SubQuery` column and
+               ``exclude_subquery_columns`` is ``True``, the returned tuples
+               may no longer contain ``node``: it is stripped from its path
+               like any other subquery column, leaving only the collapsed
+               source-to-target endpoints that used to be connected through it.
 
         return a list of column tuple :class:`sqllineage.models.Column`
         """
@@ -389,8 +397,10 @@ class SQLLineageHolder(ColumnLineageMixin):
     ) -> list[Column | Table]:
         """
         Return every Column/Table vertex in the graph for which
-        ``predicate(vertex)`` is true. Use this to discover a candidate, then
-        pass it to :meth:`get_column_lineage` as ``node``.
+        ``predicate(vertex)`` is true. To discover a candidate for
+        :meth:`get_column_lineage`'s ``node`` argument, filter the result to
+        :class:`sqllineage.core.models.Column` instances, e.g.
+        ``[v for v in find_nodes(predicate) if isinstance(v, Column)]``.
         """
         return [
             v
