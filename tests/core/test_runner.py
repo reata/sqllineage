@@ -11,18 +11,22 @@ from sqllineage.utils.constant import LineageLevel
 
 from ..helpers import _gen_graph_operators, assert_table_lineage_equal
 
+parametrize_graph_operator = pytest.mark.parametrize(
+    "graph_operator", _gen_graph_operators(), ids=lambda go: go.rsplit(".", 1)[-1]
+)
 
-def test_runner_dummy():
-    for graph_operator in _gen_graph_operators():
-        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
-            runner = LineageRunner(
-                """insert into tab2 select col1, col2, col3, col4, col5, col6 from tab1;
+
+@parametrize_graph_operator
+def test_runner_dummy(graph_operator):
+    with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+        runner = LineageRunner(
+            """insert into tab2 select col1, col2, col3, col4, col5, col6 from tab1;
         insert into tab3 select * from tab2""",
-                verbose=True,
-            )
-            assert str(runner)
-            assert runner.to_cytoscape() is not None
-            assert runner.to_cytoscape(level=LineageLevel.COLUMN) is not None
+            verbose=True,
+        )
+        assert str(runner)
+        assert runner.to_cytoscape() is not None
+        assert runner.to_cytoscape(level=LineageLevel.COLUMN) is not None
 
 
 def test_statements_trim_comment():
@@ -63,20 +67,18 @@ def _naive_filter(all_paths, node):
     return {path for path in all_paths if node in path}
 
 
-def test_node_filter_matches_naive_filtering():
-    for graph_operator in _gen_graph_operators():
-        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
-            full = set(LineageRunner(_MULTI_COL_SQL).get_column_lineage())
-            for node in [
-                _col("col1", "tab2"),
-                _col("col2", "tab2"),
-                _col("col2", "tab1"),
-                _col("col1", "tab3"),
-            ]:
-                filtered = set(
-                    LineageRunner(_MULTI_COL_SQL).get_column_lineage(node=node)
-                )
-                assert filtered == _naive_filter(full, node), node
+@parametrize_graph_operator
+def test_node_filter_matches_naive_filtering(graph_operator):
+    with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+        full = set(LineageRunner(_MULTI_COL_SQL).get_column_lineage())
+        for node in [
+            _col("col1", "tab2"),
+            _col("col2", "tab2"),
+            _col("col2", "tab1"),
+            _col("col1", "tab3"),
+        ]:
+            filtered = set(LineageRunner(_MULTI_COL_SQL).get_column_lineage(node=node))
+            assert filtered == _naive_filter(full, node), node
 
 
 def test_node_filter_by_column_object():
@@ -154,33 +156,32 @@ def test_find_nodes_no_match_returns_empty():
     assert lr.find_nodes(lambda v: str(v) == "does_not_exist") == []
 
 
-def test_column_selfloop_matches_across_graph_operators():
+@parametrize_graph_operator
+def test_column_selfloop_matches_across_graph_operators(graph_operator):
     # insert into tab1 select col1 from tab1: tab1.col1 has a real self-loop
     # lineage edge; both backends must report the same shape for it, see
     # https://github.com/Qiskit/rustworkx/issues/1617 for the divergence this
-    # guards against.
-    sql = "insert into tab1 select col1 from tab1"
-    results = []
-    for graph_operator in _gen_graph_operators():
-        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
-            results.append(set(LineageRunner(sql).get_column_lineage()))
-    assert len(set(map(frozenset, results))) == 1
-    seed = _col("col1", "tab1")
-    assert results[0] == {(seed, seed)}
-
-
-def test_column_selfloop_via_node_filter_matches_across_graph_operators():
+    # guards against. Asserting the same fixed expected value on every
+    # backend is what makes them match each other.
     sql = "insert into tab1 select col1 from tab1"
     seed = _col("col1", "tab1")
-    results = []
-    for graph_operator in _gen_graph_operators():
-        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
-            results.append(set(LineageRunner(sql).get_column_lineage(node=seed)))
-    assert len(set(map(frozenset, results))) == 1
-    assert results[0] == {(seed, seed)}
+    with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+        assert set(LineageRunner(sql).get_column_lineage()) == {(seed, seed)}
 
 
-def test_column_selfloop_with_downstream_target():
+@parametrize_graph_operator
+def test_column_selfloop_via_node_filter_matches_across_graph_operators(
+    graph_operator,
+):
+    sql = "insert into tab1 select col1 from tab1"
+    seed = _col("col1", "tab1")
+    with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+        result = set(LineageRunner(sql).get_column_lineage(node=seed))
+        assert result == {(seed, seed)}
+
+
+@parametrize_graph_operator
+def test_column_selfloop_with_downstream_target(graph_operator):
     # tab1.col1 self-loops, and also feeds tab2.col1; both the self-loop path
     # and the genuine downstream path must be present, on both backends.
     sql = (
@@ -189,20 +190,19 @@ def test_column_selfloop_with_downstream_target():
     )
     seed = _col("col1", "tab1")
     down = _col("col1", "tab2")
-    for graph_operator in _gen_graph_operators():
-        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
-            result = set(LineageRunner(sql).get_column_lineage(node=seed))
-            assert result == {(seed, seed), (seed, down)}, graph_operator
+    with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+        result = set(LineageRunner(sql).get_column_lineage(node=seed))
+        assert result == {(seed, seed), (seed, down)}
 
 
-def test_table_selfloop_classified_as_source_and_target():
+@parametrize_graph_operator
+def test_table_selfloop_classified_as_source_and_target(graph_operator):
     sql = "insert into tab1 select * from tab1"
-    for graph_operator in _gen_graph_operators():
-        with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
-            lr = LineageRunner(sql)
-            assert Table("tab1") in lr.source_tables
-            assert Table("tab1") in lr.target_tables
-            assert Table("tab1") not in lr.intermediate_tables
+    with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+        lr = LineageRunner(sql)
+        assert Table("tab1") in lr.source_tables
+        assert Table("tab1") in lr.target_tables
+        assert Table("tab1") not in lr.intermediate_tables
 
 
 def test_respect_sqlfluff_configuration_file():
