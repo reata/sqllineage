@@ -385,7 +385,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return self.go.get_sub_graph(*column_nodes)
 
     def find_nodes(
-        self, predicate: Callable[[Column | Table], bool]
+        self, predicate: Callable[[Column | Table], bool] | None = None
     ) -> list[Column | Table]:
         """
         Return every Column/Table vertex in the graph for which
@@ -395,7 +395,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return [
             v
             for v in self.go.retrieve_vertices_by_props()
-            if isinstance(v, (Column, Table)) and predicate(v)
+            if predicate is not None and isinstance(v, (Column, Table)) and predicate(v)
         ]
 
     @property
