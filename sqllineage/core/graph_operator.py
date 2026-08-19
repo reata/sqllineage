@@ -84,6 +84,20 @@ class GraphOperator(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def ancestors(self, vertex: Any) -> set[Any]:
+        """
+        all vertices with a path leading to vertex, not just direct predecessors.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def descendants(self, vertex: Any) -> set[Any]:
+        """
+        all vertices with a path leading from vertex, not just direct successors.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def merge(self, other: "GraphOperator") -> None:
         """
         The vertices and edges from other graph will be added to current graph.

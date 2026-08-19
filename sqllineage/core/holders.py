@@ -94,7 +94,9 @@ class ColumnLineageMixin:
         target_column_set = set(target_columns)
 
         if node is None:
-            raw_paths = self._all_paths(source_column_set, target_column_set)
+            raw_paths = self._all_paths(
+                column_graph, source_column_set, target_column_set
+            )
         else:
             matches = _resolve_node(node, all_columns)
             if len(matches) > 1:
@@ -104,7 +106,7 @@ class ColumnLineageMixin:
             if not matches:
                 return set()
             raw_paths = self._cone_paths(
-                matches[0], source_column_set, target_column_set
+                column_graph, matches[0], source_column_set, target_column_set
             )
 
         columns = set()
@@ -117,25 +119,32 @@ class ColumnLineageMixin:
         return columns
 
     def _all_paths(
-        self, source_columns: set[Column], target_columns: set[Column]
+        self,
+        column_graph: GraphOperator,
+        source_columns: set[Column],
+        target_columns: set[Column],
     ) -> list[list[Column]]:
         """Naive path enumeration: every source/target pair, no filtering."""
         return [
             path
             for source, target in itertools.product(source_columns, target_columns)
-            for path in self.go.list_lineage_paths(source, target)
+            for path in column_graph.list_lineage_paths(source, target)
         ]
 
     def _cone_paths(
-        self, seed: Column, source_columns: set[Column], target_columns: set[Column]
+        self,
+        column_graph: GraphOperator,
+        seed: Column,
+        source_columns: set[Column],
+        target_columns: set[Column],
     ) -> list[list[Column]]:
         """
         Path enumeration restricted to the subgraph around ``seed``: only
         ancestors/descendants of ``seed`` are considered, so path enumeration
         runs on a much smaller subgraph than the full lineage graph.
         """
-        ancestors = self._lineage_neighbors(seed, EdgeDirection.IN)
-        descendants = self._lineage_neighbors(seed, EdgeDirection.OUT)
+        ancestors = column_graph.ancestors(seed)
+        descendants = column_graph.descendants(seed)
         true_sources = ancestors & source_columns
         true_targets = descendants & target_columns
         if seed in source_columns:
@@ -145,8 +154,8 @@ class ColumnLineageMixin:
         if not true_sources or not true_targets:
             return []
 
-        up_graph = self.go.get_sub_graph(*(ancestors | {seed}))
-        down_graph = self.go.get_sub_graph(*(descendants | {seed}))
+        up_graph = column_graph.get_sub_graph(*(ancestors | {seed}))
+        down_graph = column_graph.get_sub_graph(*(descendants | {seed}))
         up_paths = [[seed]] if seed in true_sources else []
         up_paths += [
             path
@@ -160,25 +169,6 @@ class ColumnLineageMixin:
             for path in down_graph.list_lineage_paths(seed, target)
         ]
         return [up + down[1:] for up in up_paths for down in down_paths]
-
-    def _lineage_neighbors(self, seed: Column, direction: str) -> set[Column]:
-        """BFS over LINEAGE edges from ``seed``, returning ancestors or descendants."""
-        seen: set[Column] = set()
-        frontier = [seed]
-        while frontier:
-            next_frontier = []
-            for vertex in frontier:
-                for edge in self.go.retrieve_edges_by_vertex(
-                    vertex, direction, EdgeType.LINEAGE
-                ):
-                    neighbor = (
-                        edge.source if direction == EdgeDirection.IN else edge.target
-                    )
-                    if neighbor != seed and neighbor not in seen:
-                        seen.add(neighbor)
-                        next_frontier.append(neighbor)
-            frontier = next_frontier
-        return seen
 
 
 class SubQueryLineageHolder(ColumnLineageMixin):

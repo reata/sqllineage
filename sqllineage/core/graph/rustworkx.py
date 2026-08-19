@@ -181,6 +181,14 @@ class RustworkXGraphOperator(GraphOperator):
         ]
         return RustworkXGraphOperator(self.graph.subgraph(indices))
 
+    def ancestors(self, vertex: Any) -> set[Any]:
+        idx = self._vertex_to_index.get(vertex, -1)
+        return {self.graph[i]["vertex"] for i in rx.ancestors(self.graph, idx)}
+
+    def descendants(self, vertex: Any) -> set[Any]:
+        idx = self._vertex_to_index.get(vertex, -1)
+        return {self.graph[i]["vertex"] for i in rx.descendants(self.graph, idx)}
+
     def merge(self, other: GraphOperator) -> None:
         if isinstance(other, RustworkXGraphOperator):
             # Create a mapping from other's indices to self's indices

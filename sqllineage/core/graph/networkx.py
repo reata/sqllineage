@@ -106,6 +106,12 @@ class NetworkXGraphOperator(GraphOperator):
     def get_sub_graph(self, *vertices) -> "NetworkXGraphOperator":
         return NetworkXGraphOperator(self.graph.subgraph(vertices))
 
+    def ancestors(self, vertex: Any) -> set[Any]:
+        return set(nx.ancestors(self.graph, vertex))
+
+    def descendants(self, vertex: Any) -> set[Any]:
+        return set(nx.descendants(self.graph, vertex))
+
     def merge(self, other: GraphOperator) -> None:
         if isinstance(other, NetworkXGraphOperator):
             self.graph = nx.compose(self.graph, other.graph)
