@@ -60,3 +60,12 @@ def test_ancestors_descendants_missing_vertex_raises(graph_operator_class, metho
     go.add_vertex_if_not_exist("A")
     with pytest.raises(KeyError):
         getattr(go, method)("ZZZ")
+
+
+@parametrize_graph_operator_class
+def test_list_lineage_paths_same_vertex_without_self_loop_is_empty(
+    graph_operator_class,
+):
+    go = graph_operator_class()
+    go.add_vertex_if_not_exist("A")
+    assert go.list_lineage_paths("A", "A") == []
