@@ -246,6 +246,9 @@ export default function App() {
             left: drawerWidth + 0.6 + "vw",
           }}
         />
+        {/* The fixed AppBar (dense Toolbar) is 48px = theme.spacing(6); the
+            marginTop below and the calc(100vh - spacing(6)) height are
+            coupled to that value and must change together. */}
         <Box
           component="main"
           sx={(theme) => ({
@@ -261,7 +264,7 @@ export default function App() {
         >
           <Paper
             elevation="24"
-            sx={{ flexGrow: 1, minHeight: 0 }}
+            sx={{ flexGrow: 1, minHeight: "240px" }}
             style={{ width: width }}
           >
             <Box sx={viewSelected === "dag" ? { height: "100%" } : { display: "none" }}>
