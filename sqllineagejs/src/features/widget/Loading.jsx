@@ -6,10 +6,12 @@ import { Box } from "@mui/material";
 export function Loading(props) {
   return (
     <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      minHeight={props.minHeight}
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: props.minHeight,
+      }}
     >
       <Fade
         in

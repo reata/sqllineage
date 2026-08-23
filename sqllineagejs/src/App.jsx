@@ -73,7 +73,12 @@ export default function App() {
   );
   const isResizing = React.useRef(false);
 
-  const height = "90vh";
+  // Reserve space for the fixed AppBar (marginTop: theme.spacing(6) = 48px),
+  // the main box padding (theme.spacing(0.5) = 4px top/bottom), and the
+  // view-toggle radio row below the paper (~42px), so the paper fills the
+  // remaining viewport instead of overflowing it (which caused a permanent
+  // vertical scrollbar on shorter windows).
+  const height = "calc(100vh - 98px)";
   const width = useMemo(() => {
     let full_width = 100;
     return (drawerOpen ? full_width - drawerWidth : full_width) + "vw";
@@ -267,7 +272,7 @@ export default function App() {
               <Editor height={height} width={width} dialect={dialectSelected} />
             </Box>
           </Paper>
-          <Grid container justifyContent="center">
+          <Grid container sx={{ justifyContent: "center" }}>
             <FormControl variant="standard" component="fieldset">
               <RadioGroup
                 row
