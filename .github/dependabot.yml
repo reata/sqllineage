@@ -13,6 +13,12 @@ updates:
       timezone: Asia/Shanghai
     open-pull-requests-limit: 5
     groups:
+      # @mui/* packages have strict cross peer dependencies and must move
+      # together, so group all their updates (including major) in one PR.
+      mui:
+        applies-to: version-updates
+        patterns:
+          - "@mui/*"
       version-updates:
         applies-to: version-updates
         update-types:
