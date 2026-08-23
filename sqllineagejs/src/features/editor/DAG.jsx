@@ -326,7 +326,7 @@ export function DAG(props) {
     ];
     const style = { width: props.width, height: props.height };
     return (
-      <div>
+      <div style={{ height: "100%" }}>
         <CytoscapeComponent
           elements={editorState.dagContent}
           stylesheet={stylesheet}
