@@ -23,7 +23,6 @@
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "VITE_BACKEND_API=https://sqllineage.azurewebsites.net/api/sqllineage/ vite build --base=/sqllineage/ && gh-pages -d build",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,json,css,md}\"",
@@ -50,7 +49,6 @@
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.5",
-    "gh-pages": "^6.3.0",
     "globals": "^17.11.0",
     "prettier": "^3.9.6",
     "vite": "^8.2.2"

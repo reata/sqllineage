@@ -2,10 +2,6 @@
 # The demo site (https://reata.github.io/sqllineage/) is a static bundle served
 # from GitHub Pages; it talks to the demo backend API at the VITE_BACKEND_API
 # URL below (baked into the bundle at build time).
-#
-# Note: this workflow must live on the default branch for
-# actions/deploy-pages to be able to deploy. Repository settings ->
-# Pages -> Source must be set to "GitHub Actions" (not the gh-pages branch).
 
 name: Deploy Frontend to GitHub Pages
 
