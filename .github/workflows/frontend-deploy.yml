@@ -1,0 +1,62 @@
+# Build the sqllineagejs frontend and deploy it to GitHub Pages.
+# The demo site (https://reata.github.io/sqllineage/) is a static bundle served
+# from GitHub Pages; it talks to the demo backend API at the VITE_BACKEND_API
+# URL below (baked into the bundle at build time).
+#
+# Note: this workflow must live on the default branch for
+# actions/deploy-pages to be able to deploy. Repository settings ->
+# Pages -> Source must be set to "GitHub Actions" (not the gh-pages branch).
+
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'sqllineagejs/**'
+      # redeploy when this workflow changes, e.g. after updating VITE_BACKEND_API
+      - '.github/workflows/frontend-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: sqllineagejs/package-lock.json
+      - name: Install dependencies
+        working-directory: sqllineagejs
+        run: npm ci
+      - name: Build frontend
+        working-directory: sqllineagejs
+        env:
+          # demo backend API server; change here and redeploy to point elsewhere
+          VITE_BACKEND_API: https://sqllineage.azurewebsites.net/api/sqllineage/
+        run: npm run build -- --base=/sqllineage/
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: sqllineagejs/build
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
