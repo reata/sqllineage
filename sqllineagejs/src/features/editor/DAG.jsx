@@ -3,13 +3,7 @@ import CytoscapeComponent from "react-cytoscapejs";
 import dagre from "cytoscape-dagre";
 import cytoscape from "cytoscape";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  SpeedDial,
-  SpeedDialIcon,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-} from "@mui/material";
+import { SpeedDial, SpeedDialIcon, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
 import SpeedDialAction from "@mui/material/SpeedDialAction";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
@@ -58,8 +52,7 @@ export function DAG(props) {
   const handleLevel = (event, value) => {
     if (cyRef.current) {
       let cy = cyRef.current._cy;
-      let data =
-        value === "column" ? editorState.dagColumn : editorState.dagContent;
+      let data = value === "column" ? editorState.dagColumn : editorState.dagContent;
       let layout = value === "column" ? layoutColumn : layoutTable;
       cy.elements().remove();
       cy.add(data);
@@ -118,10 +111,7 @@ export function DAG(props) {
               .filter((n) => n.data().temporary === undefined)
               .lock();
             cy.elements()
-              .filter(
-                (n) =>
-                  n.data().temporary === true || n.data().id === sel.data().id,
-              )
+              .filter((n) => n.data().temporary === true || n.data().id === sel.data().id)
               .layout({
                 boundingBox: {
                   x1: sel.position().x,
@@ -152,15 +142,11 @@ export function DAG(props) {
       cy.removeListener("click", "node");
       cy.on("click", "node", (e) => {
         let sel = e.target;
-        let columnLevel = cy
-          .elements()
-          .some((e) => e.isNode() && e.data().type === "Column");
+        let columnLevel = cy.elements().some((e) => e.isNode() && e.data().type === "Column");
         if (sel.data().type === "Column" || !columnLevel) {
           let elements = sel.union(sel.successors()).union(sel.predecessors());
           if (columnLevel) {
-            elements = elements.filter(
-              (e) => e.isNode() && e.data().type === "Column",
-            );
+            elements = elements.filter((e) => e.isNode() && e.data().type === "Column");
           }
           if (elements.every((e) => e.hasClass("highlight_locked"))) {
             elements.removeClass("highlight_locked");
@@ -181,10 +167,7 @@ export function DAG(props) {
           const z = Math.sqrt(x * x + y * y);
           const costheta = x / z;
           const alpha = 0.2;
-          const controlPointDistances = [
-            -alpha * y * costheta,
-            alpha * y * costheta,
-          ];
+          const controlPointDistances = [-alpha * y * costheta, alpha * y * costheta];
           edge.style("curve-style", "unbundled-bezier");
           edge.style("control-point-distances", controlPointDistances);
           edge.style("control-point-weights", [alpha, 1 - alpha]);
@@ -199,10 +182,7 @@ export function DAG(props) {
     return (
       <LoadError
         minHeight={props.height}
-        message={
-          editorState.dagError +
-          "\nPlease check your SQL code for potential syntax error in Script View."
-        }
+        message={editorState.dagError + "\nPlease check your SQL code for potential syntax error in Script View."}
       />
     );
   } else if (editorState.dagContent.length === 0) {
@@ -217,8 +197,7 @@ export function DAG(props) {
           "Have fun!";
         info = true;
       } else {
-        message =
-          "No Lineage Info found in your SQL.\nPlease review your code in Script View.";
+        message = "No Lineage Info found in your SQL.\nPlease review your code in Script View.";
       }
     } else {
       message = `No Lineage Info found in SQL file ${editorState.file}.\nPlease review the code in Script View.`;
@@ -377,11 +356,7 @@ export function DAG(props) {
           direction="left"
           FabProps={{ size: "small" }}
         >
-          <SpeedDialAction
-            title="Save"
-            icon={<SaveAltIcon />}
-            onClick={handleSave}
-          />
+          <SpeedDialAction title="Save" icon={<SaveAltIcon />} onClick={handleSave} />
           <SpeedDialAction
             title="Zoom In"
             icon={<ZoomInIcon />}

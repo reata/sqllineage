@@ -13,3 +13,11 @@ repos:
     - id: mypy
       additional_dependencies:
         - sqlfluff
+  - repo: local
+    hooks:
+      - id: js-check
+        name: js check (eslint + prettier)
+        entry: bash -c 'if command -v npm >/dev/null 2>&1; then cd sqllineagejs && npm run check; else echo "npm not found; skipping js check (CI enforces it)"; fi'
+        language: system
+        files: ^sqllineagejs/
+        pass_filenames: false

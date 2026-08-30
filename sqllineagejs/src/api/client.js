@@ -3,9 +3,7 @@ import { BACKEND_API } from "../config.js";
 // A tiny wrapper around fetch(), borrowed from
 // https://kentcdodds.com/blog/replace-axios-with-a-simple-custom-fetch-wrapper
 export function assemble_absolute_endpoint(relative_endpoint) {
-  let api_prefix = BACKEND_API
-    ? BACKEND_API
-    : new URL(window.location.href).origin;
+  let api_prefix = BACKEND_API ? BACKEND_API : new URL(window.location.href).origin;
   return `${api_prefix}${relative_endpoint}`;
 }
 

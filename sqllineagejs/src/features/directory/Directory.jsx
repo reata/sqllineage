@@ -5,11 +5,7 @@ import { Snackbar } from "@mui/material";
 import { Loading } from "../widget/Loading";
 import { LoadError } from "../widget/LoadError";
 
-import {
-  fetchRootDirectory,
-  selectDirectory,
-  setOpenNonSQLWarning,
-} from "./directorySlice";
+import { fetchRootDirectory, selectDirectory, setOpenNonSQLWarning } from "./directorySlice";
 import DirectoryTreeItem from "./DirectoryTreeItem";
 
 export function Directory(props) {
@@ -26,9 +22,7 @@ export function Directory(props) {
   if (directoryState.status === "loading") {
     return <Loading minHeight={props.height} />;
   } else if (directoryState.status === "failed") {
-    return (
-      <LoadError minHeight={props.height} message={directoryState.error} />
-    );
+    return <LoadError minHeight={props.height} message={directoryState.error} />;
   } else {
     return (
       <div>

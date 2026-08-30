@@ -16,10 +16,7 @@ export function DAGDesc(props) {
     return (
       <LoadError
         minHeight={props.height}
-        message={
-          editorState.dagError +
-          "\nPlease check your SQL code for potential syntax error in Script View."
-        }
+        message={editorState.dagError + "\nPlease check your SQL code for potential syntax error in Script View."}
       />
     );
   } else {
@@ -29,13 +26,6 @@ export function DAGDesc(props) {
       wordWrap: "on",
       automaticLayout: true,
     };
-    return (
-      <MonacoEditor
-        width={props.width}
-        height={props.height}
-        value={editorState.dagVerbose}
-        options={options}
-      />
-    );
+    return <MonacoEditor width={props.width} height={props.height} value={editorState.dagVerbose} options={options} />;
   }
 }

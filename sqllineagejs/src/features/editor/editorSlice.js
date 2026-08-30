@@ -18,12 +18,9 @@ const initialState = {
   dagError: null,
 };
 
-export const fetchContent = createAsyncThunk(
-  "editor/fetchContent",
-  async (payload) => {
-    return await client.post(assemble_absolute_endpoint("/script"), payload);
-  },
-);
+export const fetchContent = createAsyncThunk("editor/fetchContent", async (payload) => {
+  return await client.post(assemble_absolute_endpoint("/script"), payload);
+});
 
 export const fetchDAG = createAsyncThunk("dag/fetchDAG", async (payload) => {
   let dialect = localStorage.getItem("dialect");
@@ -83,12 +80,6 @@ export const editorSlice = createSlice({
 });
 
 export const selectEditor = (state) => state.editor;
-export const {
-  setContentComposed,
-  setDagLevel,
-  setEditable,
-  setFile,
-  setDialect,
-} = editorSlice.actions;
+export const { setContentComposed, setDagLevel, setEditable, setFile, setDialect } = editorSlice.actions;
 
 export default editorSlice.reducer;

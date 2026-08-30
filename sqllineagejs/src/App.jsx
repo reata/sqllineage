@@ -68,9 +68,7 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = React.useState(true);
   const [drawerWidth, setDrawerWidth] = React.useState(18);
   const [dialectMenuAnchor, setDialectMenuAnchor] = React.useState(null);
-  const [dialectSelected, setDialectSelected] = React.useState(
-    () => localStorage.getItem("dialect") ?? "ansi",
-  );
+  const [dialectSelected, setDialectSelected] = React.useState(() => localStorage.getItem("dialect") ?? "ansi");
   const isResizing = React.useRef(false);
 
   const width = useMemo(() => {
@@ -177,11 +175,7 @@ export default function App() {
                   <div>
                     <ListSubheader>{entry[0]}</ListSubheader>
                     {entry[1].map((dialect) => (
-                      <MenuItem
-                        selected={dialect === dialectSelected}
-                        value={dialect}
-                        onClick={handleDialectMenuClose}
-                      >
+                      <MenuItem selected={dialect === dialectSelected} value={dialect} onClick={handleDialectMenuClose}>
                         {dialect}
                       </MenuItem>
                     ))}
@@ -190,18 +184,12 @@ export default function App() {
               </Menu>
 
               {editorState.editable ? (
-                <Tooltip
-                  title="Visualize Lineage By Filling In Your Own SQL"
-                  arrow
-                >
+                <Tooltip title="Visualize Lineage By Filling In Your Own SQL" arrow>
                   <div>Composing Mode</div>
                 </Tooltip>
               ) : (
                 <Link to="/" style={{ color: "white" }}>
-                  <Tooltip
-                    title="Enter Composing Mode to Visualize Your Own SQL"
-                    arrow
-                  >
+                  <Tooltip title="Enter Composing Mode to Visualize Your Own SQL" arrow>
                     <IconButton
                       color="inherit"
                       onClick={() => {
@@ -262,11 +250,7 @@ export default function App() {
             boxSizing: "border-box",
           })}
         >
-          <Paper
-            elevation="24"
-            sx={{ flexGrow: 1, minHeight: "240px" }}
-            style={{ width: width }}
-          >
+          <Paper elevation="24" sx={{ flexGrow: 1, minHeight: "240px" }} style={{ width: width }}>
             <Box sx={viewSelected === "dag" ? { height: "100%" } : { display: "none" }}>
               <DAG height="100%" width={width} />
             </Box>
@@ -287,21 +271,9 @@ export default function App() {
                 value={viewSelected}
                 onChange={(event) => setViewSelected(event.target.value)}
               >
-                <FormControlLabel
-                  value="dag"
-                  control={<Radio color="primary" />}
-                  label="Lineage View"
-                />
-                <FormControlLabel
-                  value="text"
-                  control={<Radio color="primary" />}
-                  label="Text View"
-                />
-                <FormControlLabel
-                  value="script"
-                  control={<Radio color="primary" />}
-                  label="Script View"
-                />
+                <FormControlLabel value="dag" control={<Radio color="primary" />} label="Lineage View" />
+                <FormControlLabel value="text" control={<Radio color="primary" />} label="Text View" />
+                <FormControlLabel value="script" control={<Radio color="primary" />} label="Script View" />
               </RadioGroup>
             </FormControl>
           </Grid>

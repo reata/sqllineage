@@ -84,11 +84,7 @@ export function Editor(props) {
         width={width}
         height={height}
         language="sql"
-        value={
-          editorState.editable
-            ? editorState.contentComposed
-            : editorState.content
-        }
+        value={editorState.editable ? editorState.contentComposed : editorState.content}
         options={options}
         onMount={handleEditorDidMount}
       />

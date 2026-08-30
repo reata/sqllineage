@@ -13,10 +13,7 @@ export const DirectoryAPI = async (payload) => {
   return await client.post(assemble_absolute_endpoint("/directory"), payload);
 };
 
-export const fetchRootDirectory = createAsyncThunk(
-  "directory/fetchDirectory",
-  DirectoryAPI,
-);
+export const fetchRootDirectory = createAsyncThunk("directory/fetchDirectory", DirectoryAPI);
 
 export const directorySlice = createSlice({
   name: "directory",

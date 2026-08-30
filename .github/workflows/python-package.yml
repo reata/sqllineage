@@ -39,3 +39,26 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         verbose: true
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: Set up Node.js
+      uses: actions/setup-node@v7
+      with:
+        node-version: '22'
+        cache: npm
+        cache-dependency-path: sqllineagejs/package-lock.json
+    - name: Install dependencies
+      working-directory: sqllineagejs
+      run: npm ci
+    - name: Lint
+      working-directory: sqllineagejs
+      run: npm run lint
+    - name: Check formatting
+      working-directory: sqllineagejs
+      run: npm run format:check
+    - name: Build
+      working-directory: sqllineagejs
+      run: npm run build
