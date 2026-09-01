@@ -106,6 +106,16 @@ class NetworkXGraphOperator(GraphOperator):
     def get_sub_graph(self, *vertices) -> "NetworkXGraphOperator":
         return NetworkXGraphOperator(self.graph.subgraph(vertices))
 
+    def ancestors(self, vertex: Any) -> set[Any]:
+        if vertex not in self.graph:
+            raise KeyError(f"vertex not found in graph: {vertex!r}")
+        return set(nx.ancestors(self.graph, vertex))
+
+    def descendants(self, vertex: Any) -> set[Any]:
+        if vertex not in self.graph:
+            raise KeyError(f"vertex not found in graph: {vertex!r}")
+        return set(nx.descendants(self.graph, vertex))
+
     def merge(self, other: GraphOperator) -> None:
         if isinstance(other, NetworkXGraphOperator):
             self.graph = nx.compose(self.graph, other.graph)
@@ -115,6 +125,16 @@ class NetworkXGraphOperator(GraphOperator):
             )
 
     def list_lineage_paths(self, src_vertex: Any, tgt_vertex: Any) -> list[list[Any]]:
+        for vertex in (src_vertex, tgt_vertex):
+            if vertex not in self.graph:
+                raise KeyError(f"vertex not found in graph: {vertex!r}")
+        if src_vertex == tgt_vertex:
+            # nx.all_simple_paths trivially returns [[src_vertex]] for src == tgt
+            # regardless of whether a self-loop edge exists; only report a path
+            # when a real self-loop edge is present, matching rustworkx's shape.
+            if self.graph.has_edge(src_vertex, src_vertex):
+                return [[src_vertex, src_vertex]]
+            return []
         return list(nx.all_simple_paths(self.graph, src_vertex, tgt_vertex))
 
     def to_cytoscape(

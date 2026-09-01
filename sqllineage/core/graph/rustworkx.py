@@ -181,6 +181,18 @@ class RustworkXGraphOperator(GraphOperator):
         ]
         return RustworkXGraphOperator(self.graph.subgraph(indices))
 
+    def ancestors(self, vertex: Any) -> set[Any]:
+        if vertex not in self._vertex_to_index:
+            raise KeyError(f"vertex not found in graph: {vertex!r}")
+        idx = self._vertex_to_index[vertex]
+        return {self.graph[i]["vertex"] for i in rx.ancestors(self.graph, idx)}
+
+    def descendants(self, vertex: Any) -> set[Any]:
+        if vertex not in self._vertex_to_index:
+            raise KeyError(f"vertex not found in graph: {vertex!r}")
+        idx = self._vertex_to_index[vertex]
+        return {self.graph[i]["vertex"] for i in rx.descendants(self.graph, idx)}
+
     def merge(self, other: GraphOperator) -> None:
         if isinstance(other, RustworkXGraphOperator):
             # Create a mapping from other's indices to self's indices
@@ -211,12 +223,21 @@ class RustworkXGraphOperator(GraphOperator):
             )
 
     def list_lineage_paths(self, src_vertex: Any, tgt_vertex: Any) -> list[list[Any]]:
+        for vertex in (src_vertex, tgt_vertex):
+            if vertex not in self._vertex_to_index:
+                raise KeyError(f"vertex not found in graph: {vertex!r}")
+        src_idx = self._vertex_to_index[src_vertex]
+        tgt_idx = self._vertex_to_index[tgt_vertex]
+        if src_vertex == tgt_vertex:
+            # rx.all_simple_paths reports a cycle through src == tgt as one long
+            # path, e.g. [v2, v1, v5, v3, v4, v2], not just the self-loop edge;
+            # only report a path when a real self-loop edge is present, matching
+            # networkx's shape.
+            if self.graph.has_edge(src_idx, src_idx):
+                return [[src_vertex, src_vertex]]
+            return []
         result = []
-        for path in rx.all_simple_paths(
-            self.graph,
-            self._vertex_to_index.get(src_vertex, -1),
-            self._vertex_to_index.get(tgt_vertex, -1),
-        ):
+        for path in rx.all_simple_paths(self.graph, src_idx, tgt_idx):
             path_vertices = []
             for idx in path:
                 node_data = self.graph[idx]

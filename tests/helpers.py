@@ -18,6 +18,14 @@ from sqllineage.core.metadata.sqlalchemy import SQLAlchemyMetaDataProvider
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Column, Table
 from sqllineage.runner import LineageRunner
+from sqllineage.utils.entities import ColumnQualifierTuple
+
+
+def build_column(col: ColumnQualifierTuple) -> Column:
+    column = Column(col.column)
+    if col.qualifier is not None:
+        column.parent = Table(col.qualifier)
+    return column
 
 
 def _assert_table_lineage(lr: LineageRunner, source_tables=None, target_tables=None):
@@ -41,12 +49,7 @@ def _assert_column_lineage(lr: LineageRunner, column_lineages=None):
     expected = set()
     if column_lineages:
         for src, tgt in column_lineages:
-            src_col: Column = Column(src.column)
-            if src.qualifier is not None:
-                src_col.parent = Table(src.qualifier)
-            tgt_col: Column = Column(tgt.column)
-            tgt_col.parent = Table(tgt.qualifier)
-            expected.add((src_col, tgt_col))
+            expected.add((build_column(src), build_column(tgt)))
     actual = {(lineage[0], lineage[-1]) for lineage in set(lr.get_column_lineage())}
 
     assert (
