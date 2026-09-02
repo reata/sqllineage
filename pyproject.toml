@@ -42,8 +42,8 @@ classifiers = [
 ]
 dynamic = ["version"]
 
-[project.optional-dependencies]
-ci = [
+[dependency-groups]
+dev = [
     "black>=26.1.0",
     "mypy>=1.19.0",
     "pytest>=8.4.1",
@@ -78,11 +78,11 @@ path = "sqllineage/__init__.py"
 path = "hatch_build.py"
 
 [tool.tox]
-requires = ["tox>=4.19"]
+requires = ["tox>=4.28.4"]
 env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
 [tool.tox.env_run_base]
-deps = [".[ci]"]
+dependency_groups = ["dev"]
 commands = [
     ["black", ".", "--check", "--diff"],
     ["ruff", "check", "."],
