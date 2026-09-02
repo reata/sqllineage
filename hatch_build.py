@@ -2,7 +2,6 @@
 Hatch build hook for building frontend assets.
 """
 
-import os
 import platform
 import shlex
 import shutil
@@ -29,8 +28,6 @@ class FrontendBuildHook(BuildHookInterface):
            then install from sdist. sdist itself does not include built static files, same as source code repo.
            Installation from sdist will trigger this hook. (by building a wheel from sdist)
         """
-        if "READTHEDOCS" in os.environ:
-            return
         py_path = Path("sqllineage")
         static_folder = "build"
         static_path = py_path / static_folder
