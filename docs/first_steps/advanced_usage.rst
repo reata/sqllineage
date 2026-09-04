@@ -31,14 +31,14 @@ And if you want to see lineage for each SQL statement, just toggle verbose optio
         table read: [Table: db2.table2]
         table write: [Table: db1.table1]
         table cte: []
-        table rename: []
         table drop: []
+        table rename: []
     Statement #2: insert into db3.table3 select * from db1.table1;
         table read: [Table: db1.table1]
         table write: [Table: db3.table3]
         table cte: []
-        table rename: []
         table drop: []
+        table rename: []
     ==========
     Summary:
     Statements(#): 2
@@ -102,7 +102,7 @@ will be printed.
              LEFT JOIN (SELECT bar_id, sum(col3) AS col3_sum
                         FROM qux
                         GROUP BY bar_id) c
-                       ON a.id = sq.bar_id
+                       ON a.id = c.bar_id
              CROSS JOIN quux d;
 
     INSERT INTO corge
@@ -140,7 +140,7 @@ col4 could be coming from `bar`, `baz` or `quux`. Without metadata, this is the 
 User can optionally provide the metadata information to sqllineage to improve the lineage result.
 
 Suppose all the tables are created in sqlite database with a file called `db.db`. In particular,
-table `quux` has columns `col5` and `col6` and `baz` has column `col4`.
+tables `baz` and `quux` are created with the following schema:
 
 .. code-block:: bash
 
@@ -153,12 +153,13 @@ Now given the same SQL, column lineage is fully resolved.
 
     $ SQLLINEAGE_DEFAULT_SCHEMA=main sqllineage -f test.sql -l column --sqlalchemy_url=sqlite:///db.db
     main.corge.col1 <- main.foo.col1 <- main.bar.col1
-    main.corge.col2 <- main.foo.col2 <- main.bar.col1
+    main.corge.col2 <- main.foo.col2 <- main.baz.col1
     main.corge.col2 <- main.grault.col2
     main.foo.col3 <- c.col3_sum <- main.qux.col3
     main.foo.col4 <- main.baz.col4
     main.foo.col5 <- main.quux.col5
     main.foo.col6 <- main.quux.col6
+    main.foo.quux_id <- main.quux.quux_id
 
 The default schema name in sqlite is called `main`, we have to specify here because the tables in SQL file are unqualified.
 
