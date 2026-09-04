@@ -12,12 +12,12 @@
     "@mui/x-tree-view": "^9.12.0",
     "@reduxjs/toolkit": "^2.12.0",
     "cytoscape": "^3.34.2",
-    "cytoscape-dagre": "^4.0.0",
+    "cytoscape-dagre": "^4.0.1",
     "react": "^19.2.8",
     "react-cytoscapejs": "^2.0.0",
     "react-dom": "^19.2.8",
     "react-redux": "^9.3.0",
-    "react-router-dom": "^7.18.2"
+    "react-router-dom": "^7.18.3"
   },
   "scripts": {
     "start": "vite",
@@ -44,7 +44,7 @@
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "@vitejs/plugin-react": "^6.1.0",
+    "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^10.9.1",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-react-hooks": "^7.1.1",
