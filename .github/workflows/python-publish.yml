@@ -22,7 +22,8 @@ jobs:
         python -m build
     - uses: actions/upload-artifact@v7
       with:
-        path: ./dist
+        name: python-package-distributions
+        path: dist/
   pypi-publish:
     needs: ['build']
     runs-on: ubuntu-latest
@@ -31,7 +32,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/download-artifact@v8
+        with:
+          name: python-package-distributions
+          path: dist/
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: artifact/
+          packages-dir: dist/
