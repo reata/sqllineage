@@ -4,13 +4,15 @@ SQLLineage: SQL Lineage Analysis Tool Powered by Python
 Never get the hang of a SQL parser? SQLLineage comes to the rescue. Given a SQL command, SQLLineage will tell you its
 source and target tables, without worrying about Tokens, Keyword, Identified and all the jagons used by a SQL parser.
 
-Behind the scene, SQLLineage pluggable leverages parser library `sqlfluff`_ and `sqlparse`_ to parse the SQL command,
-analyze the AST, stores the lineage information in a graph (using graph library `networkx`_), and bring you all the
-human-readable result with ease.
+Behind the scene, SQLLineage leverages pluggable parser libraries `sqlfluff`_ and `sqlparse`_ to parse the SQL command
+and analyze the AST. The lineage information is then stored in a graph maintained by a pluggable graph operator with
+two interchangeable implementations: the `networkx`_-based one, which is the default, and an opt-in `rustworkx`_-based
+one. Check :doc:`gear_up/configuration` for how to choose between them.
 
 .. _sqlfluff: https://github.com/sqlfluff/sqlfluff
 .. _sqlparse: https://github.com/andialbrecht/sqlparse
 .. _networkx: https://github.com/networkx/networkx
+.. _rustworkx: https://github.com/Qiskit/rustworkx
 
 First steps
 ===========
