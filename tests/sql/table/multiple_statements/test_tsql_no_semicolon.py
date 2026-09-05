@@ -21,3 +21,24 @@ insert into tab2 select * from bar"""
         dialect=dialect,
         test_sqlparse=False,
     )
+
+
+@patch.dict(os.environ, {"SQLLINEAGE_TSQL_NO_SEMICOLON": "TRUE"})
+@pytest.mark.parametrize("dialect", ["tsql"])
+def test_tsql_multi_statement_no_semicolon_with_group_by(dialect: str):
+    """
+    tsql multiple statements without explicit semicolon, where the first statement
+    ends with a group by clause.
+
+    Regression test for https://github.com/reata/sqllineage/issues/573: sqlfluff
+    used to swallow the following statement into the group-by expression as a single
+    statement. Fixed upstream in sqlfluff (https://github.com/sqlfluff/sqlfluff/issues/5601).
+    """
+    sql = """select id from foo group by id
+select * from bar"""
+    assert_table_lineage_equal(
+        sql,
+        {"foo", "bar"},
+        dialect=dialect,
+        test_sqlparse=False,
+    )

@@ -108,6 +108,16 @@ def test_set_command(dialect: str):
     )
 
 
+@pytest.mark.parametrize("dialect", ["hive"])
+def test_set_command_with_unquoted_value(dialect: str):
+    """
+    Regression test for https://github.com/reata/sqllineage/issues/504: hive set
+    statement with an unquoted string value was unparsable. Fixed upstream in sqlfluff
+    (https://github.com/sqlfluff/sqlfluff/pull/7767, released in 4.2.0).
+    """
+    assert_table_lineage_equal("SET hive.execution.engine=mr", dialect=dialect)
+
+
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_set_command_without_property_value(dialect: str):
     assert_table_lineage_equal("SET spark.sql.variable.substitute", dialect=dialect)
