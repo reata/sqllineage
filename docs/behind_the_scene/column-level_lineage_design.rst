@@ -23,6 +23,12 @@ Questions Before Implementation
 
 **Answer**: See design principle for two possible data structure. I would prefer property graph for this.
 
+.. note::
+     This document is a historical record of the early design discussion. Since v1.5.7, the graph representation has
+     been pluggable through the ``GraphOperator`` interface: the ``networkx``-based implementation remains the default,
+     while a ``rustworkx``-based implementation is available as an opt-in choice for better performance on large
+     lineage graphs. See :doc:`/gear_up/configuration` for details.
+
 2. **How do we deal with** ``select *`` **?**
    In following case, we don't know which columns are in tab2
 

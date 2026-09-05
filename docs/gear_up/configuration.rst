@@ -92,17 +92,21 @@ Since: 1.4.8
 
 GRAPH_OPERATOR_CLASS
 ====================
-A rustworkx graph operator implementation is available since v1.5.7. Set this config to
-``sqllineage.core.graph.rustworkx.RustworkXGraphOperator`` to enable it for better performance, in particular
-when handling large lineage graphs.
+The graph operator is the pluggable layer that maintains the lineage graph. Two implementations are provided:
 
-SQLLineage uses networkx as default graph operator implementation. Any import errors when using other graph operator
-will fallback to networkx implementation.
+* ``sqllineage.core.graph.networkx.NetworkXGraphOperator``: the ``networkx``-based implementation, which is the default.
+* ``sqllineage.core.graph.rustworkx.RustworkXGraphOperator``: the ``rustworkx``-based implementation, available since
+  v1.5.7 as an opt-in choice.
+
+While networkx remains the default, we recommend switching to rustworkx for better performance, in particular when
+handling large lineage graphs. It has been validated against large-scale SQL workloads in production and shows
+significant performance improvement over the networkx implementation while passing the whole test suite. Any import
+errors when using a non-default graph operator will fallback to the networkx implementation.
 
 .. note::
-     This is an experimental feature. Based on our test suite, rustworkx graph operator shows significant performance
-     improvement over networkx implementation and passes all tests. However, there might be edge cases not covered
-     by our tests. Please report any issues you encounter when using rustworkx graph operator.
+     rustworkx graph operator is still an opt-in feature: sqllineage defaults to the networkx implementation unless you
+     opt in by setting this config, though we may switch the default in a future release. There might be edge cases
+     not covered by our tests, so please report any issues you encounter when using rustworkx graph operator.
 
 Default: ``sqllineage.core.graph.networkx.NetworkXGraphOperator``
 
