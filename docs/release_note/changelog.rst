@@ -2,6 +2,47 @@
 Changelog
 *********
 
+v1.5.9
+======
+:Date: September 5, 2026
+
+This is a minor release with six enhancements and several bugfixes. A special thanks to `rubytobi
+<https://github.com/rubytobi>`_ for a series of contributions that keep pushing sqllineage's performance
+forward: batch SQLFluff parsing, ``Table``/``Column`` stringification and hashing cache, node-scoped column
+lineage, and, since v1.5.7, the rustworkx-based graph operator.
+
+Having been validated against large-scale SQL workloads in production, the rustworkx graph operator shows
+significant performance improvement over the networkx implementation. We now recommend users to switch the
+graph operator to rustworkx by setting ``GRAPH_OPERATOR_CLASS`` to
+``sqllineage.core.graph.rustworkx.RustworkXGraphOperator``.
+
+For users consuming sqllineage as a library, this release ships a ``py.typed`` marker (PEP 561) so static type
+checkers such as mypy and pyright can make use of sqllineage's type hints, no longer reconfigures the root logger
+so embedding sqllineage in your own application leaves your logging setup untouched, and moves development and
+documentation dependencies into PEP 735 dependency groups so the ``ci`` and ``docs`` extras are no longer shipped
+with the published package.
+
+Enhancement
+-------------
+* Move development and documentation dependencies into PEP 735 dependency groups, so the `ci` and `docs` extras are no longer shipped with the published package (`#828 <https://github.com/reata/sqllineage/pull/828>`_)
+* Support node-scoped column lineage to analyze the lineage of a specific node only, a performance improvement (`#803 <https://github.com/reata/sqllineage/pull/803>`_)
+* Ship `py.typed` marker for PEP 561 compliance so static type checkers such as mypy and pyright can make use of sqllineage's type hints when it is used as a library (`#802 <https://github.com/reata/sqllineage/pull/802>`_)
+* Cache `Table` and `Column` `__str__`/`__hash__` results to avoid repeated recomputation, a performance improvement (`#792 <https://github.com/reata/sqllineage/pull/792>`_)
+* Configure only the `sqllineage` logger in `DEFAULT_LOGGING` instead of the root logger, so embedding sqllineage in your own application no longer alters your application's logging setup (`#791 <https://github.com/reata/sqllineage/pull/791>`_)
+* Reduce hot-path overhead of column lineage analysis by batch parsing statements with SQLFluff, a performance improvement (`#778 <https://github.com/reata/sqllineage/pull/778>`_)
+
+Bugfix
+-------------
+* Lineage across RENAME dropped when using rustworkx as graph operator (`#798 <https://github.com/reata/sqllineage/pull/798>`_)
+* Drawing server directory access check bypassable with a sibling directory sharing the root's string prefix (`#797 <https://github.com/reata/sqllineage/pull/797>`_)
+* Column lineage lost for tsql UPDATE/MERGE when SET RHS is wrapped in an expression (`#796 <https://github.com/reata/sqllineage/pull/796>`_)
+* Source table missing when subquery is used in scalar projection or CASE ELSE branch (`#795 <https://github.com/reata/sqllineage/pull/795>`_)
+* tsql bracket identifier containing quote character not unquoted correctly (`#794 <https://github.com/reata/sqllineage/pull/794>`_)
+* SQL statement parsed twice on the upload path because of cache key mismatch on trailing semicolons (`#793 <https://github.com/reata/sqllineage/pull/793>`_)
+* PostgreSQL quoted table identifier containing dots raises SQLLineageException (`#787 <https://github.com/reata/sqllineage/issues/787>`_)
+* Error parsing tsql without semicolons (`#573 <https://github.com/reata/sqllineage/issues/573>`_)
+* hive SET statement with unquoted string value fails to parse (`#504 <https://github.com/reata/sqllineage/issues/504>`_)
+
 v1.5.8
 ======
 :Date: May 16, 2026
