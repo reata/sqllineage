@@ -44,3 +44,11 @@ def test_alter_target_table_name():
         {"tab2"},
         {"tab3"},
     )
+
+
+def test_alter_source_table_name():
+    assert_table_lineage_equal(
+        "INSERT INTO tab1 SELECT * FROM tab2; ALTER TABLE tab2 RENAME TO tab3;",
+        {"tab3"},
+        {"tab1"},
+    )

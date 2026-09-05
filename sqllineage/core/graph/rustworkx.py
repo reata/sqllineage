@@ -149,14 +149,17 @@ class RustworkXGraphOperator(GraphOperator):
                 tgt_vertex = (
                     tgt_node.get("vertex") if isinstance(tgt_node, dict) else tgt_node
                 )
-                label = edge_data["label"]
+                # use a dedicated local so the `label` filter parameter is not mutated
+                # across iterations (otherwise, when called with label=None, every edge
+                # after the first would be filtered by the first edge's label)
+                edge_label = edge_data["label"]
                 attributes = edge_data.copy()
                 attributes.pop("label")
                 edges.append(
                     EdgeTuple(
                         source=src_vertex,
                         target=tgt_vertex,
-                        label=label,
+                        label=edge_label,
                         attributes=attributes,
                     )
                 )
