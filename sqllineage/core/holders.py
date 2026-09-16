@@ -162,15 +162,18 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         """
         tgt_cols = []
         if tgt_tbl := self._get_target_table():
-            tbl_col_edges = self.go.retrieve_edges_by_vertex(
-                tgt_tbl, EdgeDirection.OUT, EdgeType.HAS_COLUMN
-            )
-            tgt_col_with_idx: list[tuple[Column, int]] = sorted(
-                [(e.target, e.attributes.get(EdgeTag.INDEX, 0)) for e in tbl_col_edges],
-                key=lambda x: x[1],
-            )
-            tgt_cols = [x[0] for x in tgt_col_with_idx]
+            tgt_cols = self._get_ordered_columns(tgt_tbl)
         return tgt_cols
+
+    def _get_ordered_columns(self, table: Table | SubQuery) -> list[Column]:
+        tbl_col_edges = self.go.retrieve_edges_by_vertex(
+            table, EdgeDirection.OUT, EdgeType.HAS_COLUMN
+        )
+        col_with_idx: list[tuple[Column, int]] = sorted(
+            [(e.target, e.attributes.get(EdgeTag.INDEX, 0)) for e in tbl_col_edges],
+            key=lambda x: x[1],
+        )
+        return [x[0] for x in col_with_idx]
 
     def add_write_column(self, *tgt_cols: Column) -> None:
         """
@@ -208,16 +211,23 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             if isinstance(edge.target, Column) and edge.target.raw_name != "*"
         ]
 
-    def expand_wildcard(self, metadata_provider: MetaDataProvider) -> None:
-        if tgt_table := self._get_target_table():
-            for column in self.write_columns:
+    def expand_wildcard(
+        self,
+        metadata_provider: MetaDataProvider,
+        tgt_table: Table | SubQuery | None = None,
+        resolve_cte: bool = True,
+    ) -> None:
+        if tgt_table is None:
+            tgt_table = self._get_target_table()
+        if tgt_table is not None:
+            for column in self._get_ordered_columns(tgt_table):
                 if column.raw_name == "*":
                     tgt_wildcard = column
                     src_wildcards = self.get_source_columns(tgt_wildcard)
                     # Enable positional mapping only for UNION-of-* into a real table; avoid join/subquery cases
                     wildcard_in_union = (
                         isinstance(tgt_table, Table)
-                        and len(self.write_columns) == 1
+                        and len(self._get_ordered_columns(tgt_table)) == 1
                         and len(src_wildcards) > 1
                     )
                     for src_wildcard in src_wildcards:
@@ -225,7 +235,12 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                             src_table_columns = []
                             if isinstance(source_table, SubQuery):
                                 # the columns of SubQuery can be inferred from graph
-                                src_table_columns = self.get_table_columns(source_table)
+                                if self._has_known_columns(
+                                    source_table, metadata_provider, resolve_cte
+                                ):
+                                    src_table_columns = self.get_table_columns(
+                                        source_table
+                                    )
                             elif isinstance(source_table, Table) and metadata_provider:
                                 # search by metadata service
                                 src_table_columns = metadata_provider.get_table_columns(
@@ -274,6 +289,39 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             )
             if isinstance(e.source, Column)
         ]
+
+    def _has_known_columns(
+        self,
+        subquery: SubQuery,
+        metadata_provider: MetaDataProvider,
+        resolve_cte: bool,
+        visiting: frozenset[SubQuery] | None = None,
+    ) -> bool:
+        # A column can be attached to a SubQuery just by being referenced, so its
+        # columns are only complete if every wildcard it selects comes from a
+        # dataset whose columns are complete too.
+        visiting = visiting or frozenset()
+        if subquery in visiting or (not resolve_cte and subquery in self.cte):
+            return False
+        visiting = visiting | {subquery}
+        for column in self._get_ordered_columns(subquery):
+            if column.raw_name != "*":
+                continue
+            for src_wildcard in self.get_source_columns(column):
+                parent = src_wildcard.parent
+                if isinstance(parent, SubQuery):
+                    known = self._has_known_columns(
+                        parent, metadata_provider, resolve_cte, visiting
+                    )
+                else:
+                    known = bool(
+                        isinstance(parent, Table)
+                        and metadata_provider
+                        and metadata_provider.get_table_columns(parent)
+                    )
+                if not known:
+                    return False
+        return True
 
     def _replace_wildcard(
         self,
