@@ -144,3 +144,67 @@ FROM (SELECT col1 AS "Abc" FROM tab2) dt"""
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
+
+
+def test_select_column_from_scalar_subquery():
+    sql = """INSERT INTO tab1
+SELECT col1, (SELECT col2 FROM db.tab3) AS col2
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "db.tab3"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
+    )
+    sql = """INSERT INTO tab1
+SELECT col1, (SELECT t.col2 FROM db.tab3 t) AS col2
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "db.tab3"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
+    )
+
+
+def test_select_column_from_scalar_subquery_with_same_table_name_as_outer_query():
+    sql = """INSERT INTO db1.tab1
+SELECT col1, (SELECT col2 FROM db3.tab2) AS col2
+FROM db2.tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "db2.tab2"),
+                ColumnQualifierTuple("col1", "db1.tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "db3.tab2"),
+                ColumnQualifierTuple("col2", "db1.tab1"),
+            ),
+        ],
+    )
+
+
+def test_select_literal_from_subquery_nested_in_scalar_subquery():
+    sql = """INSERT INTO tab1
+SELECT col1, (SELECT x FROM (SELECT 1 AS x) s) AS col2
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
+    )

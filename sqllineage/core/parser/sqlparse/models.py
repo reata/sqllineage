@@ -128,9 +128,14 @@ class SqlParseColumn(Column):
                 source_columns = [
                     ColumnQualifierTuple(
                         src_col.raw_name,
-                        src_col.parent.raw_name if src_col.parent else None,
+                        # the full table name makes the outer query resolve this exact
+                        # table, not one with the same name in its own FROM clause
+                        str(src_col.parent) if src_col.parent else None,
                     )
                     for src_col in src_cols
+                    # columns of a subquery nested inside this one (e.g. literals)
+                    # aren't visible to the outer query
+                    if src_col.parent is None or isinstance(src_col.parent, Table)
                 ]
             else:
                 # (col1 + col2) AS col3
