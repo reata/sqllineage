@@ -283,6 +283,12 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         src_wildcard: Column,
         wildcard_in_union: bool = False,
     ) -> None:
+        if tgt_wildcard.except_columns:
+            src_table_columns = [
+                c
+                for c in src_table_columns
+                if c.raw_name not in tgt_wildcard.except_columns
+            ]
         target_columns = self.get_table_columns(tgt_table)
         use_positional = wildcard_in_union or (
             len(target_columns) == len(src_table_columns)

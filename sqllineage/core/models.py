@@ -167,6 +167,12 @@ class Column:
             )
         ]
         self.from_alias = kwargs.pop("from_alias", False)
+        # column names excluded by a wildcard's EXCEPT clause (BigQuery/DuckDB
+        # `SELECT * EXCEPT(col1, col2)`), applied when this column is a wildcard
+        # and gets expanded against the source table/subquery's actual columns
+        self.except_columns = [
+            escape_identifier_name(c) for c in kwargs.pop("except_columns", [])
+        ]
 
     def __str__(self):
         try:
