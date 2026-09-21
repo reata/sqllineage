@@ -61,7 +61,9 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
 
         self.end_of_query_cleanup(holder)
 
-        holder.expand_wildcard(self.metadata_provider)
+        # CTE queries are extracted separately, so a CTE's columns aren't known
+        # here. CteExtractor expands wildcards selected from a CTE once they are.
+        holder.expand_wildcard(self.metadata_provider, resolve_cte=False)
 
         return holder
 

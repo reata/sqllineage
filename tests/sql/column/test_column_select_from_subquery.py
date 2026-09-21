@@ -144,3 +144,13 @@ FROM (SELECT col1 AS "Abc" FROM tab2) dt"""
         sql,
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
+
+
+def test_nested_subquery_with_partial_wildcard_expansion():
+    sql = """INSERT INTO tab1
+SELECT *
+FROM (SELECT col1, * FROM (SELECT * FROM tab2) t2) t3"""
+    assert_column_lineage_equal(
+        sql,
+        [(ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1"))],
+    )
