@@ -292,7 +292,10 @@ def extract_as_and_target_segment(
 def extract_column_qualifier(segment: BaseSegment) -> ColumnQualifierTuple | None:
     cqt = None
     if is_wildcard(segment):
-        identifiers = segment.raw.split(".")
+        # a wildcard_expression like "t.* EXCEPT(col)" also contains the EXCEPT/REPLACE
+        # clause; only wildcard_identifier (e.g. "t.*") identifies the column/qualifier
+        wildcard_segment = segment.get_child("wildcard_identifier") or segment
+        identifiers = wildcard_segment.raw.split(".")
         column = identifiers[-1]
         parent = identifiers[-2] if len(identifiers) > 1 else None
         cqt = ColumnQualifierTuple(column, parent)
@@ -306,6 +309,25 @@ def extract_column_qualifier(segment: BaseSegment) -> ColumnQualifierTuple | Non
             case "identifier":
                 cqt = ColumnQualifierTuple(segment.raw, None)
     return cqt
+
+
+def extract_wildcard_except_columns(segment: BaseSegment) -> list[str]:
+    """
+    For a wildcard_expression segment like "* EXCEPT(col1, col2)" (BigQuery/DuckDB
+    syntax), return the excluded column names. Returns an empty list when the
+    segment isn't a wildcard_expression or carries no EXCEPT clause.
+    """
+    columns = []
+    if segment.type == "wildcard_expression":
+        if select_except_clause := segment.get_child("select_except_clause"):
+            if bracketed := select_except_clause.get_child("bracketed"):
+                columns = [
+                    identifier.raw
+                    for identifier in bracketed.get_children(
+                        "naked_identifier", "quoted_identifier"
+                    )
+                ]
+    return columns
 
 
 def extract_innermost_bracketed(bracketed_segment: BaseSegment) -> BaseSegment:

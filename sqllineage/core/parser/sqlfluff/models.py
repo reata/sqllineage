@@ -5,6 +5,7 @@ from sqllineage.core.models import Column, Schema, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
     extract_identifier,
+    extract_wildcard_except_columns,
     is_subquery,
     is_teradata_title_phrase,
     is_wildcard,
@@ -131,12 +132,14 @@ class SqlFluffColumn(Column):
                 return Column(alias, source_columns=source_columns, from_alias=True)
             if source_columns:
                 column_name = None
+                except_columns: list[str] = []
                 for sub_segment in list_child_segments(column):
                     if sub_segment.type == "column_reference" or is_wildcard(
                         sub_segment
                     ):
                         if cqt := extract_column_qualifier(sub_segment):
                             column_name = cqt.column
+                        except_columns = extract_wildcard_except_columns(sub_segment)
                     elif sub_segment.type == "expression":
                         # special handling for postgres style type cast, col as target column name instead of col::type
                         if len(sub2_segments := list_child_segments(sub_segment)) == 1:
@@ -161,6 +164,7 @@ class SqlFluffColumn(Column):
                 return Column(
                     column.raw if column_name is None else column_name,
                     source_columns=source_columns,
+                    except_columns=except_columns,
                 )
 
         # Wildcard, Case, Function without alias (thus not recognized as an Identifier)

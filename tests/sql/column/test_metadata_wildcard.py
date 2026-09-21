@@ -606,3 +606,200 @@ FROM temp.dim_credit_card"""
         dialect=dialect,
         metadata_provider=provider,
     )
+
+
+@pytest.mark.parametrize(
+    "provider",
+    generate_metadata_providers(
+        {"dataset.table_0": ["A", "B", "C", "D"]},
+    ),
+    ids=["dummy", "sqlalchemy"],
+)
+def test_select_wildcard_except_single_column(provider: MetaDataProvider):
+    sql = """CREATE OR REPLACE TABLE table_1 AS
+    SELECT * EXCEPT(B)
+    FROM dataset.table_0
+    """
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("A", "dataset.table_0"),
+                ColumnQualifierTuple("A", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("C", "dataset.table_0"),
+                ColumnQualifierTuple("C", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("D", "dataset.table_0"),
+                ColumnQualifierTuple("D", "table_1"),
+            ),
+        ],
+        dialect="bigquery",
+        metadata_provider=provider,
+        # EXCEPT() is BigQuery/DuckDB-specific syntax, not understood by the
+        # legacy sqlparse-based parser
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "provider",
+    generate_metadata_providers(
+        {"dataset.table_0": ["A", "B", "C", "D"]},
+    ),
+    ids=["dummy", "sqlalchemy"],
+)
+def test_select_wildcard_except_multiple_columns(provider: MetaDataProvider):
+    sql = """CREATE OR REPLACE TABLE table_1 AS
+    SELECT * EXCEPT(B, C)
+    FROM dataset.table_0
+    """
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("A", "dataset.table_0"),
+                ColumnQualifierTuple("A", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("D", "dataset.table_0"),
+                ColumnQualifierTuple("D", "table_1"),
+            ),
+        ],
+        dialect="bigquery",
+        metadata_provider=provider,
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "provider",
+    generate_metadata_providers(
+        {"dataset.table_0": ["A", "B", "C", "D"]},
+    ),
+    ids=["dummy", "sqlalchemy"],
+)
+def test_select_qualified_wildcard_except_column(provider: MetaDataProvider):
+    sql = """CREATE OR REPLACE TABLE table_1 AS
+    SELECT t.* EXCEPT(B)
+    FROM dataset.table_0 t
+    """
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("A", "dataset.table_0"),
+                ColumnQualifierTuple("A", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("C", "dataset.table_0"),
+                ColumnQualifierTuple("C", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("D", "dataset.table_0"),
+                ColumnQualifierTuple("D", "table_1"),
+            ),
+        ],
+        dialect="bigquery",
+        metadata_provider=provider,
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "provider",
+    generate_metadata_providers(
+        {"dataset.table_0": ["A", "B", "C", "D"]},
+    ),
+    ids=["dummy", "sqlalchemy"],
+)
+def test_select_wildcard_replace_column_keeps_all_columns(provider: MetaDataProvider):
+    # REPLACE(expr AS col) transforms a column's value but doesn't remove it from
+    # the wildcard expansion, unlike EXCEPT
+    sql = """CREATE OR REPLACE TABLE table_1 AS
+    SELECT * REPLACE(B + 1 AS B)
+    FROM dataset.table_0
+    """
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("A", "dataset.table_0"),
+                ColumnQualifierTuple("A", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("B", "dataset.table_0"),
+                ColumnQualifierTuple("B", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("C", "dataset.table_0"),
+                ColumnQualifierTuple("C", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("D", "dataset.table_0"),
+                ColumnQualifierTuple("D", "table_1"),
+            ),
+        ],
+        dialect="bigquery",
+        metadata_provider=provider,
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "provider",
+    generate_metadata_providers(
+        {"dataset.table_0": ["A", "B", "C", "D"]},
+    ),
+    ids=["dummy", "sqlalchemy"],
+)
+def test_select_wildcard_except_and_replace(provider: MetaDataProvider):
+    sql = """CREATE OR REPLACE TABLE table_1 AS
+    SELECT * EXCEPT(B) REPLACE(C + 1 AS C)
+    FROM dataset.table_0
+    """
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("A", "dataset.table_0"),
+                ColumnQualifierTuple("A", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("C", "dataset.table_0"),
+                ColumnQualifierTuple("C", "table_1"),
+            ),
+            (
+                ColumnQualifierTuple("D", "dataset.table_0"),
+                ColumnQualifierTuple("D", "table_1"),
+            ),
+        ],
+        dialect="bigquery",
+        metadata_provider=provider,
+        test_sqlparse=False,
+    )
+
+
+def test_select_wildcard_except_column_from_subquery():
+    # EXCEPT() also applies when the source columns come from the lineage graph
+    # (a subquery) rather than a metadata provider
+    sql = """INSERT INTO tab1
+SELECT * EXCEPT(col2)
+FROM (SELECT col1, col2, col3 FROM tab2) sq"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col3", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
+        dialect="bigquery",
+        test_sqlparse=False,
+    )
