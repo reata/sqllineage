@@ -445,6 +445,33 @@ def test_wildcard_reference_from_previous_statements(provider: MetaDataProvider)
     )
 
 
+def test_select_wildcard_from_cte_selecting_table_wildcard(provider: MetaDataProvider):
+    sql = """with cte as (
+        select * from marts.dim_credit_card
+    )
+    insert into temp.creditcard_snapshot
+    select * from cte
+    """
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("creditcard_key", "marts.dim_credit_card"),
+                ColumnQualifierTuple("creditcard_key", "temp.creditcard_snapshot"),
+            ),
+            (
+                ColumnQualifierTuple("creditcardid", "marts.dim_credit_card"),
+                ColumnQualifierTuple("creditcardid", "temp.creditcard_snapshot"),
+            ),
+            (
+                ColumnQualifierTuple("cardtype", "marts.dim_credit_card"),
+                ColumnQualifierTuple("cardtype", "temp.creditcard_snapshot"),
+            ),
+        ],
+        metadata_provider=provider,
+    )
+
+
 # The following tests use locally-defined schema instead of the global conftest fixture because they require tables
 # with identical or structurally-paired column layouts (union compatibility, partition exclusion) that don't exist in
 # the shared dimensional model schema

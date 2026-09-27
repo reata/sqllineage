@@ -26,6 +26,7 @@ class CteExtractor(BaseExtractor):
     ) -> SubQueryLineageHolder:
         holder = self._init_holder(context)
         subqueries = []
+        ctes = []
         for segment in list_child_segments(statement):
             match segment.type:
                 case "select_statement" | "set_expression":
@@ -56,8 +57,17 @@ class CteExtractor(BaseExtractor):
                                 for sq in self.list_subquery(sub_segment):
                                     sq.alias = alias
                                     subqueries.append(sq)
-                                holder.add_cte(SqlFluffSubQuery.of(sub_segment, alias))
+                                cte = SqlFluffSubQuery.of(sub_segment, alias)
+                                holder.add_cte(cte)
+                                ctes.append(cte)
 
         self.extract_subquery(subqueries, holder)
+
+        # A wildcard selected from a CTE can only be expanded once the CTE's
+        # columns are known, i.e. after its query is extracted above. Expand in
+        # definition order so that a CTE can select * from an earlier one.
+        for cte in ctes:
+            holder.expand_wildcard(self.metadata_provider, cte)
+        holder.expand_wildcard(self.metadata_provider)
 
         return holder

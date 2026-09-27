@@ -159,3 +159,128 @@ INSERT INTO tab1
             (ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("b", "tab1")),
         ],
     )
+
+
+def test_select_wildcard_from_cte():
+    sql = """WITH cte1 AS (SELECT col1, col2 FROM tab2)
+INSERT INTO tab1
+SELECT * FROM cte1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
+    )
+
+
+def test_select_qualified_wildcard_from_cte_with_alias():
+    sql = """WITH cte1 AS (SELECT col1, col2 FROM tab2)
+INSERT INTO tab1
+SELECT c.* FROM cte1 AS c"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
+    )
+
+
+def test_select_column_and_wildcard_from_cte():
+    sql = """WITH cte1 AS (SELECT col1, col2 FROM tab2)
+INSERT INTO tab1
+SELECT col1 AS renamed, * FROM cte1"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("renamed", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
+    )
+
+
+def test_select_wildcard_from_union_of_ctes():
+    sql = """WITH cte1 AS (SELECT col1 FROM tab2),
+cte2 AS (SELECT col1 FROM tab3)
+INSERT INTO tab1
+SELECT * FROM cte1
+UNION ALL
+SELECT * FROM cte2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab3"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+        ],
+    )
+
+
+def test_select_wildcard_from_cte_selecting_wildcard_from_previous_cte():
+    sql = """WITH cte1 AS (SELECT col1, col2 FROM tab2),
+cte2 AS (SELECT * FROM cte1)
+INSERT INTO tab1
+SELECT * FROM cte2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
+
+
+def test_create_table_as_select_wildcard_from_cte():
+    sql = """CREATE TABLE tab1 AS (
+    WITH cte1 AS (SELECT col1, col2 FROM tab2)
+    SELECT * FROM cte1
+)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
