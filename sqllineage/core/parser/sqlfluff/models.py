@@ -139,7 +139,10 @@ class SqlFluffColumn(Column):
                     ):
                         if cqt := extract_column_qualifier(sub_segment):
                             column_name = cqt.column
-                        except_columns = extract_wildcard_except_columns(sub_segment)
+                        if is_wildcard(sub_segment):
+                            except_columns = extract_wildcard_except_columns(
+                                sub_segment
+                            )
                     elif sub_segment.type == "expression":
                         # special handling for postgres style type cast, col as target column name instead of col::type
                         if len(sub2_segments := list_child_segments(sub_segment)) == 1:

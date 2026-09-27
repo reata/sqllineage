@@ -313,20 +313,26 @@ def extract_column_qualifier(segment: BaseSegment) -> ColumnQualifierTuple | Non
 
 def extract_wildcard_except_columns(segment: BaseSegment) -> list[str]:
     """
-    For a wildcard_expression segment like "* EXCEPT(col1, col2)" (BigQuery/DuckDB
-    syntax), return the excluded column names. Returns an empty list when the
-    segment isn't a wildcard_expression or carries no EXCEPT clause.
+    For a wildcard_expression segment, return the column names it leaves out with
+    "* EXCEPT (col1, col2)" (BigQuery, ClickHouse, Databricks, SparkSQL) or
+    "* EXCLUDE (col1, col2)" (DuckDB, Snowflake, Redshift). EXCLUDE also accepts a
+    single unbracketed column, like "* EXCLUDE col1". Returns an empty list when the
+    wildcard has no such clause.
     """
     columns = []
-    if segment.type == "wildcard_expression":
-        if select_except_clause := segment.get_child("select_except_clause"):
-            if bracketed := select_except_clause.get_child("bracketed"):
-                columns = [
-                    identifier.raw
-                    for identifier in bracketed.get_children(
-                        "naked_identifier", "quoted_identifier"
-                    )
-                ]
+    for clause in segment.get_children(
+        "select_except_clause", "select_exclude_clause", "wildcard_exclude"
+    ):
+        container = clause.get_child("bracketed") or clause
+        for sub_segment in container.get_children("identifier", "column_reference"):
+            if sub_segment.type == "column_reference":
+                identifiers = sub_segment.get_children("identifier")
+                # a multi-part name like "col.field" (Databricks) excludes a struct
+                # field, the column itself stays in the wildcard expansion
+                if len(identifiers) == 1:
+                    columns.append(identifiers[0].raw)
+            else:
+                columns.append(sub_segment.raw)
     return columns
 
 
