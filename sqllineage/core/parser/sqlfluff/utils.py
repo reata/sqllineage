@@ -292,7 +292,10 @@ def extract_as_and_target_segment(
 def extract_column_qualifier(segment: BaseSegment) -> ColumnQualifierTuple | None:
     cqt = None
     if is_wildcard(segment):
-        identifiers = segment.raw.split(".")
+        # a wildcard_expression like "t.* EXCEPT(col)" also contains the EXCEPT/REPLACE
+        # clause; only wildcard_identifier (e.g. "t.*") identifies the column/qualifier
+        wildcard_segment = segment.get_child("wildcard_identifier") or segment
+        identifiers = wildcard_segment.raw.split(".")
         column = identifiers[-1]
         parent = identifiers[-2] if len(identifiers) > 1 else None
         cqt = ColumnQualifierTuple(column, parent)
@@ -306,6 +309,31 @@ def extract_column_qualifier(segment: BaseSegment) -> ColumnQualifierTuple | Non
             case "identifier":
                 cqt = ColumnQualifierTuple(segment.raw, None)
     return cqt
+
+
+def extract_wildcard_except_columns(segment: BaseSegment) -> list[str]:
+    """
+    For a wildcard_expression segment, return the column names it leaves out with
+    "* EXCEPT (col1, col2)" (BigQuery, ClickHouse, Databricks, SparkSQL) or
+    "* EXCLUDE (col1, col2)" (DuckDB, Snowflake, Redshift). EXCLUDE also accepts a
+    single unbracketed column, like "* EXCLUDE col1". Returns an empty list when the
+    wildcard has no such clause.
+    """
+    columns = []
+    for clause in segment.get_children(
+        "select_except_clause", "select_exclude_clause", "wildcard_exclude"
+    ):
+        container = clause.get_child("bracketed") or clause
+        for sub_segment in container.get_children("identifier", "column_reference"):
+            if sub_segment.type == "column_reference":
+                identifiers = sub_segment.get_children("identifier")
+                # a multi-part name like "col.field" (Databricks) excludes a struct
+                # field, the column itself stays in the wildcard expansion
+                if len(identifiers) == 1:
+                    columns.append(identifiers[0].raw)
+            else:
+                columns.append(sub_segment.raw)
+    return columns
 
 
 def extract_innermost_bracketed(bracketed_segment: BaseSegment) -> BaseSegment:
