@@ -311,7 +311,7 @@ def extract_column_qualifier(segment: BaseSegment) -> ColumnQualifierTuple | Non
     return cqt
 
 
-def extract_wildcard_except_columns(segment: BaseSegment) -> list[str]:
+def extract_wildcard_except_columns(wildcard_expression: BaseSegment) -> list[str]:
     """
     For a wildcard_expression segment, return the column names it leaves out with
     "* EXCEPT (col1, col2)" (BigQuery, ClickHouse, Databricks, SparkSQL) or
@@ -319,10 +319,24 @@ def extract_wildcard_except_columns(segment: BaseSegment) -> list[str]:
     single unbracketed column, like "* EXCLUDE col1". Returns an empty list when the
     wildcard has no such clause.
     """
+    wildcard_except_segment_types = (
+        "select_except_clause",
+        "select_exclude_clause",
+        "wildcard_exclude",
+    )
+    wildcard_except_segment = wildcard_expression.get_children(
+        *wildcard_except_segment_types
+    )
+    if not wildcard_except_segment:
+        # redshift dialect starting sqlfluff 4.4.0 parses EXCLUDE as a direct child of select_clause instead of part of
+        # the wildcard, see https://github.com/sqlfluff/sqlfluff/pull/8270 for details
+        if select_clause_element_tuple := wildcard_expression.get_parent():
+            if select_clause_tuple := select_clause_element_tuple[0].get_parent():
+                wildcard_except_segment = select_clause_tuple[0].get_children(
+                    *wildcard_except_segment_types
+                )
     columns = []
-    for clause in segment.get_children(
-        "select_except_clause", "select_exclude_clause", "wildcard_exclude"
-    ):
+    for clause in wildcard_except_segment:
         container = clause.get_child("bracketed") or clause
         for sub_segment in container.get_children("identifier", "column_reference"):
             if sub_segment.type == "column_reference":
