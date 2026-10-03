@@ -91,6 +91,9 @@ commands = [
     ["pytest", "--cov"],
 ]
 
+[tool.black]
+target-version = ["py310"]
+
 [tool.ruff]
 line-length = 120
 indent-width = 4
