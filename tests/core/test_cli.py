@@ -17,11 +17,14 @@ def test_cli_dummy(_):
         if len(files) > 0:
             sql_file = str(Path(dirname).joinpath(Path(files[0])))
             main(["-f", sql_file])
-            main(["-e", "select * from dual", "-f", sql_file])
             main(["-f", sql_file, "-g"])
             main(["-f", sql_file, "--silent_mode"])
             main(["-f", sql_file, "--sqlalchemy_url=sqlite:///:memory:"])
             main(["--sqlalchemy_url=sqlite:///:memory:", "-g"])
+            with pytest.warns(
+                UserWarning, match="Both -e and -f options are specified"
+            ):
+                main(["-e", "select * from dual", "-f", sql_file])
             break
     main(["-g"])
     main(["-ds"])

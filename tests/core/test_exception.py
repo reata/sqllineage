@@ -45,8 +45,8 @@ def test_deprecation_warning_in_sqlparse():
         LineageRunner("SELECT * FROM DUAL", dialect=SQLPARSE_DIALECT)._eval()
 
 
-def test_syntax_warning_no_semicolon_in_tsql():
-    with pytest.warns(SyntaxWarning):
+def test_user_warning_no_semicolon_in_tsql():
+    with pytest.warns(UserWarning):
         LineageRunner(
             """SELECT * FROM foo
 SELECT * FROM bar""",
