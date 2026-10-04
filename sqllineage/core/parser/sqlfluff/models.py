@@ -1,7 +1,7 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage import SQLPARSE_DIALECT
-from sqllineage.core.models import Column, Schema, SubQuery, Table
+from sqllineage.core.models import Column, Schema, SourcePosition, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
     extract_identifier,
@@ -98,7 +98,10 @@ class SqlFluffSubQuery(SubQuery):
         :param alias: subquery alias
         :return: 'SubQuery' object
         """
-        return SubQuery(subquery, subquery.raw, alias)
+        position = SourcePosition(-1, -1)
+        if pos_marker := subquery.pos_marker:
+            position = SourcePosition(pos_marker.line_no, pos_marker.line_pos)
+        return SubQuery(subquery, subquery.raw, alias, position=position)
 
 
 class SqlFluffColumn(Column):

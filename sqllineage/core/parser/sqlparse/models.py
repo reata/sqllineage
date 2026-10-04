@@ -15,7 +15,7 @@ from sqlparse.sql import (
 from sqlparse.utils import imt
 
 from sqllineage import SQLPARSE_DIALECT
-from sqllineage.core.models import Column, Schema, SubQuery, Table
+from sqllineage.core.models import Column, Schema, SourcePosition, SubQuery, Table
 from sqllineage.core.parser.sqlparse.utils import get_parameters, is_subquery
 from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
@@ -67,7 +67,33 @@ class SqlParseTable(Table):
 class SqlParseSubQuery(SubQuery):
     @staticmethod
     def of(subquery: Parenthesis, alias: str | None) -> SubQuery:
-        return SubQuery(subquery, subquery.value, alias)
+
+        def get_token_position(token: Token) -> SourcePosition:
+            """
+            Compute the line and column of a sqlparse token in the analyzed SQL text.
+
+            sqlparse does not record positions, but it keeps the token tree lossless and
+            links every token to its parent, so summing the length of all preceding
+            siblings up to the root yields the exact character offset.
+            """
+            offset = 0
+            node: Token = token
+            while node.parent is not None:
+                parent = node.parent
+                for sibling in parent.tokens:
+                    if sibling is node:
+                        break
+                    offset += len(sibling.value)
+                node = parent
+            text = node.value
+            return SourcePosition(
+                text.count("\n", 0, offset) + 1,
+                offset - (text.rfind("\n", 0, offset) + 1) + 1,
+            )
+
+        return SubQuery(
+            subquery, subquery.value, alias, position=get_token_position(subquery)
+        )
 
 
 class SqlParseColumn(Column):

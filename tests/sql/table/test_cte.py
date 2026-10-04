@@ -129,3 +129,17 @@ def test_non_reserved_keyword_as_cte():
         {"host"},
         test_sqlparse=False,
     )
+
+
+def test_with_select_many_identical_query():
+    # two CTEs sharing the exact same query text are still two distinct subqueries:
+    # t2 must resolve to its own CTE instead of degrading into a source table
+    assert_table_lineage_equal(
+        """WITH
+t1 AS (SELECT * FROM t),
+t2 AS (SELECT * FROM t)
+SELECT * FROM t1
+UNION ALL
+SELECT * FROM t2""",
+        {"t"},
+    )

@@ -1,9 +1,21 @@
 import warnings
-from typing import Any
+from typing import Any, NamedTuple
 
 from sqllineage.config import SQLLineageConfig
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.utils.helpers import escape_identifier_name
+
+
+class SourcePosition(NamedTuple):
+    """
+    Position of a parse tree node in the analyzed SQL text. Both line and column are 1-based.
+    """
+
+    line: int
+    column: int
+
+    def __str__(self):
+        return f"{self.line}:{self.column}"
 
 
 class Schema:
@@ -112,30 +124,49 @@ class SubQuery:
     Data Class for SubQuery
     """
 
-    def __init__(self, subquery: Any, subquery_raw: str, alias: str | None):
+    def __init__(
+        self,
+        subquery: Any,
+        subquery_raw: str,
+        alias: str | None,
+        position: SourcePosition,
+    ):
         """
-        :param subquery: subquery
-        :param alias: subquery alias name
+        :param subquery: subquery as a node in AST, parser specific
+        :param subquery_raw: subquery raw SQL string
+        :param alias: subquery alias name, None when the SQL does not alias it
+        :param position: where the subquery sits in the analyzed SQL text
         """
         self.query = subquery
         self.query_raw = subquery_raw
+        self.position = position
+        # alias doubles as the key of the subquery vertex, so it must be unique
+        # per subquery: an anonymous subquery cannot use "" here, otherwise every
+        # anonymous subquery would collapse into a single node
         self.alias = (
             escape_identifier_name(alias)
             if alias is not None
-            else f"subquery_{hash(self)}"
+            else f"subquery@{position}"
         )
+        # the alias has to stay exactly as written in the SQL for qualified column
+        # lookup, hence the position is appended to the display name only
+        self._display = f"{self.alias}@{position}" if alias is not None else self.alias
 
     def __str__(self):
-        return self.alias
+        return self._display
 
     def __repr__(self):
         return "SubQuery: " + str(self)
 
     def __eq__(self, other):
-        return isinstance(other, SubQuery) and self.query_raw == other.query_raw
+        return (
+            isinstance(other, SubQuery)
+            and self.query_raw == other.query_raw
+            and self.position == other.position
+        )
 
     def __hash__(self):
-        return hash(self.query_raw)
+        return hash((self.query_raw, self.position))
 
     @staticmethod
     def of(subquery: Any, alias: str | None) -> "SubQuery":
