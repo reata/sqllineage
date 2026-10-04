@@ -5,7 +5,7 @@ import pytest
 
 from sqllineage.cli import main
 from sqllineage.config import SQLLineageConfig
-from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.core.models import Column, Path, SourcePosition, SubQuery, Table
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.entities import ColumnQualifierTuple
@@ -28,6 +28,48 @@ def test_runner_dummy(graph_operator):
         assert str(runner)
         assert runner.to_cytoscape() is not None
         assert runner.to_cytoscape(level=LineageLevel.COLUMN) is not None
+
+
+@parametrize_graph_operator
+def test_to_cytoscape_subquery_alias_reuse_has_unique_node_id(graph_operator):
+    # https://github.com/reata/sqllineage/issues/481 and #489
+    # subqueries with different bodies may reuse the same alias in different union branches and across statements.
+    # They are already distinct vertices, expect distinct id in cytoscape nodes
+    sql = """insert into public.tgt_tbl1 (id)
+select sq.id from (select id from public.src_tbl1) sq
+union all
+select sq.id from (select id from public.src_tbl2) sq;
+insert into public.tgt_tbl1 (id) with sq as (select id from public.src_tbl3) select sq.id from sq"""
+    with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+        elements = LineageRunner(sql).to_cytoscape(level=LineageLevel.COLUMN)
+    nodes = [
+        e["data"]
+        for e in elements
+        if "source" not in e["data"] and "target" not in e["data"]
+    ]
+    node_ids = [n["id"] for n in nodes]
+    assert len(node_ids) == len(set(node_ids)), f"duplicated node id in {node_ids}"
+    subqueries = [n for n in nodes if n["type"] == "SubQuery"]
+    assert len(subqueries) == 3
+
+
+@parametrize_graph_operator
+def test_to_cytoscape_identical_subquery_is_split_by_position(graph_operator):
+    # two subqueries sharing the very same body and alias are still two vertices
+    # when they sit at different positions, and their ids have to keep them apart.
+    sql = """insert into t1 select sq.id from (select id from src) sq;
+insert into t2 select sq.id from (select id from src) sq"""
+    with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
+        elements = LineageRunner(sql).to_cytoscape(level=LineageLevel.COLUMN)
+    nodes = [
+        e["data"]
+        for e in elements
+        if "source" not in e["data"] and "target" not in e["data"]
+    ]
+    node_ids = [n["id"] for n in nodes]
+    assert len(node_ids) == len(set(node_ids)), f"duplicated node id in {node_ids}"
+    subqueries = [n for n in nodes if n["type"] == "SubQuery"]
+    assert len(subqueries) == 2
 
 
 def test_statements_trim_comment():
@@ -178,9 +220,9 @@ def test_get_column_lineage_deterministic_order_for_tied_endpoints():
     tgt_col = Column("tgt")
     tgt_col.parent = Table("tab3")
     mid1 = Column("mid1")
-    mid1.parent = SubQuery("select 1", "select 1", "sub1")
+    mid1.parent = SubQuery("select 1", "select 1", "sub1", SourcePosition(-1, -1))
     mid2 = Column("mid2")
-    mid2.parent = SubQuery("select 2", "select 2", "sub2")
+    mid2.parent = SubQuery("select 2", "select 2", "sub2", SourcePosition(-1, -1))
 
     path_a = (src_col, mid1, tgt_col)
     path_b = (src_col, mid2, tgt_col)

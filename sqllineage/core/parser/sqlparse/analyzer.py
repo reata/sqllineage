@@ -145,7 +145,7 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 if isinstance(token, Identifier):
                     if subqueries := SqlParseLineageAnalyzer.parse_subquery(token):
                         for sq in subqueries:
-                            direct_source = SqlParseSubQuery.of(sq.query, sq.alias)
+                            direct_source = sq
                             holder |= SqlParseLineageAnalyzer._extract_from_dml(
                                 sq.query,
                                 AnalyzerContext(cte=holder.cte, write={sq}),
