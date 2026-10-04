@@ -1,8 +1,6 @@
-import warnings
-
 from sqlfluff.core.parser import BaseSegment
 
-from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
+from sqllineage.core.holders import StatementLineageHolder
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.utils.entities import AnalyzerContext
 
@@ -21,21 +19,13 @@ class ProcedureExtractor(BaseExtractor):
     ) -> StatementLineageHolder:
         holder = StatementLineageHolder()
 
+        # recursive_crawl yields every nested statement, control-flow containers and lineage-free statements
+        # (SET, PRINT, THROW, ...) included. A statement without a matching extractor is therefore the normal case here.
+        # the statements that do carry lineage are yielded separately by the same crawl, so they are still picked up.
         for segment in statement.recursive_crawl("statement"):
-            holder |= self._delegate_to_extractor(segment.segments[0], context)
-        return holder
-
-    def _delegate_to_extractor(
-        self, segment: BaseSegment, context: AnalyzerContext
-    ) -> SubQueryLineageHolder:
-        holder = BaseExtractor.try_extract(
-            self.dialect, self.metadata_provider, segment, context
-        )
-        if holder is not None:
-            return holder
-        else:
-            warnings.warn(
-                "SQLLineage doesn't support analyzing statement type "
-                f"[{segment.type}] for SQL Segment: '{segment.raw}' embedding in procedure, skipping it."
+            sub_holder = BaseExtractor.try_extract(
+                self.dialect, self.metadata_provider, segment.segments[0], context
             )
-            return SubQueryLineageHolder()
+            if sub_holder is not None:
+                holder |= sub_holder
+        return holder

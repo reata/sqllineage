@@ -120,6 +120,14 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 disallow_any_generics = true
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "error",
+    "ignore:dialect `non-validating` is deprecated:DeprecationWarning",
+    "ignore:SQL statements is not split by semicolon:UserWarning",
+]
+
 [tool.coverage.run]
 source = ["sqllineage"]
 

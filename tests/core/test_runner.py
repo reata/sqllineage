@@ -80,7 +80,8 @@ def test_statements_trim_comment():
 
 def test_silent_mode():
     sql = "begin; select * from dual;"
-    LineageRunner(sql, dialect="greenplum", silent_mode=True)._eval()
+    with pytest.warns(UserWarning):
+        LineageRunner(sql, dialect="greenplum", silent_mode=True)._eval()
 
 
 def test_get_column_lineage_exclude_subquery_inpath():

@@ -118,9 +118,7 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                     if len(statements) > 1:
                         warnings.warn(
                             "SQL statements is not split by semicolon. "
-                            "SQLLineage is not guaranteed to generate correct result under this circumstances.",
-                            SyntaxWarning,
-                            stacklevel=2,
+                            "SQLLineage is not guaranteed to generate correct result under this circumstances."
                         )
                     for statement in statements:
                         segments.append(statement.segments[0])
