@@ -284,3 +284,23 @@ def test_create_table_as_select_wildcard_from_cte():
         ],
         test_sqlparse=False,
     )
+
+
+def test_select_column_from_cte_with_column_alias_list():
+    sql = """WITH cte1 (col3, col4) AS (SELECT col1, max(col2) FROM tab2 GROUP BY col1)
+INSERT INTO tab1
+SELECT c.col3, c.col4 FROM cte1 c"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
