@@ -6,7 +6,11 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Path, SubQuery, Table
-from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery, SqlFluffTable
+from sqllineage.core.parser.sqlfluff.models import (
+    SqlFluffColumn,
+    SqlFluffSubQuery,
+    SqlFluffTable,
+)
 from sqllineage.core.parser.sqlfluff.utils import (
     find_from_expression_element,
     find_table_identifier,
@@ -14,6 +18,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     list_child_segments,
     list_join_clause,
     list_subqueries,
+    list_subquery_column_aliases,
 )
 from sqllineage.utils.constant import NodeTag
 from sqllineage.utils.entities import AnalyzerContext, SubQueryTuple
@@ -243,7 +248,19 @@ class BaseExtractor:
             )
             subquery_holder = extractor_cls(
                 self.dialect, self.metadata_provider
-            ).extract(sq.query, AnalyzerContext(cte=holder.cte, write={sq}))
+            ).extract(
+                sq.query,
+                AnalyzerContext(
+                    cte=holder.cte,
+                    write={sq},
+                    # SELECT * FROM (SELECT col1, col2 FROM tab) AS sq (col3, col4)
+                    # columns of subquery sq are named by column alias list col3, col4
+                    write_columns=[
+                        SqlFluffColumn.of(identifier)
+                        for identifier in list_subquery_column_aliases(sq.query)
+                    ],
+                ),
+            )
             # remove WRITE tag from subquery so that the combined holder won't have multiple WRITE dataset
             subquery_holder.go.update_vertices(sq, **{NodeTag.WRITE: False})
             holder |= subquery_holder
