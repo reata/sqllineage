@@ -1,5 +1,5 @@
 from sqllineage.core.metadata.resolution.catalog import RelationCatalog
-from sqllineage.core.metadata.resolution.model import (
+from sqllineage.core.metadata.resolution.models import (
     ColumnSource,
     ScopeModel,
     ScopeRelation,

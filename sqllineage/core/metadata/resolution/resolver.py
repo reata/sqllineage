@@ -1,15 +1,15 @@
 from collections.abc import Iterator
 
 from sqllineage.core.metadata.resolution.catalog import RelationCatalog
-from sqllineage.core.metadata.resolution.model import (
+from sqllineage.core.metadata.resolution.models import (
     ResolutionDiagnostic,
     ResolvedRelation,
     ResolvedScope,
     ScopeModel,
     ScopeWildcard,
 )
-from sqllineage.core.metadata.resolution.rules.bind import bind_columns
-from sqllineage.core.metadata.resolution.rules.cte import ScopeColumns
+from sqllineage.core.metadata.resolution.rules.column_bind import bind_columns
+from sqllineage.core.metadata.resolution.rules.derived_relation import ScopeColumns
 from sqllineage.core.metadata.resolution.rules.wildcard import expand_wildcards
 from sqllineage.core.models import Table
 
@@ -45,7 +45,7 @@ def resolve_scope(
         if any(expansion is None for expansion in expansions.values()):
             diagnostics.extend(_unexpanded_wildcards(branches, catalog))
 
-        # cte
+        # derived_relation
         for branch in branches:
             for relation in branch.relations:
                 if (relation_columns := columns.relation_columns(relation)) is not None:
@@ -53,7 +53,7 @@ def resolve_scope(
                         relation.relation, *relation_columns
                     )
 
-        # bind
+        # column_binding
         for branch in branches:
             bindings, bind_diagnostics = bind_columns(branch, columns.column_names)
             resolved.bindings.update(bindings)

@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from sqllineage.core.metadata.resolution.model import (
+from sqllineage.core.metadata.resolution.models import (
     ScopeModel,
     ScopeRelation,
     ScopeWildcard,

@@ -1,4 +1,4 @@
-from sqllineage.core.metadata.resolution.model import ResolutionDiagnostic, ScopeModel
+from sqllineage.core.metadata.resolution.models import ResolutionDiagnostic, ScopeModel
 from sqllineage.core.metadata.resolution.rules.wildcard import RelationColumns
 from sqllineage.core.models import Column, SubQuery, Table
 
