@@ -56,13 +56,13 @@ FROM Employee;"""
     )
 
 
-@pytest.mark.parametrize(
-    "dialect", ["mysql", "postgres", "snowflake", "teradata", "tsql"]
-)
-def test_select_column_from_subquery_with_column_alias_list(dialect: str):
+@pytest.mark.parametrize("dialect", ["tsql"])
+def test_tsql_subquery_with_column_alias_list(dialect: str):
     """
-    A derived table can rename its columns with a column alias list after the alias.
-    tsql parses the column alias list differently from other dialects.
+    Column alias list for derived table is not a tsql specific language feature, but since sqlfluff 4.4.0 it's parsed
+    differently for tsql only: the bracketed column alias list is wrapped in an alias_column_list segment so that
+    layout rules can target it, while other dialects keep it as a plain bracketed segment under alias_expression.
+    https://github.com/sqlfluff/sqlfluff/issues/6733
     """
     sql = """INSERT INTO tab1
 SELECT dt.col3, dt.col4
