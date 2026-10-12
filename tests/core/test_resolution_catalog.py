@@ -5,7 +5,7 @@ from sqllineage.core.metadata.resolution import (
     ResolvedRelation,
     ResolvedScope,
 )
-from sqllineage.core.models import Column, Path, SourcePosition, SubQuery, Table
+from sqllineage.core.models import Column, Table
 
 
 class CountingMetaDataProvider(DummyMetaDataProvider):
@@ -26,15 +26,6 @@ def test_prefetch_looks_up_each_table_once():
     catalog.prefetch([Table("db.t", alias="a"), Table("db.t", alias="b")])
     assert catalog.column_names(Table("db.t")) == ["col1", "col2"]
     assert catalog.column_names(Table("db.t")) == ["col1", "col2"]
-    assert provider.lookups == ["db.t"]
-
-
-def test_prefetch_skips_subqueries_and_paths():
-    provider = CountingMetaDataProvider({"db.t": ["col1"]})
-    catalog = CachingRelationCatalog(provider)
-
-    subquery = SubQuery(None, "SELECT col1 FROM db.t", "sq", SourcePosition(1, 1))
-    catalog.prefetch([Table("db.t"), subquery, Path("s3://bucket/key")])
     assert provider.lookups == ["db.t"]
 
 

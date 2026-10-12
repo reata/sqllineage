@@ -2,7 +2,7 @@ from sqllineage.core.metadata.resolution.catalog import (
     CachingRelationCatalog,
     RelationCatalog,
 )
-from sqllineage.core.metadata.resolution.model import (
+from sqllineage.core.metadata.resolution.models import (
     ColumnSource,
     ResolutionDiagnostic,
     ResolvedRelation,
