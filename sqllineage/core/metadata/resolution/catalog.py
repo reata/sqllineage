@@ -40,12 +40,10 @@ class CachingRelationCatalog:
 
     def prefetch(self, tables: Iterable[Table]) -> None:
         """
-        Look up the columns of every table. Anything that isn't a :class:`sqllineage.core.models.Table`, like a
-        subquery or path, is skipped.
+        Look up the columns of every table.
         """
         for table in tables:
-            if isinstance(table, Table):
-                self._lookup(table)
+            self._lookup(table)
 
     def column_names(self, table: Table) -> list[str]:
         """
