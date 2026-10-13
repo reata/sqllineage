@@ -218,3 +218,75 @@ FROM (SELECT col1, * FROM (SELECT * FROM tab2) t2) t3"""
         sql,
         [(ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1"))],
     )
+
+
+def test_select_column_from_subquery_with_column_alias_list():
+    sql = """INSERT INTO tab1
+SELECT col3, col4
+FROM (SELECT col1, max(col2) FROM tab2 GROUP BY col1) AS dt (col3, col4)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
+
+
+def test_select_qualified_column_from_subquery_with_column_alias_list():
+    sql = """INSERT INTO tab1
+SELECT dt.col3, dt.col4
+FROM ((SELECT col1, col2 FROM tab2)) dt (col3, col4)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
+
+
+def test_select_wildcard_from_subquery_with_column_alias_list():
+    sql = """INSERT INTO tab1
+SELECT *
+FROM (
+    SELECT col1, col2 FROM tab2
+    UNION ALL
+    SELECT col1, col2 FROM tab3
+) AS dt (col3, col4)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab3"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab3"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
