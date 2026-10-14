@@ -34,7 +34,8 @@ class ResolvedScope:
     The result of resolving the scope of a statement.
     """
 
-    relations: dict[object, ResolvedRelation] = field(default_factory=dict)
+    #: the columns of each relation whose columns are known, by relation
+    relations: dict[Table | SubQuery, ResolvedRelation] = field(default_factory=dict)
     #: the relation each column is bound to; None means the column is left unqualified
     bindings: dict[Column, Table | SubQuery | None] = field(default_factory=dict)
     #: the column names each wildcard expands to; None means the wildcard is not expanded and kept as-is
