@@ -110,6 +110,28 @@ def test_unexpanded_wildcard_diagnostic_once_per_table():
     ]
 
 
+def test_unexpanded_wildcard_next_to_columns():
+    # SELECT id, x.* FROM db.unknown x
+    x_star = wildcard("x")
+    scope = ScopeModel(relations=[table("db.unknown", "x")], select=["id", x_star])
+
+    resolved, diagnostics = resolve_scope(scope, catalog())
+    assert resolved.wildcards == {x_star.column: None}
+    assert [(d.kind, d.table) for d in diagnostics] == [
+        ("unexpanded_wildcard", Table("db.unknown"))
+    ]
+
+
+def test_wildcard_with_unknown_qualifier_is_not_expanded():
+    # SELECT nope.* FROM db.a a
+    star = wildcard("nope")
+    scope = ScopeModel(relations=[table("db.a", "a")], select=[star])
+
+    resolved, diagnostics = resolve_scope(scope, catalog())
+    assert resolved.wildcards == {star.column: None}
+    assert diagnostics == []
+
+
 def test_wildcards_in_union_are_expanded_all_or_none():
     a_star, x_star = wildcard(), wildcard()
     scope = ScopeModel(
