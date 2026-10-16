@@ -235,3 +235,68 @@ from marts.dim_credit_card"""
         metadata_provider=provider,
         test_sqlparse=False,
     )
+
+
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_select_wildcard_from_table_with_lateral_view(
+    provider: MetaDataProvider, dialect: str
+):
+    sql = """INSERT INTO temp.countryregion_name
+SELECT *
+FROM person.countryregion
+LATERAL VIEW explode(split(name, ' ')) x AS name_part"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("countryregioncode", "person.countryregion"),
+                ColumnQualifierTuple("countryregioncode", "temp.countryregion_name"),
+            ),
+            (
+                ColumnQualifierTuple("modifieddate", "person.countryregion"),
+                ColumnQualifierTuple("modifieddate", "temp.countryregion_name"),
+            ),
+            (
+                ColumnQualifierTuple("name", "person.countryregion"),
+                ColumnQualifierTuple("name", "temp.countryregion_name"),
+            ),
+            (
+                ColumnQualifierTuple("name", "person.countryregion"),
+                ColumnQualifierTuple("name_part", "temp.countryregion_name"),
+            ),
+        ],
+        dialect=dialect,
+        metadata_provider=provider,
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
+def test_select_unqualified_column_from_join_with_lateral_view(
+    provider: MetaDataProvider, dialect: str
+):
+    sql = """INSERT INTO temp.person_name
+SELECT businessentityid, name, name_part
+FROM person.person p
+JOIN person.countryregion c ON p.title = c.countryregioncode
+LATERAL VIEW explode(split(firstname, ' ')) x AS name_part"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("businessentityid", "person.person"),
+                ColumnQualifierTuple("businessentityid", "temp.person_name"),
+            ),
+            (
+                ColumnQualifierTuple("name", "person.countryregion"),
+                ColumnQualifierTuple("name", "temp.person_name"),
+            ),
+            (
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("name_part", "temp.person_name"),
+            ),
+        ],
+        dialect=dialect,
+        metadata_provider=provider,
+        test_sqlparse=False,
+    )
