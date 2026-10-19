@@ -327,25 +327,32 @@ def extract_identifier(col_segment: BaseSegment) -> str:
     return str(col_identifier.raw)
 
 
-def extract_lateral_view_aliases(
-    lateral_view_clause: BaseSegment,
-) -> tuple[str | None, list[str]]:
+def extract_lateral_view_alias(lateral_view_clause: BaseSegment) -> str | None:
     """
-    For LATERAL VIEW explode(col1) alias AS col2, col3, return the table alias and the column aliases.
-    AS is optional before the column aliases in sparksql.
+    For LATERAL VIEW explode(col1) alias AS col2, col3, return the table alias.
     """
-    table_alias = None
-    column_aliases = []
-    after_as = False
     for seg in list_child_segments(lateral_view_clause):
         if seg.type == "keyword" and seg.raw_upper == "AS":
-            after_as = True
+            break
+        if seg.type == "identifier":
+            return str(seg.raw)
+    return None
+
+
+def list_lateral_view_column_aliases(lateral_view_clause: BaseSegment) -> list[str]:
+    """
+    For LATERAL VIEW explode(col1) alias AS col2, col3, return the column aliases.
+    AS is optional before the column aliases in sparksql.
+    """
+    before_as: list[str] = []
+    after_as: list[str] | None = None
+    for seg in list_child_segments(lateral_view_clause):
+        if seg.type == "keyword" and seg.raw_upper == "AS":
+            after_as = []
         elif seg.type == "identifier":
-            if table_alias is None and not after_as:
-                table_alias = seg.raw
-            else:
-                column_aliases.append(seg.raw)
-    return table_alias, column_aliases
+            (before_as if after_as is None else after_as).append(str(seg.raw))
+    # without AS, the first identifier is the table alias
+    return before_as[1:] if after_as is None else after_as
 
 
 def extract_as_and_target_segment(

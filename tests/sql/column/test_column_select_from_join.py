@@ -192,3 +192,18 @@ def test_insert_overwrite_from_self_with_join():
             ),
         ],
     )
+
+
+def test_select_wildcard_from_table_joined_with_subquery():
+    # the columns of tab2 are unknown without metadata, so tab2.* is kept next to the subquery columns
+    sql = """INSERT INTO tab1
+SELECT *
+FROM tab2 t
+JOIN (SELECT a FROM tab3) sq ON t.id = sq.a"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1")),
+            (ColumnQualifierTuple("a", "tab3"), ColumnQualifierTuple("a", "tab1")),
+        ],
+    )

@@ -1,6 +1,6 @@
 from sqllineage.config import SQLLineageConfig
 from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.core.models import Column, LateralView, Path, SubQuery, Table
 from sqllineage.exceptions import SQLLineageException
 
 
@@ -76,3 +76,10 @@ class SourceHandlerMixin:
                             lateral_column_aliases[tgt_col_from_query.raw_name] = (
                                 src_cols_resolved
                             )
+            # the columns of a lateral view are generated from the datasets to its left in the same query
+            for tbl_idx, tbl in enumerate(tbl_grp):
+                if isinstance(tbl, LateralView):
+                    holder.add_lateral_view(
+                        tbl,
+                        holder.get_alias_mapping_from_table_group(tbl_grp[:tbl_idx]),
+                    )

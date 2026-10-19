@@ -271,29 +271,42 @@ LATERAL VIEW explode(split(name, ' ')) x AS name_part"""
     )
 
 
-@pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
+# A lateral view goes in a different place in a query with JOIN. In hive, it belongs to the table before it
+# ("FROM baseTable (lateralView)*" in the Hive manual), so it can't follow the ON condition of a JOIN. sparksql
+# only accepts lateral views after all the relations ("FROM relation (COMMA relation)* lateralView*" in its grammar).
+_join_with_lateral_view_sql = {
+    "hive": """INSERT INTO temp.customer_name
+SELECT customerid, lastname, firstname_part
+FROM person.person p
+LATERAL VIEW explode(split(p.firstname, ' ')) x AS firstname_part
+JOIN sales.customer c ON c.personid = p.businessentityid""",
+    "sparksql": """INSERT INTO temp.customer_name
+SELECT customerid, lastname, firstname_part
+FROM sales.customer c
+JOIN person.person p ON c.personid = p.businessentityid
+LATERAL VIEW explode(split(p.firstname, ' ')) x AS firstname_part""",
+}
+
+
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
 def test_select_unqualified_column_from_join_with_lateral_view(
     provider: MetaDataProvider, dialect: str
 ):
-    sql = """INSERT INTO temp.person_name
-SELECT businessentityid, name, name_part
-FROM person.person p
-JOIN person.countryregion c ON p.title = c.countryregioncode
-LATERAL VIEW explode(split(firstname, ' ')) x AS name_part"""
+    sql = _join_with_lateral_view_sql["hive" if dialect == "hive" else "sparksql"]
     assert_column_lineage_equal(
         sql,
         [
             (
-                ColumnQualifierTuple("businessentityid", "person.person"),
-                ColumnQualifierTuple("businessentityid", "temp.person_name"),
+                ColumnQualifierTuple("customerid", "sales.customer"),
+                ColumnQualifierTuple("customerid", "temp.customer_name"),
             ),
             (
-                ColumnQualifierTuple("name", "person.countryregion"),
-                ColumnQualifierTuple("name", "temp.person_name"),
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("lastname", "temp.customer_name"),
             ),
             (
                 ColumnQualifierTuple("firstname", "person.person"),
-                ColumnQualifierTuple("name_part", "temp.person_name"),
+                ColumnQualifierTuple("firstname_part", "temp.customer_name"),
             ),
         ],
         dialect=dialect,

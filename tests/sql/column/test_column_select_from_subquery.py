@@ -290,3 +290,18 @@ FROM (
         ],
         test_sqlparse=False,
     )
+
+
+def test_select_unqualified_column_from_table_joined_with_subquery():
+    # the subquery only has column a, so id comes from tab2
+    sql = """INSERT INTO tab1
+SELECT id, a
+FROM tab2
+JOIN (SELECT a FROM tab3) sq ON tab2.id = sq.a"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("id", "tab2"), ColumnQualifierTuple("id", "tab1")),
+            (ColumnQualifierTuple("a", "tab3"), ColumnQualifierTuple("a", "tab1")),
+        ],
+    )

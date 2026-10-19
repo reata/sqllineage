@@ -5,7 +5,7 @@ from sqllineage.core.graph import get_graph_operator_class
 from sqllineage.core.graph.utils import cone_lineage_paths, list_lineage_paths_between
 from sqllineage.core.graph_operator import GraphOperator
 from sqllineage.core.metadata_provider import MetaDataProvider
-from sqllineage.core.models import Column, Path, Schema, SubQuery, Table
+from sqllineage.core.models import Column, LateralView, Path, Schema, SubQuery, Table
 from sqllineage.utils.constant import EdgeDirection, EdgeTag, EdgeType, NodeTag
 
 DATASET_CLASSES = (Path, Table)
@@ -202,6 +202,24 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         self.go.add_edge_if_not_exist(tgt.parent, tgt, EdgeType.HAS_COLUMN)
         self.go.add_edge_if_not_exist(src.parent, src, EdgeType.HAS_COLUMN)
 
+    def add_lateral_view(
+        self,
+        lateral_view: LateralView,
+        alias_mapping: dict[str, Path | Table | SubQuery],
+    ) -> None:
+        """
+        link the source columns of the table generating function to each column of the lateral view.
+
+        without column aliases, the generated columns are the ones referred to by their default name, like alias.col
+        """
+        columns = lateral_view.columns or self.get_table_columns(lateral_view)
+        for column in columns:
+            self.go.add_edge_if_not_exist(lateral_view, column, EdgeType.HAS_COLUMN)
+        if lateral_view.generator is not None:
+            for src_col in lateral_view.generator.to_source_columns(alias_mapping):
+                for column in columns:
+                    self.add_column_lineage(src_col, column)
+
     def get_table_columns(self, table: Table | SubQuery) -> list[Column]:
         return [
             edge.target
@@ -224,12 +242,21 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                 if column.raw_name == "*":
                     tgt_wildcard = column
                     src_wildcards = self.get_source_columns(tgt_wildcard)
-                    # Enable positional mapping only for UNION-of-* into a real table; avoid join/subquery cases
+                    # Enable positional mapping only for UNION-of-* into a real table; avoid join/subquery cases.
+                    # A lateral view is in the same SELECT as the datasets it follows, never another UNION query.
                     wildcard_in_union = (
                         isinstance(tgt_table, Table)
                         and len(self._get_ordered_columns(tgt_table)) == 1
-                        and len(src_wildcards) > 1
+                        and len(
+                            [
+                                w
+                                for w in src_wildcards
+                                if not isinstance(w.parent, LateralView)
+                            ]
+                        )
+                        > 1
                     )
+                    expanded = []
                     for src_wildcard in src_wildcards:
                         if source_table := src_wildcard.parent:
                             src_table_columns = []
@@ -254,6 +281,15 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                                     src_wildcard,
                                     wildcard_in_union=wildcard_in_union,
                                 )
+                                expanded.append(src_wildcard)
+                    # preserve SubQuery wildcards in the lineage graph to maintain the wildcard chain in case of
+                    # partial expansion, likewise keep the target wildcard while some source wildcard isn't expanded
+                    if not isinstance(tgt_table, SubQuery):
+                        if len(expanded) == len(src_wildcards):
+                            self.go.drop_vertices(tgt_wildcard)
+                        else:
+                            for src_wildcard in expanded:
+                                self.go.drop_edge(src_wildcard, tgt_wildcard)
 
     def get_alias_mapping_from_table_group(
         self, table_group: list[Path | Table | SubQuery]
@@ -367,10 +403,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                     src_col.parent, src_col, EdgeType.HAS_COLUMN
                 )
             self.go.add_edge_if_not_exist(src_col, target_col, EdgeType.LINEAGE)
-        # preserve SubQuery wildcards in the lineage graph to maintain the wildcard chain in case of partial expansion
-        # otherwise, remove wildcard for Table
+        # remove the expanded source wildcard of Table, the target wildcard is handled by the caller
         if not isinstance(tgt_table, SubQuery):
-            self.go.drop_vertices(tgt_wildcard)
             if src_wildcard.parent is not None and not isinstance(
                 src_wildcard.parent, SubQuery
             ):
@@ -607,6 +641,26 @@ class SQLLineageHolder(ColumnLineageMixin):
                         for parent_col in metadata_provider.get_table_columns(parent):
                             if unresolved_col.raw_name == parent_col.raw_name:
                                 src_cols.append(parent_col)
+
+            # otherwise rule out the subqueries whose columns are all known and don't include it
+            if len(src_cols) == 0:
+                parents = [
+                    parent
+                    for parent in unresolved_col.parent_candidates
+                    if not (
+                        isinstance(parent, SubQuery)
+                        and (
+                            parent_columns := ngo.retrieve_edges_by_vertex(
+                                parent, EdgeDirection.OUT, EdgeType.HAS_COLUMN
+                            )
+                        )
+                        and all(e.target.raw_name != "*" for e in parent_columns)
+                    )
+                ]
+                if len(parents) == 1:
+                    src_col_candidate = Column(unresolved_col.raw_name)
+                    src_col_candidate.parent = parents[0]
+                    src_cols.append(src_col_candidate)
 
             # Multiple sources is a correct case for JOIN with USING
             # It incorrect for JOIN with ON, but sql without specifying an alias in this case will be invalid

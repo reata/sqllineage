@@ -1,5 +1,6 @@
 import pytest
 
+from sqllineage.runner import LineageRunner
 from sqllineage.utils.entities import ColumnQualifierTuple
 
 from ...helpers import assert_column_lineage_equal
@@ -116,6 +117,8 @@ LATERAL VIEW json_tuple(t.js, 'k', 'v') z AS k, v"""
     )
 
 
+# Hive accepts a lateral view without column aliases since 0.12.0, but the sqlfluff hive dialect follows the
+# documented grammar "LATERAL VIEW udtf(expression) tableAlias AS columnAlias", so hive is not tested here
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_select_column_from_lateral_view_without_column_alias(dialect: str):
     sql = """INSERT INTO tab1
@@ -191,3 +194,14 @@ LATERAL VIEW explode(t.elements) x AS item"""
         dialect=dialect,
         test_sqlparse=False,
     )
+
+
+@pytest.mark.parametrize("dialect", _lateral_view_dialects)
+def test_select_count_wildcard_from_lateral_view(dialect: str):
+    # count(*) reads every column but writes none of the lateral view columns
+    sql = """INSERT INTO tab1
+SELECT count(*) AS cnt
+FROM tab2
+LATERAL VIEW explode(items) x AS item"""
+    lr = LineageRunner(sql, dialect=dialect)
+    assert {str(path[-1]) for path in lr.get_column_lineage()} == {"<default>.tab1.cnt"}
