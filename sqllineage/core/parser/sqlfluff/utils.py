@@ -329,14 +329,10 @@ def extract_identifier(col_segment: BaseSegment) -> str:
 
 def extract_lateral_view_alias(lateral_view_clause: BaseSegment) -> str | None:
     """
-    For LATERAL VIEW explode(col1) alias AS col2, col3, return the table alias.
+    For LATERAL VIEW explode(col1) alias AS col2, col3, return the table alias, which is the first identifier.
     """
-    for seg in list_child_segments(lateral_view_clause):
-        if seg.type == "keyword" and seg.raw_upper == "AS":
-            break
-        if seg.type == "identifier":
-            return str(seg.raw)
-    return None
+    identifier = lateral_view_clause.get_child("identifier")
+    return str(identifier.raw) if identifier else None
 
 
 def list_lateral_view_column_aliases(lateral_view_clause: BaseSegment) -> list[str]:
