@@ -43,6 +43,7 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
         self.columns = []
         self.tables = []
         self.union_barriers = []
+        self.union_by_name = set()
         super().__init__()
 
     def _indicate(self, token: Token) -> bool:
