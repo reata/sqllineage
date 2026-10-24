@@ -1,7 +1,14 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage import SQLPARSE_DIALECT
-from sqllineage.core.models import Column, Schema, SourcePosition, SubQuery, Table
+from sqllineage.core.models import (
+    Column,
+    LateralView,
+    Schema,
+    SourcePosition,
+    SubQuery,
+    Table,
+)
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
     extract_identifier,
@@ -10,6 +17,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     is_teradata_title_phrase,
     is_wildcard,
     list_child_segments,
+    list_lateral_view_column_aliases,
 )
 from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
@@ -102,6 +110,33 @@ class SqlFluffSubQuery(SubQuery):
         if pos_marker := subquery.pos_marker:
             position = SourcePosition(pos_marker.line_no, pos_marker.line_pos)
         return SubQuery(subquery, subquery.raw, alias, position=position)
+
+
+class SqlFluffLateralView(LateralView):
+    """
+    Data Class for SqlFluffLateralView
+    """
+
+    @staticmethod
+    def of(subquery: BaseSegment, alias: str | None) -> LateralView:
+        """
+        Build a 'LateralView' object
+        :param subquery: lateral_view_clause segment
+        :param alias: lateral view alias
+        :return: 'LateralView' object
+        """
+        position = SourcePosition(-1, -1)
+        if pos_marker := subquery.pos_marker:
+            position = SourcePosition(pos_marker.line_no, pos_marker.line_pos)
+        function = subquery.get_child("function")
+        return LateralView(
+            subquery,
+            subquery.raw,
+            alias,
+            position=position,
+            generator=SqlFluffColumn.of(function) if function else None,
+            column_names=list_lateral_view_column_aliases(subquery),
+        )
 
 
 class SqlFluffColumn(Column):

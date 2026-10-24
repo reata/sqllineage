@@ -6,12 +6,15 @@ from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffColumn,
+    SqlFluffLateralView,
     SqlFluffTable,
 )
 from sqllineage.core.parser.sqlfluff.utils import (
+    extract_lateral_view_alias,
     find_table_identifier,
     is_set_expression,
     list_child_segments,
+    list_lateral_view_clauses,
 )
 from sqllineage.utils.entities import AnalyzerContext
 from sqllineage.utils.helpers import escape_identifier_name
@@ -75,6 +78,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         self.tables.extend(
             self._list_table_from_from_clause_or_join_clause(segment, holder)
         )
+        self._handle_lateral_view(segment)
         self._handle_column(segment)
 
     def _handle_swap_partition(
@@ -114,6 +118,22 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             if identifier := find_table_identifier(segment):
                 if table := self.find_table(identifier):
                     holder.add_write(table)
+
+    def _handle_lateral_view(self, segment: BaseSegment) -> None:
+        """
+        A handler for LATERAL VIEW clause supported by hive and sparksql:
+            FROM tab LATERAL VIEW explode(tab.col1) alias AS col2
+        The lateral view is read like a subquery named alias, after the datasets it follows
+        """
+        if segment.type == "from_clause":
+            for from_expression in segment.get_children("from_expression"):
+                for lateral_view_clause in list_lateral_view_clauses(from_expression):
+                    self.tables.append(
+                        SqlFluffLateralView.of(
+                            lateral_view_clause,
+                            extract_lateral_view_alias(lateral_view_clause),
+                        )
+                    )
 
     def _handle_set_expression(
         self, segment: BaseSegment, holder: SubQueryLineageHolder
