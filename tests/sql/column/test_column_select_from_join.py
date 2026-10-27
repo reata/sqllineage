@@ -1,3 +1,4 @@
+from sqllineage.core.metadata.dummy import DummyMetaDataProvider
 from sqllineage.utils.entities import ColumnQualifierTuple
 
 from ...helpers import assert_column_lineage_equal
@@ -206,4 +207,21 @@ JOIN (SELECT a FROM tab3) sq ON t.id = sq.a"""
             (ColumnQualifierTuple("*", "tab2"), ColumnQualifierTuple("*", "tab1")),
             (ColumnQualifierTuple("a", "tab3"), ColumnQualifierTuple("a", "tab1")),
         ],
+    )
+
+
+def test_select_wildcard_from_join_with_partially_known_columns():
+    # only db.t1 has known columns, so db.tgt.* is kept for the wildcard of db.t5
+    sql = """INSERT INTO db.tgt
+SELECT *
+FROM db.t1
+JOIN db.t5 u ON db.t1.a = u.c"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("a", "db.t1"), ColumnQualifierTuple("a", "db.tgt")),
+            (ColumnQualifierTuple("b", "db.t1"), ColumnQualifierTuple("b", "db.tgt")),
+            (ColumnQualifierTuple("*", "db.t5"), ColumnQualifierTuple("*", "db.tgt")),
+        ],
+        metadata_provider=DummyMetaDataProvider({"db.t1": ["a", "b"]}),
     )

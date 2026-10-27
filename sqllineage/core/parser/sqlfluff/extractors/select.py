@@ -10,7 +10,6 @@ from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffTable,
 )
 from sqllineage.core.parser.sqlfluff.utils import (
-    extract_lateral_view_alias,
     find_table_identifier,
     is_set_expression,
     list_child_segments,
@@ -125,15 +124,12 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             FROM tab LATERAL VIEW explode(tab.col1) alias AS col2
         The lateral view is read like a subquery named alias, after the datasets it follows
         """
-        if segment.type == "from_clause":
-            for from_expression in segment.get_children("from_expression"):
-                for lateral_view_clause in list_lateral_view_clauses(from_expression):
-                    self.tables.append(
-                        SqlFluffLateralView.of(
-                            lateral_view_clause,
-                            extract_lateral_view_alias(lateral_view_clause),
-                        )
-                    )
+        self.tables.extend(
+            [
+                SqlFluffLateralView.of(lateral_view_clause)
+                for lateral_view_clause in list_lateral_view_clauses(segment)
+            ]
+        )
 
     def _handle_set_expression(
         self, segment: BaseSegment, holder: SubQueryLineageHolder

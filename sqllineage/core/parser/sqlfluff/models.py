@@ -17,7 +17,6 @@ from sqllineage.core.parser.sqlfluff.utils import (
     is_teradata_title_phrase,
     is_wildcard,
     list_child_segments,
-    list_lateral_view_column_aliases,
 )
 from sqllineage.utils.entities import ColumnQualifierTuple
 from sqllineage.utils.helpers import escape_identifier_name
@@ -118,16 +117,25 @@ class SqlFluffLateralView(LateralView):
     """
 
     @staticmethod
-    def of(subquery: BaseSegment, alias: str | None) -> LateralView:
+    def of(subquery: BaseSegment, alias: str | None = None) -> LateralView:
         """
         Build a 'LateralView' object
         :param subquery: lateral_view_clause segment
-        :param alias: lateral view alias
+        :param alias: lateral view alias, inferred from the lateral_view_clause segment if not given
         :return: 'LateralView' object
         """
         position = SourcePosition(-1, -1)
         if pos_marker := subquery.pos_marker:
             position = SourcePosition(pos_marker.line_no, pos_marker.line_pos)
+        # LATERAL VIEW explode(col1) alias AS col2, col3: the first identifier is the table alias and the rest
+        # are the column aliases. AS is optional before the column aliases in sparksql.
+        identifiers = [
+            str(seg.raw)
+            for seg in list_child_segments(subquery)
+            if seg.type == "identifier"
+        ]
+        if alias is None and identifiers:
+            alias = identifiers[0]
         function = subquery.get_child("function")
         return LateralView(
             subquery,
@@ -135,7 +143,7 @@ class SqlFluffLateralView(LateralView):
             alias,
             position=position,
             generator=SqlFluffColumn.of(function) if function else None,
-            column_names=list_lateral_view_column_aliases(subquery),
+            column_names=identifiers[1:],
         )
 
 

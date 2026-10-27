@@ -278,18 +278,20 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                                     tgt_table,
                                     src_table_columns,
                                     tgt_wildcard,
-                                    src_wildcard,
                                     wildcard_in_union=wildcard_in_union,
                                 )
                                 expanded.append(src_wildcard)
-                    # preserve SubQuery wildcards in the lineage graph to maintain the wildcard chain in case of
-                    # partial expansion, likewise keep the target wildcard while some source wildcard isn't expanded
+                    # expand_wildcard owns the wildcard vertices, _replace_wildcard only maps the columns.
+                    # SubQuery wildcards are preserved to maintain the wildcard chain in case of partial
+                    # expansion, and the target wildcard is kept while some source wildcard isn't expanded.
                     if not isinstance(tgt_table, SubQuery):
+                        for src_wildcard in expanded:
+                            if isinstance(src_wildcard.parent, SubQuery):
+                                self.go.drop_edge(src_wildcard, tgt_wildcard)
+                            else:
+                                self.go.drop_vertices(src_wildcard)
                         if len(expanded) == len(src_wildcards):
                             self.go.drop_vertices(tgt_wildcard)
-                        else:
-                            for src_wildcard in expanded:
-                                self.go.drop_edge(src_wildcard, tgt_wildcard)
 
     def get_alias_mapping_from_table_group(
         self, table_group: list[Path | Table | SubQuery]
@@ -364,7 +366,6 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         tgt_table: Table | SubQuery,
         src_table_columns: list[Column],
         tgt_wildcard: Column,
-        src_wildcard: Column,
         wildcard_in_union: bool = False,
     ) -> None:
         if tgt_wildcard.except_columns:
@@ -403,12 +404,6 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                     src_col.parent, src_col, EdgeType.HAS_COLUMN
                 )
             self.go.add_edge_if_not_exist(src_col, target_col, EdgeType.LINEAGE)
-        # remove the expanded source wildcard of Table, the target wildcard is handled by the caller
-        if not isinstance(tgt_table, SubQuery):
-            if src_wildcard.parent is not None and not isinstance(
-                src_wildcard.parent, SubQuery
-            ):
-                self.go.drop_vertices(src_wildcard)
 
 
 class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):

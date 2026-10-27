@@ -268,14 +268,18 @@ def list_subquery_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
 
 def list_lateral_view_clauses(segment: BaseSegment) -> list[BaseSegment]:
     """
-    For a from_expression segment, list the hive/sparksql LATERAL VIEW clauses:
+    For a from_clause segment, list the hive/sparksql LATERAL VIEW clauses:
         FROM tab LATERAL VIEW explode(tab.col1) alias AS col2
     hive puts lateral_view_clause under from_expression_element, while sparksql puts it under from_expression
     """
     lateral_view_clauses = []
-    if segment.type == "from_expression":
-        for seg in [segment, *segment.get_children("from_expression_element")]:
-            lateral_view_clauses += seg.get_children("lateral_view_clause")
+    if segment.type == "from_clause":
+        for from_expression in segment.get_children("from_expression"):
+            for seg in [
+                from_expression,
+                *from_expression.get_children("from_expression_element"),
+            ]:
+                lateral_view_clauses += seg.get_children("lateral_view_clause")
     return lateral_view_clauses
 
 
@@ -325,30 +329,6 @@ def extract_identifier(col_segment: BaseSegment) -> str:
 
     col_identifier = identifiers[-1]
     return str(col_identifier.raw)
-
-
-def extract_lateral_view_alias(lateral_view_clause: BaseSegment) -> str | None:
-    """
-    For LATERAL VIEW explode(col1) alias AS col2, col3, return the table alias, which is the first identifier.
-    """
-    identifier = lateral_view_clause.get_child("identifier")
-    return str(identifier.raw) if identifier else None
-
-
-def list_lateral_view_column_aliases(lateral_view_clause: BaseSegment) -> list[str]:
-    """
-    For LATERAL VIEW explode(col1) alias AS col2, col3, return the column aliases.
-    AS is optional before the column aliases in sparksql.
-    """
-    before_as: list[str] = []
-    after_as: list[str] | None = None
-    for seg in list_child_segments(lateral_view_clause):
-        if seg.type == "keyword" and seg.raw_upper == "AS":
-            after_as = []
-        elif seg.type == "identifier":
-            (before_as if after_as is None else after_as).append(str(seg.raw))
-    # without AS, the first identifier is the table alias
-    return before_as[1:] if after_as is None else after_as
 
 
 def extract_as_and_target_segment(
