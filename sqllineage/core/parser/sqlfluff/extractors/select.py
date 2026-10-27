@@ -11,7 +11,6 @@ from sqllineage.core.parser.sqlfluff.models import (
 from sqllineage.core.parser.sqlfluff.utils import (
     find_table_identifier,
     is_set_expression,
-    is_set_operator_by_name,
     list_child_segments,
 )
 from sqllineage.utils.entities import AnalyzerContext
@@ -27,7 +26,6 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
 
     def __init__(self, dialect: str, metadata_provider: MetaDataProvider):
         super().__init__(dialect, metadata_provider)
-        self.union_by_name = set()
         self.columns = []
         self.tables = []
         self.union_barriers = []
@@ -126,11 +124,18 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             segment.get_children("select_statement", "bracketed")
         ):
             if idx != 0:
-                self.union_barriers.append((len(self.columns), len(self.tables)))
-                if idx <= len(set_operators) and is_set_operator_by_name(
-                    set_operators[idx - 1]
-                ):
-                    self.union_by_name.add(len(self.union_barriers))
+                # UNION [ALL] BY NAME (snowflake, duckdb, bigquery) and UNION ALL CORRESPONDING (bigquery)
+                # combine the query that follows by column name instead of by position
+                by_name = idx <= len(set_operators) and bool(
+                    {
+                        kw.raw_upper
+                        for kw in set_operators[idx - 1].get_children("keyword")
+                    }
+                    & {"NAME", "CORRESPONDING"}
+                )
+                self.union_barriers.append(
+                    (len(self.columns), len(self.tables), by_name)
+                )
             match child.type:
                 case "select_statement":
                     for seg in list_child_segments(child):

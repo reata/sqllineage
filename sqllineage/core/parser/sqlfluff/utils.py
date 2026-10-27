@@ -29,16 +29,6 @@ def is_set_expression(segment: BaseSegment) -> bool:
     )
 
 
-def is_set_operator_by_name(segment: BaseSegment) -> bool:
-    """
-    check if a set operator matches columns by name instead of by position, like
-        snowflake/duckdb: UNION [ALL] BY NAME
-        bigquery: UNION ALL BY NAME, UNION ALL CORRESPONDING
-    """
-    keywords = {keyword.raw_upper for keyword in segment.get_children("keyword")}
-    return "NAME" in keywords or "CORRESPONDING" in keywords
-
-
 def is_subquery(segment: BaseSegment) -> bool:
     if segment.type in ["from_expression_element", "bracketed"]:
         token = extract_innermost_bracketed(

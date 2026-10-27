@@ -43,12 +43,12 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
         self.columns = []
         self.tables = []
         self.union_barriers = []
-        self.union_by_name = set()
         super().__init__()
 
     def _indicate(self, token: Token) -> bool:
         if token.normalized in ("UNION", "UNION ALL"):
-            self.union_barriers.append((len(self.columns), len(self.tables)))
+            # BY NAME needs a lookahead the token handler doesn't have, so sqlparse combines by position
+            self.union_barriers.append((len(self.columns), len(self.tables), False))
 
         if self.column_flag is True and bool(token.normalized == "DISTINCT"):
             # special handling for SELECT DISTINCT
