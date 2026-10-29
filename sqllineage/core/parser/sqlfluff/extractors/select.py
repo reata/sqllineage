@@ -119,11 +119,23 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> None:
         # Recursively handle set_expression and nested bracketed set_expressions
+        set_operators = segment.get_children("set_operator")
         for idx, child in enumerate(
             segment.get_children("select_statement", "bracketed")
         ):
             if idx != 0:
-                self.union_barriers.append((len(self.columns), len(self.tables)))
+                # UNION [ALL] BY NAME (snowflake, duckdb, bigquery) and UNION ALL CORRESPONDING (bigquery)
+                # combine the query that follows by column name instead of by position
+                by_name = idx <= len(set_operators) and bool(
+                    {
+                        kw.raw_upper
+                        for kw in set_operators[idx - 1].get_children("keyword")
+                    }
+                    & {"NAME", "CORRESPONDING"}
+                )
+                self.union_barriers.append(
+                    (len(self.columns), len(self.tables), by_name)
+                )
             match child.type:
                 case "select_statement":
                     for seg in list_child_segments(child):
