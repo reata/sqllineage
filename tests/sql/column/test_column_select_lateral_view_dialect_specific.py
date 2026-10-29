@@ -139,6 +139,29 @@ LATERAL VIEW explode(items) x"""
 
 
 @pytest.mark.parametrize("dialect", _lateral_view_dialects)
+def test_select_column_from_lateral_view_without_table_alias(dialect: str):
+    sql = """INSERT INTO tab1
+SELECT a, b
+FROM tab2 t
+LATERAL VIEW posexplode(t.items) AS a, b"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("items", "tab2"),
+                ColumnQualifierTuple("a", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("items", "tab2"),
+                ColumnQualifierTuple("b", "tab1"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize("dialect", _lateral_view_dialects)
 def test_select_wildcard_from_lateral_view(dialect: str):
     sql = """INSERT INTO tab1
 SELECT *

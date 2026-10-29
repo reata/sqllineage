@@ -127,15 +127,19 @@ class SqlFluffLateralView(LateralView):
         position = SourcePosition(-1, -1)
         if pos_marker := subquery.pos_marker:
             position = SourcePosition(pos_marker.line_no, pos_marker.line_pos)
-        # LATERAL VIEW explode(col1) alias AS col2, col3: the first identifier is the table alias and the rest
-        # are the column aliases. AS is optional before the column aliases in sparksql.
-        identifiers = [
-            str(seg.raw)
-            for seg in list_child_segments(subquery)
-            if seg.type == "identifier"
-        ]
-        if alias is None and identifiers:
-            alias = identifiers[0]
+        # LATERAL VIEW explode(col1) alias AS col2, col3: the identifier before AS is the table alias and the ones
+        # after it are the column aliases. The table alias can be omitted (LATERAL VIEW explode(col1) AS col2), and
+        # sparksql also accepts the column aliases without AS, in which case the first identifier is the table alias.
+        # databricks parses AS as an identifier when the table alias is omitted, so check the raw text.
+        before_as: list[str] = []
+        after_as: list[str] | None = None
+        for seg in list_child_segments(subquery):
+            if seg.type in ("keyword", "identifier") and seg.raw_upper == "AS":
+                after_as = []
+            elif seg.type == "identifier":
+                (before_as if after_as is None else after_as).append(str(seg.raw))
+        if alias is None and before_as:
+            alias = before_as[0]
         function = subquery.get_child("function")
         return LateralView(
             subquery,
@@ -143,7 +147,7 @@ class SqlFluffLateralView(LateralView):
             alias,
             position=position,
             generator=SqlFluffColumn.of(function) if function else None,
-            column_names=identifiers[1:],
+            column_names=before_as[1:] if after_as is None else after_as,
         )
 
 

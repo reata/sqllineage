@@ -271,28 +271,19 @@ LATERAL VIEW explode(split(name, ' ')) x AS name_part"""
     )
 
 
-# A lateral view goes in a different place in a query with JOIN. In hive, it belongs to the table before it
-# ("FROM baseTable (lateralView)*" in the Hive manual), so it can't follow the ON condition of a JOIN. sparksql
-# only accepts lateral views after all the relations ("FROM relation (COMMA relation)* lateralView*" in its grammar).
-_join_with_lateral_view_sql = {
-    "hive": """INSERT INTO temp.customer_name
-SELECT customerid, lastname, firstname_part
-FROM person.person p
-LATERAL VIEW explode(split(p.firstname, ' ')) x AS firstname_part
-JOIN sales.customer c ON c.personid = p.businessentityid""",
-    "sparksql": """INSERT INTO temp.customer_name
-SELECT customerid, lastname, firstname_part
-FROM sales.customer c
-JOIN person.person p ON c.personid = p.businessentityid
-LATERAL VIEW explode(split(p.firstname, ' ')) x AS firstname_part""",
-}
-
-
-@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+# Hive does not support a lateral view together with a JOIN in the same FROM clause, in any position or join type:
+# Hive 3.1.3 raises "SemanticException [Error 10085]: JOIN with a LATERAL VIEW is not supported", even though the
+# sqlfluff hive dialect parses it. In hive, one side of the join has to be wrapped in a subquery instead.
+# sparksql accepts lateral views after all the relations ("FROM relation (COMMA relation)* lateralView*").
+@pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_select_unqualified_column_from_join_with_lateral_view(
     provider: MetaDataProvider, dialect: str
 ):
-    sql = _join_with_lateral_view_sql["hive" if dialect == "hive" else "sparksql"]
+    sql = """INSERT INTO temp.customer_name
+SELECT customerid, lastname, firstname_part
+FROM sales.customer c
+JOIN person.person p ON c.personid = p.businessentityid
+LATERAL VIEW explode(split(p.firstname, ' ')) x AS firstname_part"""
     assert_column_lineage_equal(
         sql,
         [
