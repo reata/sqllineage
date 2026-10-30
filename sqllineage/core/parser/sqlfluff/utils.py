@@ -266,6 +266,23 @@ def list_subquery_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
     return []
 
 
+def list_lateral_view_clauses(segment: BaseSegment) -> list[BaseSegment]:
+    """
+    For a from_clause segment, list the hive/sparksql LATERAL VIEW clauses:
+        FROM tab LATERAL VIEW explode(tab.col1) alias AS col2
+    hive puts lateral_view_clause under from_expression_element, while sparksql puts it under from_expression
+    """
+    lateral_view_clauses = []
+    if segment.type == "from_clause":
+        for from_expression in segment.get_children("from_expression"):
+            for seg in [
+                from_expression,
+                *from_expression.get_children("from_expression_element"),
+            ]:
+                lateral_view_clauses += seg.get_children("lateral_view_clause")
+    return lateral_view_clauses
+
+
 def list_child_segments(
     segment: BaseSegment, check_bracketed: bool = True
 ) -> list[BaseSegment]:
