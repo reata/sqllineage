@@ -6,12 +6,14 @@ from sqllineage.core.parser import SourceHandlerMixin
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffColumn,
+    SqlFluffLateralView,
     SqlFluffTable,
 )
 from sqllineage.core.parser.sqlfluff.utils import (
     find_table_identifier,
     is_set_expression,
     list_child_segments,
+    list_lateral_view_clauses,
 )
 from sqllineage.utils.entities import AnalyzerContext
 from sqllineage.utils.helpers import escape_identifier_name
@@ -75,6 +77,7 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         self.tables.extend(
             self._list_table_from_from_clause_or_join_clause(segment, holder)
         )
+        self._handle_lateral_view(segment)
         self._handle_column(segment)
 
     def _handle_swap_partition(
@@ -115,15 +118,40 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                 if table := self.find_table(identifier):
                     holder.add_write(table)
 
+    def _handle_lateral_view(self, segment: BaseSegment) -> None:
+        """
+        A handler for LATERAL VIEW clause supported by hive and sparksql:
+            FROM tab LATERAL VIEW explode(tab.col1) alias AS col2
+        The lateral view is read like a subquery named alias, after the datasets it follows
+        """
+        self.tables.extend(
+            [
+                SqlFluffLateralView.of(lateral_view_clause)
+                for lateral_view_clause in list_lateral_view_clauses(segment)
+            ]
+        )
+
     def _handle_set_expression(
         self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> None:
         # Recursively handle set_expression and nested bracketed set_expressions
+        set_operators = segment.get_children("set_operator")
         for idx, child in enumerate(
             segment.get_children("select_statement", "bracketed")
         ):
             if idx != 0:
-                self.union_barriers.append((len(self.columns), len(self.tables)))
+                # UNION [ALL] BY NAME (snowflake, duckdb, bigquery) and UNION ALL CORRESPONDING (bigquery)
+                # combine the query that follows by column name instead of by position
+                by_name = idx <= len(set_operators) and bool(
+                    {
+                        kw.raw_upper
+                        for kw in set_operators[idx - 1].get_children("keyword")
+                    }
+                    & {"NAME", "CORRESPONDING"}
+                )
+                self.union_barriers.append(
+                    (len(self.columns), len(self.tables), by_name)
+                )
             match child.type:
                 case "select_statement":
                     for seg in list_child_segments(child):

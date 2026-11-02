@@ -9,7 +9,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@mui/icons-material": "^9.5.0",
     "@mui/material": "^9.3.1",
-    "@mui/x-tree-view": "^9.15.0",
+    "@mui/x-tree-view": "^9.16.0",
     "@reduxjs/toolkit": "^2.13.0",
     "cytoscape": "^3.34.4",
     "cytoscape-dagre": "^4.0.1",
@@ -51,6 +51,6 @@
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
     "prettier": "^3.9.10",
-    "vite": "^8.3.4"
+    "vite": "^8.3.5"
   }
 }

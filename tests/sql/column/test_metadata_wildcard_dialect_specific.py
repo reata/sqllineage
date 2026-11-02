@@ -235,3 +235,72 @@ from marts.dim_credit_card"""
         metadata_provider=provider,
         test_sqlparse=False,
     )
+
+
+@pytest.mark.parametrize("dialect", ["databricks", "hive", "sparksql"])
+def test_select_wildcard_from_table_with_lateral_view(
+    provider: MetaDataProvider, dialect: str
+):
+    sql = """INSERT INTO temp.countryregion_name
+SELECT *
+FROM person.countryregion
+LATERAL VIEW explode(split(name, ' ')) x AS name_part"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("countryregioncode", "person.countryregion"),
+                ColumnQualifierTuple("countryregioncode", "temp.countryregion_name"),
+            ),
+            (
+                ColumnQualifierTuple("modifieddate", "person.countryregion"),
+                ColumnQualifierTuple("modifieddate", "temp.countryregion_name"),
+            ),
+            (
+                ColumnQualifierTuple("name", "person.countryregion"),
+                ColumnQualifierTuple("name", "temp.countryregion_name"),
+            ),
+            (
+                ColumnQualifierTuple("name", "person.countryregion"),
+                ColumnQualifierTuple("name_part", "temp.countryregion_name"),
+            ),
+        ],
+        dialect=dialect,
+        metadata_provider=provider,
+        test_sqlparse=False,
+    )
+
+
+# Hive does not support a lateral view together with a JOIN in the same FROM clause, in any position or join type:
+# Hive 3.1.3 raises "SemanticException [Error 10085]: JOIN with a LATERAL VIEW is not supported", even though the
+# sqlfluff hive dialect parses it. In hive, one side of the join has to be wrapped in a subquery instead.
+# sparksql accepts lateral views after all the relations ("FROM relation (COMMA relation)* lateralView*").
+@pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
+def test_select_unqualified_column_from_join_with_lateral_view(
+    provider: MetaDataProvider, dialect: str
+):
+    sql = """INSERT INTO temp.customer_name
+SELECT customerid, lastname, firstname_part
+FROM sales.customer c
+JOIN person.person p ON c.personid = p.businessentityid
+LATERAL VIEW explode(split(p.firstname, ' ')) x AS firstname_part"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("customerid", "sales.customer"),
+                ColumnQualifierTuple("customerid", "temp.customer_name"),
+            ),
+            (
+                ColumnQualifierTuple("lastname", "person.person"),
+                ColumnQualifierTuple("lastname", "temp.customer_name"),
+            ),
+            (
+                ColumnQualifierTuple("firstname", "person.person"),
+                ColumnQualifierTuple("firstname_part", "temp.customer_name"),
+            ),
+        ],
+        dialect=dialect,
+        metadata_provider=provider,
+        test_sqlparse=False,
+    )

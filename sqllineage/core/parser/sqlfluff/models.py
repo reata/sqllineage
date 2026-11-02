@@ -1,7 +1,14 @@
 from sqlfluff.core.parser import BaseSegment
 
 from sqllineage import SQLPARSE_DIALECT
-from sqllineage.core.models import Column, Schema, SourcePosition, SubQuery, Table
+from sqllineage.core.models import (
+    Column,
+    LateralView,
+    Schema,
+    SourcePosition,
+    SubQuery,
+    Table,
+)
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
     extract_identifier,
@@ -102,6 +109,46 @@ class SqlFluffSubQuery(SubQuery):
         if pos_marker := subquery.pos_marker:
             position = SourcePosition(pos_marker.line_no, pos_marker.line_pos)
         return SubQuery(subquery, subquery.raw, alias, position=position)
+
+
+class SqlFluffLateralView(LateralView):
+    """
+    Data Class for SqlFluffLateralView
+    """
+
+    @staticmethod
+    def of(subquery: BaseSegment, alias: str | None = None) -> LateralView:
+        """
+        Build a 'LateralView' object
+        :param subquery: lateral_view_clause segment
+        :param alias: lateral view alias, inferred from the lateral_view_clause segment if not given
+        :return: 'LateralView' object
+        """
+        position = SourcePosition(-1, -1)
+        if pos_marker := subquery.pos_marker:
+            position = SourcePosition(pos_marker.line_no, pos_marker.line_pos)
+        # LATERAL VIEW explode(col1) alias AS col2, col3: the identifier before AS is the table alias and the ones
+        # after it are the column aliases. The table alias can be omitted (LATERAL VIEW explode(col1) AS col2), and
+        # sparksql also accepts the column aliases without AS, in which case the first identifier is the table alias.
+        # databricks parses AS as an identifier when the table alias is omitted, so check the raw text.
+        before_as: list[str] = []
+        after_as: list[str] | None = None
+        for seg in list_child_segments(subquery):
+            if seg.type in ("keyword", "identifier") and seg.raw_upper == "AS":
+                after_as = []
+            elif seg.type == "identifier":
+                (before_as if after_as is None else after_as).append(str(seg.raw))
+        if alias is None and before_as:
+            alias = before_as[0]
+        function = subquery.get_child("function")
+        return LateralView(
+            subquery,
+            subquery.raw,
+            alias,
+            position=position,
+            generator=SqlFluffColumn.of(function) if function else None,
+            column_names=before_as[1:] if after_as is None else after_as,
+        )
 
 
 class SqlFluffColumn(Column):
