@@ -100,6 +100,21 @@ def find_table_identifier(segment: BaseSegment) -> BaseSegment | None:
     return table_identifier
 
 
+def find_stage_path(segment: BaseSegment) -> BaseSegment | None:
+    """
+    find the snowflake stage path a table_expression or table_reference refers to, like:
+        SELECT $1 FROM @mystage/path/
+        SELECT t.$1 FROM @mystage/path/ (FILE_FORMAT => 'myformat') t
+    sqlfluff wraps the stage_path in a table_reference, unless it is followed by a bracketed option list,
+    in which case the stage_path is a direct child of table_expression
+    """
+    if segment.is_type("stage_path"):
+        return segment
+    elif segment.type in ["table_expression", "table_reference"]:
+        return segment.get_child("stage_path")
+    return None
+
+
 def list_join_clause(segment: BaseSegment) -> list[BaseSegment]:
     """
     traverse from_clause, recursively goes into bracket by default

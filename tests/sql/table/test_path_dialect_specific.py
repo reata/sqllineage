@@ -83,3 +83,111 @@ iam_role 'arn:aws:iam::0123456789012:role/MyRedshiftRole';""",
         dialect=dialect,
         test_sqlparse=False,
     )
+
+
+@pytest.mark.parametrize(
+    "stage",
+    [
+        "@mystage",
+        "@mystage/path/",
+        "@mydb.myschema.mystage/path/",
+        "@~/path/",
+        "@%tab2/path/",
+    ],
+)
+def test_snowflake_select_from_stage(stage: str):
+    """
+    https://docs.snowflake.com/en/user-guide/querying-stage
+    """
+    assert_table_lineage_equal(
+        f"SELECT $1, $2 FROM {stage}",
+        {Path(stage)},
+        dialect="snowflake",
+        test_sqlparse=False,
+    )
+    assert_table_lineage_equal(
+        f"INSERT INTO tab1 SELECT $1, $2 FROM {stage}",
+        {Path(stage)},
+        {"tab1"},
+        dialect="snowflake",
+        test_sqlparse=False,
+    )
+
+
+def test_snowflake_select_from_stage_with_file_format_and_alias():
+    """
+    https://docs.snowflake.com/en/user-guide/querying-stage
+    """
+    assert_table_lineage_equal(
+        "SELECT t.$1, t.$2 FROM @mystage/path/ (FILE_FORMAT => 'myformat', PATTERN => '.*[.]csv') t",
+        {Path("@mystage/path/")},
+        dialect="snowflake",
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "stage",
+    ["@mystage/path/", "@mydb.myschema.mystage/path/"],
+)
+def test_snowflake_copy_into_table_from_stage(stage: str):
+    """
+    https://docs.snowflake.com/en/sql-reference/sql/copy-into-table
+    """
+    assert_table_lineage_equal(
+        f"COPY INTO tab1 FROM {stage} FILE_FORMAT = (TYPE = CSV)",
+        {Path(stage)},
+        {"tab1"},
+        dialect="snowflake",
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "COPY INTO tab1 FROM (SELECT $1, $2 FROM @mystage/path/) FILE_FORMAT = (TYPE = CSV)",
+        "COPY INTO tab1 (col1, col2) FROM (SELECT $1, $2 FROM @mystage/path/)",
+        "COPY INTO tab1 FROM (SELECT t.$1, t.$2 FROM @mystage/path/ t)",
+        "COPY INTO tab1 FROM (SELECT $1, TO_DATE($2) FROM @mystage/path/ (FILE_FORMAT => 'myformat') t)",
+    ],
+)
+def test_snowflake_copy_into_table_from_stage_with_transformation(sql: str):
+    """
+    https://docs.snowflake.com/en/user-guide/data-load-transform
+    """
+    assert_table_lineage_equal(
+        sql,
+        {Path("@mystage/path/")},
+        {"tab1"},
+        dialect="snowflake",
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "location, path",
+    [
+        ("@mystage/unload/", "@mystage/unload/"),
+        ("'s3://mybucket/unload/'", "s3://mybucket/unload/"),
+    ],
+)
+@pytest.mark.parametrize(
+    "source",
+    [
+        "tab1",
+        "(SELECT col1, col2 FROM tab1)",
+        "(SELECT col1, col2 FROM tab1 WHERE col1 > 0)",
+    ],
+)
+def test_snowflake_copy_into_location(location: str, path: str, source: str):
+    """
+    https://docs.snowflake.com/en/sql-reference/sql/copy-into-location
+    """
+    assert_table_lineage_equal(
+        f"COPY INTO {location} FROM {source} FILE_FORMAT = (TYPE = PARQUET) HEADER = TRUE",
+        {"tab1"},
+        {Path(path)},
+        dialect="snowflake",
+        test_sqlparse=False,
+    )
