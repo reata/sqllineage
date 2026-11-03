@@ -1,6 +1,8 @@
 import argparse
+import json
 import logging
 import logging.config
+import os
 import warnings
 
 from sqllineage import (
@@ -23,6 +25,10 @@ from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import extract_file_path_from_args, extract_sql_from_args
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_OPENLINEAGE_JOB_NAMESPACE = "sqllineage"
+DEFAULT_OPENLINEAGE_JOB_NAME = "sqllineage_job"
+DEFAULT_OPENLINEAGE_DATASET_NAMESPACE = "default"
 
 
 def main(args=None) -> None:
@@ -102,6 +108,44 @@ def main(args=None) -> None:
         help="sqlalchemy url to provide metadata for lineage analysis",
         type=str,
     )
+    parser.add_argument(
+        "--openlineage",
+        help="print the lineage as an OpenLineage RunEvent in JSON format",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--job-namespace",
+        help="OpenLineage job namespace, used with --openlineage",
+        type=str,
+        default=DEFAULT_OPENLINEAGE_JOB_NAMESPACE,
+        metavar="<job_namespace>",
+    )
+    parser.add_argument(
+        "--job-name",
+        help="OpenLineage job name, used with --openlineage. "
+        "default to the SQL file name with -f, or sqllineage_job with -e",
+        type=str,
+        metavar="<job_name>",
+    )
+    parser.add_argument(
+        "--dataset-namespace",
+        help="OpenLineage namespace for all input and output datasets, used with --openlineage",
+        type=str,
+        default=DEFAULT_OPENLINEAGE_DATASET_NAMESPACE,
+        metavar="<dataset_namespace>",
+    )
+    parser.add_argument(
+        "--run-id",
+        help="OpenLineage run ID (UUID), used with --openlineage. A random UUID is generated if not provided",
+        type=str,
+        metavar="<run_id>",
+    )
+    parser.add_argument(
+        "--event-time",
+        help="OpenLineage event time in ISO-8601 format, used with --openlineage. Current time if not provided",
+        type=str,
+        metavar="<event_time>",
+    )
     args = parser.parse_args(args)
     metadata_provider = (
         SQLAlchemyMetaDataProvider(args.sqlalchemy_url)
@@ -126,7 +170,22 @@ def main(args=None) -> None:
             },
             silent_mode=args.silent_mode,
         )
-        if args.graph_visualization:
+        if args.openlineage:
+            job_name = args.job_name or (
+                os.path.basename(args.f) if args.f else DEFAULT_OPENLINEAGE_JOB_NAME
+            )
+            try:
+                event = runner.to_openlineage(
+                    job_namespace=args.job_namespace,
+                    job_name=job_name,
+                    dataset_namespace=args.dataset_namespace,
+                    run_id=args.run_id,
+                    event_time=args.event_time,
+                )
+            except ValueError as e:
+                parser.error(str(e))
+            print(json.dumps(event, indent=2))
+        elif args.graph_visualization:
             runner.draw()
         elif args.level == LineageLevel.COLUMN:
             runner.print_column_lineage()

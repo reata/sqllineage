@@ -2,6 +2,7 @@ import logging
 import warnings
 from collections import OrderedDict
 from collections.abc import Callable
+from datetime import datetime
 from functools import wraps
 from typing import Any
 
@@ -114,6 +115,36 @@ Target Tables:
             return to_cytoscape(self._sql_holder.column_lineage_graph, compound=True)
         else:
             return to_cytoscape(self._sql_holder.table_lineage_graph)
+
+    @lazy_method
+    def to_openlineage(
+        self,
+        job_namespace: str,
+        job_name: str,
+        dataset_namespace: str,
+        run_id: str | None = None,
+        event_time: str | datetime | None = None,
+    ) -> dict[str, Any]:
+        """
+        to convert the table and column lineage into an OpenLineage RunEvent.
+
+        :param job_namespace: OpenLineage namespace of the job
+        :param job_name: OpenLineage name of the job
+        :param dataset_namespace: OpenLineage namespace used for every input/output dataset
+        :param run_id: run id as UUID string, a random UUID will be generated if not supplied
+        :param event_time: ISO-8601 string or datetime, current UTC time if not supplied
+        :return: a JSON-serializable dictionary of OpenLineage RunEvent
+        """
+        from sqllineage.openlineage import OpenLineageConverter
+
+        return OpenLineageConverter(
+            self,
+            job_namespace=job_namespace,
+            job_name=job_name,
+            dataset_namespace=dataset_namespace,
+            run_id=run_id,
+            event_time=event_time,
+        ).to_dict()
 
     def draw(self) -> None:
         """
