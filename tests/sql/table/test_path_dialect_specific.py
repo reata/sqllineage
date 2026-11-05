@@ -191,3 +191,16 @@ def test_snowflake_copy_into_location(location: str, path: str, source: str):
         dialect="snowflake",
         test_sqlparse=False,
     )
+
+
+def test_snowflake_copy_into_stage_from_query_without_options():
+    """
+    without a trailing option, sqlfluff wraps the target stage path in table_reference
+    """
+    assert_table_lineage_equal(
+        "COPY INTO @mystage/unload/ FROM (SELECT col1, col2 FROM tab1)",
+        {"tab1"},
+        {Path("@mystage/unload/")},
+        dialect="snowflake",
+        test_sqlparse=False,
+    )

@@ -110,9 +110,7 @@ def find_stage_path(segment: BaseSegment) -> BaseSegment | None:
     """
     if segment.is_type("stage_path"):
         return segment
-    elif segment.type in ["table_expression", "table_reference"]:
-        return segment.get_child("stage_path")
-    return None
+    return segment.get_child("stage_path")
 
 
 def list_join_clause(segment: BaseSegment) -> list[BaseSegment]:
