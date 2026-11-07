@@ -13,6 +13,7 @@ from sqllineage.core.parser.sqlfluff.models import (
 )
 from sqllineage.core.parser.sqlfluff.utils import (
     find_from_expression_element,
+    find_stage_path,
     find_table_identifier,
     is_subquery,
     list_child_segments,
@@ -158,6 +159,11 @@ class BaseExtractor:
                 tables.append(read_sq)
         else:
             table_identifier = find_table_identifier(segment)
+            if table_identifier is None and (
+                table_expression := segment.get_child("table_expression")
+            ):
+                # snowflake stage path followed by an option list is not wrapped in table_reference
+                table_identifier = find_stage_path(table_expression)
             if table_identifier:
                 subquery_flag = False
                 alias_expression = None
@@ -197,6 +203,9 @@ class BaseExtractor:
                                 )
                             )
                         )
+                    elif stage_path := find_stage_path(table_identifier):
+                        # snowflake: SELECT $1 FROM @mystage/path/
+                        tables.append(Path(escape_identifier_name(stage_path.raw)))
                     else:
                         tables.append(
                             SqlFluffTable.of(
