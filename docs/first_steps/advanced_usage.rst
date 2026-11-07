@@ -193,3 +193,44 @@ Column-Level Lineage:
 
 .. image:: ../_static/column.jpg
    :alt: Column lineage visualization
+
+
+OpenLineage Export
+==================
+
+Lineage result can be exported as an `OpenLineage`_ RunEvent, including table-level inputs/outputs, the SQL job facet
+and the ``columnLineage`` dataset facet. The event is a plain JSON-serializable dict, no extra dependency is required.
+
+.. code-block:: bash
+
+    sqllineage -e "insert into db1.tgt select id, name as full_name from db2.src" --openlineage \
+        --job-namespace etl --job-name daily_job --dataset-namespace postgres://db.example.com:5432
+
+``--run-id`` (UUID) and ``--event-time`` (ISO-8601) are optional; a random run ID and the current UTC time are used
+when not provided. When ``--openlineage`` is set, only the JSON event is printed.
+
+The same is available in Python:
+
+.. code-block:: python
+
+    >>> import json
+    >>> from sqllineage.runner import LineageRunner
+    >>> runner = LineageRunner("insert into db1.tgt select id, name as full_name from db2.src")
+    >>> event = runner.to_openlineage(
+    ...     job_namespace="etl",
+    ...     job_name="daily_job",
+    ...     dataset_namespace="postgres://db.example.com:5432",
+    ...     run_id="0190e5c4-6a8d-7c3e-9f7a-1b2c3d4e5f60",  # optional
+    ...     event_time="2024-01-01T00:00:00+00:00",  # optional
+    ... )
+    >>> [d["name"] for d in event["inputs"]], [d["name"] for d in event["outputs"]]
+    (['db2.src'], ['db1.tgt'])
+    >>> event["outputs"][0]["facets"]["columnLineage"]["fields"]["full_name"]
+    {'inputFields': [{'namespace': 'postgres://db.example.com:5432', 'name': 'db2.src', 'field': 'name'}]}
+    >>> print(json.dumps(event, indent=2))
+
+Dataset names follow sqllineage's ``schema.table`` naming (unqualified tables use ``<default>`` as schema unless
+``DEFAULT_SCHEMA`` is configured). Columns that cannot be resolved to a single source table, as well as unexpanded
+wildcards (``*``), are left out of the ``columnLineage`` facet.
+
+.. _OpenLineage: https://openlineage.io
