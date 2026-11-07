@@ -253,16 +253,27 @@ def list_subquery_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
     if parent is not None:
         if parent[0].type == "from_expression_element":
             if alias_expression := parent[0].get_child("alias_expression"):
-                # tsql wraps the bracketed column alias list in alias_column_list
-                column_alias_list = (
-                    alias_expression.get_child("alias_column_list") or alias_expression
-                )
+                return list_alias_expression_column_aliases(alias_expression)
         elif parent[0].type == "common_table_expression":
             column_alias_list = parent[0].get_child("cte_column_list")
     if column_alias_list is not None:
         if bracketed := column_alias_list.get_child("bracketed"):
             if identifier_list := bracketed.get_child("identifier_list"):
                 return identifier_list.get_children("identifier")
+    return []
+
+
+def list_alias_expression_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
+    """
+    For an alias_expression segment, list the identifiers of the column alias list following the alias:
+        AS alias (col1, col2)
+    Return an empty list when no column alias list is specified.
+    """
+    # tsql wraps the bracketed column alias list in alias_column_list
+    column_alias_list = segment.get_child("alias_column_list") or segment
+    if bracketed := column_alias_list.get_child("bracketed"):
+        if identifier_list := bracketed.get_child("identifier_list"):
+            return identifier_list.get_children("identifier")
     return []
 
 
