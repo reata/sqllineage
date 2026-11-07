@@ -90,17 +90,6 @@ class SourceHandlerMixin:
             # the columns of a lateral view are generated from the datasets to its left in the same query
             for tbl_idx, tbl in enumerate(tbl_grp):
                 if isinstance(tbl, LateralView):
-                    if (
-                        tbl.alias_as_column
-                        and tbl.alias is not None
-                        and not tbl.columns
-                        and not holder.get_table_columns(tbl)
-                    ):
-                        # UNNEST(tab.col1) AS col2: no column alias list and no column referred to as col2.x,
-                        # so col2 is the single column generated
-                        column = Column(tbl.alias)
-                        column.parent = tbl
-                        tbl.columns.append(column)
                     holder.add_lateral_view(
                         tbl,
                         holder.get_alias_mapping_from_table_group(tbl_grp[:tbl_idx]),

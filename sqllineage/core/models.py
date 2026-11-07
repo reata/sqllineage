@@ -332,8 +332,21 @@ class LateralView(SubQuery):
         super().__init__(subquery, subquery_raw, alias, position)
         self.generator = generator
         self.alias_as_column = alias_as_column
-        self.columns = []
-        for column_name in column_names:
-            column = Column(column_name)
-            column.parent = self
-            self.columns.append(column)
+        self.columns = [
+            self._generated_column(column_name) for column_name in column_names
+        ]
+
+    def _generated_column(self, name: str) -> Column:
+        column = Column(name)
+        column.parent = self
+        return column
+
+    def implicit_alias_columns(self) -> list[Column]:
+        """
+        The columns implied by the alias when the SQL neither specifies column aliases nor refers to any column through
+        the alias, so the alias names the single generated column, like bigquery UNNEST(tab.col1) AS col2.
+        Empty for a lateral view whose alias only names the view.
+        """
+        if self.alias_as_column and self.alias is not None:
+            return [self._generated_column(self.alias)]
+        return []
