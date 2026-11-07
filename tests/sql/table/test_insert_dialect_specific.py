@@ -112,3 +112,41 @@ SELECT sc.id, q.col1
 FROM bar sc
 LATERAL VIEW OUTER explode(sc.json_array) q AS col1"""
     assert_table_lineage_equal(sql, {"bar"}, {"foo"}, dialect)
+
+
+@pytest.mark.parametrize("dialect", ["oracle", "snowflake"])
+def test_insert_all(dialect: str):
+    sql = """INSERT ALL
+    INTO tab1 (col1) VALUES (col1)
+    INTO tab2 (col2) VALUES (col2)
+SELECT col1, col2 FROM tab3"""
+    assert_table_lineage_equal(
+        sql, {"tab3"}, {"tab1", "tab2"}, dialect=dialect, test_sqlparse=False
+    )
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        """INSERT ALL
+    INTO tab1
+    INTO tab2
+SELECT col1, col2 FROM tab3""",
+        """INSERT OVERWRITE ALL
+    INTO tab1
+    INTO tab2
+SELECT col1, col2 FROM tab3""",
+        """INSERT ALL
+    WHEN col1 > 0 THEN INTO tab1
+    WHEN col2 > 0 THEN INTO tab1 INTO tab2
+SELECT col1, col2 FROM tab3""",
+        """INSERT FIRST
+    WHEN col1 > 0 THEN INTO tab1
+    ELSE INTO tab2
+SELECT col1, col2 FROM tab3""",
+    ],
+)
+def test_insert_multi_table_snowflake(sql: str):
+    assert_table_lineage_equal(
+        sql, {"tab3"}, {"tab1", "tab2"}, dialect="snowflake", test_sqlparse=False
+    )
