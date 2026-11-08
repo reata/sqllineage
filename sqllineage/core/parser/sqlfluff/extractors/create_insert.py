@@ -3,6 +3,9 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
+from sqllineage.core.parser.sqlfluff.extractors.multi_table_insert import (
+    MultiTableInsertExtractor,
+)
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffTable
 from sqllineage.core.parser.sqlfluff.utils import (
@@ -30,6 +33,9 @@ class CreateInsertExtractor(BaseExtractor):
         statement: BaseSegment,
         context: AnalyzerContext,
     ) -> SubQueryLineageHolder:
+        if MultiTableInsertExtractor.is_multi_table_insert(statement):
+            # snowflake and oracle INSERT {ALL | FIRST} parse as insert_statement, delegate explicitly
+            return self.delegate_to(MultiTableInsertExtractor, statement, context)
         holder = self._init_holder(context)
         src_flag = tgt_flag = part_flag = False
         partition_columns = []

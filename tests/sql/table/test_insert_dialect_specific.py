@@ -112,3 +112,51 @@ SELECT sc.id, q.col1
 FROM bar sc
 LATERAL VIEW OUTER explode(sc.json_array) q AS col1"""
     assert_table_lineage_equal(sql, {"bar"}, {"foo"}, dialect)
+
+
+# https://docs.snowflake.com/en/sql-reference/sql/insert-multi-table
+# https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/INSERT.html#GUID-903F8043-0254-4EE9-ACC1-CB8AC0AF3423
+@pytest.mark.parametrize("dialect", ["oracle", "snowflake"])
+@pytest.mark.parametrize(
+    "sql",
+    [
+        """INSERT ALL
+    INTO tab1 (col1) VALUES (col1)
+    INTO tab2 (col2) VALUES (col2)
+SELECT col1, col2 FROM tab3""",
+        """INSERT ALL
+    INTO tab1
+    INTO tab2
+SELECT col1, col2 FROM tab3""",
+    ],
+)
+def test_insert_multi_table(sql: str, dialect: str):
+    assert_table_lineage_equal(
+        sql, {"tab3"}, {"tab1", "tab2"}, dialect=dialect, test_sqlparse=False
+    )
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        # oracle has no INSERT OVERWRITE
+        """INSERT OVERWRITE ALL
+    INTO tab1
+    INTO tab2
+SELECT col1, col2 FROM tab3""",
+        # oracle supports conditional multi-table insert as well, but sqlfluff oracle dialect doesn't parse
+        # WHEN ... THEN INTO
+        """INSERT ALL
+    WHEN col1 > 0 THEN INTO tab1
+    WHEN col2 > 0 THEN INTO tab1 INTO tab2
+SELECT col1, col2 FROM tab3""",
+        """INSERT FIRST
+    WHEN col1 > 0 THEN INTO tab1
+    ELSE INTO tab2
+SELECT col1, col2 FROM tab3""",
+    ],
+)
+def test_insert_multi_table_snowflake(sql: str):
+    assert_table_lineage_equal(
+        sql, {"tab3"}, {"tab1", "tab2"}, dialect="snowflake", test_sqlparse=False
+    )
