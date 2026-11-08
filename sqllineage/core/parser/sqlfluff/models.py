@@ -16,6 +16,7 @@ from sqllineage.core.parser.sqlfluff.utils import (
     is_subquery,
     is_teradata_title_phrase,
     is_wildcard,
+    list_alias_expression_column_aliases,
     list_child_segments,
 )
 from sqllineage.utils.entities import ColumnQualifierTuple
@@ -30,6 +31,8 @@ NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
     "else_clause",
     "select_clause_element",
     "cast_expression",
+    # snowflake named argument, like FLATTEN(input => tab.col1)
+    "snowflake_keyword_expression",
 ]
 
 FUNCTION_SEGMENT_TYPE = ["function"]
@@ -120,13 +123,15 @@ class SqlFluffLateralView(LateralView):
     def of(subquery: BaseSegment, alias: str | None = None) -> LateralView:
         """
         Build a 'LateralView' object
-        :param subquery: lateral_view_clause segment
-        :param alias: lateral view alias, inferred from the lateral_view_clause segment if not given
+        :param subquery: lateral_view_clause segment, or from_expression_element segment of a table function
+        :param alias: lateral view alias, inferred from the segment if not given
         :return: 'LateralView' object
         """
         position = SourcePosition(-1, -1)
         if pos_marker := subquery.pos_marker:
             position = SourcePosition(pos_marker.line_no, pos_marker.line_pos)
+        if subquery.type == "from_expression_element":
+            return SqlFluffLateralView._of_table_function(subquery, alias, position)
         # LATERAL VIEW explode(col1) alias AS col2, col3: the identifier before AS is the table alias and the ones
         # after it are the column aliases. The table alias can be omitted (LATERAL VIEW explode(col1) AS col2), and
         # sparksql also accepts the column aliases without AS, in which case the first identifier is the table alias.
@@ -148,6 +153,39 @@ class SqlFluffLateralView(LateralView):
             position=position,
             generator=SqlFluffColumn.of(function) if function else None,
             column_names=before_as[1:] if after_as is None else after_as,
+        )
+
+    @staticmethod
+    def _of_table_function(
+        segment: BaseSegment, alias: str | None, position: SourcePosition
+    ) -> LateralView:
+        """
+        Build a 'LateralView' object for a table function in FROM clause, like UNNEST in presto/trino/bigquery/postgres
+        or FLATTEN in snowflake:
+            FROM tab CROSS JOIN UNNEST(tab.col1) [WITH ORDINALITY] AS alias (col2, col3)
+        The identifier after AS is the table alias and the optional bracketed list following it are the column aliases
+        :param segment: from_expression_element segment whose table_expression is a function
+        """
+        function = None
+        if table_expression := segment.get_child("table_expression"):
+            function = table_expression.get_child("function")
+        column_names: list[str] = []
+        if alias_expression := segment.get_child("alias_expression"):
+            if alias is None:
+                alias = extract_identifier(alias_expression)
+            column_names = [
+                str(identifier.raw)
+                for identifier in list_alias_expression_column_aliases(alias_expression)
+            ]
+        return LateralView(
+            segment,
+            segment.raw,
+            alias,
+            position=position,
+            generator=SqlFluffColumn.of(function) if function else None,
+            column_names=column_names,
+            # bigquery UNNEST(tab.col1) AS col2 or postgres unnest(tab.col1) AS col2 names the generated column col2
+            alias_as_column=True,
         )
 
 

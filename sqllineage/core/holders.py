@@ -210,9 +210,14 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         """
         link the source columns of the table generating function to each column of the lateral view.
 
-        without column aliases, the generated columns are the ones referred to by their default name, like alias.col
+        without column aliases, the generated columns are the ones referred to by their default name, like alias.col.
+        when none is referred to either, the alias itself may name the single generated column: UNNEST(col) AS alias
         """
-        columns = lateral_view.columns or self.get_table_columns(lateral_view)
+        columns = (
+            lateral_view.columns
+            or self.get_table_columns(lateral_view)
+            or lateral_view.implicit_alias_columns()
+        )
         for column in columns:
             self.go.add_edge_if_not_exist(lateral_view, column, EdgeType.HAS_COLUMN)
         if lateral_view.generator is not None:

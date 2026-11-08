@@ -8,6 +8,7 @@ from sqllineage.core.metadata_provider import MetaDataProvider
 from sqllineage.core.models import Path, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.models import (
     SqlFluffColumn,
+    SqlFluffLateralView,
     SqlFluffSubQuery,
     SqlFluffTable,
 )
@@ -142,7 +143,11 @@ class BaseExtractor:
         ]
         if table_expression := segment.get_child("table_expression"):
             if table_expression.get_child("function"):
-                # for UNNEST or generator function, no dataset involved
+                # for UNNEST or generator function, no dataset involved.
+                # when aliased, like UNNEST(tab.col1) AS alias (col2), the function is read like a lateral view,
+                # whose columns are generated from the datasets before it: alias.col2 <- tab.col1
+                if segment.get_child("alias_expression"):
+                    tables.append(SqlFluffLateralView.of(segment))
                 return tables
         first_segment = all_segments[0]
         if first_segment.type == "bracketed":

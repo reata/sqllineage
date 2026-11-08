@@ -138,6 +138,27 @@ LATERAL VIEW explode(items) x"""
     )
 
 
+# hive requires the column alias list, so the alias naming only the view is tested for databricks and sparksql
+@pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
+def test_select_no_column_from_lateral_view_without_column_alias(dialect: str):
+    # unlike UNNEST(items) AS x, the alias of a lateral view never names a generated column
+    sql = """INSERT INTO tab1
+SELECT t.id
+FROM tab2 t
+LATERAL VIEW explode(t.items) x"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("id", "tab2"),
+                ColumnQualifierTuple("id", "tab1"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
 @pytest.mark.parametrize("dialect", _lateral_view_dialects)
 def test_select_column_from_lateral_view_without_table_alias(dialect: str):
     sql = """INSERT INTO tab1

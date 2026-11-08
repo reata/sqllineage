@@ -249,20 +249,28 @@ def list_subquery_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
     # the subquery may be wrapped in extra parenthesis like: FROM ((SELECT ...)) AS alias (col1, col2)
     while parent is not None and parent[0].type in ["bracketed", "table_expression"]:
         parent = parent[0].get_parent()
-    column_alias_list = None
     if parent is not None:
         if parent[0].type == "from_expression_element":
             if alias_expression := parent[0].get_child("alias_expression"):
-                # tsql wraps the bracketed column alias list in alias_column_list
-                column_alias_list = (
-                    alias_expression.get_child("alias_column_list") or alias_expression
-                )
+                return list_alias_expression_column_aliases(alias_expression)
         elif parent[0].type == "common_table_expression":
-            column_alias_list = parent[0].get_child("cte_column_list")
-    if column_alias_list is not None:
-        if bracketed := column_alias_list.get_child("bracketed"):
-            if identifier_list := bracketed.get_child("identifier_list"):
-                return identifier_list.get_children("identifier")
+            if cte_column_list := parent[0].get_child("cte_column_list"):
+                return list_alias_expression_column_aliases(cte_column_list)
+    return []
+
+
+def list_alias_expression_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
+    """
+    For an alias_expression or cte_column_list segment, list the identifiers of its bracketed column alias list:
+        AS alias (col1, col2)
+        WITH alias (col1, col2) AS (...)
+    Return an empty list when no column alias list is specified.
+    """
+    # tsql wraps the bracketed column alias list in alias_column_list
+    column_alias_list = segment.get_child("alias_column_list") or segment
+    if bracketed := column_alias_list.get_child("bracketed"):
+        if identifier_list := bracketed.get_child("identifier_list"):
+            return identifier_list.get_children("identifier")
     return []
 
 
