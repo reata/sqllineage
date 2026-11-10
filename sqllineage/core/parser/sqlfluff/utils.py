@@ -92,25 +92,17 @@ def find_table_identifier(segment: BaseSegment) -> BaseSegment | None:
     """
     table_identifier = None
     if segment.type in ["table_reference", "file_reference", "object_reference"]:
+        # snowflake: SELECT $1 FROM @mystage/path/, the stage_path is wrapped in table_reference
+        return segment.get_child("stage_path") or segment
+    elif segment.is_type("stage_path"):
+        # snowflake: SELECT t.$1 FROM @mystage/path/ (FILE_FORMAT => 'myformat') t
+        # the stage_path followed by an option list is a direct child of table_expression
         return segment
     else:
         for sub_segment in segment.segments:
             if identifier := find_table_identifier(sub_segment):
                 return identifier
     return table_identifier
-
-
-def find_stage_path(segment: BaseSegment) -> BaseSegment | None:
-    """
-    find the snowflake stage path a table_expression or table_reference refers to, like:
-        SELECT $1 FROM @mystage/path/
-        SELECT t.$1 FROM @mystage/path/ (FILE_FORMAT => 'myformat') t
-    sqlfluff wraps the stage_path in a table_reference, unless it is followed by a bracketed option list,
-    in which case the stage_path is a direct child of table_expression
-    """
-    if segment.is_type("stage_path"):
-        return segment
-    return segment.get_child("stage_path")
 
 
 def list_join_clause(segment: BaseSegment) -> list[BaseSegment]:

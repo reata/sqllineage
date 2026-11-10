@@ -3,11 +3,11 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
+from sqllineage.core.parser.sqlfluff.extractors.cte import CteExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
 from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn
 from sqllineage.core.parser.sqlfluff.utils import (
     find_from_expression_element,
-    find_stage_path,
     list_child_segments,
 )
 from sqllineage.utils.entities import AnalyzerContext
@@ -55,7 +55,6 @@ class CopyExtractor(BaseExtractor):
                 #   COPY INTO @mystage/path/ FROM (SELECT col1, col2 FROM tab1)
                 for query_segment in query_segments:
                     holder |= self._delegate_to_query(query_segment, holder)
-                src_flag = False
             elif segment.type == "bracketed":
                 # target column list: COPY INTO tab1 (col1, col2) FROM ...
                 sub_segments = list_child_segments(segment)
@@ -99,15 +98,13 @@ class CopyExtractor(BaseExtractor):
         """
         if segment.type in ["literal", "storage_location"]:
             return Path(escape_identifier_name(segment.raw))
-        elif stage_path := find_stage_path(segment):
+        elif stage_path := segment.get_child("stage_path"):
             return Path(escape_identifier_name(stage_path.raw))
         return None
 
     def _delegate_to_query(
         self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> SubQueryLineageHolder:
-        from .cte import CteExtractor
-
         extractor_cls = (
             CteExtractor
             if segment.type == "with_compound_statement"
