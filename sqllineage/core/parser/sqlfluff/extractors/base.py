@@ -194,11 +194,12 @@ class BaseExtractor:
                         )
                         subquery_flag = True
                 if subquery_flag is False:
-                    if table_identifier.type == "file_reference":
+                    if table_identifier.is_type("file_reference", "stage_path"):
+                        # the last raw segment is the path: `/path` in csv.`/path`, or @mystage/path/ itself
                         tables.append(
                             Path(
                                 escape_identifier_name(
-                                    table_identifier.segments[-1].raw
+                                    table_identifier.raw_segments[-1].raw
                                 )
                             )
                         )

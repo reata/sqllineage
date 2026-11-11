@@ -92,6 +92,11 @@ def find_table_identifier(segment: BaseSegment) -> BaseSegment | None:
     """
     table_identifier = None
     if segment.type in ["table_reference", "file_reference", "object_reference"]:
+        # snowflake: SELECT $1 FROM @mystage/path/, the stage_path is wrapped in table_reference
+        return segment.get_child("stage_path") or segment
+    elif segment.is_type("stage_path"):
+        # snowflake: SELECT t.$1 FROM @mystage/path/ (FILE_FORMAT => 'myformat') t
+        # the stage_path followed by an option list is a direct child of table_expression
         return segment
     else:
         for sub_segment in segment.segments:
