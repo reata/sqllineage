@@ -57,6 +57,7 @@ A clear and concise description of what you expected to happen, and the output i
  - 3.12.0
  - 3.13.0
  - 3.14.0
+ - 3.15.0
  - etc.
 
 **SQLLineage version (available via `sqllineage --version`):**
