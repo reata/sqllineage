@@ -53,7 +53,6 @@ print(result.target_tables)
 A clear and concise description of what you expected to happen, and the output in accordance with the `To Reproduce` section.
 
 **Python version (available via `python --version`)**
- - 3.10.0
  - 3.11.0
  - 3.12.0
  - 3.13.0
