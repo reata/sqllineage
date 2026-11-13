@@ -4,7 +4,7 @@ FROM nikolaik/python-nodejs:python3.11-nodejs22-slim
 ARG CWD=/mnt/sqllineage
 ADD sqllineage/ ${CWD}/sqllineage
 ADD sqllineagejs/ ${CWD}/sqllineagejs
-COPY pyproject.toml setup.py README.md ${CWD}/
+COPY pyproject.toml hatch_build.py README.md ${CWD}/
 WORKDIR ${CWD}
 
 # install and remove all source code
@@ -12,7 +12,7 @@ RUN pip install ${CWD}  \
     && rm -rf ${CWD}/*
 
 # Run the image as a non-root user
-RUN adduser --quiet sqllineage
+RUN adduser --quiet --disabled-password --gecos "" sqllineage
 USER sqllineage
 
 # $PORT environment variable will be passed with --env in docker run command
