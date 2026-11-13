@@ -11,7 +11,7 @@ dependencies = [
     "networkx>=2.4",
     "rustworkx>=0.16.0",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     { name = "Reata", email = "reddevil.hjw@gmail.com" },
 ]
@@ -33,7 +33,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -79,7 +78,7 @@ path = "hatch_build.py"
 
 [tool.tox]
 requires = ["tox>=4.28.4"]
-env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
+env_list = ["3.11", "3.12", "3.13", "3.14"]
 
 [tool.tox.env_run_base]
 deps = ["."]
@@ -92,12 +91,12 @@ commands = [
 ]
 
 [tool.black]
-target-version = ["py310"]
+target-version = ["py311"]
 
 [tool.ruff]
 line-length = 120
 indent-width = 4
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [

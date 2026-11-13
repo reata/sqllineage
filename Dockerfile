@@ -1,4 +1,4 @@
-FROM nikolaik/python-nodejs:python3.10-nodejs18-slim
+FROM nikolaik/python-nodejs:python3.11-nodejs18-slim
 
 # copy source files to docker image
 ARG CWD=/mnt/sqllineage

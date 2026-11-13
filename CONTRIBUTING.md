@@ -52,14 +52,14 @@ supported in the minimum version.
 Use [tox](https://github.com/tox-dev/tox) to create a virtualenv with all dependencies installed to do your development work.
 
 ```bash
-tox -e py310 --devenv venv
+tox -e py311 --devenv venv
 ```
 
 ### Running CI in Local
 The entrypoint for CI in GitHub Actions is simply tox. Run it in local, all the style check will be triggered.
 
 ```bash
-tox -e py310
+tox -e py311
 ```
 
 ### Multi Python Version
