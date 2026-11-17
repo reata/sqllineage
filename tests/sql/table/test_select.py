@@ -197,6 +197,25 @@ WHERE col1 IN (SELECT max(col1) FROM tab2)""",
     )
 
 
+@pytest.mark.parametrize(
+    "predicate", ["EXISTS (", "EXISTS(", "NOT EXISTS (", "NOT EXISTS("]
+)
+def test_select_subquery_in_where_exists(predicate: str):
+    assert_table_lineage_equal(
+        f"""SELECT col1
+FROM tab1
+WHERE {predicate}SELECT 1 FROM tab2 WHERE tab2.col1 = tab1.col1)""",
+        {"tab1", "tab2"},
+    )
+
+
+def test_select_subquery_in_where_exists_with_parenthesis_inside():
+    assert_table_lineage_equal(
+        "SELECT col1 FROM tab1 WHERE EXISTS(SELECT (1) FROM tab2)",
+        {"tab1", "tab2"},
+    )
+
+
 def test_select_scalar_subquery_in_projection():
     assert_table_lineage_equal(
         "SELECT (SELECT max(col1) FROM tab1) AS c1, col2 FROM tab2",

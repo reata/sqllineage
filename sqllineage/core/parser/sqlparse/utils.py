@@ -132,6 +132,14 @@ def get_subquery_parentheses(
                     subquery.append(SubQueryTuple(tk.right, tk.right.get_real_name()))
             elif is_subquery(tk):
                 subquery.append(SubQueryTuple(tk, token.get_real_name()))
+            elif isinstance(tk, Function):
+                # WHERE EXISTS(SELECT 1 FROM tab2): without a space, sqlparse
+                # reads EXISTS( as a function call instead of keyword + parenthesis
+                parentheses = [p for p in tk.get_sublists() if is_subquery(p)]
+                if parentheses:
+                    subquery.extend(SubQueryTuple(p, None) for p in parentheses)
+                else:
+                    subquery.extend(get_subquery_parentheses(tk))
     elif isinstance(target, Function):
         # recursively check function parameter to possible scalar subquery
         parameters = get_parameters(target)
