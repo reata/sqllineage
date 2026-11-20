@@ -9,10 +9,10 @@
     "@monaco-editor/react": "^4.7.0",
     "@mui/icons-material": "^9.5.0",
     "@mui/material": "^9.3.1",
-    "@mui/x-tree-view": "^9.17.0",
+    "@mui/x-tree-view": "^9.18.0",
     "@reduxjs/toolkit": "^2.14.0",
-    "cytoscape": "^3.34.4",
-    "cytoscape-dagre": "^4.0.1",
+    "cytoscape": "^3.35.0",
+    "cytoscape-dagre": "^4.1.0",
     "react": "^19.3.1",
     "react-cytoscapejs": "^2.0.0",
     "react-dom": "^19.3.1",
@@ -45,12 +45,12 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
-    "eslint": "^10.14.0",
+    "eslint": "^10.15.0",
     "eslint-plugin-import-x": "^4.18.1",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.7",
+    "eslint-plugin-react-refresh": "^0.5.8",
     "globals": "^17.14.0",
-    "prettier": "^3.9.10",
-    "vite": "^8.3.7"
+    "prettier": "^3.10.1",
+    "vite": "^8.3.8"
   }
 }
