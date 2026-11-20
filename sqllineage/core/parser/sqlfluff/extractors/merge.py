@@ -5,7 +5,7 @@ from sqllineage.core.models import Column, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.cte import CteExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
-from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
+from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
     extract_identifier,
@@ -46,30 +46,26 @@ class MergeExtractor(BaseExtractor):
                             for set_clause in set_clause_list.get_children(
                                 "set_clause"
                             ):
-                                columns = list(
-                                    set_clause.get_children("column_reference")
+                                tgt_segment, *src_segments = list_child_segments(
+                                    set_clause
                                 )
-                                if len(columns) == 1:
-                                    # tsql wraps the RHS of an assignment in an
-                                    # `expression` segment
-                                    if expression := set_clause.get_child("expression"):
-                                        expr_children = list_child_segments(expression)
-                                        if (
-                                            len(expr_children) == 1
-                                            and expr_children[0].type
-                                            == "column_reference"
-                                        ):
-                                            columns.append(expr_children[0])
-                                if len(columns) == 2:
-                                    src_col = tgt_col = None
-                                    if src_cqt := extract_column_qualifier(columns[1]):
+                                if tgt_cqt := extract_column_qualifier(tgt_segment):
+                                    tgt_col = Column(tgt_cqt.column)
+                                    tgt_col.parent = list(holder.write)[0]
+                                    # RHS can be a column, or an expression like col + 1 or coalesce(col1, col2)
+                                    src_cqts = [
+                                        cqt
+                                        for src_segment in src_segments
+                                        # sqlfluff parses the DEFAULT keyword as a column_reference
+                                        if src_segment.raw_upper != "DEFAULT"
+                                        for cqt in SqlFluffColumn._extract_source_columns(
+                                            src_segment
+                                        )
+                                    ]
+                                    for src_cqt in src_cqts:
                                         src_col = Column(src_cqt.column)
                                         if direct_source is not None:
                                             src_col.parent = direct_source
-                                    if tgt_cqt := extract_column_qualifier(columns[0]):
-                                        tgt_col = Column(tgt_cqt.column)
-                                        tgt_col.parent = list(holder.write)[0]
-                                    if src_col is not None and tgt_col is not None:
                                         holder.add_column_lineage(src_col, tgt_col)
                 for merge_when_not_matched_clause in merge_match.get_children(
                     "merge_when_not_matched_clause"
@@ -109,18 +105,15 @@ class MergeExtractor(BaseExtractor):
                                         "literal", "expression"
                                     )
                                 ):
-                                    if column_reference_optional := e.get_child(
-                                        "column_reference"
+                                    for cqt in SqlFluffColumn._extract_source_columns(
+                                        e
                                     ):
-                                        if cqt := extract_column_qualifier(
-                                            column_reference_optional
-                                        ):
-                                            src_col = Column(cqt.column)
-                                            if direct_source is not None:
-                                                src_col.parent = direct_source
-                                            holder.add_column_lineage(
-                                                src_col, insert_columns[j]
-                                            )
+                                        src_col = Column(cqt.column)
+                                        if direct_source is not None:
+                                            src_col.parent = direct_source
+                                        holder.add_column_lineage(
+                                            src_col, insert_columns[j]
+                                        )
             elif segment.type == "keyword":
                 if segment.raw_upper in ["MERGE", "INTO"]:
                     tgt_flag = True

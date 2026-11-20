@@ -3,6 +3,7 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Column, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
+from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
     list_child_segments,
@@ -55,25 +56,19 @@ class UpdateExtractor(BaseExtractor):
 
             if segment.type == "set_clause_list":
                 for set_clause in segment.get_children("set_clause"):
-                    column_references = list(
-                        set_clause.get_children("column_reference")
-                    )
-                    if len(column_references) == 1:
-                        # tsql wraps the RHS of an assignment in an `expression` segment
-                        if expression := set_clause.get_child("expression"):
-                            expr_children = list_child_segments(expression)
-                            if (
-                                len(expr_children) == 1
-                                and expr_children[0].type == "column_reference"
-                            ):
-                                column_references.append(expr_children[0])
-                    if len(column_references) == 2:
-                        tgt_cqt = extract_column_qualifier(column_references[0])
-                        src_cqt = extract_column_qualifier(column_references[1])
-                        if tgt_cqt is not None and src_cqt is not None:
-                            columns.append(
-                                Column(tgt_cqt.column, source_columns=[src_cqt])
+                    tgt_segment, *src_segments = list_child_segments(set_clause)
+                    if tgt_cqt := extract_column_qualifier(tgt_segment):
+                        # RHS can be a column, or an expression like col + 1 or coalesce(col1, col2)
+                        src_cqts = [
+                            cqt
+                            for src_segment in src_segments
+                            # sqlfluff parses the DEFAULT keyword as a column_reference
+                            if src_segment.raw_upper != "DEFAULT"
+                            for cqt in SqlFluffColumn._extract_source_columns(
+                                src_segment
                             )
+                        ]
+                        columns.append(Column(tgt_cqt.column, source_columns=src_cqts))
 
             if segment.type == "from_clause":
                 # UPDATE FROM, ansi syntax
