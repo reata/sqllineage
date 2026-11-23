@@ -279,6 +279,24 @@ def list_alias_expression_column_aliases(segment: BaseSegment) -> list[BaseSegme
     return []
 
 
+def extract_alias_and_column_names(
+    segment: BaseSegment,
+) -> tuple[str | None, list[str]]:
+    """
+    For a from_expression_element segment, extract its alias and the names in its column alias list:
+        FROM UNNEST(tab.col1) AS alias (col1, col2)
+        FROM (VALUES (1, 2)) AS alias (col1, col2)
+    Return (None, []) without alias, and an empty list when no column alias list is specified.
+    """
+    if alias_expression := segment.get_child("alias_expression"):
+        column_names = [
+            str(identifier.raw)
+            for identifier in list_alias_expression_column_aliases(alias_expression)
+        ]
+        return extract_identifier(alias_expression), column_names
+    return None, []
+
+
 def list_lateral_view_clauses(segment: BaseSegment) -> list[BaseSegment]:
     """
     For a from_clause segment, list the hive/sparksql LATERAL VIEW clauses:
