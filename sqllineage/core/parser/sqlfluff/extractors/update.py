@@ -3,9 +3,7 @@ from sqlfluff.core.parser import BaseSegment
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Column, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
-from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn
 from sqllineage.core.parser.sqlfluff.utils import (
-    extract_column_qualifier,
     list_child_segments,
 )
 from sqllineage.utils.entities import AnalyzerContext
@@ -56,18 +54,10 @@ class UpdateExtractor(BaseExtractor):
 
             if segment.type == "set_clause_list":
                 for set_clause in segment.get_children("set_clause"):
-                    tgt_segment, *src_segments = list_child_segments(set_clause)
-                    if tgt_cqt := extract_column_qualifier(tgt_segment):
-                        # RHS can be a column, or an expression like col + 1 or coalesce(col1, col2)
-                        src_cqts = [
-                            cqt
-                            for src_segment in src_segments
-                            # sqlfluff parses the DEFAULT keyword as a column_reference
-                            if src_segment.raw_upper != "DEFAULT"
-                            for cqt in SqlFluffColumn._extract_source_columns(
-                                src_segment
-                            )
-                        ]
+                    tgt_cqt, src_cqts = self._extract_set_clause_source_columns(
+                        set_clause
+                    )
+                    if tgt_cqt:
                         columns.append(Column(tgt_cqt.column, source_columns=src_cqts))
 
             if segment.type == "from_clause":

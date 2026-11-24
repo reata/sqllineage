@@ -11,7 +11,30 @@ first parameter of each function must be sqlfluff BaseSegment
 
 from sqlfluff.core.parser import BaseSegment
 
+from sqllineage import SQLPARSE_DIALECT
+from sqllineage.core.models import Table
 from sqllineage.utils.entities import ColumnQualifierTuple, SubQueryTuple
+
+NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
+    "partitionby_clause",
+    "orderby_clause",
+    "expression",
+    "case_expression",
+    "when_clause",
+    "else_clause",
+    "select_clause_element",
+    "cast_expression",
+    # snowflake named argument, like FLATTEN(input => tab.col1)
+    "snowflake_keyword_expression",
+]
+
+FUNCTION_SEGMENT_TYPE = ["function"]
+
+COLUMN_SEGMENT_TYPE = ["identifier", "column_reference"]
+
+SOURCE_COLUMN_SEGMENT_TYPE = (
+    NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE + FUNCTION_SEGMENT_TYPE + COLUMN_SEGMENT_TYPE
+)
 
 
 def is_negligible(segment: BaseSegment) -> bool:
@@ -433,3 +456,93 @@ def extract_innermost_bracketed(bracketed_segment: BaseSegment) -> BaseSegment:
         else:
             break
     return bracketed_segment
+
+
+def extract_source_columns(segment: BaseSegment) -> list[ColumnQualifierTuple]:
+    """
+    :param segment: segment to be processed
+    :return: list of extracted source columns
+    """
+    col_list = []
+    if segment.type in COLUMN_SEGMENT_TYPE or is_wildcard(segment):
+        if cqt := extract_column_qualifier(segment):
+            col_list = [cqt]
+    elif segment.type in FUNCTION_SEGMENT_TYPE:
+        for bracketed in segment.recursive_crawl("bracketed"):
+            # the bracketed could be in function_contents or over_clause in case of window function
+            col_list += _extract_columns_from_parenthesis(bracketed)
+    elif segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
+        sub_segments = list_child_segments(segment)
+        col_list = []
+        for sub_segment in sub_segments:
+            if sub_segment.type == "bracketed":
+                if is_subquery(sub_segment):
+                    col_list += _extract_columns_from_subquery(sub_segment)
+                else:
+                    col_list += _extract_columns_from_parenthesis(sub_segment)
+            elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
+                sub_segment
+            ):
+                res = extract_source_columns(sub_segment)
+                col_list.extend(res)
+    return col_list
+
+
+def _extract_columns_from_subquery(
+    sub_segment: BaseSegment,
+) -> list[ColumnQualifierTuple]:
+    """
+    :param sub_segment: segment to be processed
+    :return: A list of source columns from a segment
+    """
+    # This is to avoid circular import
+    from sqllineage.runner import LineageRunner
+
+    src_cols = [
+        lineage[0]
+        for lineage in LineageRunner(
+            sub_segment.raw, dialect=SQLPARSE_DIALECT
+        ).get_column_lineage(exclude_path_ending_in_subquery=False)
+    ]
+    source_columns = [
+        ColumnQualifierTuple(
+            src_col.raw_name,
+            # the full table name makes the outer query resolve this exact table,
+            # not one with the same name in its own FROM clause
+            str(src_col.parent) if src_col.parent else None,
+        )
+        for src_col in src_cols
+        # columns of a subquery nested inside this one (e.g. literals) aren't
+        # visible to the outer query
+        if src_col.parent is None or isinstance(src_col.parent, Table)
+    ]
+    return source_columns
+
+
+def _extract_columns_from_parenthesis(
+    sub_segment: BaseSegment,
+) -> list[ColumnQualifierTuple]:
+    # windows function has an extra layer, get rid of it so that it can be handled as regular functions
+    if window_specification := sub_segment.get_child("window_specification"):
+        sub_segment = window_specification
+    col, _ = extract_column_and_alias(sub_segment, False)
+    return col if col else []
+
+
+def extract_column_and_alias(
+    segment: BaseSegment, check_bracketed: bool = True
+) -> tuple[list[ColumnQualifierTuple], str | None]:
+    """
+    check_bracketed is True for top-level column definition, like (col1 + col2) as col3
+    set to False for bracket in function call, like coalesce(col1, col2) as col3
+    """
+    alias = None
+    columns = []
+    sub_segments = list_child_segments(segment, check_bracketed)
+    for sub_segment in sub_segments:
+        if sub_segment.type == "alias_expression":
+            alias = extract_identifier(sub_segment)
+        elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(sub_segment):
+            res = extract_source_columns(sub_segment)
+            columns += res if res else []
+    return columns, alias

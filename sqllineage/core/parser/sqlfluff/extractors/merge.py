@@ -5,14 +5,15 @@ from sqllineage.core.models import Column, SubQuery, Table
 from sqllineage.core.parser.sqlfluff.extractors.base import BaseExtractor
 from sqllineage.core.parser.sqlfluff.extractors.cte import CteExtractor
 from sqllineage.core.parser.sqlfluff.extractors.select import SelectExtractor
-from sqllineage.core.parser.sqlfluff.models import SqlFluffColumn, SqlFluffSubQuery
+from sqllineage.core.parser.sqlfluff.models import SqlFluffSubQuery
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_column_qualifier,
     extract_identifier,
     extract_innermost_bracketed,
+    extract_source_columns,
     list_child_segments,
 )
-from sqllineage.utils.entities import AnalyzerContext
+from sqllineage.utils.entities import AnalyzerContext, ColumnQualifierTuple
 
 
 class MergeExtractor(BaseExtractor):
@@ -46,27 +47,15 @@ class MergeExtractor(BaseExtractor):
                             for set_clause in set_clause_list.get_children(
                                 "set_clause"
                             ):
-                                tgt_segment, *src_segments = list_child_segments(
-                                    set_clause
+                                tgt_cqt, src_cqts = (
+                                    self._extract_set_clause_source_columns(set_clause)
                                 )
-                                if tgt_cqt := extract_column_qualifier(tgt_segment):
+                                if tgt_cqt:
                                     tgt_col = Column(tgt_cqt.column)
                                     tgt_col.parent = list(holder.write)[0]
-                                    # RHS can be a column, or an expression like col + 1 or coalesce(col1, col2)
-                                    src_cqts = [
-                                        cqt
-                                        for src_segment in src_segments
-                                        # sqlfluff parses the DEFAULT keyword as a column_reference
-                                        if src_segment.raw_upper != "DEFAULT"
-                                        for cqt in SqlFluffColumn._extract_source_columns(
-                                            src_segment
-                                        )
-                                    ]
-                                    for src_cqt in src_cqts:
-                                        src_col = Column(src_cqt.column)
-                                        if direct_source is not None:
-                                            src_col.parent = direct_source
-                                        holder.add_column_lineage(src_col, tgt_col)
+                                    self._add_source_column_lineage(
+                                        holder, src_cqts, tgt_col, direct_source
+                                    )
                 for merge_when_not_matched_clause in merge_match.get_children(
                     "merge_when_not_matched_clause"
                 ):
@@ -105,15 +94,12 @@ class MergeExtractor(BaseExtractor):
                                         "literal", "expression"
                                     )
                                 ):
-                                    for cqt in SqlFluffColumn._extract_source_columns(
-                                        e
-                                    ):
-                                        src_col = Column(cqt.column)
-                                        if direct_source is not None:
-                                            src_col.parent = direct_source
-                                        holder.add_column_lineage(
-                                            src_col, insert_columns[j]
-                                        )
+                                    self._add_source_column_lineage(
+                                        holder,
+                                        extract_source_columns(e),
+                                        insert_columns[j],
+                                        direct_source,
+                                    )
             elif segment.type == "keyword":
                 if segment.raw_upper in ["MERGE", "INTO"]:
                     tgt_flag = True
@@ -155,3 +141,16 @@ class MergeExtractor(BaseExtractor):
                     )
                 src_flag = False
         return holder
+
+    @staticmethod
+    def _add_source_column_lineage(
+        holder: StatementLineageHolder,
+        src_cqts: list[ColumnQualifierTuple],
+        tgt_col: Column,
+        direct_source: Table | SubQuery | None,
+    ) -> None:
+        for src_cqt in src_cqts:
+            src_col = Column(src_cqt.column)
+            if direct_source is not None:
+                src_col.parent = direct_source
+            holder.add_column_lineage(src_col, tgt_col)
