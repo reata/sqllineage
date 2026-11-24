@@ -36,6 +36,8 @@ NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
     # array constructor, like ARRAY[col1, col2] or [col1, col2]
     "typed_array_literal",
     "array_literal",
+    # flink ARRAY[col1, col2]
+    "array_expression",
 ]
 
 FUNCTION_SEGMENT_TYPE = ["function"]

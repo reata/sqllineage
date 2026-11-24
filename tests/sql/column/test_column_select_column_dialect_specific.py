@@ -84,7 +84,19 @@ FROM (SELECT col1, col2 FROM tab2) AS dt (col3, col4)"""
     )
 
 
-@pytest.mark.parametrize("dialect", ["postgres", "trino"])
+@pytest.mark.parametrize(
+    "dialect",
+    [
+        "athena",
+        "bigquery",
+        "flink",
+        "greenplum",
+        "materialize",
+        "postgres",
+        "trino",
+        "vertica",
+    ],
+)
 def test_select_column_in_typed_array_constructor(dialect: str):
     sql = """INSERT INTO tab1
 SELECT ARRAY[col1, col2 + 1, upper(col3)] AS col4
@@ -110,7 +122,9 @@ FROM tab2"""
     )
 
 
-@pytest.mark.parametrize("dialect", ["bigquery", "duckdb", "snowflake"])
+@pytest.mark.parametrize(
+    "dialect", ["bigquery", "clickhouse", "duckdb", "snowflake", "starrocks"]
+)
 def test_select_column_in_array_literal(dialect: str):
     sql = """INSERT INTO tab1
 SELECT [col1, col2] AS col3
