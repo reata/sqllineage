@@ -33,6 +33,9 @@ NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
     "cast_expression",
     # snowflake named argument, like FLATTEN(input => tab.col1)
     "snowflake_keyword_expression",
+    # array constructor, like ARRAY[col1, col2] or [col1, col2]
+    "typed_array_literal",
+    "array_literal",
 ]
 
 FUNCTION_SEGMENT_TYPE = ["function"]

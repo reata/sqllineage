@@ -82,3 +82,51 @@ FROM (SELECT col1, col2 FROM tab2) AS dt (col3, col4)"""
         dialect=dialect,
         test_sqlparse=False,
     )
+
+
+@pytest.mark.parametrize("dialect", ["postgres", "trino"])
+def test_select_column_in_typed_array_constructor(dialect: str):
+    sql = """INSERT INTO tab1
+SELECT ARRAY[col1, col2 + 1, upper(col3)] AS col4
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col3", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize("dialect", ["bigquery", "duckdb", "snowflake"])
+def test_select_column_in_array_literal(dialect: str):
+    sql = """INSERT INTO tab1
+SELECT [col1, col2] AS col3
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
