@@ -95,6 +95,30 @@ FROM tab2 s
     )
 
 
+@pytest.mark.parametrize("dialect", ["postgres", "tsql"])
+def test_select_column_from_lateral_values_without_alias(dialect: str):
+    lateral = "CROSS APPLY" if dialect == "tsql" else "CROSS JOIN LATERAL"
+    sql = f"""INSERT INTO tab1
+SELECT s.id, s.col1
+FROM tab2 s
+{lateral} (VALUES (s.col_a), (s.col_b))"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("id", "tab2"),
+                ColumnQualifierTuple("id", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
 @pytest.mark.parametrize("dialect", ["tsql"])
 def test_select_column_from_cross_apply_table_function(dialect: str):
     sql = """INSERT INTO tab1 (id, col1, col2)

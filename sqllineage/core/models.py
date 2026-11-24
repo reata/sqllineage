@@ -369,6 +369,7 @@ class LateralView(SubQuery):
         """
         if self.values_generators is not None:
             return list(zip(columns, self.values_generators))
-        if self.function_generator is not None:
-            return [(column, [self.function_generator]) for column in columns]
-        return []
+        function_generators = (
+            [] if self.function_generator is None else [self.function_generator]
+        )
+        return [(column, function_generators) for column in columns]
