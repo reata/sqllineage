@@ -1,5 +1,6 @@
 import itertools
 from collections.abc import Callable
+from typing import Self
 
 from sqllineage.core.graph import get_graph_operator_class
 from sqllineage.core.graph.utils import cone_lineage_paths, list_lineage_paths_between
@@ -114,7 +115,7 @@ class SubQueryLineageHolder(ColumnLineageMixin):
     def __init__(self) -> None:
         self.go = get_graph_operator_class()()
 
-    def __or__(self, other):
+    def __or__(self, other) -> Self:
         self.go.merge(other.go)
         return self
 
@@ -458,7 +459,7 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
         self.go.add_edge_if_not_exist(src, tgt, EdgeType.RENAME)
 
     @classmethod
-    def of(cls, holder: SubQueryLineageHolder) -> "StatementLineageHolder":
+    def of(cls, holder: SubQueryLineageHolder) -> Self:
         stmt_holder = cls()
         stmt_holder.go = holder.go
         return stmt_holder
@@ -553,7 +554,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         }
 
     @classmethod
-    def of(cls, metadata_provider, *args: StatementLineageHolder) -> "SQLLineageHolder":
+    def of(cls, metadata_provider, *args: StatementLineageHolder) -> Self:
         """
         To assemble multiple :class:`sqllineage.core.holders.StatementLineageHolder` into
         :class:`sqllineage.core.holders.SQLLineageHolder`

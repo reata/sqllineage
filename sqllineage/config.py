@@ -1,6 +1,6 @@
 import os
 import threading
-from typing import Any
+from typing import Any, Self
 
 from sqllineage.exceptions import ConfigException
 
@@ -54,7 +54,7 @@ class _SQLLineageConfigLoader:
         else:
             super().__setattr__(key, value)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Self:
         if self.get_ident() not in self._thread_config.keys():
             self._thread_config[self.get_ident()] = {}
         for key, value in kwargs.items():

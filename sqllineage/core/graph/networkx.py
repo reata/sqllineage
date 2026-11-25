@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 
 import networkx as nx
 
@@ -103,8 +103,8 @@ class NetworkXGraphOperator(GraphOperator):
     def drop_edge(self, src_vertex: Any, tgt_vertex: Any) -> None:
         self.graph.remove_edge(src_vertex, tgt_vertex)
 
-    def get_sub_graph(self, *vertices) -> "NetworkXGraphOperator":
-        return NetworkXGraphOperator(self.graph.subgraph(vertices))
+    def get_sub_graph(self, *vertices) -> Self:
+        return type(self)(self.graph.subgraph(vertices))
 
     def ancestors(self, vertex: Any) -> set[Any]:
         if vertex not in self.graph:
