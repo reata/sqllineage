@@ -220,9 +220,9 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         )
         for column in columns:
             self.go.add_edge_if_not_exist(lateral_view, column, EdgeType.HAS_COLUMN)
-        if lateral_view.generator is not None:
-            for src_col in lateral_view.generator.to_source_columns(alias_mapping):
-                for column in columns:
+        for column, generators in lateral_view.generators_for_columns(columns):
+            for generator in generators:
+                for src_col in generator.to_source_columns(alias_mapping):
                     self.add_column_lineage(src_col, column)
 
     def get_table_columns(self, table: Table | SubQuery) -> list[Column]:
