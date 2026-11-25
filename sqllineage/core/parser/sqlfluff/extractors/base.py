@@ -14,6 +14,8 @@ from sqllineage.core.parser.sqlfluff.models import (
 )
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_alias_and_column_names,
+    extract_column_qualifier,
+    extract_source_columns,
     find_from_expression_element,
     find_table_identifier,
     is_subquery,
@@ -23,7 +25,11 @@ from sqllineage.core.parser.sqlfluff.utils import (
     list_subquery_column_aliases,
 )
 from sqllineage.utils.constant import NodeTag
-from sqllineage.utils.entities import AnalyzerContext, SubQueryTuple
+from sqllineage.utils.entities import (
+    AnalyzerContext,
+    ColumnQualifierTuple,
+    SubQueryTuple,
+)
 from sqllineage.utils.helpers import escape_identifier_name
 
 
@@ -276,6 +282,26 @@ class BaseExtractor:
             # remove WRITE tag from subquery so that the combined holder won't have multiple WRITE dataset
             subquery_holder.go.update_vertices(sq, **{NodeTag.WRITE: False})
             holder |= subquery_holder
+
+    @staticmethod
+    def _extract_set_clause_source_columns(
+        set_clause: BaseSegment,
+    ) -> tuple[ColumnQualifierTuple | None, list[ColumnQualifierTuple]]:
+        """
+        Extract the target column and its source columns from a SET clause.
+
+        The right-hand side can be a column, or an expression like col + 1 or
+        coalesce(col1, col2).
+        """
+        tgt_segment, *src_segments = list_child_segments(set_clause)
+        src_cqts = [
+            cqt
+            for src_segment in src_segments
+            # sqlfluff parses the DEFAULT keyword as a column_reference
+            if src_segment.raw_upper != "DEFAULT"
+            for cqt in extract_source_columns(src_segment)
+        ]
+        return extract_column_qualifier(tgt_segment), src_cqts
 
     @staticmethod
     def _init_holder(context: AnalyzerContext) -> SubQueryLineageHolder:

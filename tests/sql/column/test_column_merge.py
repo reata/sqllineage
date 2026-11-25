@@ -136,3 +136,33 @@ WHEN MATCHED THEN UPDATE SET target.v = src.v"""
         dialect="tsql",
         test_sqlparse=False,
     )
+
+
+def test_merge_into_update_with_expression():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN MATCHED THEN UPDATE SET target.v = src.v + 1, target.v1 = COALESCE(src.v1, src.v2)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target")),
+            (ColumnQualifierTuple("v1", "src"), ColumnQualifierTuple("v1", "target")),
+            (ColumnQualifierTuple("v2", "src"), ColumnQualifierTuple("v1", "target")),
+        ],
+        test_sqlparse=False,
+    )
+
+
+def test_merge_into_insert_with_expression():
+    sql = """MERGE INTO target
+USING src ON target.k = src.k
+WHEN NOT MATCHED THEN INSERT (k, v) VALUES (src.k, COALESCE(src.v, src.v1))"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (ColumnQualifierTuple("k", "src"), ColumnQualifierTuple("k", "target")),
+            (ColumnQualifierTuple("v", "src"), ColumnQualifierTuple("v", "target")),
+            (ColumnQualifierTuple("v1", "src"), ColumnQualifierTuple("v", "target")),
+        ],
+        test_sqlparse=False,
+    )

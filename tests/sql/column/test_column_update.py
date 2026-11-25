@@ -171,3 +171,42 @@ def test_column_update_tsql_alias_target_column():
         dialect="tsql",
         test_sqlparse=False,
     )
+
+
+def test_column_update_with_expression():
+    sql = """
+    update
+        public.tgt_tbl1 as t
+    set
+        name  = upper(s.name),
+        email = coalesce(s.email, s.address),
+        cnt   = s.cnt + 1,
+        flag  = 1,
+        note  = default
+    from
+        public.src_tbl1 as s
+    where
+        s.id = t.id
+    """
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("name", "public.src_tbl1"),
+                ColumnQualifierTuple("name", "public.tgt_tbl1"),
+            ),
+            (
+                ColumnQualifierTuple("email", "public.src_tbl1"),
+                ColumnQualifierTuple("email", "public.tgt_tbl1"),
+            ),
+            (
+                ColumnQualifierTuple("address", "public.src_tbl1"),
+                ColumnQualifierTuple("email", "public.tgt_tbl1"),
+            ),
+            (
+                ColumnQualifierTuple("cnt", "public.src_tbl1"),
+                ColumnQualifierTuple("cnt", "public.tgt_tbl1"),
+            ),
+        ],
+        test_sqlparse=False,
+    )
