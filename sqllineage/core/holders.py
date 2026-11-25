@@ -545,7 +545,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         intermediate_tables -= self.__retrieve_tag_tables(NodeTag.SELFLOOP)
         return intermediate_tables
 
-    def __retrieve_tag_tables(self, tag) -> set[Path | Table]:
+    def __retrieve_tag_tables(self, tag: NodeTag) -> set[Path | Table]:
         return {
             vertex
             for vertex in self.go.retrieve_vertices_by_props(**{tag: True})

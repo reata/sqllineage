@@ -106,7 +106,9 @@ Target Tables:
         return combined
 
     @lazy_method
-    def to_cytoscape(self, level=LineageLevel.TABLE) -> list[dict[str, dict[str, str]]]:
+    def to_cytoscape(
+        self, level: LineageLevel = LineageLevel.TABLE
+    ) -> list[dict[str, dict[str, str]]]:
         """
         to turn the DAG into cytoscape format.
         """

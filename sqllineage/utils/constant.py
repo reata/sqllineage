@@ -1,4 +1,7 @@
-class NodeTag:
+from enum import StrEnum
+
+
+class NodeTag(StrEnum):
     READ = "read"
     WRITE = "write"
     CTE = "cte"
@@ -8,22 +11,22 @@ class NodeTag:
     SELFLOOP = "selfloop"
 
 
-class EdgeTag:
+class EdgeTag(StrEnum):
     INDEX = "index"
 
 
-class EdgeType:
+class EdgeType(StrEnum):
     LINEAGE = "lineage"
     RENAME = "rename"
     HAS_COLUMN = "has_column"
     HAS_ALIAS = "has_alias"
 
 
-class EdgeDirection:
+class EdgeDirection(StrEnum):
     IN = "in"
     OUT = "out"
 
 
-class LineageLevel:
+class LineageLevel(StrEnum):
     TABLE = "table"
     COLUMN = "column"

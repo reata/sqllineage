@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from sqllineage.utils.constant import EdgeDirection
 from sqllineage.utils.entities import EdgeTuple
 
 
@@ -71,7 +72,7 @@ class GraphOperator(ABC):
 
     @abstractmethod
     def retrieve_edges_by_vertex(
-        self, vertex: Any, direction: str, label: str | None = None
+        self, vertex: Any, direction: EdgeDirection, label: str | None = None
     ) -> list[EdgeTuple]:
         raise NotImplementedError
 
