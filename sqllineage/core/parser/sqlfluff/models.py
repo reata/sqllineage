@@ -38,7 +38,18 @@ NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
     "array_literal",
     # flink ARRAY[col1, col2]
     "array_expression",
+    # struct constructor, like STRUCT(col1 AS a, col2) or STRUCT<a INT64>(col1)
+    "typed_struct_literal",
+    "struct_literal",
+    # struct/object constructor, like {'a': col1, 'b': col2}
+    "object_literal",
+    "object_literal_element",
+    # named argument, like struct_pack(a := col1) or make_interval(days => col1)
+    "named_argument",
 ]
+
+# the first child of these is a key or argument name, not a source column
+KEY_VALUE_SEGMENT_TYPE = ["object_literal_element", "named_argument"]
 
 FUNCTION_SEGMENT_TYPE = ["function"]
 
@@ -316,6 +327,8 @@ class SqlFluffColumn(Column):
                 col_list += SqlFluffColumn._get_column_from_parenthesis(bracketed)
         elif segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
             sub_segments = list_child_segments(segment)
+            if segment.type in KEY_VALUE_SEGMENT_TYPE:
+                sub_segments = sub_segments[1:]
             col_list = []
             for sub_segment in sub_segments:
                 if sub_segment.type == "bracketed":
