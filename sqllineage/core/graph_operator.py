@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from sqllineage.utils.constant import EdgeDirection
+from sqllineage.utils.constant import EdgeDirection, EdgeType
 from sqllineage.utils.entities import EdgeTuple
 
 
@@ -58,7 +58,7 @@ class GraphOperator(ABC):
 
     @abstractmethod
     def add_edge_if_not_exist(
-        self, src_vertex: Any, tgt_vertex: Any, label: str, **props
+        self, src_vertex: Any, tgt_vertex: Any, label: EdgeType, **props
     ) -> None:
         """
         when source and target vertices do not exist, they will be added to the graph first.
@@ -67,12 +67,12 @@ class GraphOperator(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def retrieve_edges_by_label(self, label: str) -> list[EdgeTuple]:
+    def retrieve_edges_by_label(self, label: EdgeType) -> list[EdgeTuple]:
         raise NotImplementedError
 
     @abstractmethod
     def retrieve_edges_by_vertex(
-        self, vertex: Any, direction: EdgeDirection, label: str | None = None
+        self, vertex: Any, direction: EdgeDirection, label: EdgeType | None = None
     ) -> list[EdgeTuple]:
         raise NotImplementedError
 

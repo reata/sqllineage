@@ -1,6 +1,7 @@
 from typing import Any, NamedTuple
 
 from sqllineage.core.models import Column, SubQuery, Table
+from sqllineage.utils.constant import EdgeType
 
 
 class SubQueryTuple(NamedTuple):
@@ -25,5 +26,5 @@ class AnalyzerContext(NamedTuple):
 class EdgeTuple(NamedTuple):
     source: Any
     target: Any
-    label: str
+    label: EdgeType
     attributes: dict[str, Any] = {}
