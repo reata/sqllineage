@@ -3,7 +3,7 @@ from typing import Any
 import rustworkx as rx
 
 from sqllineage.core.graph_operator import GraphOperator
-from sqllineage.utils.constant import EdgeDirection
+from sqllineage.utils.constant import EdgeDirection, EdgeType
 from sqllineage.utils.entities import EdgeTuple
 
 
@@ -93,7 +93,7 @@ class RustworkXGraphOperator(GraphOperator):
         self.graph.remove_nodes_from(indices_to_remove)
 
     def add_edge_if_not_exist(
-        self, src_vertex: Any, tgt_vertex: Any, label: str, **props
+        self, src_vertex: Any, tgt_vertex: Any, label: EdgeType, **props
     ) -> None:
         if src_vertex is not None and tgt_vertex is not None:
             src_idx = self._vertex_to_index.get(src_vertex)
@@ -108,7 +108,7 @@ class RustworkXGraphOperator(GraphOperator):
             if not self.graph.has_edge(src_idx, tgt_idx):
                 self.graph.add_edge(src_idx, tgt_idx, edge_data)
 
-    def retrieve_edges_by_label(self, label: str) -> list[EdgeTuple]:
+    def retrieve_edges_by_label(self, label: EdgeType) -> list[EdgeTuple]:
         edges = []
         for src_idx, tgt_idx in self.graph.edge_list():
             edge_data = self.graph.get_edge_data(src_idx, tgt_idx)
@@ -126,7 +126,7 @@ class RustworkXGraphOperator(GraphOperator):
         return edges
 
     def retrieve_edges_by_vertex(
-        self, vertex: Any, direction: str, label: str | None = None
+        self, vertex: Any, direction: EdgeDirection, label: EdgeType | None = None
     ) -> list[EdgeTuple]:
         edges: list[EdgeTuple] = []
         vertex_idx = self._vertex_to_index.get(vertex, -1)

@@ -3,7 +3,7 @@ from typing import Any
 import networkx as nx
 
 from sqllineage.core.graph_operator import GraphOperator
-from sqllineage.utils.constant import EdgeDirection
+from sqllineage.utils.constant import EdgeDirection, EdgeType
 from sqllineage.utils.entities import EdgeTuple
 
 
@@ -61,7 +61,7 @@ class NetworkXGraphOperator(GraphOperator):
                 self.graph.remove_node(vertex)
 
     def add_edge_if_not_exist(
-        self, src_vertex: Any, tgt_vertex: Any, label: str, **props
+        self, src_vertex: Any, tgt_vertex: Any, label: EdgeType, **props
     ) -> None:
         # starting NetworkX v2.6, None is not allowed as node, see https://github.com/networkx/networkx/pull/4892
         if src_vertex is not None and tgt_vertex is not None:
@@ -69,7 +69,7 @@ class NetworkXGraphOperator(GraphOperator):
             props.pop("type", None)
             self.graph.add_edge(src_vertex, tgt_vertex, type=label, **props)
 
-    def retrieve_edges_by_label(self, label: str) -> list[EdgeTuple]:
+    def retrieve_edges_by_label(self, label: EdgeType) -> list[EdgeTuple]:
         return [
             EdgeTuple(
                 source=src, target=tgt, label=attr.get("type", ""), attributes=attr
@@ -79,7 +79,7 @@ class NetworkXGraphOperator(GraphOperator):
         ]
 
     def retrieve_edges_by_vertex(
-        self, vertex: Any, direction: str, label: str | None = None
+        self, vertex: Any, direction: EdgeDirection, label: EdgeType | None = None
     ) -> list[EdgeTuple]:
         edges = []
         edge_view = (

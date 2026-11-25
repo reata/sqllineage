@@ -4,6 +4,7 @@ from sqllineage.config import SQLLineageConfig
 from sqllineage.core.graph import get_graph_operator_class
 from sqllineage.core.graph.networkx import NetworkXGraphOperator
 from sqllineage.core.graph.rustworkx import RustworkXGraphOperator
+from sqllineage.utils.constant import EdgeType
 
 parametrize_graph_operator_class = pytest.mark.parametrize(
     "graph_operator_class",
@@ -83,7 +84,7 @@ def test_list_lineage_paths_cycle_through_seed_without_self_loop_is_empty(
     """
     go = graph_operator_class()
     for src, tgt in [("A", "B"), ("B", "C"), ("C", "A")]:
-        go.add_edge_if_not_exist(src, tgt, "label")
+        go.add_edge_if_not_exist(src, tgt, EdgeType.LINEAGE)
     assert go.list_lineage_paths("A", "A") == []
 
 
@@ -95,5 +96,5 @@ def test_list_lineage_paths_cycle_through_seed_with_self_loop(graph_operator_cla
     """
     go = graph_operator_class()
     for src, tgt in [("A", "B"), ("B", "C"), ("C", "A"), ("A", "A")]:
-        go.add_edge_if_not_exist(src, tgt, "label")
+        go.add_edge_if_not_exist(src, tgt, EdgeType.LINEAGE)
     assert go.list_lineage_paths("A", "A") == [["A", "A"]]
