@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 
 import rustworkx as rx
 
@@ -176,13 +176,13 @@ class RustworkXGraphOperator(GraphOperator):
         ):
             self.graph.remove_edge(src_idx, tgt_idx)
 
-    def get_sub_graph(self, *vertices: Any) -> "RustworkXGraphOperator":
+    def get_sub_graph(self, *vertices: Any) -> Self:
         indices = [
             self._vertex_to_index[vertex]
             for vertex in vertices
             if vertex in self._vertex_to_index
         ]
-        return RustworkXGraphOperator(self.graph.subgraph(indices))
+        return type(self)(self.graph.subgraph(indices))
 
     def ancestors(self, vertex: Any) -> set[Any]:
         if vertex not in self._vertex_to_index:

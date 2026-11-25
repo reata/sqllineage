@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Self
 
 from sqllineage.core.models import Column, Table
 
@@ -71,7 +72,7 @@ class MetaDataSession:
     def __init__(self, metadata_provider: MetaDataProvider):
         self.metadata_provider = metadata_provider
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

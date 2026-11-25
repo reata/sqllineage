@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Self
 
 from sqllineage.utils.constant import EdgeDirection, EdgeType
 from sqllineage.utils.entities import EdgeTuple
@@ -81,7 +81,7 @@ class GraphOperator(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_sub_graph(self, *vertices: Any) -> "GraphOperator":
+    def get_sub_graph(self, *vertices: Any) -> Self:
         raise NotImplementedError
 
     @abstractmethod
