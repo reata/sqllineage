@@ -39,7 +39,8 @@ def test_swapping_partitions(dialect: str):
     for language specification
     """
     assert_table_lineage_equal(
-        "SELECT swap_partitions_between_tables('staging', 'min-range-value', 'max-range-value', 'target')",
+        "SELECT swap_partitions_between_tables("
+        "'staging', 'min-range-value', 'max-range-value', 'target')",
         {"staging"},
         {"target"},
         dialect=dialect,

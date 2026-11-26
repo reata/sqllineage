@@ -41,7 +41,9 @@ def test_to_cytoscape_subquery_alias_reuse_has_unique_node_id(graph_operator):
 select sq.id from (select id from public.src_tbl1) sq
 union all
 select sq.id from (select id from public.src_tbl2) sq;
-insert into public.tgt_tbl1 (id) with sq as (select id from public.src_tbl3) select sq.id from sq"""
+insert into public.tgt_tbl1 (id)
+with sq as (select id from public.src_tbl3)
+select sq.id from sq"""
     with SQLLineageConfig(GRAPH_OPERATOR_CLASS=graph_operator):
         elements = LineageRunner(sql).to_cytoscape(level=LineageLevel.COLUMN)
     nodes = [
@@ -87,7 +89,10 @@ def test_silent_mode():
 
 
 def test_get_column_lineage_exclude_subquery_inpath():
-    v_sql = "insert into ta select b from (select b from tb union all select c from tc ) sub"
+    v_sql = (
+        "insert into ta select b from "
+        "(select b from tb union all select c from tc ) sub"
+    )
     parse = LineageRunner(sql=v_sql)
     for col_tuple in parse.get_column_lineage(exclude_subquery_columns=True):
         for col in col_tuple:
@@ -95,7 +100,10 @@ def test_get_column_lineage_exclude_subquery_inpath():
 
 
 # two columns per table, so "tab2.col1" is distinct from "tab2.col2"
-_MULTI_COL_SQL = "insert into tab2 select col1, col2 from tab1; insert into tab3 select col1 from tab2"
+_MULTI_COL_SQL = (
+    "insert into tab2 select col1, col2 from tab1; "
+    "insert into tab3 select col1 from tab2"
+)
 # one column per table, so a bare table name resolves to exactly one column
 _SINGLE_COL_SQL = (
     "insert into tab2 select col1 from tab1; insert into tab3 select col1 from tab2"

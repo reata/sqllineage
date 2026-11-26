@@ -59,7 +59,8 @@ class LineageRunner:
         """
         if dialect == SQLPARSE_DIALECT:
             warnings.warn(
-                f"dialect `{SQLPARSE_DIALECT}` is deprecated, use `ansi` or dialect of your SQL instead. "
+                f"dialect `{SQLPARSE_DIALECT}` is deprecated, "
+                "use `ansi` or dialect of your SQL instead. "
                 f"`{SQLPARSE_DIALECT}` will be completely removed in v1.6.x",
                 DeprecationWarning,
                 stacklevel=2,
@@ -240,7 +241,8 @@ Target Tables:
                     # logging, but keeps str(exc) unchanged
                     stmt_short = " ".join(stmt.split())[:50]
                     exc.add_note(
-                        f"while analyzing statement #{idx} ({self._dialect} dialect): {stmt_short}"
+                        f"while analyzing statement #{idx} ({self._dialect} "
+                        f"dialect): {stmt_short}"
                     )
                     raise
                 if write := stmt_holder.write:

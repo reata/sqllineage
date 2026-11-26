@@ -50,7 +50,8 @@ class _SQLLineageConfigLoader:
     def __setattr__(self, key, value) -> None:
         if key in self.config:
             raise ConfigException(
-                "SQLLineageConfig is read-only. Use context manager to update thread level config."
+                "SQLLineageConfig is read-only. Use context manager to update thread "
+                "level config."
             )
         else:
             super().__setattr__(key, value)

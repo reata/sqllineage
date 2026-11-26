@@ -75,7 +75,8 @@ FROM tab2"""
         [(ColumnQualifierTuple("col1", "tab2"), ColumnQualifierTuple("col1", "tab1"))],
     )
     sql = f"""INSERT INTO tab1
-SELECT cast(cast(cast(cast(cast(col1 AS {dtype}) AS {dtype}) AS {dtype}) AS {dtype}) AS {dtype}) AS col1
+SELECT cast(cast(cast(cast(cast(col1 AS {dtype}) AS {dtype})
+    AS {dtype}) AS {dtype}) AS {dtype}) AS col1
 FROM tab2"""
     assert_column_lineage_equal(
         sql,

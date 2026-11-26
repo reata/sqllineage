@@ -106,7 +106,8 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
             pass
         else:
             raise SQLLineageException(
-                f"An Identifier is expected, got {type(token).__name__}[value: {token}] instead."
+                f"An Identifier is expected, got {type(token).__name__}"
+                f"[value: {token}] instead."
             )
 
     def _handle_column(self, token: Token) -> None:

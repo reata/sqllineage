@@ -54,7 +54,8 @@ class SQLAlchemyMetaDataProvider(MetaDataProvider):
             columns = [c.name for c in sqlalchemy_table.columns]
         except (NoSuchTableError, OperationalError):
             logger.warning(
-                "error listing columns for table %s.%s in %s, return empty list instead",
+                "error listing columns for table %s.%s in %s, "
+                "return empty list instead",
                 schema,
                 table,
                 self.engine.url,

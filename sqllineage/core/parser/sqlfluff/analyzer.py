@@ -86,12 +86,14 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             else:
                 if self._silent_mode:
                     warnings.warn(
-                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:{sql}"
+                        "SQLLineage doesn't support analyzing statement type "
+                        f"[{statement_segment.type}] for SQL:{sql}"
                     )
                     return StatementLineageHolder()
                 else:
                     raise UnsupportedStatementException(
-                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:{sql}"
+                        "SQLLineage doesn't support analyzing statement type "
+                        f"[{statement_segment.type}] for SQL:{sql}"
                     )
 
     def _list_specific_statement_segment(self, sql: str):
@@ -104,7 +106,8 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         if violations:
             violation_msg = "\n".join(violations)
             raise InvalidSyntaxException(
-                f"This SQL statement is unparsable, please check potential syntax error for SQL:\n"
+                "This SQL statement is unparsable, "
+                "please check potential syntax error for SQL:\n"
                 f"{sql}\n"
                 f"{violation_msg}"
             )
@@ -118,7 +121,8 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                     if len(statements) > 1:
                         warnings.warn(
                             "SQL statements is not split by semicolon. "
-                            "SQLLineage is not guaranteed to generate correct result under this circumstances."
+                            "SQLLineage is not guaranteed to generate correct "
+                            "result under this circumstances."
                         )
                     for statement in statements:
                         segments.append(statement.segments[0])

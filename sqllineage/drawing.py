@@ -56,8 +56,9 @@ class SQLLineageApp:
                     if not index_path.exists():
                         return self.handle_404(
                             start_response,
-                            "Frontend assets not built. Install Node.js/npm and reinstall sqllineage from "
-                            "source to enable the web-based DAG viewer. Or install the pre-built wheel distribution.",
+                            "Frontend assets not built. Install Node.js/npm and "
+                            "reinstall sqllineage from source to enable the web-based "
+                            "DAG viewer. Or install the pre-built wheel distribution.",
                         )
                     static_fname = str(index_path)
                 else:

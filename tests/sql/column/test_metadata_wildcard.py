@@ -298,7 +298,8 @@ def test_select_table_join_multiple_wildcards_at_different_level(
     from (select * from marts.fct_sales where revenue >= 100) x
     join (select *
           from (
-              select *, row_number() over (partition by address_key) as rn from marts.dim_address
+              select *, row_number() over (partition by address_key) as rn
+              from marts.dim_address
           ) t1
           where rn = 1
     ) y
@@ -400,7 +401,8 @@ def test_wildcard_reference_from_previous_statements(provider: MetaDataProvider)
     insert into temp.customer_address_snapshot
     select t1.*, t2.fullname, t3.*
     from temp.customer_latest_ship_address_snapshot t1
-    join (select * from marts.dim_customer where fullname is not null) t2 on t1.customer_key = t2.customer_key
+    join (select * from marts.dim_customer where fullname is not null) t2
+        on t1.customer_key = t2.customer_key
     left join temp.address_snapshot t3 on t1.ship_address_key = t3.address_key
     """
     assert_column_lineage_equal(

@@ -3,7 +3,8 @@ import pytest
 from ...helpers import assert_table_lineage_equal
 
 """
-This test class will contain all the tests for testing 'Select Queries' where the dialect is not ANSI.
+This test class will contain all the tests for testing 'Select Queries' where the
+dialect is not ANSI.
 """
 
 

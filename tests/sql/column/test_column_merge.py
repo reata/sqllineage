@@ -94,7 +94,9 @@ WHEN NOT MATCHED THEN INSERT (k) VALUES (src.k)"""
 
 
 def test_merge_into_using_subquery():
-    sql = """MERGE INTO target USING (select k, max(v) as v_max from src group by k) AS b ON target.k = b.k
+    sql = """MERGE INTO target
+USING (select k, max(v) as v_max from src group by k) AS b
+ON target.k = b.k
 WHEN MATCHED THEN UPDATE SET target.v = b.v_max
 WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v_max)"""
     assert_column_lineage_equal(
@@ -112,7 +114,9 @@ def test_merge_into_using_subquery_tsql():
     dialect. Not sure if this is expected behavior, but we implemented a workaround to
     handle this specific case.
     """
-    sql = """MERGE INTO target USING (select k, max(v) as v_max from src group by k) AS b ON target.k = b.k
+    sql = """MERGE INTO target
+USING (select k, max(v) as v_max from src group by k) AS b
+ON target.k = b.k
 WHEN MATCHED THEN UPDATE SET target.v = b.v_max
 WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v_max)"""
     assert_column_lineage_equal(
@@ -142,7 +146,8 @@ WHEN MATCHED THEN UPDATE SET target.v = src.v"""
 def test_merge_into_update_with_expression():
     sql = """MERGE INTO target
 USING src ON target.k = src.k
-WHEN MATCHED THEN UPDATE SET target.v = src.v + 1, target.v1 = COALESCE(src.v1, src.v2)"""
+WHEN MATCHED THEN UPDATE SET target.v = src.v + 1,
+    target.v1 = COALESCE(src.v1, src.v2)"""
     assert_column_lineage_equal(
         sql,
         [
