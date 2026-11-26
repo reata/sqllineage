@@ -274,3 +274,106 @@ FROM tab2"""
         dialect=dialect,
         test_sqlparse=False,
     )
+
+
+@pytest.mark.parametrize(
+    "dialect, func",
+    [
+        ("athena", "transform(col1, x -> x + col2)"),
+        ("clickhouse", "arrayMap(x -> x + col2, col1)"),
+        ("databricks", "transform(col1, x -> x + col2)"),
+        ("duckdb", "list_transform(col1, x -> x + col2)"),
+        ("snowflake", "transform(col1, x -> x + col2)"),
+        ("sparksql", "transform(col1, x -> x + col2)"),
+        ("trino", "transform(col1, x -> x + col2)"),
+    ],
+)
+def test_select_column_in_lambda(dialect: str, func: str):
+    # the lambda parameter x is not a source column, col2 in the lambda body is
+    sql = f"""INSERT INTO tab1
+SELECT {func} AS col3
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "dialect, func",
+    [
+        ("clickhouse", "arrayMap((x, y) -> x + y.f + coalesce(x, col3), col1, col2)"),
+        ("sparksql", "zip_with(col1, col2, (x, y) -> x + y.f + coalesce(x, col3))"),
+        ("trino", "zip_with(col1, col2, (x, y) -> x + y.f + coalesce(x, col3))"),
+        (
+            "sparksql",
+            "transform(col1, x -> transform(x, y -> y + x + col2) || col3) || col1",
+        ),
+        ("trino", "transform(col1, x -> transform(x, y -> y + x + col2) || col3)"),
+    ],
+)
+def test_select_column_in_lambda_with_parameters_and_nested_functions(
+    dialect: str, func: str
+):
+    sql = f"""INSERT INTO tab1
+SELECT {func} AS col4
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col3", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
+@pytest.mark.parametrize("dialect", ["duckdb", "postgres", "redshift"])
+def test_select_column_with_json_arrow_operator(dialect: str):
+    # "->" is the JSON operator here, not a lambda: col1 stays a source column
+    sql = """INSERT INTO tab1
+SELECT col1 -> 'a' AS col2,
+       coalesce(col1 -> 'b', col1) AS col3,
+       tab2.col1 -> 'c' AS col4
+FROM tab2"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col3", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col4", "tab1"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
