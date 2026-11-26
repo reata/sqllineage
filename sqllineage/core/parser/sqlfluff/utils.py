@@ -171,7 +171,8 @@ def list_expression_from_when_clause(
     when_clause: BaseSegment, sub_type: str
 ) -> list[BaseSegment]:
     """
-    sub_type can be either WHEN or THEN, this is to extract subquery for case when (SELECT ...) then (SELECT ...)
+    sub_type can be either WHEN or THEN, this is to extract subquery for case when
+    (SELECT ...) then (SELECT ...)
     """
     segments = []
     start_flag = False
@@ -286,7 +287,8 @@ def list_subqueries(segment: BaseSegment) -> list[SubQueryTuple]:
 
 def list_subquery_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
     """
-    For a subquery segment, list the identifiers of the column alias list that renames its output columns:
+    For a subquery segment, list the identifiers of the column alias list that renames
+    its output columns:
         FROM (SELECT ...) AS alias (col1, col2)
         WITH alias (col1, col2) AS (SELECT ...)
     Return an empty list when no column alias list is specified.
@@ -308,7 +310,8 @@ def list_subquery_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
 
 def list_alias_expression_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
     """
-    For an alias_expression or cte_column_list segment, list the identifiers of its bracketed column alias list:
+    For an alias_expression or cte_column_list segment, list the identifiers of its
+    bracketed column alias list:
         AS alias (col1, col2)
         WITH alias (col1, col2) AS (...)
     Return an empty list when no column alias list is specified.
@@ -325,10 +328,12 @@ def extract_alias_and_column_names(
     segment: BaseSegment,
 ) -> tuple[str | None, list[str]]:
     """
-    For a from_expression_element segment, extract its alias and the names in its column alias list:
+    For a from_expression_element segment, extract its alias and the names in its column
+    alias list:
         FROM UNNEST(tab.col1) AS alias (col1, col2)
         FROM (VALUES (1, 2)) AS alias (col1, col2)
-    Return (None, []) without alias, and an empty list when no column alias list is specified.
+    Return (None, []) without alias, and an empty list when no column alias list is
+    specified.
     """
     if alias_expression := segment.get_child("alias_expression"):
         column_names = [
@@ -343,7 +348,8 @@ def list_lateral_view_clauses(segment: BaseSegment) -> list[BaseSegment]:
     """
     For a from_clause segment, list the hive/sparksql LATERAL VIEW clauses:
         FROM tab LATERAL VIEW explode(tab.col1) alias AS col2
-    hive puts lateral_view_clause under from_expression_element, while sparksql puts it under from_expression
+    hive puts lateral_view_clause under from_expression_element, while sparksql puts it
+    under from_expression
     """
     lateral_view_clauses = []
     if segment.type == "from_clause":
@@ -360,7 +366,8 @@ def list_child_segments(
     segment: BaseSegment, check_bracketed: bool = True
 ) -> list[BaseSegment]:
     """
-    Filter segments for a given segment's children, recursive goes into bracket by default
+    Filter segments for a given segment's children, recursive goes into bracket by
+    default
     """
     if segment.type == "bracketed" and check_bracketed:
         if is_set_expression(segment):
@@ -416,13 +423,15 @@ def extract_target_segment(segment: BaseSegment) -> BaseSegment:
 
 def extract_from_expression_element_alias(segment: BaseSegment) -> str | None:
     """
-    For a from_expression_element segment, extract the alias the query refers to its dataset by:
+    For a from_expression_element segment, extract the alias the query refers to its
+    dataset by:
         FROM tab AS alias
         FROM (SELECT ...) AS alias
         FROM ((tab AS alias JOIN ...))
         FROM tab PIVOT (sum(col1) FOR col2 IN ('a', 'b')) AS alias
-    An alias after table operators like PIVOT/UNPIVOT names their result, so it takes precedence over the alias
-    before the operators. Return None when no alias is specified.
+    An alias after table operators like PIVOT/UNPIVOT names their result, so it takes
+    precedence over the alias before the operators. Return None when no alias is
+    specified.
     """
     if alias := _extract_table_operator_alias(segment):
         return alias
@@ -445,11 +454,13 @@ def extract_from_expression_element_alias(segment: BaseSegment) -> str | None:
 
 def _extract_table_operator_alias(segment: BaseSegment) -> str | None:
     """
-    For a from_expression_element segment, find the alias of the table operators applied to its dataset:
+    For a from_expression_element segment, find the alias of the table operators applied
+    to its dataset:
         FROM tab PIVOT (sum(col1) FOR col2 IN ('a', 'b')) AS alias
         FROM tab UNPIVOT (col1 FOR col2 IN (col3, col4)) AS alias
         FROM tab AT (TIMESTAMP => '2024-01-01'::timestamp) AS alias
-    sqlfluff puts the operators either inside the from_expression_element, or after it under from_expression.
+    sqlfluff puts the operators either inside the from_expression_element, or after it
+    under from_expression.
     tsql puts the alias inside the PIVOT/UNPIVOT operator.
     Return None when no aliased operator is applied.
     """

@@ -8,7 +8,8 @@ from sqllineage.utils.helpers import escape_identifier_name
 
 class SwapPartitionHandler(CurrentTokenBaseHandler):
     """
-    a special handling for swap_partitions_between_tables function of Vertica SQL dialect.
+    a special handling for swap_partitions_between_tables function of Vertica SQL
+    dialect.
     """
 
     def handle(self, token: Token, holder: SubQueryLineageHolder) -> None:

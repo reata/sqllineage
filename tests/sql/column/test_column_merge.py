@@ -108,8 +108,9 @@ WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v_max)"""
 
 def test_merge_into_using_subquery_tsql():
     """
-    sqlfluff is generating a different AST for T-SQL dialect compared to ANSI SQL dialect.
-    Not sure if this is expected behavior, but we implemented a workaround to handle this specific case.
+    sqlfluff is generating a different AST for T-SQL dialect compared to ANSI SQL
+    dialect. Not sure if this is expected behavior, but we implemented a workaround to
+    handle this specific case.
     """
     sql = """MERGE INTO target USING (select k, max(v) as v_max from src group by k) AS b ON target.k = b.k
 WHEN MATCHED THEN UPDATE SET target.v = b.v_max

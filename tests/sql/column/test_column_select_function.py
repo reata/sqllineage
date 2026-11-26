@@ -130,9 +130,9 @@ FROM tab1"""
 
 def test_coalesce_with_whitespace():
     """
-    coalesce is a keyword since ANSI SQL-2023
-    usually it's parsed as a function. however, when whitespace followed which is valid syntax,
-    sqlparse cannot produce the correct AST
+    coalesce is a keyword since ANSI SQL-2023 usually it's parsed as a function.
+    however, when whitespace followed which is valid syntax, sqlparse cannot produce the
+    correct AST
     """
     sql = """INSERT INTO tab1
 SELECT coalesce (col1, col2) as col3

@@ -101,8 +101,8 @@ def get_subquery_parentheses(
     token: Identifier | Function | Values | Where,
 ) -> list[SubQueryTuple]:
     """
-    Retrieve subquery list
-    the returned list is either empty when no subquery parsed or list of [parenthesis, alias] tuple
+    Retrieve subquery list the returned list is either empty when no subquery parsed or
+    list of [parenthesis, alias] tuple
     """
     subquery = []
     as_idx, as_ = token.token_next_by(m=(Keyword, "AS"))
@@ -159,9 +159,11 @@ def get_subquery_parentheses(
 
 def get_parameters(token: Function):
     """
-    This is a replacement for sqlparse.sql.Function.get_parameters(), which produces problematic result for:
+    This is a replacement for sqlparse.sql.Function.get_parameters(), which produces
+    problematic result for:
         if(col1 = 'foo' AND col2 = 'bar', 1, 0)
-    This implementation ignores the constant parameter as we don't need them for column lineage for now
+    This implementation ignores the constant parameter as we don't need them for column
+    lineage for now
     """
     last_token = token.tokens[-1]
     parameters = []

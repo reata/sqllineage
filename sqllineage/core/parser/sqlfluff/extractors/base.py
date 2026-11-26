@@ -36,7 +36,8 @@ from sqllineage.utils.helpers import escape_identifier_name
 
 class BaseExtractor:
     """
-    Abstract class implementation for extract 'SubQueryLineageHolder' from different statement types
+    Abstract class implementation for extract 'SubQueryLineageHolder' from different
+    statement types
     """
 
     SUPPORTED_STMT_TYPES: list[str] = []
@@ -54,8 +55,8 @@ class BaseExtractor:
         context: AnalyzerContext,
     ) -> SubQueryLineageHolder | None:
         """
-        Find an extractor subclass to extract lineage for a given statement. Return None if no extractor can process
-        the statement
+        Find an extractor subclass to extract lineage for a given statement. Return None
+        if no extractor can process the statement
         """
         for extractor_cls in cls.__subclasses__():
             extractor = extractor_cls(dialect, metadata_provider)
@@ -86,9 +87,10 @@ class BaseExtractor:
     def list_subquery(segment: BaseSegment) -> list[SubQuery]:
         """
         The parse_subquery function takes a segment as an argument.
+
         :param segment: segment to determine if it is a subquery
-        :return: A list of `SqlFluffSubQuery` objects, otherwise, if the segment is not matching any of the expected
-        types it returns an empty list.
+        :return: A list of `SqlFluffSubQuery` objects, otherwise, if the segment is not
+            matching any of the expected types it returns an empty list.
         """
         result: list[SubQuery] = []
         identifiers = segment.get_children("from_expression")
@@ -114,7 +116,8 @@ class BaseExtractor:
         self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> list[Table | SubQuery | Path]:
         """
-        Extract table from from_clause or join_clause, join_clause is a child node of from_clause.
+        Extract table from from_clause or join_clause, join_clause is a child node of
+        from_clause.
         """
         tables = []
         if segment.type in ["from_clause", "join_clause", "update_statement"]:
@@ -143,8 +146,8 @@ class BaseExtractor:
         self, segment: BaseSegment, holder: SubQueryLineageHolder
     ) -> list[Table | SubQuery | Path]:
         """
-        Append tables and subqueries identified in the 'from_expression_element' type segment to the table and
-        holder extra subqueries sets
+        Append tables and subqueries identified in the 'from_expression_element' type
+        segment to the table and holder extra subqueries sets
         """
         tables: list[Table | SubQuery | Path] = []
         all_segments = [

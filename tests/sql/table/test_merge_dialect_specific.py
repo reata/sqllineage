@@ -18,9 +18,10 @@ WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v)"""
 @pytest.mark.parametrize("dialect", ["bigquery"])
 def test_merge_insert_row(dialect: str):
     """
-    MERGE INSERT CLAUSE in BigQuery can be INSERT ROW without specifying columns via INSERT VALUES (col, ...)
+    MERGE INSERT CLAUSE in BigQuery can be INSERT ROW without specifying columns via
+    INSERT VALUES (col, ...)
     https://cloud.google.com/bigquery/docs/reference/standard-sql/dml-syntax#merge_statement
-    """
+    """  # noqa: E501
     sql = """MERGE INTO tgt t
 USING src s
 ON t.date = s.date and t.channel = s.channel

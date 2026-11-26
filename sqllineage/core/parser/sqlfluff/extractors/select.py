@@ -122,7 +122,8 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
         """
         A handler for LATERAL VIEW clause supported by hive and sparksql:
             FROM tab LATERAL VIEW explode(tab.col1) alias AS col2
-        The lateral view is read like a subquery named alias, after the datasets it follows
+        The lateral view is read like a subquery named alias, after the datasets it
+        follows
         """
         self.tables.extend(
             [

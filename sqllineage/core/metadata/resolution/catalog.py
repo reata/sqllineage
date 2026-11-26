@@ -26,11 +26,13 @@ class RelationCatalog(Protocol):
 
 class CachingRelationCatalog:
     """
-    A :class:`RelationCatalog` backed by a :class:`sqllineage.core.metadata_provider.MetaDataProvider`.
+    A :class:`RelationCatalog` backed by a
+    :class:`sqllineage.core.metadata_provider.MetaDataProvider`.
 
-    Each table is looked up at most once, so ``FROM t a JOIN t b`` triggers a single lookup. Create one catalog per
-    statement and :meth:`prefetch` the tables of the statement before resolving it, so that the resolution itself
-    doesn't query the provider. Session metadata takes priority over the provider, like in
+    Each table is looked up at most once, so ``FROM t a JOIN t b`` triggers a single
+    lookup. Create one catalog per statement and :meth:`prefetch` the tables of the
+    statement before resolving it, so that the resolution itself doesn't query the
+    provider. Session metadata takes priority over the provider, like in
     :meth:`sqllineage.core.metadata_provider.MetaDataProvider.get_table_columns`.
     """
 
@@ -47,8 +49,8 @@ class CachingRelationCatalog:
 
     def column_names(self, table: Table) -> list[str]:
         """
-        Return the column names of the table, or an empty list if they're unknown. A table that wasn't prefetched is
-        looked up now.
+        Return the column names of the table, or an empty list if they're unknown. A
+        table that wasn't prefetched is looked up now.
         """
         return list(self._lookup(table))
 

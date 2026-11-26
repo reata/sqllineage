@@ -1,9 +1,9 @@
 """
-app is a wsgi application which accepts environ and start_response as argument.
-Here We implement a simple flask-like api to avoid explicitly add it as dependency.
-wsgiref is used to spawn a server from sqllineage commandline. To serve production traffic, you can/should put
-the app behind a real production server like gunicorn or uwsgi, as app is wsgi compatible.
-A simple gunicorn example: gunicorn sqllineage.drawing:app
+app is a wsgi application which accepts environ and start_response as argument. Here We
+implement a simple flask-like api to avoid explicitly add it as dependency. wsgiref is
+used to spawn a server from sqllineage commandline. To serve production traffic, you
+can/should put the app behind a real production server like gunicorn or uwsgi, as app is
+wsgi compatible. A simple gunicorn example: gunicorn sqllineage.drawing:app
 """
 
 import json

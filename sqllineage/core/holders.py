@@ -22,21 +22,20 @@ class ColumnLineageMixin:
         node: Column | None = None,
     ) -> set[tuple[Column, ...]]:
         """
-        :param exclude_path_ending_in_subquery:  exclude_subquery rename to exclude_path_ending_in_subquery
-               exclude column from SubQuery in the ending path
+        :param exclude_path_ending_in_subquery: exclude_subquery rename to
+            exclude_path_ending_in_subquery exclude column from SubQuery in the ending
+            path
         :param exclude_subquery_columns: exclude column from SubQuery in the path.
         :param node: restrict the result to paths that touch this column. Use
-               :meth:`find_nodes` to discover a candidate, filtering its
-               result to :class:`sqllineage.core.models.Column` instances
-               first, since ``find_nodes`` can also return
-               :class:`sqllineage.core.models.Table` and
-               :class:`sqllineage.core.models.Path` vertices that this
-               method rejects. If ``node`` is
-               itself a :class:`sqllineage.core.models.SubQuery` column and
-               ``exclude_subquery_columns`` is ``True``, the returned tuples
-               may no longer contain ``node``: it is stripped from its path
-               like any other subquery column, leaving only the collapsed
-               source-to-target endpoints that used to be connected through it.
+            :meth:`find_nodes` to discover a candidate, filtering its result to
+            :class:`sqllineage.core.models.Column` instances first, since ``find_nodes``
+            can also return :class:`sqllineage.core.models.Table` and
+            :class:`sqllineage.core.models.Path` vertices that this method rejects. If
+            ``node`` is itself a :class:`sqllineage.core.models.SubQuery` column and
+            ``exclude_subquery_columns`` is ``True``, the returned tuples may no longer
+            contain ``node``: it is stripped from its path like any other subquery
+            column, leaving only the collapsed source-to-target endpoints that used to
+            be connected through it.
 
         return a list of column tuple :class:`sqllineage.models.Column`
         """
@@ -188,7 +187,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             INSERT INTO tab1 (col1, col2)
             SELECT col3, col4
 
-        this method is called to make sure tab1 has column col1 and col2 instead of col3 and col4
+        this method is called to make sure tab1 has column col1 and col2 instead of col3
+        and col4
         """
         if self.write:
             tgt_tbl = list(self.write)[0]
@@ -212,10 +212,12 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         alias_mapping: dict[str, Path | Table | SubQuery],
     ) -> None:
         """
-        link the source columns of the table generating function to each column of the lateral view.
+        link the source columns of the table generating function to each column of the
+        lateral view.
 
-        without column aliases, the generated columns are the ones referred to by their default name, like alias.col.
-        when none is referred to either, the alias itself may name the single generated column: UNNEST(col) AS alias
+        without column aliases, the generated columns are the ones referred to by their
+        default name, like alias.col. when none is referred to either, the alias itself
+        may name the single generated column: UNNEST(col) AS alias
         """
         columns = (
             lateral_view.columns
@@ -311,8 +313,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
         self, table_group: list[Path | Table | SubQuery]
     ) -> dict[str, Path | Table | SubQuery]:
         """
-        A table can be referred to as alias, table name, or database_name.table_name, create the mapping here.
-        For SubQuery, it's only alias then.
+        A table can be referred to as alias, table name, or database_name.table_name,
+        create the mapping here. For SubQuery, it's only alias then.
         """
         alias_map = {
             edge.target: edge.source
@@ -426,12 +428,14 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
     """
     Statement Level Lineage Result.
 
-    Based on SubQueryLineageHolder, StatementLineageHolder holds extra attributes like drop and rename
+    Based on SubQueryLineageHolder, StatementLineageHolder holds extra attributes like
+    drop and rename
 
     For drop, it is a set[:class:`sqllineage.core.models.Table`].
 
-    For rename, it a set[tuple[:class:`sqllineage.core.models.Table`, :class:`sqllineage.core.models.Table`]],
-    with the first table being original table before renaming and the latter after renaming.
+    For rename, it a set[tuple[:class:`sqllineage.core.models.Table`,
+    :class:`sqllineage.core.models.Table`]], with the first table being original table
+    before renaming and the latter after renaming.
     """
 
     def __str__(self):
@@ -566,8 +570,8 @@ class SQLLineageHolder(ColumnLineageMixin):
     @classmethod
     def of(cls, metadata_provider, *args: StatementLineageHolder) -> Self:
         """
-        To assemble multiple :class:`sqllineage.core.holders.StatementLineageHolder` into
-        :class:`sqllineage.core.holders.SQLLineageHolder`
+        To assemble multiple :class:`sqllineage.core.holders.StatementLineageHolder`
+        into :class:`sqllineage.core.holders.SQLLineageHolder`
         """
         ngo = get_graph_operator_class()()
         for holder in args:

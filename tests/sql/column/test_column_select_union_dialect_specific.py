@@ -110,7 +110,8 @@ FROM tab2"""
 @pytest.mark.parametrize("dialect", ["duckdb", "snowflake"])
 def test_union_all_by_name_with_different_columns(dialect: str):
     """
-    a column missing from one query is filled with NULL, and a column only in later queries is appended to the result
+    a column missing from one query is filled with NULL, and a column only in later
+    queries is appended to the result
     """
     sql = """INSERT INTO tab4
 SELECT col1
@@ -153,7 +154,8 @@ FROM tab3"""
 @pytest.mark.parametrize("dialect", ["duckdb", "snowflake"])
 def test_union_all_by_name_with_column_specified_in_dml(dialect: str):
     """
-    the result of UNION ALL BY NAME is inserted into the columns specified in DML by position
+    the result of UNION ALL BY NAME is inserted into the columns specified in DML by
+    position
     """
     sql = """INSERT INTO tab3 (col4, col5, col6)
 SELECT 1 AS col1, col2, col3

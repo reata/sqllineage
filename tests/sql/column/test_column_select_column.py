@@ -277,7 +277,8 @@ FROM (SELECT tab_b.col_b AS col_a
 
 
 def test_select_unqualified_column_from_join_is_unresolved():
-    """An unqualified column selected from a JOIN has no resolved parent (qualifier=None).
+    """An unqualified column selected from a JOIN has no resolved parent
+    (qualifier=None).
 
     Without schema metadata, sqllineage cannot determine which of the joined tables
     owns col1, so Column.parent must remain None rather than picking an arbitrary

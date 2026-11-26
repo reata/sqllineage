@@ -5,7 +5,8 @@ from sqllineage.core.holders import SubQueryLineageHolder
 
 class NextTokenBaseHandler:
     """
-    This is to address an extract pattern when a specified token indicates we should extract something from next token.
+    This is to address an extract pattern when a specified token indicates we should
+    extract something from next token.
     """
 
     def __init__(self) -> None:
@@ -46,7 +47,8 @@ class NextTokenBaseHandler:
 
 class CurrentTokenBaseHandler:
     """
-    This is to address an extract pattern when we should extract something from current token
+    This is to address an extract pattern when we should extract something from current
+    token
     """
 
     def handle(self, token: Token, holder: SubQueryLineageHolder) -> None:

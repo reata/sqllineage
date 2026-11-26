@@ -28,11 +28,13 @@ class MultiTableInsertExtractor(BaseExtractor):
             INTO tab2
         SELECT col3, col4 FROM tab3
 
-    The query is read like a subquery. Each INTO clause writes the subquery columns listed in its VALUES clause,
-    or all subquery columns by position when there is no VALUES clause, to its own table.
+    The query is read like a subquery. Each INTO clause writes the subquery columns
+    listed in its VALUES clause, or all subquery columns by position when there is no
+    VALUES clause, to its own table.
 
-    sqlfluff parses INSERT {ALL | FIRST} as a plain insert_statement for both dialects, so this extractor takes no part
-    in the statement type based dispatch of BaseExtractor.try_extract: SUPPORTED_STMT_TYPES is empty on purpose, and
+    sqlfluff parses INSERT {ALL | FIRST} as a plain insert_statement for both dialects,
+    so this extractor takes no part in the statement type based dispatch of
+    BaseExtractor.try_extract: SUPPORTED_STMT_TYPES is empty on purpose, and
     CreateInsertExtractor explicitly delegates to it when is_multi_table_insert() holds.
     """
 

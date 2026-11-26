@@ -41,8 +41,8 @@ def test_create_select_without_as(dialect: str):
 @pytest.mark.parametrize("dialect", ["duckdb", "greenplum", "postgres", "redshift"])
 def test_create_table_as_with_postgres_dialect(dialect: str):
     """
-    sqlfluff postgres family dialects parse CTAS statement as "create_table_as_statement",
-    unlike "create_table_statement" in ansi dialect
+    sqlfluff postgres family dialects parse CTAS statement as
+    "create_table_as_statement", unlike "create_table_statement" in ansi dialect
     """
     assert_table_lineage_equal(
         """CREATE TABLE bar AS

@@ -93,8 +93,9 @@ class CopyExtractor(BaseExtractor):
     @staticmethod
     def _find_path(segment: BaseSegment) -> Path | None:
         """
-        A quoted file path, a snowflake storage location (stage path or bucket path) or a stage path that sqlfluff
-        wraps in table_reference, like: COPY INTO @mystage/path/ FROM (SELECT col1 FROM tab1)
+        A quoted file path, a snowflake storage location (stage path or bucket path) or
+        a stage path that sqlfluff wraps in table_reference, like: COPY INTO
+        @mystage/path/ FROM (SELECT col1 FROM tab1)
         """
         if segment.type in ["literal", "storage_location"]:
             return Path(escape_identifier_name(segment.raw))

@@ -21,7 +21,8 @@ class SQLAlchemyMetaDataProvider(MetaDataProvider):
     def __init__(self, url: str, engine_kwargs: dict[str, Any] | None = None):
         """
         :param url: sqlalchemy url
-        :param engine_kwargs: a dictionary of keyword arguments that will be passed to sqlalchemy create_engine
+        :param engine_kwargs: a dictionary of keyword arguments that will be passed to
+            sqlalchemy create_engine
         """
         super().__init__()
         self.metadata_obj = MetaData()
