@@ -226,8 +226,16 @@ Target Tables:
         self._stmt = analyzer.statements
         with self._metadata_provider.session() as session:
             stmt_holders = []
-            for stmt in self._stmt:
-                stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
+            for idx, stmt in enumerate(self._stmt, start=1):
+                try:
+                    stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
+                except Exception as exc:
+                    # a note shows up in tracebacks and in CLI logging, but keeps str(exc) unchanged
+                    stmt_short = " ".join(stmt.split())[:50]
+                    exc.add_note(
+                        f"while analyzing statement #{idx} ({self._dialect} dialect): {stmt_short}"
+                    )
+                    raise
                 if write := stmt_holder.write:
                     tgt_table = next(iter(write))
                     if isinstance(tgt_table, Table) and (
