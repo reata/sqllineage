@@ -15,6 +15,7 @@ from sqllineage.core.parser.sqlfluff.models import (
 from sqllineage.core.parser.sqlfluff.utils import (
     extract_alias_and_column_names,
     extract_column_qualifier,
+    extract_from_expression_element_alias,
     extract_source_columns,
     find_from_expression_element,
     find_table_identifier,
@@ -177,22 +178,7 @@ class BaseExtractor:
             table_identifier = find_table_identifier(segment)
             if table_identifier:
                 subquery_flag = False
-                alias_expression = None
-                if len(all_segments) > 1 and all_segments[1].type == "alias_expression":
-                    alias_expression = all_segments[1]
-                elif len(all_segments) == 1 and all_segments[0].type == "bracketed":
-                    # the alias_expression may be deeply nested in the bracketed segment
-                    alias_expression = next(
-                        all_segments[0].recursive_crawl("alias_expression"), None
-                    )
-                alias = None
-                if alias_expression is not None:
-                    all_segments = list_child_segments(alias_expression)
-                    alias = str(
-                        all_segments[1].raw
-                        if len(all_segments) > 1
-                        else all_segments[0].raw
-                    )
+                alias = extract_from_expression_element_alias(segment)
                 if "." not in table_identifier.raw:
                     cte_dict = {s.alias: s for s in holder.cte}
                     cte = cte_dict.get(escape_identifier_name(table_identifier.raw))

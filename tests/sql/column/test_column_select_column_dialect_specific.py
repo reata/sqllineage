@@ -84,6 +84,32 @@ FROM (SELECT col1, col2 FROM tab2) AS dt (col3, col4)"""
     )
 
 
+@pytest.mark.parametrize("dialect", ["postgres"])
+def test_select_qualified_column_from_table_with_column_alias_list(dialect: str):
+    """
+    Without AS, the table alias is followed directly by the column alias list: FROM tab2 t (col1, col2).
+    The alias is t, not the bracketed column alias list.
+    """
+    sql = """INSERT INTO tab1
+SELECT t.col1, t.col2
+FROM tab2 t (col1, col2)"""
+    assert_column_lineage_equal(
+        sql,
+        [
+            (
+                ColumnQualifierTuple("col1", "tab2"),
+                ColumnQualifierTuple("col1", "tab1"),
+            ),
+            (
+                ColumnQualifierTuple("col2", "tab2"),
+                ColumnQualifierTuple("col2", "tab1"),
+            ),
+        ],
+        dialect=dialect,
+        test_sqlparse=False,
+    )
+
+
 @pytest.mark.parametrize(
     "dialect",
     [

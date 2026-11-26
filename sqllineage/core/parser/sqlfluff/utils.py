@@ -249,7 +249,7 @@ def list_subqueries(segment: BaseSegment) -> list[SubQueryTuple]:
                         if is_subquery(bracketed):
                             subquery.append(SubQueryTuple(bracketed, None))
         case "from_expression_element":
-            as_segment, target = extract_as_and_target_segment(segment)
+            target = extract_target_segment(segment)
             if is_subquery(target):
                 subquery = [
                     SubQueryTuple(
@@ -258,7 +258,7 @@ def list_subqueries(segment: BaseSegment) -> list[SubQueryTuple]:
                             if not is_set_expression(target)
                             else target
                         ),
-                        extract_identifier(as_segment) if as_segment else None,
+                        extract_from_expression_element_alias(segment),
                     )
                 ]
         case "where_clause":
@@ -401,16 +401,85 @@ def extract_identifier(col_segment: BaseSegment) -> str:
     return str(col_identifier.raw)
 
 
-def extract_as_and_target_segment(
-    segment: BaseSegment,
-) -> tuple[BaseSegment | None, BaseSegment]:
-    as_segment = segment.get_child("alias_expression")
+def extract_target_segment(segment: BaseSegment) -> BaseSegment:
     sublist = list_child_segments(segment, False)
     target = sublist[0]
     if target.type == "keyword" and target.raw_upper == "LATERAL":
         target = sublist[1]
     table_expr = target if is_subquery(target) else target.segments[0]
-    return as_segment, table_expr
+    return table_expr
+
+
+def extract_from_expression_element_alias(segment: BaseSegment) -> str | None:
+    """
+    For a from_expression_element segment, extract the alias the query refers to its dataset by:
+        FROM tab AS alias
+        FROM (SELECT ...) AS alias
+        FROM ((tab AS alias JOIN ...))
+        FROM tab PIVOT (sum(col1) FOR col2 IN ('a', 'b')) AS alias
+    An alias after table operators like PIVOT/UNPIVOT names their result, so it takes precedence over the alias
+    before the operators. Return None when no alias is specified.
+    """
+    if alias := _extract_table_operator_alias(segment):
+        return alias
+    alias_expression = segment.get_child("alias_expression")
+    if alias_expression is None:
+        child_segments = [
+            seg for seg in list_child_segments(segment) if seg.type != "keyword"
+        ]
+        if (
+            len(child_segments) == 1
+            and child_segments[0].type == "bracketed"
+            and not is_subquery(child_segments[0])
+        ):
+            # the alias_expression may be deeply nested in the bracketed segment
+            alias_expression = next(
+                child_segments[0].recursive_crawl("alias_expression"), None
+            )
+    return extract_identifier(alias_expression) if alias_expression else None
+
+
+def _extract_table_operator_alias(segment: BaseSegment) -> str | None:
+    """
+    For a from_expression_element segment, find the alias of the table operators applied to its dataset:
+        FROM tab PIVOT (sum(col1) FOR col2 IN ('a', 'b')) AS alias
+        FROM tab UNPIVOT (col1 FOR col2 IN (col3, col4)) AS alias
+        FROM tab AT (TIMESTAMP => '2024-01-01'::timestamp) AS alias
+    sqlfluff puts the operators either inside the from_expression_element, or after it under from_expression.
+    tsql puts the alias inside the PIVOT/UNPIVOT operator.
+    Return None when no aliased operator is applied.
+    """
+    segments = list_child_segments(segment)[1:]
+    if (parent := segment.get_parent()) is not None:
+        parent_segment, idx = parent
+        if parent_segment.type in ["from_expression", "join_clause"]:
+            segments += [
+                seg
+                for seg in parent_segment.segments[idx + 1 :]
+                if not is_negligible(seg)
+            ]
+    alias = None
+    operator_applied = False
+    for seg in segments:
+        if seg.type in [
+            "from_pivot_expression",
+            "from_unpivot_expression",
+            "pivot_clause",
+            "unpivot_clause",
+            "from_at_expression",
+            "from_before_expression",
+            "changes_clause",
+        ]:
+            operator_applied = True
+            if table_reference := seg.get_child("table_reference"):
+                alias = extract_identifier(table_reference)
+        elif seg.type == "alias_expression":
+            # only an alias after the operators names their result
+            if operator_applied:
+                alias = extract_identifier(seg)
+        else:
+            break
+    return alias
 
 
 def extract_column_qualifier(segment: BaseSegment) -> ColumnQualifierTuple | None:
