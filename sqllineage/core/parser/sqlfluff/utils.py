@@ -39,6 +39,8 @@ NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE = [
     "object_literal_element",
     # named argument, like struct_pack(a := col1) or make_interval(days => col1)
     "named_argument",
+    # lambda, like transform(col1, x -> x + col2) in trino, duckdb and snowflake
+    "lambda_function",
 ]
 
 # the first child of these is a key or argument name, not a source column
@@ -589,26 +591,101 @@ def extract_source_columns(segment: BaseSegment) -> list[ColumnQualifierTuple]:
             col_list = [cqt]
     elif segment.type in FUNCTION_SEGMENT_TYPE:
         for bracketed in segment.recursive_crawl("bracketed"):
+            # a lambda extracts the columns of its own body, see below
+            if _is_inside_lambda(bracketed, segment):
+                continue
             # the bracketed could be in function_contents or over_clause in case of
             # window function
             col_list += _extract_columns_from_parenthesis(bracketed)
+    elif lambda_parts := _split_lambda(segment):
+        # the parameters of a lambda are not columns, only the rest of its body is
+        parameters, body = lambda_parts
+        col_list = [
+            cqt
+            for cqt in _extract_columns_from_segments(body)
+            if (cqt.qualifier or cqt.column).lower() not in parameters
+        ]
     elif segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
         sub_segments = list_child_segments(segment)
         if segment.type in KEY_VALUE_SEGMENT_TYPE:
             sub_segments = sub_segments[1:]
-        col_list = []
-        for sub_segment in sub_segments:
-            if sub_segment.type == "bracketed":
-                if is_subquery(sub_segment):
-                    col_list += _extract_columns_from_subquery(sub_segment)
-                else:
-                    col_list += _extract_columns_from_parenthesis(sub_segment)
-            elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(
-                sub_segment
-            ):
-                res = extract_source_columns(sub_segment)
-                col_list.extend(res)
+        col_list = _extract_columns_from_segments(sub_segments)
     return col_list
+
+
+def _extract_columns_from_segments(
+    sub_segments: list[BaseSegment],
+) -> list[ColumnQualifierTuple]:
+    col_list = []
+    for sub_segment in sub_segments:
+        if sub_segment.type == "bracketed":
+            if is_subquery(sub_segment):
+                col_list += _extract_columns_from_subquery(sub_segment)
+            else:
+                col_list += _extract_columns_from_parenthesis(sub_segment)
+        elif sub_segment.type in SOURCE_COLUMN_SEGMENT_TYPE or is_wildcard(sub_segment):
+            col_list += extract_source_columns(sub_segment)
+    return col_list
+
+
+def _split_lambda(
+    segment: BaseSegment,
+) -> tuple[set[str], list[BaseSegment]] | None:
+    """
+    For a lambda like "x -> x + col1" or "(x, y) -> x + y", return its lowercased
+    parameter names and the segments of its body. Return None for other segments.
+
+    trino, duckdb and snowflake parse a lambda as lambda_function, clickhouse as an
+    expression with a lambda arrow. sparksql, databricks and athena parse the arrow as
+    a binary operator, which is also the JSON operator of postgres, duckdb and
+    redshift ("data -> 'key'"), so it only counts as a lambda when the body uses one
+    of the parameters.
+    """
+    if segment.type not in ("lambda_function", "expression"):
+        return None
+    # the arrow is a symbol, which list_child_segments leaves out
+    sub_segments = [
+        seg
+        for seg in segment.segments
+        if not (seg.is_whitespace or seg.is_comment or seg.is_meta)
+    ]
+    if len(sub_segments) < 3:
+        return None
+    arrow = sub_segments[1]
+    if arrow.is_type("lambda_arrow", "lambda"):
+        is_binary_operator = False
+    elif arrow.is_type("binary_operator") and arrow.raw == "->":
+        is_binary_operator = True
+    else:
+        return None
+    parameters = set()
+    head = sub_segments[0]
+    for parameter in (
+        list_child_segments(head, False) if head.type == "bracketed" else [head]
+    ):
+        if parameter.is_type("parameter") or (
+            parameter.type == "column_reference" and len(parameter.segments) == 1
+        ):
+            parameters.add(parameter.raw.lower())
+        elif not parameter.is_type("comma", "start_bracket", "end_bracket"):
+            return None
+    body = sub_segments[2:]
+    if is_binary_operator and not any(
+        column_reference.segments[0].raw.lower() in parameters
+        for sub_segment in body
+        for column_reference in sub_segment.recursive_crawl("column_reference")
+    ):
+        return None
+    return parameters, body
+
+
+def _is_inside_lambda(segment: BaseSegment, function: BaseSegment) -> bool:
+    parent = segment.get_parent()
+    while parent is not None and parent[0] is not function:
+        if _split_lambda(parent[0]):
+            return True
+        parent = parent[0].get_parent()
+    return False
 
 
 def _extract_columns_from_subquery(
