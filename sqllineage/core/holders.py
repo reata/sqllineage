@@ -439,9 +439,12 @@ class StatementLineageHolder(SubQueryLineageHolder, ColumnLineageMixin):
     """
 
     def __str__(self):
+        def format_attr(attr: str) -> str:
+            values = getattr(self, attr)
+            return f"table {attr}: {sorted(values, key=str) if values else '[]'}"
+
         return "\n".join(
-            f"table {attr}: {sorted(getattr(self, attr), key=lambda x: str(x)) if getattr(self, attr) else '[]'}"
-            for attr in ["read", "write", "cte", "drop", "rename"]
+            format_attr(attr) for attr in ["read", "write", "cte", "drop", "rename"]
         )
 
     def __repr__(self):

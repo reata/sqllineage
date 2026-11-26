@@ -62,10 +62,11 @@ class SourceHandlerMixin:
                                 self, "metadata_provider", None
                             ):
                                 from_dataset = False
+                                get_table_columns = metadata_provider.get_table_columns
                                 for parent_candidate in src_col.parent_candidates:
                                     if isinstance(
                                         parent_candidate, Table
-                                    ) and src_col in metadata_provider.get_table_columns(
+                                    ) and src_col in get_table_columns(
                                         parent_candidate
                                     ):
                                         from_dataset = True
