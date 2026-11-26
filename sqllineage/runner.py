@@ -237,8 +237,8 @@ Target Tables:
                 try:
                     stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
                 except Exception as exc:
-                    # a note shows up in tracebacks and in CLI
-                    # logging, but keeps str(exc) unchanged
+                    # a note shows up in tracebacks and in CLI logging, but keeps
+                    # str(exc) unchanged
                     stmt_short = " ".join(stmt.split())[:50]
                     exc.add_note(
                         f"while analyzing statement #{idx} ({self._dialect} "

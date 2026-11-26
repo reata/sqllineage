@@ -7,8 +7,8 @@ from sqllineage.exceptions import MetaDataProviderException
 
 
 def test_sqlalchemy_metadata_provider_connection_fail():
-    # connect to a directory as sqlite db, which
-    # is not possible. Simulate connection failure
+    # connect to a directory as sqlite db, which is not possible. Simulate connection
+    # failure
     with pytest.raises(MetaDataProviderException):
         SQLAlchemyMetaDataProvider(f"sqlite:///{os.path.dirname(__file__)}")
 

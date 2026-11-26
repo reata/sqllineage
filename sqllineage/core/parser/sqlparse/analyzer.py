@@ -262,16 +262,16 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             # call end of query hook here as loop is over
             for next_handler in next_handlers:
                 next_handler.end_of_query_cleanup(holder)
-        # By recursively extracting each subquery of the
-        # parent and merge, we're doing Depth-first search
+        # By recursively extracting each subquery of the parent and merge, we're doing
+        # Depth-first search
         for sq in subqueries:
             holder |= SqlParseLineageAnalyzer._extract_from_dml(
                 sq.query,
                 AnalyzerContext(cte=holder.cte, write={sq}),
                 metadata_provider,
             )
-        # replace wildcard with real columns, put here so
-        # that wildcard in subqueries are already replaced
+        # replace wildcard with real columns, put here so that wildcard in subqueries
+        # are already replaced
         holder.expand_wildcard(metadata_provider)
         return holder
 
@@ -283,8 +283,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
             # Function for CTE without AS keyword
             result = SqlParseLineageAnalyzer._parse_subquery(token)
         elif isinstance(token, IdentifierList):
-            # IdentifierList for SQL89 style of JOIN or
-            # multiple CTEs, this is actually SubQueries
+            # IdentifierList for SQL89 style of JOIN or multiple CTEs,
+            # this is actually SubQueries
             result = reduce(
                 add,
                 [
@@ -294,8 +294,8 @@ class SqlParseLineageAnalyzer(LineageAnalyzer):
                 [],
             )
         elif isinstance(token, Parenthesis) and is_subquery(token):
-            # Parenthesis for SubQuery without alias, this
-            # is valid syntax for certain SQL dialect
+            # Parenthesis for SubQuery without alias, this is valid syntax for certain
+            # SQL dialect
             result = [SqlParseSubQuery.of(token, None)]
         return result
 

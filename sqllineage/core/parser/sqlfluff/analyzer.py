@@ -84,17 +84,15 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             if holder is not None:
                 return StatementLineageHolder.of(holder)
             else:
+                msg = (
+                    "SQLLineage doesn't support analyzing statement type "
+                    f"[{statement_segment.type}] for SQL:{sql}"
+                )
                 if self._silent_mode:
-                    warnings.warn(
-                        "SQLLineage doesn't support analyzing statement type "
-                        f"[{statement_segment.type}] for SQL:{sql}"
-                    )
+                    warnings.warn(msg)
                     return StatementLineageHolder()
                 else:
-                    raise UnsupportedStatementException(
-                        "SQLLineage doesn't support analyzing statement type "
-                        f"[{statement_segment.type}] for SQL:{sql}"
-                    )
+                    raise UnsupportedStatementException(msg)
 
     def _list_specific_statement_segment(self, sql: str):
         parsed = Linter(config=self._sqlfluff_config).parse_string(sql)

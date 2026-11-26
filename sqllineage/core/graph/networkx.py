@@ -90,8 +90,8 @@ class NetworkXGraphOperator(GraphOperator):
             case _:  # pragma: no cover
                 assert_never(direction)
         for src, tgt, attr in edge_view:
-            # always add the edge when label is not
-            # specified (or when specified and matches)
+            # always add the edge when label is not specified
+            # (or when specified and matches)
             if label is None or attr.get("type") == label:
                 edges.append(
                     EdgeTuple(

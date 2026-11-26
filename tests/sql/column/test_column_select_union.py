@@ -64,18 +64,16 @@ SELECT col1 FROM dataset.tab2) SELECT col1 FROM temp_cte"""
 
 
 def test_union_where_later_branch_introduces_new_output_columns():
-    # When a later UNION branch has more columns
-    # than the first, write_columns grows lazily
-    # during the column loop as add_column_lineage calls accumulate HAS_COLUMN edges.
-    # The fix re-evaluates holder.write_columns inside the loop so later columns in the
-    # same barrier see the updated list and map
-    # to the correct output column by position.
+    # When a later UNION branch has more columns than the first, write_columns grows
+    # lazily during the column loop as add_column_lineage calls accumulate HAS_COLUMN
+    # edges. The fix re-evaluates holder.write_columns inside the loop so later columns
+    # in the same barrier see the updated list and map to the correct output column by
+    # position.
     #
     # With the buggy pre-hoisted check the length snapshot was taken before the loop, so
-    # it saw 1 element vs col_grp of 2 and fell
-    # back to tgt_col_from_query for every idx.
-    # That mapped t2.a -> tgt.a (wrong) instead
-    # of t2.a -> tgt.b (the position-1 output).
+    # it saw 1 element vs col_grp of 2 and fell back to tgt_col_from_query for every
+    # idx. That mapped t2.a -> tgt.a (wrong) instead of t2.a -> tgt.b
+    # (the position-1 output).
     sql = """INSERT INTO tgt
 SELECT a FROM t1
 UNION ALL

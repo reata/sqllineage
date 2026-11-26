@@ -19,12 +19,11 @@ class ProcedureExtractor(BaseExtractor):
     ) -> StatementLineageHolder:
         holder = StatementLineageHolder()
 
-        # recursive_crawl yields every nested statement,
-        # control-flow containers and lineage-free statements
-        # (SET, PRINT, THROW, ...) included. A statement without
-        # a matching extractor is therefore the normal case here.
-        # the statements that do carry lineage are yielded
-        # separately by the same crawl, so they are still picked up.
+        # recursive_crawl yields every nested statement, control-flow containers and
+        # lineage-free statements (SET, PRINT, THROW, ...) included. A statement without
+        # a matching extractor is therefore the normal case here. the statements that do
+        # carry lineage are yielded separately by the same crawl, so they are still
+        # picked up.
         for segment in statement.recursive_crawl("statement"):
             sub_holder = BaseExtractor.try_extract(
                 self.dialect, self.metadata_provider, segment.segments[0], context

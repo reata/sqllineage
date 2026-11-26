@@ -109,8 +109,8 @@ class MultiTableInsertExtractor(BaseExtractor):
             )
             holder |= subquery_holder
             for table, columns, values in into_clauses:
-                # the source columns of each target column,
-                # in the order they're written to the table
+                # the source columns of each target column, in the order they're written
+                # to the table
                 src_cols_list: list[list[Column]] = []
                 default_names = []
                 if values:
@@ -122,8 +122,8 @@ class MultiTableInsertExtractor(BaseExtractor):
                             src_col.parent = subquery
                             src_cols.append(src_col)
                         src_cols_list.append(src_cols)
-                        # a column reference is written to the column
-                        # of the same name, like INSERT INTO ... SELECT
+                        # a column reference is written to the column of the same name,
+                        # like INSERT INTO ... SELECT
                         if (
                             value.type == "expression"
                             and len(children := list_child_segments(value)) == 1

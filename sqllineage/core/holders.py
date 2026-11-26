@@ -133,16 +133,15 @@ class SubQueryLineageHolder(ColumnLineageMixin):
 
     def add_read(self, value) -> None:
         self._property_setter(value, NodeTag.READ)
-        # the same table can be added (in SQL:
-        # joined) multiple times with different alias
+        # the same table can be added (in SQL: joined) multiple times with different
+        # alias
         if hasattr(value, "alias"):
             self.go.add_edge_if_not_exist(value, value.alias, EdgeType.HAS_ALIAS)
 
     @property
     def write(self) -> set[SubQuery | Table]:
-        # SubQueryLineageHolder.write can return a single
-        # SubQuery or Table, or both when __or__ together.
-        # This is different from StatementLineageHolder.write,
+        # SubQueryLineageHolder.write can return a single SubQuery or Table, or both
+        # when __or__ together. This is different from StatementLineageHolder.write,
         # where Table is the only possibility.
         return self._property_getter(NodeTag.WRITE)
 
@@ -253,10 +252,9 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                 if column.raw_name == "*":
                     tgt_wildcard = column
                     src_wildcards = self.get_source_columns(tgt_wildcard)
-                    # Enable positional mapping only for UNION-of-*
-                    # into a real table; avoid join/subquery cases.
-                    # A lateral view is in the same SELECT as the
-                    # datasets it follows, never another UNION query.
+                    # Enable positional mapping only for UNION-of-* into a real table;
+                    # avoid join/subquery cases. A lateral view is in the same SELECT as
+                    # the datasets it follows, never another UNION query.
                     wildcard_in_union = (
                         isinstance(tgt_table, Table)
                         and len(self._get_ordered_columns(tgt_table)) == 1
@@ -294,12 +292,10 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                                     wildcard_in_union=wildcard_in_union,
                                 )
                                 expanded.append(src_wildcard)
-                    # expand_wildcard owns the wildcard vertices,
-                    # _replace_wildcard only maps the columns.
-                    # SubQuery wildcards are preserved to maintain
-                    # the wildcard chain in case of partial
-                    # expansion, and the target wildcard is kept
-                    # while some source wildcard isn't expanded.
+                    # expand_wildcard owns the wildcard vertices, _replace_wildcard only
+                    # maps the columns. SubQuery wildcards are preserved to maintain the
+                    # wildcard chain in case of partial expansion, and the target
+                    # wildcard is kept while some source wildcard isn't expanded.
                     if not isinstance(tgt_table, SubQuery):
                         for src_wildcard in expanded:
                             if isinstance(src_wildcard.parent, SubQuery):
@@ -398,8 +394,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
             if use_positional and idx < len(target_columns):
                 target_col = target_columns[idx]
             else:
-                # otherwise, if target column with same name exists
-                # (union scenario), reuse it; or create a new one
+                # otherwise, if target column with same name exists (union scenario),
+                # reuse it; or create a new one
                 existing_col = next(
                     (c for c in target_columns if c.raw_name == src_col.raw_name),
                     None,
@@ -411,8 +407,8 @@ class SubQueryLineageHolder(ColumnLineageMixin):
                         tgt_table, new_column, EdgeType.HAS_COLUMN
                     )
                     target_col = new_column
-                    # keep local target_columns in sync
-                    # to preserve order for the same call
+                    # keep local target_columns in sync to preserve order for the same
+                    # call
                     target_columns.append(target_col)
                 else:
                     target_col = existing_col
@@ -619,30 +615,31 @@ class SQLLineageHolder(ColumnLineageMixin):
                     # source only table comes from SELECT statement
                     ngo.update_vertices(*read, **{NodeTag.SOURCE_ONLY: True})
                 elif len(read) == 0 and len(write) > 0:
-                    # target only table comes from case like: 1)
-                    # INSERT/UPDATE constant values; 2) CREATE TABLE
+                    # target only table comes from case like:
+                    #   1) INSERT/UPDATE constant values;
+                    #   2) CREATE TABLE
                     ngo.update_vertices(*write, **{NodeTag.TARGET_ONLY: True})
                 else:
                     for source, target in itertools.product(read, write):
                         ngo.add_edge_if_not_exist(source, target, EdgeType.LINEAGE)
-        # selfloop table comes from cases like: INSERT INTO
-        # tbl (part='xx') SELECT * FROM tbl WHERE part = ''
+        # selfloop table comes from cases like:
+        # INSERT INTO tbl (part='xx') SELECT * FROM tbl WHERE part = ''
         ngo.update_vertices(
             *ngo.retrieve_selfloop_vertices(), **{NodeTag.SELFLOOP: True}
         )
-        # find all the columns that we can't assign accurately
-        # to a parent table (with multiple parent candidates)
+        # find all the columns that we can't assign accurately to a parent table
+        # (with multiple parent candidates)
         unresolved_column_lineages = [
             (e.source, e.target)
             for e in ngo.retrieve_edges_by_label(label=EdgeType.LINEAGE)
             if isinstance(e.source, Column) and len(e.source.parent_candidates) > 1
         ]
         for unresolved_col, tgt_col in unresolved_column_lineages:
-            # check if there's only one parent candidate
-            # contains the column with same name
+            # check if there's only one parent candidate contains the column with same
+            # name
             src_cols = []
-            # check if source column exists in graph (either from
-            # subquery or from table created in prev statement)
+            # check if source column exists in graph (either from subquery or from table
+            # created in prev statement)
             for parent in unresolved_col.parent_candidates:
                 src_col_candidate = Column(unresolved_col.raw_name)
                 src_col_candidate.parent = parent
@@ -665,8 +662,8 @@ class SQLLineageHolder(ColumnLineageMixin):
                             if unresolved_col.raw_name == parent_col.raw_name:
                                 src_cols.append(parent_col)
 
-            # otherwise rule out the subqueries whose
-            # columns are all known and don't include it
+            # otherwise rule out the subqueries whose columns are all known and don't
+            # include it
             if len(src_cols) == 0:
                 parents = [
                     parent
@@ -686,23 +683,21 @@ class SQLLineageHolder(ColumnLineageMixin):
                     src_col_candidate.parent = parents[0]
                     src_cols.append(src_col_candidate)
 
-            # Multiple sources is a correct case for JOIN with USING
-            # It incorrect for JOIN with ON, but sql without
-            # specifying an alias in this case will be invalid
+            # Multiple sources is a correct case for JOIN with USING while incorrect for
+            # JOIN with ON, but sql without specifying an alias in this case will be
+            # invalid
             for src_col in src_cols:
                 ngo.add_edge_if_not_exist(src_col, tgt_col, EdgeType.LINEAGE)
             if len(src_cols) > 0:
                 # only delete unresolved column when it's resolved
                 ngo.drop_edge(unresolved_col, tgt_col)
 
-        # when unresolved column got resolved, it
-        # will be orphan node, and we can remove it
-        # convert unresolved_column_lineages to a set of cols,
-        # otherwise if an unresolved appears multiple times,
-        # calling retrieve_edges_by_vertex using a deleted node
-        # would cause inconsistent behavior for different graph
-        # operator, e.g. NetworkX 3.x would throw exception while
-        # NetworkX 2.x and Rustworkx would succeed silently
+        # when unresolved column got resolved, it will be orphan node, and we can remove
+        # it convert unresolved_column_lineages to a set of cols, otherwise if an
+        # unresolved appears multiple times, calling retrieve_edges_by_vertex using a
+        # deleted node would cause inconsistent behavior for different graph operator,
+        # e.g. NetworkX 3.x would throw exception while NetworkX 2.x and Rustworkx would
+        # succeed silently
         for unresolved_col in {col for col, _ in unresolved_column_lineages}:
             if (
                 len(ngo.retrieve_edges_by_vertex(unresolved_col, EdgeDirection.OUT))

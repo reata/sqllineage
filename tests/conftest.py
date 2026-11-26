@@ -210,8 +210,8 @@ _data_warehouse_schemas = {
         "sales_key",  # The surrogate key of the fct sales
         "product_key",  # The foreign key of the product
         "customer_key",  # The foreign key of the customer
-        # The foreign key of the creditcard. If no creditcard
-        # exists, it was assumed that purchase was made in cash
+        # The foreign key of the creditcard. If no creditcard exists, it was assumed
+        # that purchase was made in cash
         "creditcard_key",
         "ship_address_key",  # The foreign key of the shipping address
         "order_status_key",  # The foreign key of the order status
@@ -270,6 +270,6 @@ _data_warehouse_schemas = {
     ids=["dummy", "sqlalchemy"],
 )
 def provider(request):
-    # session scope: SQLAlchemy provider is expensive to
-    # initialize; share one instance across all tests
+    # session scope: SQLAlchemy provider is expensive to initialize; share one instance
+    # across all tests
     return request.param

@@ -136,8 +136,8 @@ def find_table_identifier(segment: BaseSegment) -> BaseSegment | None:
         return segment.get_child("stage_path") or segment
     elif segment.is_type("stage_path"):
         # snowflake: SELECT t.$1 FROM @mystage/path/ (FILE_FORMAT => 'myformat') t
-        # the stage_path followed by an option list
-        # is a direct child of table_expression
+        # the stage_path followed by an option list is a direct child of
+        # table_expression
         return segment
     else:
         for sub_segment in segment.segments:
@@ -294,8 +294,8 @@ def list_subquery_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
     Return an empty list when no column alias list is specified.
     """
     parent = segment.get_parent()
-    # the subquery may be wrapped in extra parenthesis
-    # like: FROM ((SELECT ...)) AS alias (col1, col2)
+    # the subquery may be wrapped in extra parenthesis like:
+    # FROM ((SELECT ...)) AS alias (col1, col2)
     while parent is not None and parent[0].type in ["bracketed", "table_expression"]:
         parent = parent[0].get_parent()
     if parent is not None:
@@ -392,8 +392,8 @@ def extract_identifier(col_segment: BaseSegment) -> str:
     identifiers = list_child_segments(col_segment)
 
     # tsql assignment operator syntax: alias_name = expression
-    # starting from sqlfluff 3.4.2, the alias_expression
-    # contains the alias operator that we need to get rid of
+    # starting from sqlfluff 3.4.2, the alias_expression contains the alias operator
+    # that we need to get rid of
     if col_segment.type == "alias_expression" and col_segment.get_child(
         "alias_operator"
     ):
@@ -536,9 +536,9 @@ def extract_wildcard_except_columns(wildcard_expression: BaseSegment) -> list[st
         *wildcard_except_segment_types
     )
     if not wildcard_except_segment:
-        # redshift dialect starting sqlfluff 4.4.0 parses EXCLUDE
-        # as a direct child of select_clause instead of part of
-        # the wildcard, see https://github.com/sqlfluff/sqlfluff/pull/8270 for details
+        # redshift dialect starting sqlfluff 4.4.0 parses EXCLUDE as a direct child of
+        # select_clause instead of part of the wildcard,
+        # see https://github.com/sqlfluff/sqlfluff/pull/8270 for details
         if select_clause_element_tuple := wildcard_expression.get_parent():
             if select_clause_tuple := select_clause_element_tuple[0].get_parent():
                 wildcard_except_segment = select_clause_tuple[0].get_children(
@@ -560,8 +560,8 @@ def extract_wildcard_except_columns(wildcard_expression: BaseSegment) -> list[st
 
 
 def extract_innermost_bracketed(bracketed_segment: BaseSegment) -> BaseSegment:
-    # in case of subquery in nested parenthesis like: `SELECT
-    # * FROM ((table))`, find the innermost one first
+    # in case of subquery in nested parenthesis like: `SELECT * FROM ((table))`,
+    # find the innermost one first
     while True:
         sub_bracketed_segments = [
             bs.get_child("bracketed")
@@ -589,8 +589,8 @@ def extract_source_columns(segment: BaseSegment) -> list[ColumnQualifierTuple]:
             col_list = [cqt]
     elif segment.type in FUNCTION_SEGMENT_TYPE:
         for bracketed in segment.recursive_crawl("bracketed"):
-            # the bracketed could be in function_contents
-            # or over_clause in case of window function
+            # the bracketed could be in function_contents or over_clause in case of
+            # window function
             col_list += _extract_columns_from_parenthesis(bracketed)
     elif segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
         sub_segments = list_child_segments(segment)
@@ -645,8 +645,8 @@ def _extract_columns_from_subquery(
 def _extract_columns_from_parenthesis(
     sub_segment: BaseSegment,
 ) -> list[ColumnQualifierTuple]:
-    # windows function has an extra layer, get rid of
-    # it so that it can be handled as regular functions
+    # windows function has an extra layer, get rid of it so that it can be handled as
+    # regular functions
     if window_specification := sub_segment.get_child("window_specification"):
         sub_segment = window_specification
     col, _ = extract_column_and_alias(sub_segment, False)

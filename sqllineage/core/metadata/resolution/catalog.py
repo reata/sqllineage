@@ -49,8 +49,8 @@ class CachingRelationCatalog:
 
     def column_names(self, table: Table) -> list[str]:
         """
-        Return the column names of the table, or an empty list if they're unknown. A
-        table that wasn't prefetched is looked up now.
+        Return the column names of the table, or an empty list if they're unknown.
+        A table that wasn't prefetched is looked up now.
         """
         return list(self._lookup(table))
 
@@ -66,9 +66,9 @@ class CachingRelationCatalog:
     def _lookup(self, table: Table) -> list[str]:
         if table not in self._columns:
             if not self._provider:
-                # like the `if metadata_provider` checks around the
-                # existing lookups, a provider without metadata
-                # isn't queried, and the table doesn't count as looked up
+                # like the `if metadata_provider` checks around the existing lookups,
+                # a provider without metadata isn't queried, and the table doesn't
+                # count as looked up
                 return []
             self._columns[table] = [
                 column.raw_name for column in self._provider.get_table_columns(table)

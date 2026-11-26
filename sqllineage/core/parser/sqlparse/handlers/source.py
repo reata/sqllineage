@@ -47,8 +47,8 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
 
     def _indicate(self, token: Token) -> bool:
         if token.normalized in ("UNION", "UNION ALL"):
-            # BY NAME needs a lookahead the token handler
-            # doesn't have, so sqlparse combines by position
+            # BY NAME needs a lookahead the token handler doesn't have, so sqlparse
+            # combines by position
             self.union_barriers.append((len(self.columns), len(self.tables), False))
 
         if self.column_flag is True and bool(token.normalized == "DISTINCT"):
@@ -79,17 +79,16 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
                 self._add_dataset_from_identifier(identifier, holder)
         elif isinstance(token, Parenthesis):
             if is_subquery(token):
-                # SELECT col1 FROM (SELECT col2 FROM tab1),
-                # the subquery will be parsed as Parenthesis
-                # This syntax without alias for subquery is
-                # invalid in MySQL, while valid for SparkSQL
+                # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed
+                # as Parenthesis. This syntax without alias for subquery is invalid in
+                # MySQL, while valid for SparkSQL
                 self.tables.append(SqlParseSubQuery.of(token, None))
             elif is_values_clause(token):
                 # SELECT * FROM (VALUES ...), no operation needed
                 pass
             else:
-                # SELECT * FROM (tab2) or SELECT * FROM
-                # (tab2 JOIN tab1), which is valid syntax
+                # SELECT * FROM (tab2) or SELECT * FROM (tab2 JOIN tab1),
+                # which is valid syntax
                 using_flag = False
                 for t in token.tokens:
                     if t.is_keyword and t.normalized == "USING":
@@ -101,8 +100,8 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
         elif token.ttype == Literal.String.Single:
             self.tables.append(Path(token.value))
         elif isinstance(token, Function):
-            # functions like unnest or generator can output a
-            # sequence of values as source, ignore it for now
+            # functions like unnest or generator can output a sequence of values as
+            # source, ignore it for now
             pass
         else:
             raise SQLLineageException(
@@ -152,8 +151,7 @@ class SourceHandler(SourceHandlerMixin, NextTokenBaseHandler):
             if len(subqueries) > 0:
                 # SELECT col1 FROM (SELECT col2 FROM tab1) dt,
                 # the subquery will be parsed as Identifier
-                # referring https://github.com/andialbrecht/sqlparse/issues/218
-                # for further information
+                # see https://github.com/andialbrecht/sqlparse/issues/218 for details
                 parenthesis, alias = subqueries[0]
                 read = SqlParseSubQuery.of(parenthesis, alias)
             else:

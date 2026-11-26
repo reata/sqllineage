@@ -40,8 +40,7 @@ class TargetHandler(NextTokenBaseHandler):
         if isinstance(token, Function):
             # insert into tab (col1, col2) values (val1, val2);
             # Here tab (col1, col2) will be parsed as Function
-            # referring https://github.com/andialbrecht/sqlparse/issues/483
-            # for further information
+            # see https://github.com/andialbrecht/sqlparse/issues/483 for details
             if not isinstance(token.token_first(skip_cm=True), Identifier):
                 raise SQLLineageException(
                     f"An Identifier is expected, got {type(token).__name__}"
@@ -50,8 +49,7 @@ class TargetHandler(NextTokenBaseHandler):
             holder.add_write(SqlParseTable.of(token.token_first(skip_cm=True)))
         elif isinstance(token, Comparison):
             # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
-            # referring https://github.com/andialbrecht/sqlparse/issues/543
-            # for further information
+            # see https://github.com/andialbrecht/sqlparse/issues/543 for details
             if not (
                 isinstance(token.left, Identifier)
                 and isinstance(token.right, Identifier)
