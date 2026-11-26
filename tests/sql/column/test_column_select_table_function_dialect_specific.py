@@ -8,9 +8,10 @@ from ...helpers import assert_column_lineage_equal
 # https://trino.io/docs/current/sql/select.html#unnest
 # https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-TABLEFUNCTIONS
 # https://duckdb.org/docs/stable/sql/query_syntax/from#table-functions
-# dialects with UNNEST(col) AS alias (col1, col2) in FROM clause, where the column alias list names the generated
-# columns. bigquery is left out since its UNNEST takes no column alias list, and snowflake since it flattens with
-# FLATTEN instead of UNNEST. Both are tested separately below.
+# dialects with UNNEST(col) AS alias (col1, col2) in FROM clause, where the column alias
+# list names the generated columns. bigquery is left out since its UNNEST takes no
+# column alias list, and snowflake since it flattens with FLATTEN instead of UNNEST.
+# Both are tested separately below.
 _unnest_dialects = ["athena", "duckdb", "postgres", "trino"]
 
 
@@ -229,13 +230,14 @@ CROSS JOIN UNNEST(s.items) AS t (item)"""
     )
 
 
-# https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax#unnest_operator
-# bigquery and duckdb: without a column alias list, the alias names the single generated column, and the fields of an
-# element of struct type are read as alias.field.
-# Not tested for the other dialects: trino and athena expand the fields of a ROW element into separate columns that are
-# named by the column alias list, and postgres reads the fields of a composite element as (alias).field.
 @pytest.mark.parametrize("dialect", ["bigquery", "duckdb"])
 def test_select_struct_field_from_unnest_without_column_alias(dialect: str):
+    # https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax#unnest_operator
+    # bigquery and duckdb: without a column alias list, the alias names the single
+    # generated column, and the fields of an element of struct type are read as
+    # alias.field. Not tested for the other dialects: trino and athena expand the fields
+    # of a ROW element into separate columns that are named by the column alias list,
+    # and postgres reads the fields of a composite element as (alias).field.
     sql = """INSERT INTO tab1
 SELECT s.id, c.name
 FROM tab2 s, UNNEST(s.items) AS c"""
@@ -256,10 +258,11 @@ FROM tab2 s, UNNEST(s.items) AS c"""
     )
 
 
-# bigquery, duckdb and postgres: without a column alias list, the alias names the single generated column.
-# Not tested for trino and athena, whose docs only name the generated columns through the column alias list.
 @pytest.mark.parametrize("dialect", ["bigquery", "duckdb", "postgres"])
 def test_select_alias_column_from_unnest_without_column_alias(dialect: str):
+    # bigquery, duckdb and postgres: without a column alias list, the alias names the
+    # single generated column. Not tested for trino and athena, whose docs only name the
+    # generated columns through the column alias list.
     sql = """INSERT INTO tab1
 SELECT s.id, tag
 FROM tab2 s
@@ -281,10 +284,11 @@ CROSS JOIN UNNEST(s.tags) AS tag"""
     )
 
 
-# https://docs.snowflake.com/en/sql-reference/functions/flatten
-# FLATTEN is a snowflake table function, the other dialects have no equivalent in FROM clause with named arguments
 @pytest.mark.parametrize("dialect", ["snowflake"])
 def test_select_column_from_lateral_flatten(dialect: str):
+    # https://docs.snowflake.com/en/sql-reference/functions/flatten, FLATTEN is a
+    # snowflake table function, the other dialects have no equivalent in FROM clause
+    # with named arguments
     sql = """INSERT INTO tab1
 SELECT s.id, f.value::string AS item
 FROM tab2 s, LATERAL FLATTEN(input => s.items) f"""

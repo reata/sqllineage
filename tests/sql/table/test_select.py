@@ -76,7 +76,8 @@ def test_select_with_comment_after_join():
 def test_select_keyword_as_column_alias():
     # here "as" is the column alias
     assert_table_lineage_equal('SELECT 1 "as" FROM tab1', {"tab1"})
-    # the following is hive specific, MySQL doesn't allow this syntax. As of now, we don't test against it
+    # the following is hive specific, MySQL doesn't allow this syntax. As of now, we
+    # don't test against it
     # assert_table_lineage_equal("SELECT 1 as FROM tab1", {"tab1"})
 
 
@@ -161,12 +162,14 @@ def test_select_subquery_with_more_parenthesis():
 def test_select_subquery_in_case():
     assert_table_lineage_equal(
         """SELECT
-CASE WHEN (SELECT count(*) FROM tab1 WHERE col1 = 'tab2') = 1 THEN (SELECT count(*) FROM tab2) ELSE 0 END AS cnt""",
+CASE WHEN (SELECT count(*) FROM tab1 WHERE col1 = 'tab2') = 1
+    THEN (SELECT count(*) FROM tab2) ELSE 0 END AS cnt""",
         {"tab1", "tab2"},
     )
     assert_table_lineage_equal(
         """SELECT
-CASE WHEN 1 = (SELECT count(*) FROM tab1 WHERE col1 = 'tab2') THEN (SELECT count(*) FROM tab2) ELSE 0 END AS cnt""",
+CASE WHEN 1 = (SELECT count(*) FROM tab1 WHERE col1 = 'tab2')
+    THEN (SELECT count(*) FROM tab2) ELSE 0 END AS cnt""",
         {"tab1", "tab2"},
     )
     assert_table_lineage_equal(

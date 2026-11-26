@@ -3,7 +3,8 @@ import pytest
 from ...helpers import assert_table_lineage_equal
 
 """
-This test class will contain all the tests for testing 'Insert Queries' where the dialect is not ANSI.
+This test class will contain all the tests for testing 'Insert Queries' where the
+dialect is not ANSI.
 """
 
 
@@ -144,8 +145,8 @@ def test_insert_multi_table(sql: str, dialect: str):
     INTO tab1
     INTO tab2
 SELECT col1, col2 FROM tab3""",
-        # oracle supports conditional multi-table insert as well, but sqlfluff oracle dialect doesn't parse
-        # WHEN ... THEN INTO
+        # oracle supports conditional multi-table insert as well, but sqlfluff oracle
+        # dialect doesn't parse WHEN ... THEN INTO
         """INSERT ALL
     WHEN col1 > 0 THEN INTO tab1
     WHEN col2 > 0 THEN INTO tab1 INTO tab2

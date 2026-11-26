@@ -14,8 +14,9 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 class FrontendBuildHook(BuildHookInterface):
     """
-    A Hatch build hook to build frontend assets using npm.
-    This hook runs during the build process to ensure that the frontend assets are built and included in the package.
+    A Hatch build hook to build frontend assets using npm. This hook runs during the
+    build process to ensure that the frontend assets are built and included in the
+    package.
     """
 
     PLUGIN_NAME = "frontend"
@@ -24,9 +25,12 @@ class FrontendBuildHook(BuildHookInterface):
         """
         This hook builds frontend assets in the following scenarios:
         1. Building wheel distribution (python -m build --wheel)
-        2. Installing from GitHub (pip install git+https://github.com/reata/sqllineage.git). pip will build sdist first,
-           then install from sdist. sdist itself does not include built static files, same as source code repo.
-           Installation from sdist will trigger this hook. (by building a wheel from sdist)
+        2. Installing from GitHub
+           (pip install git+https://github.com/reata/sqllineage.git).
+           pip will build sdist first, then install from sdist. sdist itself
+           does not include built static files, same as source code repo.
+           Installation from sdist will trigger this hook. (by building a
+           wheel from sdist)
         """
         py_path = Path("sqllineage")
         static_folder = "build"

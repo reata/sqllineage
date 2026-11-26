@@ -43,7 +43,8 @@ def test_with_select_using_alias():
 
 def test_with_select_join_table_with_same_name():
     assert_table_lineage_equal(
-        "WITH wtab1 AS (SELECT * FROM schema1.tab1) SELECT * FROM wtab1 CROSS JOIN db.wtab1",
+        "WITH wtab1 AS (SELECT * FROM schema1.tab1) "
+        "SELECT * FROM wtab1 CROSS JOIN db.wtab1",
         {"schema1.tab1", "db.wtab1"},
     )
 
@@ -124,7 +125,8 @@ FROM cte1"""
 
 def test_non_reserved_keyword_as_cte():
     assert_table_lineage_equal(
-        "WITH summary AS (SELECT * FROM segment) INSERT INTO host SELECT * FROM summary",
+        "WITH summary AS (SELECT * FROM segment) "
+        "INSERT INTO host SELECT * FROM summary",
         {"segment"},
         {"host"},
         test_sqlparse=False,

@@ -6,7 +6,8 @@ from ...helpers import assert_column_lineage_equal
 
 def test_select_column_from_tables(provider: MetaDataProvider):
     sql = """insert into temp.order_line_extract
-select t1.salesorderid, customerid as customer_id, territoryid, orderqty, unitprice as unit_price
+select t1.salesorderid, customerid as customer_id, territoryid, orderqty,
+       unitprice as unit_price
 from sales.salesorderdetail t1
 left join sales.salesorderheader t2 on t1.salesorderid = t2.salesorderid
 """
@@ -38,7 +39,8 @@ left join sales.salesorderheader t2 on t1.salesorderid = t2.salesorderid
     )
 
     sql = """insert into temp.order_line_extract
-select customerid, territoryid as territory, orderqty, unitprice as unit_price, weight, color, name as product_name
+select customerid, territoryid as territory, orderqty, unitprice as unit_price,
+       weight, color, name as product_name
 from sales.salesorderdetail t1
 left join sales.salesorderheader t2 on t1.salesorderid = t2.salesorderid
 left join production.product t3 on t2.salesorderid = t3.productid
@@ -82,7 +84,8 @@ left join production.product t3 on t2.salesorderid = t3.productid
 def test_select_column_from_subqueries(provider: MetaDataProvider):
     sql = """insert into temp.order_line_extract
 select customerid, territoryid as territory, orderqty, detail_id
-from (select orderqty, unitprice, salesorderdetailid as detail_id from sales.salesorderdetail) t1
+from (select orderqty, unitprice, salesorderdetailid as detail_id
+      from sales.salesorderdetail) t1
 left join (select customerid, territoryid, subtotal from sales.salesorderheader) t2
 on t1.salesorderid = t2.salesorderid
 """
@@ -179,9 +182,11 @@ on t1.productid = t3.productid
 
     sql = """insert into temp.order_line_extract
 select orderqty, unit_price, territoryid as territory, subtotal, color, product_name
-from (select salesorderdetailid, orderqty, unitprice as unit_price, specialofferid from sales.salesorderdetail) t1
+from (select salesorderdetailid, orderqty, unitprice as unit_price, specialofferid
+      from sales.salesorderdetail) t1
 left join sales.salesorderheader t2 on t1.salesorderid = t2.salesorderid
-left join (select productid, color, name as product_name from production.product) t3 on t1.productid = t3.productid
+left join (select productid, color, name as product_name from production.product) t3
+    on t1.productid = t3.productid
 """
     assert_column_lineage_equal(
         sql,

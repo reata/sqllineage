@@ -13,7 +13,10 @@ def _patch_updating_lateral_view_lexeme() -> None:
     for i, (regex, lexeme) in enumerate(SQL_REGEX):
         rgx = re.compile(regex, re.IGNORECASE | re.UNICODE).match
         if rgx("LATERAL VIEW EXPLODE(col)"):
-            new_regex = r"(LATERAL\s+VIEW\s+)(OUTER\s+)?(EXPLODE|INLINE|PARSE_URL_TUPLE|POSEXPLODE|STACK|JSON_TUPLE)\b"
+            new_regex = (
+                r"(LATERAL\s+VIEW\s+)(OUTER\s+)?"
+                r"(EXPLODE|INLINE|PARSE_URL_TUPLE|POSEXPLODE|STACK|JSON_TUPLE)\b"
+            )
             SQL_REGEX[i] = (new_regex, lexeme)
             break
 

@@ -131,11 +131,13 @@ def find_table_identifier(segment: BaseSegment) -> BaseSegment | None:
     """
     table_identifier = None
     if segment.type in ["table_reference", "file_reference", "object_reference"]:
-        # snowflake: SELECT $1 FROM @mystage/path/, the stage_path is wrapped in table_reference
+        # snowflake: SELECT $1 FROM @mystage/path/,
+        # the stage_path is wrapped in table_reference
         return segment.get_child("stage_path") or segment
     elif segment.is_type("stage_path"):
         # snowflake: SELECT t.$1 FROM @mystage/path/ (FILE_FORMAT => 'myformat') t
-        # the stage_path followed by an option list is a direct child of table_expression
+        # the stage_path followed by an option list is a direct child of
+        # table_expression
         return segment
     else:
         for sub_segment in segment.segments:
@@ -169,7 +171,8 @@ def list_expression_from_when_clause(
     when_clause: BaseSegment, sub_type: str
 ) -> list[BaseSegment]:
     """
-    sub_type can be either WHEN or THEN, this is to extract subquery for case when (SELECT ...) then (SELECT ...)
+    sub_type can be either WHEN or THEN, this is to extract subquery for case when
+    (SELECT ...) then (SELECT ...)
     """
     segments = []
     start_flag = False
@@ -284,13 +287,15 @@ def list_subqueries(segment: BaseSegment) -> list[SubQueryTuple]:
 
 def list_subquery_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
     """
-    For a subquery segment, list the identifiers of the column alias list that renames its output columns:
+    For a subquery segment, list the identifiers of the column alias list that renames
+    its output columns:
         FROM (SELECT ...) AS alias (col1, col2)
         WITH alias (col1, col2) AS (SELECT ...)
     Return an empty list when no column alias list is specified.
     """
     parent = segment.get_parent()
-    # the subquery may be wrapped in extra parenthesis like: FROM ((SELECT ...)) AS alias (col1, col2)
+    # the subquery may be wrapped in extra parenthesis like:
+    # FROM ((SELECT ...)) AS alias (col1, col2)
     while parent is not None and parent[0].type in ["bracketed", "table_expression"]:
         parent = parent[0].get_parent()
     if parent is not None:
@@ -305,7 +310,8 @@ def list_subquery_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
 
 def list_alias_expression_column_aliases(segment: BaseSegment) -> list[BaseSegment]:
     """
-    For an alias_expression or cte_column_list segment, list the identifiers of its bracketed column alias list:
+    For an alias_expression or cte_column_list segment, list the identifiers of its
+    bracketed column alias list:
         AS alias (col1, col2)
         WITH alias (col1, col2) AS (...)
     Return an empty list when no column alias list is specified.
@@ -322,10 +328,12 @@ def extract_alias_and_column_names(
     segment: BaseSegment,
 ) -> tuple[str | None, list[str]]:
     """
-    For a from_expression_element segment, extract its alias and the names in its column alias list:
+    For a from_expression_element segment, extract its alias and the names in its column
+    alias list:
         FROM UNNEST(tab.col1) AS alias (col1, col2)
         FROM (VALUES (1, 2)) AS alias (col1, col2)
-    Return (None, []) without alias, and an empty list when no column alias list is specified.
+    Return (None, []) without alias, and an empty list when no column alias list is
+    specified.
     """
     if alias_expression := segment.get_child("alias_expression"):
         column_names = [
@@ -340,7 +348,8 @@ def list_lateral_view_clauses(segment: BaseSegment) -> list[BaseSegment]:
     """
     For a from_clause segment, list the hive/sparksql LATERAL VIEW clauses:
         FROM tab LATERAL VIEW explode(tab.col1) alias AS col2
-    hive puts lateral_view_clause under from_expression_element, while sparksql puts it under from_expression
+    hive puts lateral_view_clause under from_expression_element, while sparksql puts it
+    under from_expression
     """
     lateral_view_clauses = []
     if segment.type == "from_clause":
@@ -357,7 +366,8 @@ def list_child_segments(
     segment: BaseSegment, check_bracketed: bool = True
 ) -> list[BaseSegment]:
     """
-    Filter segments for a given segment's children, recursive goes into bracket by default
+    Filter segments for a given segment's children, recursive goes into bracket by
+    default
     """
     if segment.type == "bracketed" and check_bracketed:
         if is_set_expression(segment):
@@ -382,7 +392,8 @@ def extract_identifier(col_segment: BaseSegment) -> str:
     identifiers = list_child_segments(col_segment)
 
     # tsql assignment operator syntax: alias_name = expression
-    # starting from sqlfluff 3.4.2, the alias_expression contains the alias operator that we need to get rid of
+    # starting from sqlfluff 3.4.2, the alias_expression contains the alias operator
+    # that we need to get rid of
     if col_segment.type == "alias_expression" and col_segment.get_child(
         "alias_operator"
     ):
@@ -412,13 +423,15 @@ def extract_target_segment(segment: BaseSegment) -> BaseSegment:
 
 def extract_from_expression_element_alias(segment: BaseSegment) -> str | None:
     """
-    For a from_expression_element segment, extract the alias the query refers to its dataset by:
+    For a from_expression_element segment, extract the alias the query refers to its
+    dataset by:
         FROM tab AS alias
         FROM (SELECT ...) AS alias
         FROM ((tab AS alias JOIN ...))
         FROM tab PIVOT (sum(col1) FOR col2 IN ('a', 'b')) AS alias
-    An alias after table operators like PIVOT/UNPIVOT names their result, so it takes precedence over the alias
-    before the operators. Return None when no alias is specified.
+    An alias after table operators like PIVOT/UNPIVOT names their result, so it takes
+    precedence over the alias before the operators. Return None when no alias is
+    specified.
     """
     if alias := _extract_table_operator_alias(segment):
         return alias
@@ -441,11 +454,13 @@ def extract_from_expression_element_alias(segment: BaseSegment) -> str | None:
 
 def _extract_table_operator_alias(segment: BaseSegment) -> str | None:
     """
-    For a from_expression_element segment, find the alias of the table operators applied to its dataset:
+    For a from_expression_element segment, find the alias of the table operators applied
+    to its dataset:
         FROM tab PIVOT (sum(col1) FOR col2 IN ('a', 'b')) AS alias
         FROM tab UNPIVOT (col1 FOR col2 IN (col3, col4)) AS alias
         FROM tab AT (TIMESTAMP => '2024-01-01'::timestamp) AS alias
-    sqlfluff puts the operators either inside the from_expression_element, or after it under from_expression.
+    sqlfluff puts the operators either inside the from_expression_element, or after it
+    under from_expression.
     tsql puts the alias inside the PIVOT/UNPIVOT operator.
     Return None when no aliased operator is applied.
     """
@@ -521,8 +536,9 @@ def extract_wildcard_except_columns(wildcard_expression: BaseSegment) -> list[st
         *wildcard_except_segment_types
     )
     if not wildcard_except_segment:
-        # redshift dialect starting sqlfluff 4.4.0 parses EXCLUDE as a direct child of select_clause instead of part of
-        # the wildcard, see https://github.com/sqlfluff/sqlfluff/pull/8270 for details
+        # redshift dialect starting sqlfluff 4.4.0 parses EXCLUDE as a direct child of
+        # select_clause instead of part of the wildcard,
+        # see https://github.com/sqlfluff/sqlfluff/pull/8270 for details
         if select_clause_element_tuple := wildcard_expression.get_parent():
             if select_clause_tuple := select_clause_element_tuple[0].get_parent():
                 wildcard_except_segment = select_clause_tuple[0].get_children(
@@ -544,7 +560,8 @@ def extract_wildcard_except_columns(wildcard_expression: BaseSegment) -> list[st
 
 
 def extract_innermost_bracketed(bracketed_segment: BaseSegment) -> BaseSegment:
-    # in case of subquery in nested parenthesis like: `SELECT * FROM ((table))`, find the innermost one first
+    # in case of subquery in nested parenthesis like: `SELECT * FROM ((table))`,
+    # find the innermost one first
     while True:
         sub_bracketed_segments = [
             bs.get_child("bracketed")
@@ -572,7 +589,8 @@ def extract_source_columns(segment: BaseSegment) -> list[ColumnQualifierTuple]:
             col_list = [cqt]
     elif segment.type in FUNCTION_SEGMENT_TYPE:
         for bracketed in segment.recursive_crawl("bracketed"):
-            # the bracketed could be in function_contents or over_clause in case of window function
+            # the bracketed could be in function_contents or over_clause in case of
+            # window function
             col_list += _extract_columns_from_parenthesis(bracketed)
     elif segment.type in NON_IDENTIFIER_OR_COLUMN_SEGMENT_TYPE:
         sub_segments = list_child_segments(segment)
@@ -627,7 +645,8 @@ def _extract_columns_from_subquery(
 def _extract_columns_from_parenthesis(
     sub_segment: BaseSegment,
 ) -> list[ColumnQualifierTuple]:
-    # windows function has an extra layer, get rid of it so that it can be handled as regular functions
+    # windows function has an extra layer, get rid of it so that it can be handled as
+    # regular functions
     if window_specification := sub_segment.get_child("window_specification"):
         sub_segment = window_specification
     col, _ = extract_column_and_alias(sub_segment, False)

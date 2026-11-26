@@ -18,7 +18,8 @@ class _SQLLineageConfigLoader:
         "DEFAULT_SCHEMA": (str, ""),
         # to enable tsql no semicolon splitter mode
         "TSQL_NO_SEMICOLON": (bool, False),
-        # lateral column alias reference supported by some dialect (redshift, spark 3.4+, etc)
+        # lateral column alias reference supported by some dialect:
+        # redshift, spark 3.4+, etc
         "LATERAL_COLUMN_ALIAS_REFERENCE": (bool, False),
         # graph operator implementation class
         "GRAPH_OPERATOR_CLASS": (
@@ -49,7 +50,8 @@ class _SQLLineageConfigLoader:
     def __setattr__(self, key, value) -> None:
         if key in self.config:
             raise ConfigException(
-                "SQLLineageConfig is read-only. Use context manager to update thread level config."
+                "SQLLineageConfig is read-only. Use context manager to update thread "
+                "level config."
             )
         else:
             super().__setattr__(key, value)

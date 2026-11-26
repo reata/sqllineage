@@ -84,15 +84,15 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
             if holder is not None:
                 return StatementLineageHolder.of(holder)
             else:
+                msg = (
+                    "SQLLineage doesn't support analyzing statement type "
+                    f"[{statement_segment.type}] for SQL:{sql}"
+                )
                 if self._silent_mode:
-                    warnings.warn(
-                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:{sql}"
-                    )
+                    warnings.warn(msg)
                     return StatementLineageHolder()
                 else:
-                    raise UnsupportedStatementException(
-                        f"SQLLineage doesn't support analyzing statement type [{statement_segment.type}] for SQL:{sql}"
-                    )
+                    raise UnsupportedStatementException(msg)
 
     def _list_specific_statement_segment(self, sql: str):
         parsed = Linter(config=self._sqlfluff_config).parse_string(sql)
@@ -104,7 +104,8 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
         if violations:
             violation_msg = "\n".join(violations)
             raise InvalidSyntaxException(
-                f"This SQL statement is unparsable, please check potential syntax error for SQL:\n"
+                "This SQL statement is unparsable, "
+                "please check potential syntax error for SQL:\n"
                 f"{sql}\n"
                 f"{violation_msg}"
             )
@@ -118,7 +119,8 @@ class SqlFluffLineageAnalyzer(LineageAnalyzer):
                     if len(statements) > 1:
                         warnings.warn(
                             "SQL statements is not split by semicolon. "
-                            "SQLLineage is not guaranteed to generate correct result under this circumstances."
+                            "SQLLineage is not guaranteed to generate correct "
+                            "result under this circumstances."
                         )
                     for statement in statements:
                         segments.append(statement.segments[0])

@@ -81,7 +81,10 @@ def main(args=None) -> None:
     parser.add_argument(
         "-d",
         "--dialect",
-        help="the dialect used to analyze the lineage, use --dialects to show all available dialects",
+        help=(
+            "the dialect used to analyze the lineage, "
+            "use --dialects to show all available dialects"
+        ),
         type=str,
         default=DEFAULT_DIALECT,
         metavar="<dialect>",

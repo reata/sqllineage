@@ -15,7 +15,8 @@ def test_insert_into_values_with_subquery():
 
 def test_insert_into_values_with_multiple_subquery():
     assert_table_lineage_equal(
-        "INSERT INTO tab1 VALUES ((SELECT max(id) FROM tab2), (SELECT max(id) FROM tab3))",
+        "INSERT INTO tab1 VALUES ((SELECT max(id) FROM tab2), "
+        "(SELECT max(id) FROM tab3))",
         {"tab2", "tab3"},
         {"tab1"},
     )
@@ -23,7 +24,8 @@ def test_insert_into_values_with_multiple_subquery():
 
 def test_insert_into_values_with_multiple_subquery_in_multiple_row():
     assert_table_lineage_equal(
-        "INSERT INTO tab1 VALUES (1, (SELECT max(id) FROM tab2)), (2, (SELECT max(id) FROM tab3))",
+        "INSERT INTO tab1 VALUES (1, (SELECT max(id) FROM tab2)), "
+        "(2, (SELECT max(id) FROM tab3))",
         {"tab2", "tab3"},
         {"tab1"},
     )

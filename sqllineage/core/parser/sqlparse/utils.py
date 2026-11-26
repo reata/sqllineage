@@ -69,7 +69,8 @@ def get_innermost_parenthesis(token: Parenthesis) -> Parenthesis:
             idx == 1
             or (idx > 1 and all(is_token_negligible(t) for t in token.tokens[1:idx]))
         ):
-            # either the subsequent parenthesis is closely followed or there is only whitespace/comment in between
+            # either the subsequent parenthesis is closely followed or there is only
+            # whitespace/comment in between
             token = sub_paren
         else:
             break
@@ -100,8 +101,8 @@ def get_subquery_parentheses(
     token: Identifier | Function | Values | Where,
 ) -> list[SubQueryTuple]:
     """
-    Retrieve subquery list
-    the returned list is either empty when no subquery parsed or list of [parenthesis, alias] tuple
+    Retrieve subquery list the returned list is either empty when no subquery parsed or
+    list of [parenthesis, alias] tuple
     """
     subquery = []
     as_idx, as_ = token.token_next_by(m=(Keyword, "AS"))
@@ -113,7 +114,8 @@ def get_subquery_parentheses(
         if isinstance(token, Function):
             # CTE without AS: tbl (SELECT 1)
             target = token.tokens[-1]
-            # fallback to Function: LEAST((SELECT MIN(dt) FROM tab1), (SELECT MIN(dt) FROM tab2))
+            # fallback to Function:
+            # LEAST((SELECT MIN(dt) FROM tab1), (SELECT MIN(dt) FROM tab2))
             if len([p for p in target.tokens if isinstance(p, Parenthesis)]) > 0:
                 target = token
         elif isinstance(token, (Values, Where)):
@@ -123,7 +125,8 @@ def get_subquery_parentheses(
             # normal subquery: (SELECT 1) tbl
             target = token.token_first(skip_cm=True)
     if isinstance(target, (Case, Where)):
-        # CASE WHEN (SELECT count(*) from tab1) > 0 THEN (SELECT count(*) FROM tab1) ELSE -1
+        # CASE WHEN (SELECT count(*) from tab1) > 0
+        # THEN (SELECT count(*) FROM tab1) ELSE -1
         for tk in target.get_sublists():
             if isinstance(tk, Comparison):
                 if is_subquery(tk.left):
@@ -156,9 +159,11 @@ def get_subquery_parentheses(
 
 def get_parameters(token: Function):
     """
-    This is a replacement for sqlparse.sql.Function.get_parameters(), which produces problematic result for:
+    This is a replacement for sqlparse.sql.Function.get_parameters(), which produces
+    problematic result for:
         if(col1 = 'foo' AND col2 = 'bar', 1, 0)
-    This implementation ignores the constant parameter as we don't need them for column lineage for now
+    This implementation ignores the constant parameter as we don't need them for column
+    lineage for now
     """
     last_token = token.tokens[-1]
     parameters = []
@@ -167,7 +172,8 @@ def get_parameters(token: Function):
         parameters = token.get_parameters()
     for tk in last_token.tokens:
         if isinstance(tk, IdentifierList):
-            # special handling when multiple parameters are grouped as IdentifierList incorrectly
+            # special handling when multiple parameters are grouped as IdentifierList
+            # incorrectly
             for identifier in tk.get_sublists():
                 parameters.append(identifier)
         elif tk.is_group or tk.ttype == Wildcard:

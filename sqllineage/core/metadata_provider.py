@@ -17,9 +17,9 @@ class MetaDataProvider(ABC):
         FROM db2.table2 t2
         JOIN db3.table3 t3 ON t2.id = t3.id
 
-    Only by literal analysis, we don't know which table is selected column c1 from.
-    A subclass of MetaDataProvider implementing _get_table_columns passing to :class:`sqllineage.runner.LineageRunner`.
-    can help parse column lineage correctly.
+    Only by literal analysis, we don't know which table is selected column c1 from. A
+    subclass of MetaDataProvider implementing _get_table_columns passing to
+    :class:`sqllineage.runner.LineageRunner`. can help parse column lineage correctly.
     """
 
     def __init__(self) -> None:
@@ -64,9 +64,9 @@ class MetaDataProvider(ABC):
 
 class MetaDataSession:
     """
-    Create an analyzer session which can register session-level metadata as a supplement to global metadata.
-    This way, table or views created during the session can be queried.
-    All session-level metadata will be deregistered once session closed.
+    Create an analyzer session which can register session-level metadata as a supplement
+    to global metadata. This way, table or views created during the session can be
+    queried. All session-level metadata will be deregistered once session closed.
     """
 
     def __init__(self, metadata_provider: MetaDataProvider):

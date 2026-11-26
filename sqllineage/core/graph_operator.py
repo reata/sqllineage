@@ -7,7 +7,8 @@ from sqllineage.utils.entities import EdgeTuple
 
 class GraphOperator(ABC):
     """
-    Base class used to operator the graph structure that holder leverages to store lineage information
+    Base class used to operator the graph structure that holder leverages to store
+    lineage information
     """
 
     @abstractmethod
@@ -27,14 +28,16 @@ class GraphOperator(ABC):
     @abstractmethod
     def retrieve_source_vertices(self) -> list[Any]:
         """
-        source vertices are defined as vertices with no incoming edges and at least one outgoing edge
+        source vertices are defined as vertices with no incoming edges and at least one
+        outgoing edge
         """
         raise NotImplementedError
 
     @abstractmethod
     def retrieve_target_vertices(self) -> list[Any]:
         """
-        target vertices are defined as vertices with no outgoing edges and at least one incoming edge
+        target vertices are defined as vertices with no outgoing edges and at least one
+        incoming edge
         """
         raise NotImplementedError
 
@@ -61,8 +64,9 @@ class GraphOperator(ABC):
         self, src_vertex: Any, tgt_vertex: Any, label: EdgeType, **props
     ) -> None:
         """
-        when source and target vertices do not exist, they will be added to the graph first.
-        when edge already exists, invoking this method should not create duplicate edge.
+        when source and target vertices do not exist, they will be added to the graph
+        first. when edge already exists, invoking this method should not create
+        duplicate edge.
         """
         raise NotImplementedError
 

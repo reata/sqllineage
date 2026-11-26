@@ -108,7 +108,7 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_table(
     insert into temp.person_composite_key
     select
         firstname || middlename || lastname || businessentityid as businessentityid,
-        businessentityid                                        as businessentityid_original
+        businessentityid as businessentityid_original
     from
         person.person
     """
@@ -151,7 +151,7 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_subquery(
     insert into temp.person_composite_key
     select
         firstname || middlename || lastname || businessentityid as businessentityid,
-        businessentityid                                        as businessentityid_original
+        businessentityid as businessentityid_original
     from
         (
             select
@@ -199,7 +199,7 @@ def test_column_top_level_enable_lateral_ref_with_metadata_from_nested_subquery(
     insert into temp.person_composite_key
     select
         firstname || middlename || lastname || businessentityid as businessentityid,
-        businessentityid                                        as businessentityid_original
+        businessentityid as businessentityid_original
     from
         (
             select
@@ -411,7 +411,7 @@ def test_column_top_level_disable_lateral_ref_with_metadata_from_table():
     insert into temp.person_composite_key
     select
         firstname || middlename || lastname || businessentityid as businessentityid,
-        businessentityid                                        as businessentityid_original
+        businessentityid as businessentityid_original
     from
         person.person
     """

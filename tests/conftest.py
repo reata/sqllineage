@@ -69,7 +69,8 @@ _data_warehouse_schemas = {
         "productmodelid",  # integer
         "weightunitmeasurecode",  # varchar
         "standardcost",  # numeric
-        "productsubcategoryid",  # integer, FK to production.productsubcategory.productsubcategoryid
+        # integer, FK to production.productsubcategory.productsubcategoryid
+        "productsubcategoryid",
         "listprice",  # numeric
         "daystomanufacture",  # integer
         "productline",  # varchar
@@ -84,7 +85,8 @@ _data_warehouse_schemas = {
     ],
     "production.productsubcategory": [
         "productsubcategoryid",  # integer, PK
-        "productcategoryid",  # integer, FK to production.productcategory.productcategoryid
+        # integer, FK to production.productcategory.productcategoryid
+        "productcategoryid",
         "name",  # varchar
         "modifieddate",  # timestamp
     ],
@@ -172,7 +174,8 @@ _data_warehouse_schemas = {
         "customer_key",  # The surrogate key of the customer
         "customerid",  # The natural key of the customer
         "businessentityid",
-        "fullname",  # The customer name. Adopted as customer_fullname when person name is not null.
+        # The customer name. Adopted as customer_fullname when person name is not null.
+        "fullname",
         "storebusinessentityid",
         "storename",  # The store name.
     ],
@@ -207,8 +210,9 @@ _data_warehouse_schemas = {
         "sales_key",  # The surrogate key of the fct sales
         "product_key",  # The foreign key of the product
         "customer_key",  # The foreign key of the customer
-        "creditcard_key",  # The foreign key of the creditcard. If no creditcard exists, it was assumed that purchase
-        # was made in cash
+        # The foreign key of the creditcard. If no creditcard exists, it was assumed
+        # that purchase was made in cash
+        "creditcard_key",
         "ship_address_key",  # The foreign key of the shipping address
         "order_status_key",  # The foreign key of the order status
         "order_date_key",  # The foreign key of the order date
@@ -235,7 +239,8 @@ _data_warehouse_schemas = {
         "product_category_name",  # varchar
         "customerid",  # The natural key of the customer
         "businessentityid",
-        "fullname",  # The customer name. Adopted as customer_fullname when person name is not null.
+        # The customer name. Adopted as customer_fullname when person name is not null.
+        "fullname",
         "storebusinessentityid",
         "storename",  # The store name.
         "creditcardid",  # The natural key of the creditcard
@@ -265,5 +270,6 @@ _data_warehouse_schemas = {
     ids=["dummy", "sqlalchemy"],
 )
 def provider(request):
-    # session scope: SQLAlchemy provider is expensive to initialize; share one instance across all tests
+    # session scope: SQLAlchemy provider is expensive to initialize; share one instance
+    # across all tests
     return request.param

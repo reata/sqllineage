@@ -9,7 +9,9 @@ WHEN MATCHED THEN UPDATE SET target.v = src.v"""
 
 
 def test_merge_into_using_subquery():
-    sql = """MERGE INTO target USING (select k, max(v) as v from src group by k) AS b ON target.k = b.k
+    sql = """MERGE INTO target
+USING (select k, max(v) as v from src group by k) AS b
+ON target.k = b.k
 WHEN MATCHED THEN UPDATE SET target.v = b.v
 WHEN NOT MATCHED THEN INSERT (k, v) VALUES (b.k, b.v)"""
     assert_table_lineage_equal(sql, {"src"}, {"target"})

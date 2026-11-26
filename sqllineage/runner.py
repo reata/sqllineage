@@ -51,13 +51,16 @@ class LineageRunner:
         :param sql: a string representation of SQL statements.
         :param dialect: sql dialect
         :param metadata_provider: metadata service object providing table schema
-        :param verbose: verbose flag indicating whether statement-wise lineage result will be shown
-        :param silent_mode: boolean flag indicating whether to skip lineage analysis for unknown statement types
+        :param verbose: verbose flag indicating whether statement-wise lineage result
+            will be shown
+        :param silent_mode: boolean flag indicating whether to skip lineage analysis for
+            unknown statement types
         :param file_path: path of the SQL file.
         """
         if dialect == SQLPARSE_DIALECT:
             warnings.warn(
-                f"dialect `{SQLPARSE_DIALECT}` is deprecated, use `ansi` or dialect of your SQL instead. "
+                f"dialect `{SQLPARSE_DIALECT}` is deprecated, "
+                "use `ansi` or dialect of your SQL instead. "
                 f"`{SQLPARSE_DIALECT}` will be completely removed in v1.6.x",
                 DeprecationWarning,
                 stacklevel=2,
@@ -184,16 +187,15 @@ Target Tables:
         """
         a list of column tuple :class:`sqllineage.models.Column`
 
-        :param exclude_path_ending_in_subquery:  exclude_subquery rename to exclude_path_ending_in_subquery
-               exclude column from SubQuery in the ending path
+        :param exclude_path_ending_in_subquery: exclude_subquery rename to
+            exclude_path_ending_in_subquery exclude column from SubQuery in the ending
+            path
         :param exclude_subquery_columns: exclude column from SubQuery in the path.
         :param node: restrict the result to paths that touch this column. Use
-               :meth:`find_nodes` to discover a candidate, filtering its
-               result to :class:`sqllineage.models.Column` instances first,
-               since ``find_nodes`` can also return
-               :class:`sqllineage.models.Table` and
-               :class:`sqllineage.models.Path` vertices that this method
-               rejects.
+            :meth:`find_nodes` to discover a candidate, filtering its result to
+            :class:`sqllineage.models.Column` instances first, since ``find_nodes`` can
+            also return :class:`sqllineage.models.Table` and
+            :class:`sqllineage.models.Path` vertices that this method rejects.
         """
         # sort by target column, then source column, then the full path as a
         # tiebreaker so paths sharing both endpoints get a deterministic order
@@ -235,10 +237,12 @@ Target Tables:
                 try:
                     stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
                 except Exception as exc:
-                    # a note shows up in tracebacks and in CLI logging, but keeps str(exc) unchanged
+                    # a note shows up in tracebacks and in CLI logging, but keeps
+                    # str(exc) unchanged
                     stmt_short = " ".join(stmt.split())[:50]
                     exc.add_note(
-                        f"while analyzing statement #{idx} ({self._dialect} dialect): {stmt_short}"
+                        f"while analyzing statement #{idx} ({self._dialect} "
+                        f"dialect): {stmt_short}"
                     )
                     raise
                 if write := stmt_holder.write:
@@ -257,8 +261,8 @@ Target Tables:
     @staticmethod
     def supported_dialects() -> dict[str, list[str]]:
         """
-        an ordered dict (so we can make sure the default parser implementation comes first)
-        with key, value as parser_name, dialect list respectively
+        an ordered dict (so we can make sure the default parser implementation comes
+        first) with key, value as parser_name, dialect list respectively
         """
         dialects = OrderedDict(
             [

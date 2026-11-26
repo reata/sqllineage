@@ -35,7 +35,8 @@ class ResolvedScope:
     relations: dict[object, ResolvedRelation] = field(default_factory=dict)
     #: the relation each column is bound to; None means the column is left unqualified
     bindings: dict[Column, Table | SubQuery | None] = field(default_factory=dict)
-    #: the column names each wildcard expands to; None means the wildcard is not expanded and kept as-is
+    #: the column names each wildcard expands to;
+    #: None means the wildcard is not expanded and kept as-is
     wildcards: dict[Column, list[str] | None] = field(default_factory=dict)
 
 

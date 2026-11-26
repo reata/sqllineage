@@ -11,13 +11,14 @@ class RustworkXGraphOperator(GraphOperator):
     """
     rustworkx based implementation of GraphOperator
 
-    node added to rustworkx graph can only be accessed by index, and it doesn't distinguish nodes vs nodes attributes.
-    For the implementation, each vertex T is represented as a dict with at least one key "vertex" to hold the actual
-    vertex object, e.g., {vertex: T, prop1: val1, ...}, and we will maintain a mapping from vertex T to its node index
-    in the graph
+    node added to rustworkx graph can only be accessed by index, and it doesn't
+    distinguish nodes vs nodes attributes. For the implementation, each vertex T is
+    represented as a dict with at least one key "vertex" to hold the actual vertex
+    object, e.g., {vertex: T, prop1: val1, ...}, and we will maintain a mapping from
+    vertex T to its node index in the graph
 
-    edge added to rustworkx does not have the concept of label, so we will store label as part of edge data,
-    e.g., {label: str, prop1: val1, ...}
+    edge added to rustworkx does not have the concept of label, so we will store label
+    as part of edge data, e.g., {label: str, prop1: val1, ...}
     """
 
     def __init__(self, graph: rx.PyDiGraph[Any, Any] | None = None) -> None:

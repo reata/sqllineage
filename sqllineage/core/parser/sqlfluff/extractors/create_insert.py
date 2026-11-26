@@ -34,12 +34,14 @@ class CreateInsertExtractor(BaseExtractor):
         context: AnalyzerContext,
     ) -> SubQueryLineageHolder:
         if MultiTableInsertExtractor.is_multi_table_insert(statement):
-            # snowflake and oracle INSERT {ALL | FIRST} parse as insert_statement, delegate explicitly
+            # snowflake and oracle INSERT {ALL | FIRST} parse as insert_statement,
+            # delegate explicitly
             return self.delegate_to(MultiTableInsertExtractor, statement, context)
         holder = self._init_holder(context)
         src_flag = tgt_flag = part_flag = False
         partition_columns = []
-        # collect partition column names first so that we can filter them out from write_columns later
+        # collect partition column names first so that we can filter them out from
+        # write_columns later
         if any(
             segment.type == "keyword" and segment.raw_upper == "PARTITION"
             for segment in statement.get_children("keyword")
@@ -78,36 +80,43 @@ class CreateInsertExtractor(BaseExtractor):
                     )
                 )
             ):
-                # note regular subquery within SELECT statement is handled by SelectExtractor, this is only to handle
-                # top-level subquery in DML like: 1) create table foo as (subquery); 2) insert into foo (subquery)
-                # subquery here isn't added as read source, and it inherits DML-level write_columns if parsed
+                # note regular subquery within SELECT statement is handled by
+                # SelectExtractor, this is only to handle top-level subquery in DML
+                # like:
+                # 1) create table foo as (subquery);
+                # 2) insert into foo (subquery)
+                # subquery here isn't added as read source, and it inherits DML-level
+                # write_columns if parsed
                 for subquery_segment in subquery_segments:
                     holder |= self.delegate_to_select(subquery_segment, holder)
 
             elif segment.type == "bracketed":
                 if part_flag:
                     part_flag = False
-                    # partition columns is handled ahead of the for loop, so just continue
+                    # partition columns is handled ahead of the for loop, just continue
                     continue
                 else:
-                    # In case of bracketed column reference, add these target columns to holder
-                    # so that when we compute the column level lineage
+                    # In case of bracketed column reference, add these target columns
+                    # to holder so that when we compute the column level lineage,
                     # we keep these columns into consideration
                     sub_segments = list_child_segments(segment)
                     if all(
                         sub_segment.type in ["column_reference", "column_definition"]
                         for sub_segment in sub_segments
                     ):
-                        # target columns only apply to bracketed column_reference and column_definition
+                        # target columns only apply to bracketed column_reference
+                        # and column_definition
                         columns = []
                         for sub_segment in sub_segments:
                             if sub_segment.type == "column_definition":
-                                # sqlfluff's column_definition parse tree varies by dialect:
-                                #  for most dialect:
-                                #     column_definition -> identifier
-                                #  for sparksql, databricks since sqlfluff 3.2.5):
-                                #     column_definition -> column_reference -> identifier
-                                # We try identifier first, then fall back to column_reference.
+                                # sqlfluff's column_definition parse tree varies by
+                                # dialect:
+                                # for most dialect:
+                                #    column_definition -> identifier
+                                # for sparksql, databricks since sqlfluff 3.2.5):
+                                #    column_definition -> column_reference -> identifier
+                                # We try identifier first, then fall back to
+                                # column_reference.
                                 if identifier := sub_segment.get_child("identifier"):
                                     sub_segment = identifier
                                 elif column_ref := sub_segment.get_child(
@@ -119,9 +128,12 @@ class CreateInsertExtractor(BaseExtractor):
 
             elif segment.type == "keyword":
                 if segment.raw_upper in [
-                    "INSERT",  # bigquery supports INTO as optional keyword so INSERT is the indicator
+                    # bigquery supports INTO as optional keyword
+                    # so INSERT itself is the indicator
+                    "INSERT",
                     "INTO",
-                    "OVERWRITE",  # sparksql supports INSERT OVERWRITE with TABLE as optional keyword
+                    # sparksql supports INSERT OVERWRITE with TABLE as optional keyword
+                    "OVERWRITE",
                     "TABLE",
                     "VIEW",
                     "DIRECTORY",
@@ -148,8 +160,8 @@ class CreateInsertExtractor(BaseExtractor):
                         all_columns = self.metadata_provider.get_table_columns(
                             table=write_obj
                         )
-                        # Filter out partition columns from metadata as write columns is supposed to match the
-                        # size of select columns
+                        # Filter out partition columns from metadata as write columns is
+                        # supposed to match the size of select columns
                         non_partition_columns = [
                             col
                             for col in all_columns

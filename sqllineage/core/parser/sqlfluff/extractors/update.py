@@ -28,9 +28,9 @@ class UpdateExtractor(BaseExtractor):
 
         for segment in list_child_segments(statement):
             if segment.type == "from_expression":
-                # UPDATE with JOIN, mysql only syntax
-                # from_expression is wrapped directly under update_statement and there's no from_clause in this case
-                # we need to pass update_statement to the function
+                # UPDATE with JOIN, mysql only syntax. from_expression is wrapped
+                # directly under update_statement and there's no from_clause in this
+                # case we need to pass update_statement to the function
                 if from_join_tables := self._list_table_from_from_clause_or_join_clause(
                     statement, holder
                 ):
@@ -48,7 +48,8 @@ class UpdateExtractor(BaseExtractor):
                         # Qualified table name, definitely not an alias
                         holder.add_write(write_table)
                     else:
-                        # tsql allows table alias here, don't add as write table yet, will resolve in FROM clause
+                        # tsql allows table alias here, don't add as write table yet,
+                        # will resolve in FROM clause
                         potential_table_alias = segment.raw
                 tgt_flag = False
 

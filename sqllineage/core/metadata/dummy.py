@@ -8,7 +8,8 @@ class DummyMetaDataProvider(MetaDataProvider):
 
     def __init__(self, metadata: dict[str, list[str]] | None = None):
         """
-        :param metadata: a dict with schema.table name as key and a list of unqualified column name as value
+        :param metadata: a dict with schema.table name as key and a list of unqualified
+            column name as value
         """
         super().__init__()
         self.metadata = metadata if metadata is not None else {}
