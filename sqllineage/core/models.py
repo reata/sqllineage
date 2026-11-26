@@ -269,8 +269,10 @@ class Column:
         def _to_src_col(
             name: str, parent: Path | Table | SubQuery | None = None
         ) -> Column:
-            # names in self.source_columns are already normalized by escape_identifier_name in __init__
-            # avoid double-processing which would lowercase case-sensitive quoted identifiers (e.g. "Abc" -> "abc")
+            # names in self.source_columns are already
+            # normalized by escape_identifier_name in __init__
+            # avoid double-processing which would lowercase
+            # case-sensitive quoted identifiers (e.g. "Abc" -> "abc")
             col = Column(name, escaped=True)
             if parent:
                 col.parent = parent

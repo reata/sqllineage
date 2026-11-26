@@ -112,10 +112,14 @@ class SqlFluffLateralView(LateralView):
             if subquery.get_child("table_expression"):
                 return SqlFluffLateralView._of_table_function(subquery, alias, position)
             return SqlFluffLateralView._of_values(subquery, alias, position)
-        # LATERAL VIEW explode(col1) alias AS col2, col3: the identifier before AS is the table alias and the ones
-        # after it are the column aliases. The table alias can be omitted (LATERAL VIEW explode(col1) AS col2), and
-        # sparksql also accepts the column aliases without AS, in which case the first identifier is the table alias.
-        # databricks parses AS as an identifier when the table alias is omitted, so check the raw text.
+        # LATERAL VIEW explode(col1) alias AS col2, col3: the
+        # identifier before AS is the table alias and the ones
+        # after it are the column aliases. The table alias can
+        # be omitted (LATERAL VIEW explode(col1) AS col2), and
+        # sparksql also accepts the column aliases without AS,
+        # in which case the first identifier is the table alias.
+        # databricks parses AS as an identifier when the
+        # table alias is omitted, so check the raw text.
         before_as: list[str] = []
         after_as: list[str] | None = None
         for seg in list_child_segments(subquery):
@@ -159,7 +163,8 @@ class SqlFluffLateralView(LateralView):
             function_generator=SqlFluffColumn.of(function) if function else None,
             values_generators=None,
             column_names=column_names,
-            # bigquery UNNEST(tab.col1) AS col2 or postgres unnest(tab.col1) AS col2 names the generated column col2
+            # bigquery UNNEST(tab.col1) AS col2 or postgres
+            # unnest(tab.col1) AS col2 names the generated column col2
             alias_as_column=True,
         )
 
@@ -243,7 +248,8 @@ class SqlFluffColumn(Column):
                                 sub_segment
                             )
                     elif sub_segment.type == "expression":
-                        # special handling for postgres style type cast, col as target column name instead of col::type
+                        # special handling for postgres style type cast,
+                        # col as target column name instead of col::type
                         if len(sub2_segments := list_child_segments(sub_segment)) == 1:
                             if (
                                 sub2_segment := sub2_segments[0]

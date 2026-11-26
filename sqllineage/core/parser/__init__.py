@@ -7,7 +7,8 @@ from sqllineage.exceptions import SQLLineageException
 class SourceHandlerMixin:
     tables: list[Path | SubQuery | Table]
     columns: list[Column]
-    # (column index, table index, whether the query after it is combined by name, like UNION ALL BY NAME)
+    # (column index, table index, whether the query after
+    # it is combined by name, like UNION ALL BY NAME)
     union_barriers: list[tuple[int, int, bool]]
 
     def end_of_query_cleanup(self, holder: SubQueryLineageHolder) -> None:
@@ -32,17 +33,23 @@ class SourceHandlerMixin:
                     tgt_col_from_query.parent = tgt_tbl
                     tgt_col_resolved = tgt_col_from_query
                     if by_name:
-                        # UNION ALL BY NAME: a column goes to the result column of the same name
+                        # UNION ALL BY NAME: a column goes to
+                        # the result column of the same name
                         # and a column not seen in previous queries is added to the end
                         tgt_col_resolved = union_columns.setdefault(
                             tgt_col_from_query.raw_name, tgt_col_from_query
                         )
                     elif len(write_columns := holder.write_columns) == len(col_grp):
-                        # example query: create view test (col3) select col1 as col2 from tab
-                        # without write_columns = [col3] information, by default src_col = col1 and tgt_col = col2
-                        # when write_columns exist and length matches, we want tgt_col = col3 instead of col2
-                        # for invalid query: create view test (col3, col4) select col1 as col2 from tab,
-                        # when the length doesn't match, we fall back to default behavior
+                        # example query: create view test
+                        # (col3) select col1 as col2 from tab
+                        # without write_columns = [col3] information,
+                        # by default src_col = col1 and tgt_col = col2
+                        # when write_columns exist and length matches,
+                        # we want tgt_col = col3 instead of col2
+                        # for invalid query: create view test (col3,
+                        # col4) select col1 as col2 from tab,
+                        # when the length doesn't match,
+                        # we fall back to default behavior
                         tgt_col_resolved = write_columns[idx]
                     if i == 0:
                         union_columns[tgt_col_from_query.raw_name] = tgt_col_resolved
@@ -87,7 +94,8 @@ class SourceHandlerMixin:
                             lateral_column_aliases[tgt_col_from_query.raw_name] = (
                                 src_cols_resolved
                             )
-            # the columns of a lateral view are generated from the datasets to its left in the same query
+            # the columns of a lateral view are generated
+            # from the datasets to its left in the same query
             for tbl_idx, tbl in enumerate(tbl_grp):
                 if isinstance(tbl, LateralView):
                     holder.add_lateral_view(

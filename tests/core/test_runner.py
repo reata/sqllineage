@@ -34,7 +34,8 @@ def test_runner_dummy(graph_operator):
 @parametrize_graph_operator
 def test_to_cytoscape_subquery_alias_reuse_has_unique_node_id(graph_operator):
     # https://github.com/reata/sqllineage/issues/481 and #489
-    # subqueries with different bodies may reuse the same alias in different union branches and across statements.
+    # subqueries with different bodies may reuse the same
+    # alias in different union branches and across statements.
     # They are already distinct vertices, expect distinct id in cytoscape nodes
     sql = """insert into public.tgt_tbl1 (id)
 select sq.id from (select id from public.src_tbl1) sq

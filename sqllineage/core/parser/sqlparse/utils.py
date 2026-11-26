@@ -69,7 +69,8 @@ def get_innermost_parenthesis(token: Parenthesis) -> Parenthesis:
             idx == 1
             or (idx > 1 and all(is_token_negligible(t) for t in token.tokens[1:idx]))
         ):
-            # either the subsequent parenthesis is closely followed or there is only whitespace/comment in between
+            # either the subsequent parenthesis is closely followed
+            # or there is only whitespace/comment in between
             token = sub_paren
         else:
             break
@@ -113,7 +114,8 @@ def get_subquery_parentheses(
         if isinstance(token, Function):
             # CTE without AS: tbl (SELECT 1)
             target = token.tokens[-1]
-            # fallback to Function: LEAST((SELECT MIN(dt) FROM tab1), (SELECT MIN(dt) FROM tab2))
+            # fallback to Function: LEAST((SELECT MIN(dt)
+            # FROM tab1), (SELECT MIN(dt) FROM tab2))
             if len([p for p in target.tokens if isinstance(p, Parenthesis)]) > 0:
                 target = token
         elif isinstance(token, (Values, Where)):
@@ -123,7 +125,8 @@ def get_subquery_parentheses(
             # normal subquery: (SELECT 1) tbl
             target = token.token_first(skip_cm=True)
     if isinstance(target, (Case, Where)):
-        # CASE WHEN (SELECT count(*) from tab1) > 0 THEN (SELECT count(*) FROM tab1) ELSE -1
+        # CASE WHEN (SELECT count(*) from tab1) > 0
+        # THEN (SELECT count(*) FROM tab1) ELSE -1
         for tk in target.get_sublists():
             if isinstance(tk, Comparison):
                 if is_subquery(tk.left):
@@ -167,7 +170,8 @@ def get_parameters(token: Function):
         parameters = token.get_parameters()
     for tk in last_token.tokens:
         if isinstance(tk, IdentifierList):
-            # special handling when multiple parameters are grouped as IdentifierList incorrectly
+            # special handling when multiple parameters
+            # are grouped as IdentifierList incorrectly
             for identifier in tk.get_sublists():
                 parameters.append(identifier)
         elif tk.is_group or tk.ttype == Wildcard:

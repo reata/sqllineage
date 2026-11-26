@@ -472,8 +472,10 @@ def test_select_wildcard_from_cte_selecting_table_wildcard(provider: MetaDataPro
     )
 
 
-# The following tests use locally-defined schema instead of the global conftest fixture because they require tables
-# with identical or structurally-paired column layouts (union compatibility, partition exclusion) that don't exist in
+# The following tests use locally-defined schema instead of
+# the global conftest fixture because they require tables
+# with identical or structurally-paired column layouts (union
+# compatibility, partition exclusion) that don't exist in
 # the shared dimensional model schema
 @pytest.mark.parametrize(
     "provider",

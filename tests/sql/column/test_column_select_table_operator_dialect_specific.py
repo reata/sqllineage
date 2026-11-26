@@ -4,7 +4,8 @@ from sqllineage.utils.entities import ColumnQualifierTuple
 
 from ...helpers import assert_column_lineage_equal
 
-# the alias after PIVOT/UNPIVOT names the pivoted dataset, so columns qualified by it come from the table pivoted
+# the alias after PIVOT/UNPIVOT names the pivoted dataset,
+# so columns qualified by it come from the table pivoted
 _pivot_dialects = [
     "bigquery",
     "databricks",

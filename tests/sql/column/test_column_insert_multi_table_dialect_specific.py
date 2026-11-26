@@ -7,7 +7,8 @@ from ...helpers import assert_column_lineage_equal
 
 # https://docs.snowflake.com/en/sql-reference/sql/insert-multi-table
 # https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/INSERT.html#GUID-903F8043-0254-4EE9-ACC1-CB8AC0AF3423
-# both dialects share the INSERT {ALL | FIRST} syntax. A case tested for one dialect only says why the other is left
+# both dialects share the INSERT {ALL | FIRST} syntax. A case
+# tested for one dialect only says why the other is left
 # out: the dialect has no such syntax, or sqlfluff fails to parse it.
 _multi_table_insert_dialects = ["oracle", "snowflake"]
 
@@ -93,7 +94,8 @@ SELECT col2 AS c FROM tab3"""
     )
 
 
-# oracle supports conditional multi-table insert as well, but sqlfluff oracle dialect doesn't parse WHEN ... THEN INTO
+# oracle supports conditional multi-table insert as well, but
+# sqlfluff oracle dialect doesn't parse WHEN ... THEN INTO
 @pytest.mark.parametrize("dialect", ["snowflake"])
 def test_insert_first_with_conditions(dialect: str):
     sql = """INSERT FIRST
@@ -133,7 +135,8 @@ SELECT o.id, o.amount FROM orders o"""
     )
 
 
-# sqlfluff snowflake dialect doesn't parse a WITH clause as the subquery of a multi-table insert
+# sqlfluff snowflake dialect doesn't parse a WITH
+# clause as the subquery of a multi-table insert
 @pytest.mark.parametrize("dialect", ["oracle"])
 def test_insert_all_from_cte(dialect: str):
     sql = """INSERT ALL

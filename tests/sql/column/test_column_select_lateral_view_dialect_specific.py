@@ -117,8 +117,10 @@ LATERAL VIEW json_tuple(t.js, 'k', 'v') z AS k, v"""
     )
 
 
-# Hive accepts a lateral view without column aliases since 0.12.0, but the sqlfluff hive dialect follows the
-# documented grammar "LATERAL VIEW udtf(expression) tableAlias AS columnAlias", so hive is not tested here
+# Hive accepts a lateral view without column aliases
+# since 0.12.0, but the sqlfluff hive dialect follows the
+# documented grammar "LATERAL VIEW udtf(expression)
+# tableAlias AS columnAlias", so hive is not tested here
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_select_column_from_lateral_view_without_column_alias(dialect: str):
     sql = """INSERT INTO tab1
@@ -138,10 +140,12 @@ LATERAL VIEW explode(items) x"""
     )
 
 
-# hive requires the column alias list, so the alias naming only the view is tested for databricks and sparksql
+# hive requires the column alias list, so the alias naming
+# only the view is tested for databricks and sparksql
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_select_no_column_from_lateral_view_without_column_alias(dialect: str):
-    # unlike UNNEST(items) AS x, the alias of a lateral view never names a generated column
+    # unlike UNNEST(items) AS x, the alias of a
+    # lateral view never names a generated column
     sql = """INSERT INTO tab1
 SELECT t.id
 FROM tab2 t

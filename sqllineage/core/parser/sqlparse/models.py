@@ -24,7 +24,8 @@ from sqllineage.utils.helpers import escape_identifier_name
 class SqlParseTable(Table):
     @staticmethod
     def of(table: Identifier) -> Table:
-        # rewrite identifier's get_real_name method, by matching the last dot instead of the first dot, so that the
+        # rewrite identifier's get_real_name method, by matching
+        # the last dot instead of the first dot, so that the
         # real name for a.b.c will be c instead of b
         dot_idx, _ = table._token_matching(
             lambda token: imt(token, m=(T.Punctuation, ".")),
@@ -123,7 +124,8 @@ class SqlParseColumn(Column):
                     ),
                 )
         else:
-            # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
+            # Wildcard, Case, Function without alias
+            # (thus not recognized as an Identifier)
             source_columns = SqlParseColumn._extract_source_columns(column)
             return Column(
                 column.value,
@@ -144,7 +146,8 @@ class SqlParseColumn(Column):
                 # This is to avoid circular import
                 from sqllineage.runner import LineageRunner
 
-                # (SELECT avg(col1) AS col1 FROM tab3), used after WHEN or THEN in CASE clause
+                # (SELECT avg(col1) AS col1 FROM tab3),
+                # used after WHEN or THEN in CASE clause
                 src_cols = [
                     lineage[0]
                     for lineage in LineageRunner(
@@ -210,7 +213,8 @@ class SqlParseColumn(Column):
             if (
                 # real name is None: col1=1 AS int
                 real_name is None
-                # real_name is decimal: case when col1 > 0 then col2 else col3 end as decimal(18, 0)
+                # real_name is decimal: case when col1 > 0
+                # then col2 else col3 end as decimal(18, 0)
                 or (real_name in FUNC_DTYPE and isinstance(token.tokens[-1], Function))
                 or (is_kw and has_function)
             ):

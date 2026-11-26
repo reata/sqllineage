@@ -29,7 +29,8 @@ class TargetHandler(NextTokenBaseHandler):
             and token.normalized == "IF NOT EXISTS"
         ):
             # special handling for CREATE TABLE IF NOT EXISTS
-            # starting sqlparse v0.5.4, IF NOT EXISTS is treated as 1 keyword instead of 3
+            # starting sqlparse v0.5.4, IF NOT EXISTS
+            # is treated as 1 keyword instead of 3
             # See https://github.com/andialbrecht/sqlparse/commit/e92a032c81d51a6645b4f8c32470481894818ba0
             return True
         else:
@@ -37,8 +38,10 @@ class TargetHandler(NextTokenBaseHandler):
 
     def _handle(self, token: Token, holder: SubQueryLineageHolder) -> None:
         if isinstance(token, Function):
-            # insert into tab (col1, col2) values (val1, val2); Here tab (col1, col2) will be parsed as Function
-            # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
+            # insert into tab (col1, col2) values (val1, val2);
+            # Here tab (col1, col2) will be parsed as Function
+            # referring https://github.com/andialbrecht/sqlparse/issues/483
+            # for further information
             if not isinstance(token.token_first(skip_cm=True), Identifier):
                 raise SQLLineageException(
                     f"An Identifier is expected, got {type(token).__name__}[value: {token}] instead."
@@ -46,7 +49,8 @@ class TargetHandler(NextTokenBaseHandler):
             holder.add_write(SqlParseTable.of(token.token_first(skip_cm=True)))
         elif isinstance(token, Comparison):
             # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
-            # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
+            # referring https://github.com/andialbrecht/sqlparse/issues/543
+            # for further information
             if not (
                 isinstance(token.left, Identifier)
                 and isinstance(token.right, Identifier)

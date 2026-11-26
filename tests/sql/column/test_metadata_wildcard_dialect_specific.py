@@ -271,10 +271,13 @@ LATERAL VIEW explode(split(name, ' ')) x AS name_part"""
     )
 
 
-# Hive does not support a lateral view together with a JOIN in the same FROM clause, in any position or join type:
-# Hive 3.1.3 raises "SemanticException [Error 10085]: JOIN with a LATERAL VIEW is not supported", even though the
-# sqlfluff hive dialect parses it. In hive, one side of the join has to be wrapped in a subquery instead.
-# sparksql accepts lateral views after all the relations ("FROM relation (COMMA relation)* lateralView*").
+# Hive does not support a lateral view together with a JOIN in the same FROM
+# clause, in any position or join type: Hive 3.1.3 raises "SemanticException
+# [Error 10085]: JOIN with a LATERAL VIEW is not supported", even though the
+# sqlfluff hive dialect parses it. In hive, one side of the join has to be
+# wrapped in a subquery instead.
+# sparksql accepts lateral views after all the relations
+# ("FROM relation (COMMA relation)* lateralView*").
 @pytest.mark.parametrize("dialect", ["databricks", "sparksql"])
 def test_select_unqualified_column_from_join_with_lateral_view(
     provider: MetaDataProvider, dialect: str

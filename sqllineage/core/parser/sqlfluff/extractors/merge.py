@@ -73,10 +73,12 @@ class MergeExtractor(BaseExtractor):
                                     insert_columns.append(tgt_col)
                             values_bracketed = None
                             if values_clause := merge_insert.get_child("values_clause"):
-                                # ANSI dialect and most others inheriting from it, VALUES is wrapped in values_clause
+                                # ANSI dialect and most others inheriting
+                                # from it, VALUES is wrapped in values_clause
                                 values_bracketed = values_clause.get_child("bracketed")
                             else:
-                                # tsql dialect: VALUES keyword is a direct child, followed by bracketed
+                                # tsql dialect: VALUES keyword is a
+                                # direct child, followed by bracketed
                                 values_flag = False
                                 for seg in list_child_segments(merge_insert):
                                     if values_flag and seg.type == "bracketed":

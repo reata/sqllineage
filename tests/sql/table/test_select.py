@@ -76,7 +76,8 @@ def test_select_with_comment_after_join():
 def test_select_keyword_as_column_alias():
     # here "as" is the column alias
     assert_table_lineage_equal('SELECT 1 "as" FROM tab1', {"tab1"})
-    # the following is hive specific, MySQL doesn't allow this syntax. As of now, we don't test against it
+    # the following is hive specific, MySQL doesn't allow
+    # this syntax. As of now, we don't test against it
     # assert_table_lineage_equal("SELECT 1 as FROM tab1", {"tab1"})
 
 

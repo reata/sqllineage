@@ -140,7 +140,8 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
             segment.get_children("select_statement", "bracketed")
         ):
             if idx != 0:
-                # UNION [ALL] BY NAME (snowflake, duckdb, bigquery) and UNION ALL CORRESPONDING (bigquery)
+                # UNION [ALL] BY NAME (snowflake, duckdb,
+                # bigquery) and UNION ALL CORRESPONDING (bigquery)
                 # combine the query that follows by column name instead of by position
                 by_name = idx <= len(set_operators) and bool(
                     {
@@ -157,7 +158,8 @@ class SelectExtractor(BaseExtractor, SourceHandlerMixin):
                     for seg in list_child_segments(child):
                         self._handle_select_statement_child_segments(seg, holder)
                 case "bracketed":
-                    # If the bracketed child contains another set_expression, recurse; otherwise handle its contents
+                    # If the bracketed child contains another
+                    # set_expression, recurse; otherwise handle its contents
                     inner_children = list_child_segments(child)
                     if any(c.type == "set_expression" for c in inner_children):
                         for c in inner_children:
