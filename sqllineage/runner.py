@@ -3,7 +3,7 @@ import warnings
 from collections import OrderedDict
 from collections.abc import Callable
 from functools import wraps
-from typing import Any
+from typing import Any, assert_never
 
 from sqllineage import DEFAULT_DIALECT, SQLPARSE_DIALECT
 from sqllineage.core.holders import SQLLineageHolder
@@ -112,10 +112,15 @@ Target Tables:
         """
         to turn the DAG into cytoscape format.
         """
-        if level == LineageLevel.COLUMN:
-            return to_cytoscape(self._sql_holder.column_lineage_graph, compound=True)
-        else:
-            return to_cytoscape(self._sql_holder.table_lineage_graph)
+        match level:
+            case LineageLevel.COLUMN:
+                return to_cytoscape(
+                    self._sql_holder.column_lineage_graph, compound=True
+                )
+            case LineageLevel.TABLE:
+                return to_cytoscape(self._sql_holder.table_lineage_graph)
+            case _:  # pragma: no cover
+                assert_never(level)
 
     def draw(self) -> None:
         """
@@ -226,8 +231,16 @@ Target Tables:
         self._stmt = analyzer.statements
         with self._metadata_provider.session() as session:
             stmt_holders = []
-            for stmt in self._stmt:
-                stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
+            for idx, stmt in enumerate(self._stmt, start=1):
+                try:
+                    stmt_holder = analyzer.analyze(stmt, session.metadata_provider)
+                except Exception as exc:
+                    # a note shows up in tracebacks and in CLI logging, but keeps str(exc) unchanged
+                    stmt_short = " ".join(stmt.split())[:50]
+                    exc.add_note(
+                        f"while analyzing statement #{idx} ({self._dialect} dialect): {stmt_short}"
+                    )
+                    raise
                 if write := stmt_holder.write:
                     tgt_table = next(iter(write))
                     if isinstance(tgt_table, Table) and (

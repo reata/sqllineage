@@ -11,12 +11,13 @@ import logging
 import mimetypes
 import os
 from argparse import Namespace
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 from wsgiref.simple_server import make_server
+from wsgiref.types import StartResponse, WSGIEnvironment
 
 from sqllineage import DEFAULT_DIALECT, DEFAULT_HOST, DEFAULT_PORT, STATIC_FOLDER
 from sqllineage.config import SQLLineageConfig
@@ -41,7 +42,9 @@ class SQLLineageApp:
 
         return wrapper
 
-    def __call__(self, environ, start_response) -> list[bytes]:
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: StartResponse
+    ) -> Iterable[bytes]:
         static_folder = Path(os.path.dirname(__file__)).joinpath(Path(STATIC_FOLDER))
         request_method = environ["REQUEST_METHOD"]
         path_info = environ["PATH_INFO"]
@@ -113,48 +116,57 @@ class SQLLineageApp:
             return self.handle_400(start_response, str(e))
 
     @staticmethod
-    def handle_200_text(start_response, mimetype, text) -> list[bytes]:
+    def handle_200_text(
+        start_response: StartResponse, mimetype: str, text: bytes
+    ) -> list[bytes]:
         status_code = HTTPStatus.OK
         start_response(
             f"{status_code.value} {status_code.phrase}", [("Content-type", mimetype)]
         )
         return [text]
 
-    def handle_200_json(self, start_response, data) -> list[bytes]:
+    def handle_200_json(
+        self, start_response: StartResponse, data: dict[str, Any]
+    ) -> list[bytes]:
         return self.handle_json_response(start_response, HTTPStatus.OK, data)
 
-    def handle_400(self, start_response, message) -> list[bytes]:
+    def handle_400(self, start_response: StartResponse, message: str) -> list[bytes]:
         return self.handle_client_error_response(
             start_response, HTTPStatus.BAD_REQUEST, message
         )
 
-    def handle_403(self, start_response) -> list[bytes]:
+    def handle_403(self, start_response: StartResponse) -> list[bytes]:
         message = "File Not Allowed For Accessing"
         return self.handle_client_error_response(
             start_response, HTTPStatus.FORBIDDEN, message
         )
 
     def handle_404(
-        self, start_response, message: str = "File Not Found"
+        self, start_response: StartResponse, message: str = "File Not Found"
     ) -> list[bytes]:
         return self.handle_client_error_response(
             start_response, HTTPStatus.NOT_FOUND, message
         )
 
-    def handle_405(self, start_response) -> list[bytes]:
+    def handle_405(self, start_response: StartResponse) -> list[bytes]:
         message = "Method Not Allowed"
         return self.handle_client_error_response(
             start_response, HTTPStatus.METHOD_NOT_ALLOWED, message
         )
 
     def handle_client_error_response(
-        self, start_response, status_code, message
+        self,
+        start_response: StartResponse,
+        status_code: HTTPStatus,
+        message: str,
     ) -> list[bytes]:
         data = {"message": message}
         return self.handle_json_response(start_response, status_code, data)
 
     @staticmethod
-    def handle_json_response(start_response, status_code, data) -> list[bytes]:
+    def handle_json_response(
+        start_response: StartResponse, status_code: HTTPStatus, data: dict[str, Any]
+    ) -> list[bytes]:
         start_response(
             f"{status_code.value} {status_code.phrase}",
             [

@@ -1,4 +1,4 @@
-from typing import Any, Self
+from typing import Any, Self, assert_never
 
 import rustworkx as rx
 
@@ -133,10 +133,13 @@ class RustworkXGraphOperator(GraphOperator):
 
         # rustworkx returns in_edges and out_edges in reverse insertion order
         # we want to return in insertion order to match the behavior of NetworkX
-        if direction == EdgeDirection.IN:
-            edge_list = reversed(self.graph.in_edges(vertex_idx))
-        else:
-            edge_list = reversed(self.graph.out_edges(vertex_idx))
+        match direction:
+            case EdgeDirection.IN:
+                edge_list = reversed(self.graph.in_edges(vertex_idx))
+            case EdgeDirection.OUT:
+                edge_list = reversed(self.graph.out_edges(vertex_idx))
+            case _:  # pragma: no cover
+                assert_never(direction)
 
         # Collect edges and sort by (source_idx, target_idx) for deterministic ordering
         for src_idx, tgt_idx, edge_data in edge_list:

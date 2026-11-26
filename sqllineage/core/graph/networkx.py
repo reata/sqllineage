@@ -1,4 +1,4 @@
-from typing import Any, Self
+from typing import Any, Self, assert_never
 
 import networkx as nx
 
@@ -82,11 +82,13 @@ class NetworkXGraphOperator(GraphOperator):
         self, vertex: Any, direction: EdgeDirection, label: EdgeType | None = None
     ) -> list[EdgeTuple]:
         edges = []
-        edge_view = (
-            self.graph.in_edges(vertex, data=True)
-            if direction == EdgeDirection.IN
-            else self.graph.out_edges(vertex, data=True)
-        )
+        match direction:
+            case EdgeDirection.IN:
+                edge_view = self.graph.in_edges(vertex, data=True)
+            case EdgeDirection.OUT:
+                edge_view = self.graph.out_edges(vertex, data=True)
+            case _:  # pragma: no cover
+                assert_never(direction)
         for src, tgt, attr in edge_view:
             # always add the edge when label is not specified (or when specified and matches)
             if label is None or attr.get("type") == label:
