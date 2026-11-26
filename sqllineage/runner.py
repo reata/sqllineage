@@ -147,21 +147,21 @@ Target Tables:
     @lazy_property
     def source_tables(self) -> list[Table | Path]:
         """
-        a list of source :class:`sqllineage.models.Table`
+        a list of source :class:`sqllineage.core.models.Table`
         """
         return sorted(self._sql_holder.source_tables, key=lambda x: str(x))
 
     @lazy_property
     def target_tables(self) -> list[Table | Path]:
         """
-        a list of target :class:`sqllineage.models.Table`
+        a list of target :class:`sqllineage.core.models.Table`
         """
         return sorted(self._sql_holder.target_tables, key=lambda x: str(x))
 
     @lazy_property
     def intermediate_tables(self) -> list[Table | Path]:
         """
-        a list of intermediate :class:`sqllineage.models.Table`
+        a list of intermediate :class:`sqllineage.core.models.Table`
         """
         return sorted(self._sql_holder.intermediate_tables, key=lambda x: str(x))
 
@@ -170,10 +170,11 @@ Target Tables:
         self, predicate: Callable[[Column | Table | Path], bool]
     ) -> list[Column | Table | Path]:
         """
-        a list of :class:`sqllineage.models.Column`/:class:`sqllineage.models.Table`/
-        :class:`sqllineage.models.Path` for which ``predicate`` is true. To discover
-        a ``node`` to pass into :meth:`get_column_lineage`, filter the result to
-        :class:`sqllineage.models.Column` instances first.
+        a list of :class:`sqllineage.core.models.Column`/
+        :class:`sqllineage.core.models.Table`/:class:`sqllineage.core.models.Path`
+        for which ``predicate`` is true. To discover a ``node`` to pass into
+        :meth:`get_column_lineage`, filter the result to
+        :class:`sqllineage.core.models.Column` instances first.
         """
         return self._sql_holder.find_nodes(predicate)
 
@@ -185,7 +186,7 @@ Target Tables:
         node: Column | None = None,
     ) -> list[tuple[Column, ...]]:
         """
-        a list of column tuple :class:`sqllineage.models.Column`
+        a list of column tuple :class:`sqllineage.core.models.Column`
 
         :param exclude_path_ending_in_subquery: exclude_subquery rename to
             exclude_path_ending_in_subquery exclude column from SubQuery in the ending
@@ -193,9 +194,10 @@ Target Tables:
         :param exclude_subquery_columns: exclude column from SubQuery in the path.
         :param node: restrict the result to paths that touch this column. Use
             :meth:`find_nodes` to discover a candidate, filtering its result to
-            :class:`sqllineage.models.Column` instances first, since ``find_nodes`` can
-            also return :class:`sqllineage.models.Table` and
-            :class:`sqllineage.models.Path` vertices that this method rejects.
+            :class:`sqllineage.core.models.Column` instances first, since
+            ``find_nodes`` can also return :class:`sqllineage.core.models.Table`
+            and :class:`sqllineage.core.models.Path` vertices that this method
+            rejects.
         """
         # sort by target column, then source column, then the full path as a
         # tiebreaker so paths sharing both endpoints get a deterministic order

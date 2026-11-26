@@ -37,7 +37,7 @@ class ColumnLineageMixin:
             column, leaving only the collapsed source-to-target endpoints that used to
             be connected through it.
 
-        return a list of column tuple :class:`sqllineage.models.Column`
+        return a list of column tuple :class:`sqllineage.core.models.Column`
         """
         if node is not None and not isinstance(node, Column):
             raise TypeError(f"node must be a Column, got {type(node).__name__}")

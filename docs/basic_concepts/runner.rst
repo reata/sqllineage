@@ -6,7 +6,8 @@ LineageRunner is the entry point for SQLLineage core processing logic. After par
 representation of SQL statements will be fed to LineageRunner for processing. From a bird's-eye view, it contains
 three steps:
 
-1. Calling ``sqllineage.utils.helpers.split`` function to split string-base SQL statements into a list of ``str`` statements.
+1. Calling the :attr:`sqllineage.core.analyzer.LineageAnalyzer.statements` property to split
+   string-based SQL statements into a list of ``str`` statements.
 
 2. Calling :class:`sqllineage.core.analyzer.LineageAnalyzer` to analyze each one statement sql string. Get a list of
    :class:`sqllineage.core.holders.StatementLineageHolder` .
@@ -23,6 +24,14 @@ sqllineage.runner.LineageRunner
 .. autoclass:: sqllineage.runner.LineageRunner
     :members:
     :special-members: __str__
+
+
+sqllineage.utils.constant.LineageLevel
+======================================
+
+.. autoclass:: sqllineage.utils.constant.LineageLevel
+    :members:
+    :undoc-members:
 
 
 sqllineage.cli.main
