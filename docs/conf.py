@@ -38,10 +38,27 @@ release = version = VERSION
 # ones.
 extensions = ["sphinx.ext.autodoc", "sphinx.ext.intersphinx", "sphinx.ext.viewcode"]
 
+# Resolve references to Python standard library objects (e.g.
+# collections.abc.Callable) against the official Python documentation.
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
+
 # Both the class’ and the __init__ method’s docstring are concatenated and inserted.
 autoclass_content = "both"
 
 autodoc_default_options = {"member-order": "bysource"}
+
+# Keep default values as written in the source. Otherwise autodoc renders
+# DummyMetaDataProvider() as "<... object>", which is not valid Python; Sphinx
+# then falls back to splitting the signature at every comma and nitpicky
+# reports a bogus "dict[str" reference.
+# https://github.com/sphinx-doc/sphinx/issues/14159
+autodoc_preserve_defaults = True
+
+# Turn unresolved cross-references into warnings. Read the Docs builds with
+# fail_on_warning: true, so a stale module path in a docstring fails the build.
+nitpicky = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
