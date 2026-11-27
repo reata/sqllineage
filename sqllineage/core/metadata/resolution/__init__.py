@@ -7,7 +7,11 @@ from sqllineage.core.metadata.resolution.models import (
     ResolutionDiagnostic,
     ResolvedRelation,
     ResolvedScope,
+    ScopeModel,
+    ScopeRelation,
+    ScopeWildcard,
 )
+from sqllineage.core.metadata.resolution.resolver import resolve_scope
 
 __all__ = [
     "CachingRelationCatalog",
@@ -16,4 +20,8 @@ __all__ = [
     "ResolutionDiagnostic",
     "ResolvedRelation",
     "ResolvedScope",
+    "ScopeModel",
+    "ScopeRelation",
+    "ScopeWildcard",
+    "resolve_scope",
 ]
