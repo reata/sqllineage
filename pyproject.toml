@@ -88,7 +88,7 @@ commands = [
     ["black", ".", "--check", "--diff"],
     ["ruff", "check", "."],
     ["mypy"],
-    ["pytest", "--cov"],
+    ["pytest", "--cov", "--cov-report=term", "--cov-report=xml"],
 ]
 
 [tool.black]
