@@ -31,13 +31,21 @@ jobs:
       with:
         node-version: '22'
     - name: Install
-      run: pip install tox codecov
+      run: pip install tox
     - name: Script
       run: tox -e py
     - name: After Success
+      # Every matrix job runs the same tests against the same source, so one
+      # report per commit is enough for Codecov.
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
       uses: codecov/codecov-action@v7
       with:
+        # Must be set in both the Actions and Dependabot secret stores: runs
+        # triggered by Dependabot can only read Dependabot secrets.
         token: ${{ secrets.CODECOV_TOKEN }}
+        # Do not mask upload failures: a failed upload leaves codecov/patch and
+        # codecov/project pending, which silently blocks merging.
+        fail_ci_if_error: true
         verbose: true
 
   frontend:
