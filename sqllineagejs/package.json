@@ -7,17 +7,17 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@monaco-editor/react": "^4.7.0",
-    "@mui/icons-material": "^9.5.0",
+    "@mui/icons-material": "^9.6.0",
     "@mui/material": "^9.3.1",
     "@mui/x-tree-view": "^9.18.0",
-    "@reduxjs/toolkit": "^2.14.0",
+    "@reduxjs/toolkit": "^2.15.0",
     "cytoscape": "^3.35.0",
     "cytoscape-dagre": "^4.1.0",
     "react": "^19.3.1",
     "react-cytoscapejs": "^2.0.0",
     "react-dom": "^19.3.1",
     "react-redux": "^9.3.1",
-    "react-router-dom": "^7.18.5"
+    "react-router-dom": "^7.18.7"
   },
   "scripts": {
     "start": "vite",
@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/react": "^19.3.0",
+    "@types/react": "^19.3.2",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
     "eslint": "^10.15.0",
