@@ -215,3 +215,18 @@ A webserver will be started, showing DAG representation of the lineage result in
 - Column-Level Lineage
 
 <img src="https://raw.githubusercontent.com/reata/sqllineage/master/docs/_static/column.jpg" alt="Column-Level Lineage">
+
+
+### OpenLineage Export
+Export the lineage result (tables plus column lineage) as an [OpenLineage](https://openlineage.io) RunEvent in JSON:
+```
+sqllineage -f foo.sql --openlineage --job-namespace etl --job-name daily_job --dataset-namespace postgres://host:5432
+```
+`--run-id` and `--event-time` are optional. You can also do this in Python:
+```python
+from sqllineage.runner import LineageRunner
+
+event = LineageRunner(sql).to_openlineage(
+    job_namespace="etl", job_name="daily_job", dataset_namespace="postgres://host:5432"
+)
+```
